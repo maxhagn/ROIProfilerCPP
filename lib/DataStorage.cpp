@@ -1,12 +1,7 @@
 #include <iostream>
-#include <chrono>
 #include <iomanip>
 #include <list>
-#include <string>
 #include <vector>
-#include <algorithm>
-#include <type_traits>
-#include <ctime>
 
 using namespace std;
 
@@ -17,7 +12,7 @@ struct StatementRuntime {
 
     bool operator<(const StatementRuntime& a) const
     {
-        return startTime < endTime;
+        return startTime-endTime > a.startTime-a.endTime;
     }
 };
 

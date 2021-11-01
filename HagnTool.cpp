@@ -22,12 +22,11 @@ using namespace clang::driver;
 using namespace clang::tooling;
 using namespace llvm;
 
-
 Rewriter rewriter;
 SourceLocation initializationLocation;
 SourceLocation summaryLocation;
+SourceLocation runtimeStartLocation;
 string currentVisitIdentifier = "start";
-int globalChildrenCounter = 0;
 bool transformationSuccess = false;
 
 // Common Options and Extra Help definition
@@ -47,7 +46,6 @@ static cl::opt <string> OutputFile( "o", cl::desc( "Write transformed file to cu
 static cl::opt <string> Statement( "stmt", cl::desc( "Specifies the current traversal point" ),
                                    cl::value_desc( "id of stmt" ), cl::cat( MyToolCategory ));
 
-
 /********************************************//**
  * ! \brief Traverses recursively through the body
  *  of the specified function body. Function Body
@@ -61,6 +59,7 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
     // visit all children in function compound statement
     for ( Stmt::child_iterator i = funcBody->child_begin( ), e = funcBody->child_end( ); i != e; ++i ) {
         Stmt *currStmt = *i;
+
         // ignore all return statements
         if ( currStmt->getStmtClass( ) != Stmt::ReturnStmtClass ) {
             childrenSize++;
@@ -90,12 +89,6 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
 
                 int64_t id = currStmt->getID( *localContext );
                 std::string idString = currStmt->getStmtClassName( ) + std::string( " " ) + std::to_string( id );
-                std::string id_definition =
-                        "ids[" + std::to_string( childCounter ) + "] = \"" + idString + "\";";
-                std::string counter_start_name =
-                        "times[" + std::to_string( childCounter ) + "][0] = std::chrono::high_resolution_clock::now();";
-                std::string counter_end_name =
-                        "times[" + std::to_string( childCounter ) + "][1] = std::chrono::high_resolution_clock::now();";
 
                 Optional <Token> currentToken( clang::Lexer::findNextToken(
                         endLoc, localContext->getSourceManager( ),
@@ -126,27 +119,17 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
                     endLoc = locAfterBrace;
                 }
 
-                rewriter.InsertText( beginLoc, id_definition + "\n" );
-                rewriter.InsertText( beginLoc, "//" + idString + " start time declaration\n" );
-                rewriter.InsertText( beginLoc, counter_start_name + "\n" );
-
-                rewriter.InsertText( endLoc, "//" + idString + " end time declaration\n" );
-                rewriter.InsertText( endLoc, counter_end_name + "\n\n" );
-
+                rewriter.InsertText( beginLoc, "dataStorage.startEvent(\"" + idString + "\");\n" );
+                rewriter.InsertText( endLoc, "dataStorage.startEvent(\"" + idString + "\");\n" );
                 childCounter++;
             }
         }
-
-        globalChildrenCounter = childCounter;
-
-        // print program finished notification
-        cout << "hagn-tool finished code transformation!\n";
 
         // set transformation successful
         transformationSuccess = true;
 
     }
-    // if body has zero or one statements
+        // if body has zero or one statements
     else {
         // if one children is parent of another set of statements
         // call traverseChildren recursively
@@ -166,9 +149,9 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
                 Stmt *nextBody = whileStmt->getBody( );
                 traverseChildren( nextBody, localContext );
             }
-        // if return is the only statement annotate nothing
+            // if return is the only statement annotate nothing
         } else {
-            cout << "hagn-tool hasn't found any statements!\n";
+            // cout << "hagn-tool hasn't found any statements!\n";
         }
     }
 }
@@ -207,7 +190,6 @@ public:
                         Stmt *nextBody = whileStmt->getBody( );
                         traverseChildren( nextBody, astContext );
                     }
-                    cout << "hagn-tool found the specified declaration.";
                 }
             }
         }
@@ -216,10 +198,23 @@ public:
 
     virtual bool VisitFunctionDecl( FunctionDecl *func ) {
 
-        // find initialization location for includes and array definitions
+        // find initialization location for includes
         if ( initializationLocation.isInvalid( ) &&
              astContext->getSourceManager( ).isInMainFile( func->getLocation( ))) {
             initializationLocation = func->getOuterLocStart( );
+        }
+
+        // find first location in main class
+        if ( runtimeStartLocation.isInvalid( ) &&
+             astContext->getSourceManager( ).isInMainFile( func->getLocation( ))) {
+            if ( func->isMain( )) {
+                SourceLocation locAfterBrace( clang::Lexer::findLocationAfterToken(
+                        func->getBody( )->getBeginLoc( ).getLocWithOffset( -1 ), clang::tok::l_brace,
+                        astContext->getSourceManager( ),
+                        astContext->getLangOpts( ), true ));
+
+                runtimeStartLocation = locAfterBrace;
+            }
         }
 
         // find summary location in main class
@@ -246,6 +241,8 @@ public:
         }
         return true;
     }
+
+    virtual ~Visitor( ) { }
 };
 
 /********************************************//**
@@ -290,6 +287,9 @@ public:
  ***********************************************/
 int main( int argc, const char **argv ) {
 
+    // runtime start
+    std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+
     // create Common Option Parser
     auto ExpectedParser = CommonOptionsParser::create( argc, argv, MyToolCategory, llvm::cl::Required );
 
@@ -312,19 +312,26 @@ int main( int argc, const char **argv ) {
         // if output file is specified
         if ( std::string( argv[ i ] ) == "-o" ) {
             outputFilename = std::string( argv[ i + 1 ] );
-            cout << "Transformed file is written to " << std::string( argv[ i + 1 ] ) << ".\n";
         }
 
         // if statement id is specified
         if ( std::string( argv[ i ] ) == "--stmt" ) {
             stmtId = std::string( argv[ i + 1 ] );
-            cout << "Statement Id " << std::string( argv[ i + 1 ] ) << " detected ... \n";
         }
     }
 
+    // Print Hagn Tool Information
+    cout << setw(82) << setfill('=') << "\n";
+    cout << setw(45) << setfill(' ') << "Hagn Tool" << setw(25) <<"\n";
+    cout << setw(83) << setfill('=') << "\n\n";
+    cout << "Input File: " << argv[1] << "\n";
+    cout << "Output File: " << outputFilename << "\n";
     // print no statement id notification
     if ( stmtId == "start" ) {
-        cout << "No statement id detected, annotating main function ...\n";
+        cout << "Mode: Annotating Main Function\n";
+    } else {
+        cout << "Mode: Annotate specified Statement\n";
+        cout << "Statement ID: " << stmtId << "\n";
     }
 
     // add statement id to global scope
@@ -338,45 +345,54 @@ int main( int argc, const char **argv ) {
     ClangTool Tool( OptionsParser.getCompilations( ),
                     OptionsParser.getSourcePathList( ));
 
-
     // run the Clang Tool, creating a new FrontendAction
-    int result =
-            Tool.run( newFrontendActionFactory<ClangFrontendAction>( ).get( ));
+    int result = Tool.run( newFrontendActionFactory<ClangFrontendAction>( ).get( ));
 
     // add initialization and summary if transformation was successful
     if ( transformationSuccess ) {
-        // insert includes and array definitions before first function
+
+        // if initialization Location is valid insert includes and create DataStorage Object
         if ( initializationLocation.isValid( )) {
-            std::string initializationString =
-                    "// Added Performance Counter to program\n// include chrono library to calculate performance times\n#include <chrono>\n#include <iomanip>\nstd::string ids[" +
-                    std::to_string( globalChildrenCounter ) + "];\n"
-                    + "std::chrono::high_resolution_clock::time_point times[" + std::to_string( globalChildrenCounter ) +
-                    "][2];\n\n";
-            rewriter.InsertText( initializationLocation, initializationString );
+            rewriter.InsertText( initializationLocation,
+                                 "#include \"../lib/DataStorage.cpp\"\n""DataStorage dataStorage;" );
+        } else {
+            cerr << "Invalid initializationLocation, Line 356";
+            exit( EXIT_FAILURE );
         }
 
-        // insert time summery as last step in the main function
-        if ( summaryLocation.isValid( )) {
-            globalChildrenCounter--;
-            std::string summaryString =
-                    "std::cout << \"\\n\\nTotal Time in Scope: \" << (times[" + std::to_string( globalChildrenCounter ) +
-                    "][1]-times[0][0])/std::chrono::nanoseconds(1) << \"ns\\n\";\n"
-                    +
-                    "std::cout << std::setw(30) << \"Description\" << std::right << std::setw(13) << std::setfill(' ') << \"Time\" << std::right <<  std::setw(17) << \"Percentage\\n\"; \n"
-                    + "for ( int j = 0; j <= " + std::to_string( globalChildrenCounter ) + "; j++ ) {\n"
-                    + "std::chrono::duration<double> sub = times[j][1]-times[j][0];\n"
-                    + "std::chrono::duration<double> all = times[" + std::to_string( globalChildrenCounter ) +
-                    "][1]-times[0][0];\n"
-                    + "double diff =  sub / all * 100;\n"
-                    +
-                    "std::cout << std::setw(30) << ids[j] << std::right << std::setw(10) << (times[j][1]-times[j][0])/std::chrono::nanoseconds(1) << std::setw(3) << \"ns\"<< std::right << std::setw(15) << std::setprecision(4) << diff << std::setw(2) << \"%\\n\";\n"
-                    + "}";
-            rewriter.InsertText( summaryLocation, summaryString );
+        // start an event at the beginning of the main function
+        if ( runtimeStartLocation.isValid( )) {
+            rewriter.InsertText( runtimeStartLocation, "dataStorage.startEvent(\"Runtime\");\n" );
+        } else {
+            cerr << "Invalid runtimeStartLocation, Line 364";
+            exit( EXIT_FAILURE );
         }
+
+        // start event and insert time summery as last step in the main function
+        if ( summaryLocation.isValid( )) {
+            rewriter.InsertText( summaryLocation, "dataStorage.startEvent(\"Runtime\");\ndataStorage.print();" );
+        } else {
+            cerr << "Invalid summaryLocation, Line 372";
+            exit( EXIT_FAILURE );
+        }
+
+        // runtime end
+        std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
+        std::chrono::duration<double, std::milli> ms_double = endTime - startTime;
+
+        // print hagn tool runtime
+        cout << "Runtime: " << ms_double.count() << "ms\n";
+
+        // print program finished notification
+        cout << "Success: Yes\n\n";
+
+        // add transformed code to output file
+        rewriter.getEditBuffer( rewriter.getSourceMgr( ).getMainFileID( )).write( dest );
+
     } else {
-        cout << "No statements with id " << stmtId << " found.\n\n";
+        cout << "Success: No\n\n";
+        exit( EXIT_FAILURE );
     }
-    // add transformed code to output file
-    rewriter.getEditBuffer( rewriter.getSourceMgr( ).getMainFileID( )).write( dest );
+
     return result;
 }
