@@ -1,36 +1,21 @@
 var indexSectionsWithContent =
 {
-  0: "acdfhimorstv",
+  0: "civ",
   1: "cv",
-  2: "hiort",
-  3: "cdfhmsv",
-  4: "r",
-  5: "d",
-  6: "ad",
-  7: "i"
+  2: "i"
 };
 
 var indexSectionNames =
 {
   0: "all",
   1: "classes",
-  2: "files",
-  3: "functions",
-  4: "variables",
-  5: "enums",
-  6: "enumvalues",
-  7: "pages"
+  2: "pages"
 };
 
 var indexSectionLabels =
 {
   0: "All",
   1: "Classes",
-  2: "Files",
-  3: "Functions",
-  4: "Variables",
-  5: "Enumerations",
-  6: "Enumerator",
-  7: "Pages"
+  2: "Pages"
 };
 
