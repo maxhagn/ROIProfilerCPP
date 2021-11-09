@@ -1,5 +1,9 @@
 # Introduction
-This Tool can be used to transform C++ Code. The Tool adds performance counter to a given file and automatically prints the generated statistics. The input parameters are a .cpp or .cxx file. The output file can be specified with -o output.cpp Furthermore the depth can be specified with --depth, where d1 only adds performance counter to the statements and function calls in the main class. d2 also adds counter to all functions on the second level and so on. --depth adds performance counter to all statements
+This Tool can be used to transform C++ Code. 
+The Tool adds performance counter to a given file and automatically prints the generated statistics. 
+The input parameters are a .cpp or .cxx file. The output file can be specified with -o output.cpp.
+With the --stmt parameter a specific statement can be traversed. If no --stmt is specified the programs
+annotates the main function and return the performance times and statement ids for further investigation.
 
 # Author
 Technical University Vienna
