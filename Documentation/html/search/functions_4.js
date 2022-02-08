@@ -1,4 +1,7 @@
 var searchData=
 [
-  ['main_37',['main',['../_hagn_tool_8cpp.html#a217dbf8b442f20279ea00b898af96f52',1,'main(int argc, const char **argv):&#160;HagnTool.cpp'],['../input__program_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe',1,'main(void):&#160;input_program.cpp'],['../output__program_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe',1,'main(void):&#160;output_program.cpp'],['../_test_performance_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe',1,'main(void):&#160;TestPerformance.cpp']]]
+  ['getlocationaftertoken_84',['getLocationAfterToken',['../_hagn_tool_8cpp.html#adfd72dc10aea9a01b5e9c1785033949d',1,'HagnTool.cpp']]],
+  ['getsegmentsofstring_85',['getSegmentsOfString',['../namespacehlibhelp.html#ac68cd92332f70edbe3d4cea4ce986f07',1,'hlibhelp']]],
+  ['getunit_86',['getUnit',['../namespacehlibhelp.html#a41fb30c70b12ff8205daf51bc226d456',1,'hlibhelp']]],
+  ['getusageasstring_87',['getUsageAsString',['../namespacehlibhelp.html#a621118bb4265d26a13d621b2b2202f65',1,'hlibhelp']]]
 ];

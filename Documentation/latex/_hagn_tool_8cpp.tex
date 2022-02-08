@@ -1,91 +1,92 @@
-\hypertarget{_hagn_tool_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/hagn-\/tool/\+Hagn\+Tool.cpp File Reference}
-\label{_hagn_tool_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/hagn-\/tool/HagnTool.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/hagn-\/tool/HagnTool.cpp}}
-{\ttfamily \#include \char`\"{}clang/\+AST/\+AST.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+AST/\+ASTConsumer.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+AST/\+ASTContext.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+AST/\+Recursive\+ASTVisitor.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Driver/\+Options.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTConsumers.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Frontend\+Actions.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Rewrite/\+Core/\+Rewriter.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Common\+Options\+Parser.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Tooling.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Basic/\+Token\+Kinds.\+h\char`\"{}}\newline
-{\ttfamily \#include \char`\"{}clang/\+Lex/\+Lexer.\+h\char`\"{}}\newline
-{\ttfamily \#include $<$fstream$>$}\newline
-{\ttfamily \#include $<$iostream$>$}\newline
+\hypertarget{_hagn_tool_8cpp}{}\doxysection{Hagn\+Tool.\+cpp File Reference}
+\label{_hagn_tool_8cpp}\index{HagnTool.cpp@{HagnTool.cpp}}
+{\ttfamily \#include \char`\"{}Hagn\+Tool.\+h\char`\"{}}\newline
 \doxysubsection*{Classes}
 \begin{DoxyCompactItemize}
 \item 
 class \mbox{\hyperlink{class_visitor}{Visitor}}
 \item 
 class \mbox{\hyperlink{class_consumer}{Consumer}}
-\item 
+\begin{DoxyCompactList}\small\item\em Customizes a Instance of ASTConsumer. The \mbox{\hyperlink{class_consumer}{Consumer}} is used by the Frontend Action to traverse the AST Tree. \end{DoxyCompactList}\item 
 class \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}}
 \begin{DoxyCompactList}\small\item\em Creates ASTConsumer and returns ASTContext. A new \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}} is created in the main, where the Compiler\+Instance and the Source\+Files are used to generate a new AST Tree \mbox{\hyperlink{class_consumer}{Consumer}}. \end{DoxyCompactList}\end{DoxyCompactItemize}
-\doxysubsection*{Enumerations}
-\begin{DoxyCompactItemize}
-\item 
-enum \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}{Depth\+Level}} \{ \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9daa91fb0824da12f8bb3b74dd78fb13b63}{a}}
-, \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9daec6e5be66411cb5f2e5fc6b6748d1ea1}{d1}}
-, \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9da96ae589b7d5427dde9e5da18bbf68d86}{d2}}
- \}
-\end{DoxyCompactItemize}
 \doxysubsection*{Functions}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}{Depth\+Level}} \mbox{\hyperlink{_hagn_tool_8cpp_ad1b417bf84cebb45c8325cc138f3509f}{String\+To\+Depth\+Level}} (const std\+::string \&str)
-\item 
-std\+::string \mbox{\hyperlink{_hagn_tool_8cpp_a21bca262b2019e754143650eac832fe3}{Depth\+Level\+To\+String}} (const \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}{Depth\+Level}} depth\+Level)
-\item 
+Source\+Location \mbox{\hyperlink{_hagn_tool_8cpp_adfd72dc10aea9a01b5e9c1785033949d}{get\+Location\+After\+Token}} (Source\+Location source\+Location, ASTContext $\ast$local\+Context)
+\begin{DoxyCompactList}\small\item\em Returns Location after Token. The end location of a function oder stmt returns the location before a brace or a semicolon. The events have to be called after the end token. This location is returned by this function. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverse\+Children}} (Stmt $\ast$func\+Body, ASTContext $\ast$local\+Context)
+\begin{DoxyCompactList}\small\item\em Traverses recursively through the body of the specified function body. Function Body is a set of statements. \end{DoxyCompactList}\item 
 int \mbox{\hyperlink{_hagn_tool_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
 \begin{DoxyCompactList}\small\item\em The entry point of the tool. The main functions deals with the input files and options. Furthermore the \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}} will be created and is used to transform the code. After transformation the rewritten code will be printed to the specified output file. \end{DoxyCompactList}\end{DoxyCompactItemize}
-\doxysubsection*{Variables}
-\begin{DoxyCompactItemize}
-\item 
-Rewriter \mbox{\hyperlink{_hagn_tool_8cpp_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}
-\end{DoxyCompactItemize}
-
-
-\doxysubsection{Enumeration Type Documentation}
-\mbox{\Hypertarget{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}\label{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}} 
-\index{HagnTool.cpp@{HagnTool.cpp}!DepthLevel@{DepthLevel}}
-\index{DepthLevel@{DepthLevel}!HagnTool.cpp@{HagnTool.cpp}}
-\doxysubsubsection{\texorpdfstring{DepthLevel}{DepthLevel}}
-{\footnotesize\ttfamily enum \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}{Depth\+Level}}}
-
-\begin{DoxyEnumFields}{Enumerator}
-\raisebox{\heightof{T}}[0pt][0pt]{\index{a@{a}!HagnTool.cpp@{HagnTool.cpp}}\index{HagnTool.cpp@{HagnTool.cpp}!a@{a}}}\mbox{\Hypertarget{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9daa91fb0824da12f8bb3b74dd78fb13b63}\label{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9daa91fb0824da12f8bb3b74dd78fb13b63}} 
-a&\\
-\hline
-
-\raisebox{\heightof{T}}[0pt][0pt]{\index{d1@{d1}!HagnTool.cpp@{HagnTool.cpp}}\index{HagnTool.cpp@{HagnTool.cpp}!d1@{d1}}}\mbox{\Hypertarget{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9daec6e5be66411cb5f2e5fc6b6748d1ea1}\label{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9daec6e5be66411cb5f2e5fc6b6748d1ea1}} 
-d1&\\
-\hline
-
-\raisebox{\heightof{T}}[0pt][0pt]{\index{d2@{d2}!HagnTool.cpp@{HagnTool.cpp}}\index{HagnTool.cpp@{HagnTool.cpp}!d2@{d2}}}\mbox{\Hypertarget{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9da96ae589b7d5427dde9e5da18bbf68d86}\label{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9da96ae589b7d5427dde9e5da18bbf68d86}} 
-d2&\\
-\hline
-
-\end{DoxyEnumFields}
-
-
-Definition at line 41 of file Hagn\+Tool.\+cpp.
-
 
 
 \doxysubsection{Function Documentation}
-\mbox{\Hypertarget{_hagn_tool_8cpp_a21bca262b2019e754143650eac832fe3}\label{_hagn_tool_8cpp_a21bca262b2019e754143650eac832fe3}} 
-\index{HagnTool.cpp@{HagnTool.cpp}!DepthLevelToString@{DepthLevelToString}}
-\index{DepthLevelToString@{DepthLevelToString}!HagnTool.cpp@{HagnTool.cpp}}
-\doxysubsubsection{\texorpdfstring{DepthLevelToString()}{DepthLevelToString()}}
-{\footnotesize\ttfamily std\+::string Depth\+Level\+To\+String (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}{Depth\+Level}}}]{depth\+Level }\end{DoxyParamCaption})}
+\mbox{\Hypertarget{_hagn_tool_8cpp_adfd72dc10aea9a01b5e9c1785033949d}\label{_hagn_tool_8cpp_adfd72dc10aea9a01b5e9c1785033949d}} 
+\index{HagnTool.cpp@{HagnTool.cpp}!getLocationAfterToken@{getLocationAfterToken}}
+\index{getLocationAfterToken@{getLocationAfterToken}!HagnTool.cpp@{HagnTool.cpp}}
+\doxysubsubsection{\texorpdfstring{getLocationAfterToken()}{getLocationAfterToken()}}
+{\footnotesize\ttfamily Source\+Location get\+Location\+After\+Token (\begin{DoxyParamCaption}\item[{Source\+Location}]{source\+Location,  }\item[{ASTContext $\ast$}]{local\+Context }\end{DoxyParamCaption})}
 
 
 
-Definition at line 51 of file Hagn\+Tool.\+cpp.
+Returns Location after Token. The end location of a function oder stmt returns the location before a brace or a semicolon. The events have to be called after the end token. This location is returned by this function. 
+
+! 
+
+Definition at line 10 of file Hagn\+Tool.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{10                                                                                                 \{}
+\DoxyCodeLine{11     \textcolor{comment}{// get the current token at the specified location}}
+\DoxyCodeLine{12     Optional <Token> currentToken( clang::Lexer::findNextToken(}
+\DoxyCodeLine{13             sourceLocation, localContext-\/>getSourceManager( ),}
+\DoxyCodeLine{14             localContext-\/>getLangOpts( )));}
+\DoxyCodeLine{15 }
+\DoxyCodeLine{16     \textcolor{comment}{// if token is raw identifier return last token}}
+\DoxyCodeLine{17     \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) == clang::tok::raw\_identifier ) \{}
+\DoxyCodeLine{18         sourceLocation = sourceLocation.getLocWithOffset( -\/1 );}
+\DoxyCodeLine{19     \}}
+\DoxyCodeLine{20     \textcolor{comment}{// if token is semi return this token}}
+\DoxyCodeLine{21     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) == clang::tok::semi ) \{}
+\DoxyCodeLine{22         sourceLocation = sourceLocation.getLocWithOffset( 0 );}
+\DoxyCodeLine{23     \}}
+\DoxyCodeLine{24     \textcolor{comment}{// if token is brace return next token}}
+\DoxyCodeLine{25     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) == clang::tok::r\_brace ) \{}
+\DoxyCodeLine{26         sourceLocation = sourceLocation.getLocWithOffset( 1 );}
+\DoxyCodeLine{27     \}}
+\DoxyCodeLine{28 }
+\DoxyCodeLine{29     \textcolor{comment}{// find location after semicolon}}
+\DoxyCodeLine{30     SourceLocation locAfterSemi( clang::Lexer::findLocationAfterToken(}
+\DoxyCodeLine{31             sourceLocation, clang::tok::semi,}
+\DoxyCodeLine{32             localContext-\/>getSourceManager( ),}
+\DoxyCodeLine{33             localContext-\/>getLangOpts( ), \textcolor{keyword}{true} ));}
+\DoxyCodeLine{34 }
+\DoxyCodeLine{35     \textcolor{comment}{// find location after brace}}
+\DoxyCodeLine{36     SourceLocation locAfterBrace( clang::Lexer::findLocationAfterToken(}
+\DoxyCodeLine{37             sourceLocation, clang::tok::r\_brace,}
+\DoxyCodeLine{38             localContext-\/>getSourceManager( ),}
+\DoxyCodeLine{39             localContext-\/>getLangOpts( ), \textcolor{keyword}{true} ));}
+\DoxyCodeLine{40 }
+\DoxyCodeLine{41     \textcolor{comment}{// if loc after semi is valid return locAfterSemi}}
+\DoxyCodeLine{42     \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) != clang::tok::r\_brace \&\& locAfterSemi.isValid( )) \{}
+\DoxyCodeLine{43         sourceLocation = locAfterSemi;}
+\DoxyCodeLine{44     \}}
+\DoxyCodeLine{45     \textcolor{comment}{// if loc after brace is valid return locAfterBrace}}
+\DoxyCodeLine{46     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) != clang::tok::r\_brace \&\& locAfterBrace.isValid( )) \{}
+\DoxyCodeLine{47         sourceLocation = locAfterBrace;}
+\DoxyCodeLine{48     \}}
+\DoxyCodeLine{49 }
+\DoxyCodeLine{50     \textcolor{comment}{// if token is brace return current location}}
+\DoxyCodeLine{51 }
+\DoxyCodeLine{52     \textcolor{keywordflow}{return} sourceLocation;}
+\DoxyCodeLine{53 \}}
+
+\end{DoxyCode}
+
+
+Referenced by traverse\+Children(), and Visitor\+::\+Visit\+Stmt().
 
 \mbox{\Hypertarget{_hagn_tool_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_hagn_tool_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
 \index{HagnTool.cpp@{HagnTool.cpp}!main@{main}}
@@ -99,28 +100,299 @@ The entry point of the tool. The main functions deals with the input files and o
 
 ! 
 
-Definition at line 162 of file Hagn\+Tool.\+cpp.
-
-\mbox{\Hypertarget{_hagn_tool_8cpp_ad1b417bf84cebb45c8325cc138f3509f}\label{_hagn_tool_8cpp_ad1b417bf84cebb45c8325cc138f3509f}} 
-\index{HagnTool.cpp@{HagnTool.cpp}!StringToDepthLevel@{StringToDepthLevel}}
-\index{StringToDepthLevel@{StringToDepthLevel}!HagnTool.cpp@{HagnTool.cpp}}
-\doxysubsubsection{\texorpdfstring{StringToDepthLevel()}{StringToDepthLevel()}}
-{\footnotesize\ttfamily \mbox{\hyperlink{_hagn_tool_8cpp_a0bad2a92d5980dd37521486efa093a9d}{Depth\+Level}} String\+To\+Depth\+Level (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{str }\end{DoxyParamCaption})}
+Definition at line 371 of file Hagn\+Tool.\+cpp.
 
 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{371                                         \{}
+\DoxyCodeLine{372 }
+\DoxyCodeLine{373     \textcolor{comment}{// runtime start}}
+\DoxyCodeLine{374     std::chrono::system\_clock::time\_point startTime = std::chrono::system\_clock::now( );}
+\DoxyCodeLine{375 }
+\DoxyCodeLine{376     \textcolor{comment}{// create Common Option Parser}}
+\DoxyCodeLine{377     \textcolor{keyword}{auto} ExpectedParser = CommonOptionsParser::create( argc, argv, MyToolCategory, llvm::cl::Required );}
+\DoxyCodeLine{378 }
+\DoxyCodeLine{379     \textcolor{comment}{// terminate if specified options are not expected}}
+\DoxyCodeLine{380     \textcolor{keywordflow}{if} ( !ExpectedParser ) \{}
+\DoxyCodeLine{381         llvm::errs( ) << ExpectedParser.takeError( );}
+\DoxyCodeLine{382         \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{383     \}}
+\DoxyCodeLine{384 }
+\DoxyCodeLine{385     \textcolor{comment}{// create local parameter variables}}
+\DoxyCodeLine{386     std::string outputFilename = \textcolor{stringliteral}{"{}output.cpp"{}};}
+\DoxyCodeLine{387     std::string stmtId = \textcolor{stringliteral}{"{}start"{}};}
+\DoxyCodeLine{388 }
+\DoxyCodeLine{389     \textcolor{comment}{// create the stream for output file}}
+\DoxyCodeLine{390     std::error\_code err\_code;}
+\DoxyCodeLine{391 }
+\DoxyCodeLine{392     \textcolor{comment}{// parse arguments}}
+\DoxyCodeLine{393     \textcolor{keywordflow}{for} ( \textcolor{keywordtype}{int} i = 0; i < argc; ++i ) \{}
+\DoxyCodeLine{394 }
+\DoxyCodeLine{395         \textcolor{comment}{// if output file is specified}}
+\DoxyCodeLine{396         \textcolor{keywordflow}{if} ( std::string( argv[ i ] ) == \textcolor{stringliteral}{"{}-\/o"{}} ) \{}
+\DoxyCodeLine{397             outputFilename = std::string( argv[ i + 1 ] );}
+\DoxyCodeLine{398         \}}
+\DoxyCodeLine{399 }
+\DoxyCodeLine{400         \textcolor{comment}{// if statement id is specified}}
+\DoxyCodeLine{401         \textcolor{keywordflow}{if} ( std::string( argv[ i ] ) == \textcolor{stringliteral}{"{}-\/-\/stmt"{}} ) \{}
+\DoxyCodeLine{402             stmtId = std::string( argv[ i + 1 ] );}
+\DoxyCodeLine{403         \}}
+\DoxyCodeLine{404     \}}
+\DoxyCodeLine{405 }
+\DoxyCodeLine{406     \textcolor{comment}{// Print Hagn Tool Information}}
+\DoxyCodeLine{407     cout << setw( 82 ) << setfill( \textcolor{charliteral}{'='} ) << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{408     cout << setw( 45 ) << setfill( \textcolor{charliteral}{' '} ) << \textcolor{stringliteral}{"{}Hagn Tool"{}} << setw( 25 ) << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{409     cout << setw( 83 ) << setfill( \textcolor{charliteral}{'='} ) << \textcolor{stringliteral}{"{}\(\backslash\)n\(\backslash\)n"{}};}
+\DoxyCodeLine{410     cout << \textcolor{stringliteral}{"{}Input File: "{}} << argv[ 1 ] << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{411     cout << \textcolor{stringliteral}{"{}Output File: "{}} << outputFilename << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{412     \textcolor{comment}{// print no statement id notification}}
+\DoxyCodeLine{413     \textcolor{keywordflow}{if} ( stmtId == \textcolor{stringliteral}{"{}start"{}} ) \{}
+\DoxyCodeLine{414         cout << \textcolor{stringliteral}{"{}Mode: Annotating Main Function\(\backslash\)n"{}};}
+\DoxyCodeLine{415     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{416         cout << \textcolor{stringliteral}{"{}Mode: Annotate specified Statement\(\backslash\)n"{}};}
+\DoxyCodeLine{417         cout << \textcolor{stringliteral}{"{}Statement ID: "{}} << stmtId << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{418     \}}
+\DoxyCodeLine{419 }
+\DoxyCodeLine{420     \textcolor{comment}{// add statement id to global scope}}
+\DoxyCodeLine{421     \mbox{\hyperlink{_hagn_tool_8h_a29f40cbf56ba1c9a5d4750faccff56c6}{statementOption}} = stmtId;}
+\DoxyCodeLine{422 }
+\DoxyCodeLine{423     \textcolor{comment}{// set destination of output file to the specified file}}
+\DoxyCodeLine{424     llvm::raw\_fd\_ostream dest( outputFilename, err\_code );}
+\DoxyCodeLine{425 }
+\DoxyCodeLine{426     \textcolor{comment}{// Parse the options and create new ClangTool}}
+\DoxyCodeLine{427     CommonOptionsParser \&OptionsParser = ExpectedParser.get( );}
+\DoxyCodeLine{428     ClangTool Tool( OptionsParser.getCompilations( ),}
+\DoxyCodeLine{429                     OptionsParser.getSourcePathList( ));}
+\DoxyCodeLine{430 }
+\DoxyCodeLine{431     \textcolor{comment}{// run the Clang Tool, creating a new FrontendAction}}
+\DoxyCodeLine{432     \textcolor{keywordtype}{int} result = Tool.run( newFrontendActionFactory<ClangFrontendAction>( ).get( ));}
+\DoxyCodeLine{433 }
+\DoxyCodeLine{434     \textcolor{comment}{// add initialization and summary if transformation was successful}}
+\DoxyCodeLine{435     \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_hagn_tool_8h_a15ae25a94346899ec5715517ec03bd4f}{transformationSuccess}} ) \{}
+\DoxyCodeLine{436 }
+\DoxyCodeLine{437         \textcolor{comment}{// if initialization Location is valid insert includes and create DataStorage Object}}
+\DoxyCodeLine{438         \mbox{\hyperlink{_hagn_tool_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}}.pop\_back( );}
+\DoxyCodeLine{439         \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_hagn_tool_8h_a824216c5325518b8eec871b8174fec3f}{initializationLocation}}.isValid( )) \{}
+\DoxyCodeLine{440             \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( \mbox{\hyperlink{_hagn_tool_8h_a824216c5325518b8eec871b8174fec3f}{initializationLocation}},}
+\DoxyCodeLine{441                                  \textcolor{stringliteral}{"{}\#include \(\backslash\)"{}../lib/DataStorage.cpp\(\backslash\)"{}\(\backslash\)n"{}}\textcolor{stringliteral}{"{}DataStorage dataStorage(\(\backslash\)"{}"{}} +}
+\DoxyCodeLine{442                                  \mbox{\hyperlink{_hagn_tool_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} + \textcolor{stringliteral}{"{}\(\backslash\)"{});"{}} );}
+\DoxyCodeLine{443         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{444             cerr << \textcolor{stringliteral}{"{}Invalid initializationLocation, Line 356"{}};}
+\DoxyCodeLine{445             exit( EXIT\_FAILURE );}
+\DoxyCodeLine{446         \}}
+\DoxyCodeLine{447 }
+\DoxyCodeLine{448         \textcolor{comment}{// start an event at the beginning of the main function}}
+\DoxyCodeLine{449         \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_hagn_tool_8h_a6a7a6f87a39ed5405e4f4df9e1205530}{runtimeStartLocation}}.isValid( )) \{}
+\DoxyCodeLine{450             \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( \mbox{\hyperlink{_hagn_tool_8h_a6a7a6f87a39ed5405e4f4df9e1205530}{runtimeStartLocation}}, \textcolor{stringliteral}{"{}dataStorage.startEvent(0);\(\backslash\)n"{}} );}
+\DoxyCodeLine{451         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{452             cerr << \textcolor{stringliteral}{"{}Invalid runtimeStartLocation, Line 364"{}};}
+\DoxyCodeLine{453             exit( EXIT\_FAILURE );}
+\DoxyCodeLine{454         \}}
+\DoxyCodeLine{455 }
+\DoxyCodeLine{456         \textcolor{comment}{// start event and insert time summery as last step in the main function}}
+\DoxyCodeLine{457         \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_hagn_tool_8h_a4d00baee5074510abc5b5853de403290}{summaryLocation}}.isValid( )) \{}
+\DoxyCodeLine{458             \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( \mbox{\hyperlink{_hagn_tool_8h_a4d00baee5074510abc5b5853de403290}{summaryLocation}}, \textcolor{stringliteral}{"{}dataStorage.endEvent(0);\(\backslash\)ndataStorage.print();"{}} );}
+\DoxyCodeLine{459         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{460             cerr << \textcolor{stringliteral}{"{}Invalid summaryLocation, Line 372"{}};}
+\DoxyCodeLine{461             exit( EXIT\_FAILURE );}
+\DoxyCodeLine{462         \}}
+\DoxyCodeLine{463 }
+\DoxyCodeLine{464         \textcolor{comment}{// runtime end}}
+\DoxyCodeLine{465         std::chrono::system\_clock::time\_point endTime = std::chrono::system\_clock::now( );}
+\DoxyCodeLine{466         std::chrono::duration<double, std::milli> ms\_double = endTime -\/ startTime;}
+\DoxyCodeLine{467 }
+\DoxyCodeLine{468         \textcolor{comment}{// print hagn tool runtime}}
+\DoxyCodeLine{469         cout << \textcolor{stringliteral}{"{}Runtime: "{}} << ms\_double.count( ) << \textcolor{stringliteral}{"{}ms\(\backslash\)n"{}};}
+\DoxyCodeLine{470 }
+\DoxyCodeLine{471         \textcolor{comment}{// print program finished notification}}
+\DoxyCodeLine{472         cout << \textcolor{stringliteral}{"{}Success: Yes\(\backslash\)n\(\backslash\)n"{}};}
+\DoxyCodeLine{473 }
+\DoxyCodeLine{474         \textcolor{comment}{// add transformed code to output file}}
+\DoxyCodeLine{475         \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.getEditBuffer( \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.getSourceMgr( ).getMainFileID( )).write( dest );}
+\DoxyCodeLine{476 }
+\DoxyCodeLine{477 }
+\DoxyCodeLine{478     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{479         cout << \textcolor{stringliteral}{"{}Success: No\(\backslash\)n\(\backslash\)n"{}};}
+\DoxyCodeLine{480         exit( EXIT\_FAILURE );}
+\DoxyCodeLine{481     \}}
+\DoxyCodeLine{482 }
+\DoxyCodeLine{483     \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{484 \}}
 
-Definition at line 45 of file Hagn\+Tool.\+cpp.
+\end{DoxyCode}
+\mbox{\Hypertarget{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}\label{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}} 
+\index{HagnTool.cpp@{HagnTool.cpp}!traverseChildren@{traverseChildren}}
+\index{traverseChildren@{traverseChildren}!HagnTool.cpp@{HagnTool.cpp}}
+\doxysubsubsection{\texorpdfstring{traverseChildren()}{traverseChildren()}}
+{\footnotesize\ttfamily void traverse\+Children (\begin{DoxyParamCaption}\item[{Stmt $\ast$}]{func\+Body,  }\item[{ASTContext $\ast$}]{local\+Context }\end{DoxyParamCaption})}
 
 
 
-\doxysubsection{Variable Documentation}
-\mbox{\Hypertarget{_hagn_tool_8cpp_a284f3685f06f0e161d79ef2f7513460b}\label{_hagn_tool_8cpp_a284f3685f06f0e161d79ef2f7513460b}} 
-\index{HagnTool.cpp@{HagnTool.cpp}!rewriter@{rewriter}}
-\index{rewriter@{rewriter}!HagnTool.cpp@{HagnTool.cpp}}
-\doxysubsubsection{\texorpdfstring{rewriter}{rewriter}}
-{\footnotesize\ttfamily Rewriter rewriter}
+Traverses recursively through the body of the specified function body. Function Body is a set of statements. 
+
+! 
+
+Definition at line 60 of file Hagn\+Tool.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{60                                                                   \{}
+\DoxyCodeLine{61 }
+\DoxyCodeLine{62     \textcolor{comment}{// count statements in body and search for parent statements}}
+\DoxyCodeLine{63     \textcolor{keywordtype}{int} childrenSize = 0;}
+\DoxyCodeLine{64     Stmt *parentStmt = NULL;}
+\DoxyCodeLine{65     \textcolor{keywordflow}{for} ( Stmt::child\_iterator i = funcBody-\/>child\_begin( ), e = funcBody-\/>child\_end( ); i != e; ++i ) \{}
+\DoxyCodeLine{66         Stmt *currStmt = *i;}
+\DoxyCodeLine{67         \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) != Stmt::ReturnStmtClass ) \{}
+\DoxyCodeLine{68             childrenSize++;}
+\DoxyCodeLine{69             \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) == Stmt::CallExprClass}
+\DoxyCodeLine{70                  || currStmt-\/>getStmtClass( ) == Stmt::ForStmtClass}
+\DoxyCodeLine{71                  || currStmt-\/>getStmtClass( ) == Stmt::WhileStmtClass}
+\DoxyCodeLine{72                  || currStmt-\/>getStmtClass( ) == Stmt::IfStmtClass}
+\DoxyCodeLine{73                     ) \{}
+\DoxyCodeLine{74                 parentStmt = currStmt;}
+\DoxyCodeLine{75             \}}
+\DoxyCodeLine{76         \}}
+\DoxyCodeLine{77     \}}
+\DoxyCodeLine{78 }
+\DoxyCodeLine{79     \textcolor{comment}{// if body has multiple children, annotate all statements with performance counter}}
+\DoxyCodeLine{80     \textcolor{keywordflow}{if} ( childrenSize > 1 ) \{}
+\DoxyCodeLine{81         \textcolor{keywordtype}{bool} isCompoundedStatement = \textcolor{keyword}{false};}
+\DoxyCodeLine{82         SourceLocation lastEventEndLocation;}
+\DoxyCodeLine{83 }
+\DoxyCodeLine{84         \textcolor{keywordflow}{for} ( Stmt::child\_iterator i = funcBody-\/>child\_begin( ), e = funcBody-\/>child\_end( );}
+\DoxyCodeLine{85               i != e; ++i ) \{}
+\DoxyCodeLine{86             Stmt *currStmt = *i;}
+\DoxyCodeLine{87             currStmt-\/>getStmtClassName( );}
+\DoxyCodeLine{88 }
+\DoxyCodeLine{89             \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) != Stmt::ReturnStmtClass ) \{}
+\DoxyCodeLine{90 }
+\DoxyCodeLine{91                 SourceLocation beginLoc = currStmt-\/>getBeginLoc( );}
+\DoxyCodeLine{92                 SourceLocation endLoc = \mbox{\hyperlink{_hagn_tool_8cpp_adfd72dc10aea9a01b5e9c1785033949d}{getLocationAfterToken}}( currStmt-\/>getEndLoc( ), localContext );}
+\DoxyCodeLine{93 }
+\DoxyCodeLine{94                 \textcolor{comment}{// if statement runtime is not merged}}
+\DoxyCodeLine{95                 \textcolor{keywordflow}{if} ( !isCompoundedStatement ) \{}
+\DoxyCodeLine{96 }
+\DoxyCodeLine{97                     \textcolor{comment}{// set start time always}}
+\DoxyCodeLine{98                     \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( beginLoc,}
+\DoxyCodeLine{99                                          \textcolor{stringliteral}{"{}dataStorage.startEvent("{}} + std::to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) + \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{100 }
+\DoxyCodeLine{101                     \textcolor{comment}{// if statement is not parent, wait for next statement}}
+\DoxyCodeLine{102                     \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) != Stmt::CallExprClass \&\&}
+\DoxyCodeLine{103                          currStmt-\/>getStmtClass( ) != Stmt::ForStmtClass \&\&}
+\DoxyCodeLine{104                          currStmt-\/>getStmtClass( ) != Stmt::WhileStmtClass \&\&}
+\DoxyCodeLine{105                          currStmt-\/>getStmtClass( ) != Stmt::IfStmtClass}
+\DoxyCodeLine{106                             ) \{}
+\DoxyCodeLine{107 }
+\DoxyCodeLine{108                         lastEventEndLocation = endLoc;}
+\DoxyCodeLine{109                         isCompoundedStatement = \textcolor{keyword}{true};}
+\DoxyCodeLine{110 }
+\DoxyCodeLine{111                         \textcolor{comment}{// statement is parent, do not merge runtime}}
+\DoxyCodeLine{112                     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{113                         \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( endLoc,}
+\DoxyCodeLine{114                                              \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) + \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{115                         \textcolor{comment}{// concat stmtclass and stmtid and add to identifierString}}
+\DoxyCodeLine{116                         int64\_t \textcolor{keywordtype}{id} = currStmt-\/>getID( *localContext );}
+\DoxyCodeLine{117                         std::string idString =}
+\DoxyCodeLine{118                                 currStmt-\/>getStmtClassName( ) + std::string( \textcolor{stringliteral}{"{} "{}} ) + std::to\_string( \textcolor{keywordtype}{id} );}
+\DoxyCodeLine{119                         \mbox{\hyperlink{_hagn_tool_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += idString + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{120 }
+\DoxyCodeLine{121                         isCompoundedStatement = \textcolor{keyword}{false};}
+\DoxyCodeLine{122                         \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++;}
+\DoxyCodeLine{123                     \}}
+\DoxyCodeLine{124 }
+\DoxyCodeLine{125                     \textcolor{comment}{// if waiting for next statement}}
+\DoxyCodeLine{126                 \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{127 }
+\DoxyCodeLine{128                     \textcolor{comment}{// if statement is parent, stop last merge and annotate this statement}}
+\DoxyCodeLine{129                     \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) == Stmt::CallExprClass ||}
+\DoxyCodeLine{130                          currStmt-\/>getStmtClass( ) == Stmt::ForStmtClass ||}
+\DoxyCodeLine{131                          currStmt-\/>getStmtClass( ) == Stmt::WhileStmtClass ||}
+\DoxyCodeLine{132                          currStmt-\/>getStmtClass( ) == Stmt::IfStmtClass}
+\DoxyCodeLine{133                             ) \{}
+\DoxyCodeLine{134 }
+\DoxyCodeLine{135                         \textcolor{comment}{// end old event}}
+\DoxyCodeLine{136                         \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( beginLoc,}
+\DoxyCodeLine{137                                              \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) +}
+\DoxyCodeLine{138                                              \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{139 }
+\DoxyCodeLine{140                         \textcolor{comment}{// add compound description to identifier string}}
+\DoxyCodeLine{141                         \mbox{\hyperlink{_hagn_tool_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += \textcolor{stringliteral}{"{}CustomCompoundStmt InterID"{}} + to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++ ) + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{142 }
+\DoxyCodeLine{143                         \textcolor{comment}{// start and end new event around parent function}}
+\DoxyCodeLine{144                         \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( beginLoc,}
+\DoxyCodeLine{145                                              \textcolor{stringliteral}{"{}dataStorage.startEvent("{}} + std::to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) +}
+\DoxyCodeLine{146                                              \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{147                         \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( endLoc,}
+\DoxyCodeLine{148                                              \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++ ) +}
+\DoxyCodeLine{149                                              \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{150 }
+\DoxyCodeLine{151                         \textcolor{comment}{// concat stmtclass and stmtid and add to identifierString}}
+\DoxyCodeLine{152                         int64\_t \textcolor{keywordtype}{id} = currStmt-\/>getID( *localContext );}
+\DoxyCodeLine{153                         std::string idString =}
+\DoxyCodeLine{154                                 currStmt-\/>getStmtClassName( ) + std::string( \textcolor{stringliteral}{"{} "{}} ) + std::to\_string( \textcolor{keywordtype}{id} );}
+\DoxyCodeLine{155                         \mbox{\hyperlink{_hagn_tool_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += idString + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{156 }
+\DoxyCodeLine{157                         isCompoundedStatement = \textcolor{keyword}{false};}
+\DoxyCodeLine{158 }
+\DoxyCodeLine{159                         \textcolor{comment}{// wait for next statement again}}
+\DoxyCodeLine{160                     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{161                         lastEventEndLocation = endLoc;}
+\DoxyCodeLine{162                         isCompoundedStatement = \textcolor{keyword}{true};}
+\DoxyCodeLine{163                     \}}
+\DoxyCodeLine{164                 \}}
+\DoxyCodeLine{165             \}}
+\DoxyCodeLine{166         \}}
+\DoxyCodeLine{167 }
+\DoxyCodeLine{168         \textcolor{comment}{// end last event}}
+\DoxyCodeLine{169         \textcolor{keywordflow}{if} ( isCompoundedStatement \&\& lastEventEndLocation.isValid( )) \{}
+\DoxyCodeLine{170             \mbox{\hyperlink{_hagn_tool_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( lastEventEndLocation,}
+\DoxyCodeLine{171                                  \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++ ) + \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{172             \mbox{\hyperlink{_hagn_tool_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += \textcolor{stringliteral}{"{}CustomCompoundStmt InterID"{}} + to\_string( \mbox{\hyperlink{_hagn_tool_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{173         \}}
+\DoxyCodeLine{174 }
+\DoxyCodeLine{175         \textcolor{comment}{// set transformation successful}}
+\DoxyCodeLine{176         \mbox{\hyperlink{_hagn_tool_8h_a15ae25a94346899ec5715517ec03bd4f}{transformationSuccess}} = \textcolor{keyword}{true};}
+\DoxyCodeLine{177 }
+\DoxyCodeLine{178     \}}
+\DoxyCodeLine{179         \textcolor{comment}{// if body has zero or one statements}}
+\DoxyCodeLine{180     \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{181         \textcolor{comment}{// if one children is parent of another set of statements}}
+\DoxyCodeLine{182         \textcolor{comment}{// call traverseChildren recursively}}
+\DoxyCodeLine{183         \textcolor{keywordflow}{if} ( parentStmt != NULL ) \{}
+\DoxyCodeLine{184             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::CallExprClass ) \{}
+\DoxyCodeLine{185                 CallExpr *expr = cast<CallExpr>( parentStmt );}
+\DoxyCodeLine{186                 Stmt *nextBody = expr-\/>getDirectCallee( )-\/>getBody( );}
+\DoxyCodeLine{187                 \mbox{\hyperlink{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{188             \}}
+\DoxyCodeLine{189             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::ForStmtClass ) \{}
+\DoxyCodeLine{190                 ForStmt *forStmt = cast<ForStmt>( parentStmt );}
+\DoxyCodeLine{191                 Stmt *nextBody = forStmt-\/>getBody( );}
+\DoxyCodeLine{192                 \mbox{\hyperlink{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{193             \}}
+\DoxyCodeLine{194             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::WhileStmtClass ) \{}
+\DoxyCodeLine{195                 WhileStmt *whileStmt = cast<WhileStmt>( parentStmt );}
+\DoxyCodeLine{196                 Stmt *nextBody = whileStmt-\/>getBody( );}
+\DoxyCodeLine{197                 \mbox{\hyperlink{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{198             \}}
+\DoxyCodeLine{199             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::IfStmtClass ) \{}
+\DoxyCodeLine{200                 IfStmt *ifStmt = cast<IfStmt>( parentStmt );}
+\DoxyCodeLine{201                 Stmt *nextBody = ifStmt-\/>getThen( );}
+\DoxyCodeLine{202                 \mbox{\hyperlink{_hagn_tool_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{203             \}}
+\DoxyCodeLine{204             \textcolor{comment}{// if return is the only statement annotate nothing}}
+\DoxyCodeLine{205         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{206             \textcolor{comment}{// cout << "{}hagn-\/tool hasn't found any statements!\(\backslash\)n"{};}}
+\DoxyCodeLine{207         \}}
+\DoxyCodeLine{208     \}}
+\DoxyCodeLine{209 \}}
+
+\end{DoxyCode}
+
+
+References get\+Location\+After\+Token(), identifier\+String, internal\+Identifier, rewriter, and transformation\+Success.
 
 
 
-Definition at line 25 of file Hagn\+Tool.\+cpp.
+Referenced by Visitor\+::\+Visit\+Function\+Decl(), and Visitor\+::\+Visit\+Stmt().
 

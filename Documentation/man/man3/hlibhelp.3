@@ -1,0 +1,245 @@
+.TH "hlibhelp" 3 "Sun Nov 14 2021" "Version 1.0" "Hagn Tool Performance Counter" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+hlibhelp
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "string \fBgetUnit\fP (std::chrono::duration< double, std::nano > duration)"
+.br
+.ti -1c
+.RI "string \fBgetUsageAsString\fP (double usage)"
+.br
+.ti -1c
+.RI "double \fBconvertToSpecifiedUnit\fP (std::chrono::duration< double, std::nano > duration, string prefix)"
+.br
+.ti -1c
+.RI "void \fBprintTableRow\fP (string identifier, string stmtClass, double duration, string unit, string scopeUsage, string totalUsage)"
+.br
+.ti -1c
+.RI "void \fBprintTableSeparator\fP (int width, char separator, string escape)"
+.br
+.ti -1c
+.RI "void \fBprintTableSeparator\fP (int width, string separator, string position, string escape)"
+.br
+.ti -1c
+.RI "void \fBprintStatisticBanner\fP ()"
+.br
+.ti -1c
+.RI "string * \fBgetSegmentsOfString\fP (string identifier)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "double hlibhelp::convertToSpecifiedUnit (std::chrono::duration< double, std::nano > duration, string prefix)"
+
+.PP
+Definition at line 44 of file Helper\&.cpp\&.
+.PP
+.nf
+44                                                                                                 {
+45         if ( prefix == "s" ) {
+46             return duration\&.count( ) / 1000000000;
+47         }
+48 
+49         if ( prefix == "ms" ) {
+50             return duration\&.count( ) / 1000000;
+51         }
+52 
+53         if ( prefix == "µs" ) {
+54             return duration\&.count( ) / 1000;
+55         }
+56 
+57         return duration\&.count( );
+58     }
+.fi
+.PP
+Referenced by DataStorage::print()\&.
+.SS "string* hlibhelp::getSegmentsOfString (string identifier)"
+
+.PP
+Definition at line 147 of file Helper\&.cpp\&.
+.PP
+.nf
+147                                                      {
+148         std::stringstream identifierStream( identifier );
+149         string identifierSegment;
+150         string *segments = new string[2];
+151         int segmentCounter = 0;
+152         while ( std::getline( identifierStream, identifierSegment, ' ' )) {
+153             segments[ segmentCounter++ ] = identifierSegment;
+154         }
+155         return segments;
+156     }
+.fi
+.PP
+Referenced by DataStorage::print()\&.
+.SS "string hlibhelp::getUnit (std::chrono::duration< double, std::nano > duration)"
+
+.PP
+Definition at line 10 of file Helper\&.cpp\&.
+.PP
+.nf
+10                                                                   {
+11         if ( duration\&.count( ) > 60000000000 ) {
+12             return " s";
+13         }
+14 
+15         if ( duration\&.count( ) > 1000000000 ) {
+16             return "ms";
+17         }
+18 
+19         if ( duration\&.count( ) > 10000000 ) {
+20             return "µs";
+21         }
+22 
+23         return "ns";
+24     }
+.fi
+.PP
+Referenced by DataStorage::print()\&.
+.SS "string hlibhelp::getUsageAsString (double usage)"
+
+.PP
+Definition at line 27 of file Helper\&.cpp\&.
+.PP
+.nf
+27                                             {
+28         std::ostringstream customPrecision;
+29 
+30         if ( usage < 0\&.01 ) {
+31             customPrecision << "<  0\&.01";
+32         } else if ( usage > 99\&.99 ) {
+33             customPrecision << "> 99\&.99";
+34         } else {
+35             customPrecision << std::fixed;
+36             customPrecision << std::setprecision( 2 );
+37             customPrecision << usage;
+38         }
+39 
+40         return customPrecision\&.str( );
+41     }
+.fi
+.PP
+Referenced by DataStorage::print()\&.
+.SS "void hlibhelp::printStatisticBanner ()"
+
+.PP
+Definition at line 139 of file Helper\&.cpp\&.
+.PP
+.nf
+139                                  {
+140         cout << "\n\n";
+141         printTableSeparator( 108, '=', "\n" );
+142         cout << setw( 60 ) << setfill( ' ' ) << "Statistic\n";
+143         printTableSeparator( 109, '=', "\n\n" );
+144     }
+.fi
+.PP
+References printTableSeparator()\&.
+.PP
+Referenced by DataStorage::print()\&.
+.SS "void hlibhelp::printTableRow (string identifier, string stmtClass, double duration, string unit, string scopeUsage, string totalUsage)"
+
+.PP
+Definition at line 61 of file Helper\&.cpp\&.
+.PP
+.nf
+62                                             {
+63         string percentChar = "  %";
+64         string separatorChar = "  │  ";
+65         string hagnToolSeparatorChar = "  │  ";
+66 
+67         if ( identifier == "Runtime" || identifier == "Scope" ) {
+68             percentChar = "";
+69             separatorChar = "     ";
+70             hagnToolSeparatorChar = "     ";
+71         }
+72         if ( identifier == "Hagn-Tool" ) {
+73             hagnToolSeparatorChar = "     ";
+74         }
+75 
+76 
+77         std::ostringstream durationCustomPrecision;
+78 
+79         if ( duration < 0\&.001 ) {
+80             durationCustomPrecision << "< 0\&.001";
+81         } else {
+82             durationCustomPrecision << std::fixed;
+83             durationCustomPrecision << std::setprecision( 3 );
+84             durationCustomPrecision << duration;
+85         }
+86 
+87 
+88         std::cout << setfill( ' ' ) << "│   "
+89                   << std::setw( 15 ) << std::left << identifier << hagnToolSeparatorChar
+90                   << std::setw( 25 ) << std::left << stmtClass << separatorChar;
+91 
+92         if ( identifier == "ID" ) {
+93             std::cout << std::right << std::setw( 19 ) << "Runtime";
+94         } else {
+95             std::cout << std::right << std::setw( 15 ) << durationCustomPrecision\&.str( ) << "  " << unit;
+96         }
+97 
+98         std::cout
+99                 << std::setw( 5 ) << separatorChar
+100 
+101                 << std::right << std::setw( 10 ) << std::setprecision( 2 ) << scopeUsage + percentChar
+102 
+103                 << std::setw( 5 ) << separatorChar
+104 
+105                 << std::right << std::setw( 10 ) << std::setprecision( 2 ) << totalUsage + percentChar
+106 
+107                 << std::setw( 5 ) << "   │" << "\n";
+108     }
+.fi
+.PP
+Referenced by DataStorage::print()\&.
+.SS "void hlibhelp::printTableSeparator (int width, char separator, string escape)"
+
+.PP
+Definition at line 111 of file Helper\&.cpp\&.
+.PP
+.nf
+111                                                                          {
+112         cout << setw( width ) << setfill( separator ) << escape;
+113     }
+.fi
+.PP
+Referenced by DataStorage::print(), and printStatisticBanner()\&.
+.SS "void hlibhelp::printTableSeparator (int width, string separator, string position, string escape)"
+
+.PP
+Definition at line 116 of file Helper\&.cpp\&.
+.PP
+.nf
+116                                                                                             {
+117         string leftSeparator = "├";
+118         string rightSeparator = "┤";
+119 
+120         if ( position == "top" ) {
+121             leftSeparator = "┌";
+122             rightSeparator = "┐";
+123         }
+124 
+125         if ( position == "bottom" ) {
+126             leftSeparator = "└";
+127             rightSeparator = "┘";
+128         }
+129 
+130         cout << leftSeparator;
+131         for ( int i = 0; i <= width; i++ ) {
+132             cout << separator;
+133         }
+134 
+135         cout << rightSeparator << escape;
+136     }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Hagn Tool Performance Counter from the source code\&.

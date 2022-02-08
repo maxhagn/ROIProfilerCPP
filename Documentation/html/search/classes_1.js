@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['visitor_6',['Visitor',['../class_visitor.html',1,'']]]
+  ['datastorage_60',['DataStorage',['../class_data_storage.html',1,'']]]
 ];

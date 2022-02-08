@@ -20,8 +20,10 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
+  <td id="projectlogo"><img alt="Logo" src="DragonMedium.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Hagn Tool Performance Counter
+   &#160;<span id="projectnumber">1.0</span>
    </div>
    <div id="projectbrief">hagn-tool [-o output][--stmt statementid] &lt;source&gt;</div>
   </td>
@@ -66,15 +68,53 @@ $(function() {
 <div class="title">Introduction </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="md_README"></a>This Tool can be used to transform C++ Code. The Tool adds performance counter to a given file and automatically prints the generated statistics. The input parameters are a .cpp or .cxx file. The output file can be specified with -o output.cpp. With the &ndash;stmt parameter a specific statement can be traversed. If no &ndash;stmt is specified the programs annotates the main function and return the performance times and statement ids for further investigation.</p>
+<div class="textblock"><p><a class="anchor" id="md_README"></a>This tool transforms C++ code by adding performance counter dynamically to the source file. Functions and statements are traversed in the Clang AST and annotated if necessary. If &ndash;stmt option is not specified the program annotates the first level. The &ndash;stmt option can be used to specify a function or bundle of statements as traversal entry point. The output file is written to output.cpp or to the file specified with the -o option. The program takes .cpp oder .cxx file as input.</p>
+<p>The Tool is build with Clang LibTooling library. LibTooling is a library to support writing standalone tools based on Clang. \ Further Information: <a href="https://clang.llvm.org/docs/LibTooling.html">https://clang.llvm.org/docs/LibTooling.html</a></p>
 <h1><a class="anchor" id="autotoc_md1"></a>
+Installation Guide</h1>
+<ol type="1">
+<li>Install Requirements: CMAKE, GCC, Python, zlib, GNU Make, Ninja</li>
+<li>Checkout, configure and build LLVM with Ninja<ol type="a">
+<li>Checkout LLVM: git clone <a href="https://github.com/llvm/llvm-project.git">https://github.com/llvm/llvm-project.git</a></li>
+<li>cd llvm-project</li>
+<li>mkdir build</li>
+<li>cd build</li>
+<li>cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DLLVM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release</li>
+<li>ninja</li>
+</ol>
+</li>
+<li>Checkout Hagn-Tool<ol type="a">
+<li>cd ../clang/tools</li>
+<li>mkdir hagn-tool</li>
+<li>cd hagn-tool</li>
+<li>git clone <a href="https://github.com/maxhagn/hagn-tool.git">https://github.com/maxhagn/hagn-tool.git</a></li>
+</ol>
+</li>
+<li>Add hagn-tool to CMakeLists.txt<ol type="a">
+<li>cd ..</li>
+<li>vi CMakeLists.txt</li>
+<li>Add line "add_clang_subdirectory(hagn-tool)"</li>
+</ol>
+</li>
+<li>Build hagn-tool<ol type="a">
+<li>cd ../build</li>
+<li>ninja</li>
+</ol>
+</li>
+</ol>
+<p>Further information for LLVM and Clang installation:</p><ul>
+<li>LLVM Installation: <a href="https://llvm.org/docs/GettingStarted.html">https://llvm.org/docs/GettingStarted.html</a></li>
+<li>Clang Installation: <a href="https://clang.llvm.org/get_started.html">https://clang.llvm.org/get_started.html</a></li>
+<li>Clang Lib Tooling: <a href="https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html">https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html</a></li>
+</ul>
+<h1><a class="anchor" id="autotoc_md2"></a>
 Author</h1>
 <p>Technical University Vienna</p>
 <p>Maximilian Hagn <br  />
  Brausewettergasse 16 / TOP 3 <br  />
  1220 Wien <br  />
  Austria</p>
-<h1><a class="anchor" id="autotoc_md2"></a>
+<h1><a class="anchor" id="autotoc_md3"></a>
 Caveat</h1>
 <p>This documentation is generated directly from the source code with doxygen. Since my clang libtool is constantly under active development, what you're about to read is out of date! </p>
 </div></div><!-- PageDoc -->

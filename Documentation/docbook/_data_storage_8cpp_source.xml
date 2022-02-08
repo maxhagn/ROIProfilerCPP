@@ -1,0 +1,150 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__data_storage_8cpp_source" xml:lang="en-US">
+<title>DataStorage.cpp</title>
+<indexterm><primary>lib/DataStorage.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__data_storage_8h">DataStorage.h</link>&quot;</emphasis>
+00002 
+<anchor xml:id="__data_storage_8cpp_source_1l00003"/><link linkend="_class_data_storage">00003</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_data_storage">DataStorage</link>&#32;{
+00004 <emphasis role="keyword">public</emphasis>:
+00005 
+00006 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;saves&#32;runtime&#32;arrays</emphasis>
+<anchor xml:id="__data_storage_8cpp_source_1l00007"/><link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">00007</link> &#32;&#32;&#32;&#32;<link linkend="_struct_statement_runtime">StatementRuntime</link>&#32;*<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>;
+00008 
+00009 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;size&#32;of&#32;measured&#32;statements</emphasis>
+<anchor xml:id="__data_storage_8cpp_source_1l00010"/><link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">00010</link> &#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>;
+00011 
+00012 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;constructor</emphasis>
+<anchor xml:id="__data_storage_8cpp_source_1l00013"/><link linkend="_class_data_storage_1ad66d06db91affee4548cf2d58b7b3ca8">00013</link> &#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1ad66d06db91affee4548cf2d58b7b3ca8">DataStorage</link>(&#32;<emphasis role="keywordtype">string</emphasis>&#32;<link linkend="__hagn_tool_8h_1ae32c9fb32bce38a59a96888d88486084">identifierString</link>&#32;)&#32;{
+00014 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;count&#32;entries&#32;in&#32;identifierStrings</emphasis>
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>&#32;=&#32;std::count(&#32;<link linkend="__hagn_tool_8h_1ae32c9fb32bce38a59a96888d88486084">identifierString</link>.begin(&#32;),&#32;<link linkend="__hagn_tool_8h_1ae32c9fb32bce38a59a96888d88486084">identifierString</link>.end(&#32;),&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>&#32;)&#32;+&#32;1;
+00016 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_struct_statement_runtime">StatementRuntime</link>[<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>];
+00017 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>&#32;=&#32;0;
+00018 
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;split&#32;identifier&#32;string&#32;to&#32;array</emphasis>
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::stringstream&#32;identifierStream(&#32;<link linkend="__hagn_tool_8h_1ae32c9fb32bce38a59a96888d88486084">identifierString</link>&#32;);
+00021 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;segment;
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(&#32;std::getline(&#32;identifierStream,&#32;segment,&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>&#32;))&#32;{
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>++&#32;].<link linkend="_struct_statement_runtime_1a1714e3b0be4ced7a565face8319449d2">identifier</link>&#32;=&#32;segment;
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00025 &#32;&#32;&#32;&#32;}
+00026 
+00027 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;start&#32;event&#32;adds&#32;current&#32;timestamp&#32;as&#32;start&#32;time</emphasis>
+<anchor xml:id="__data_storage_8cpp_source_1l00028"/><link linkend="_class_data_storage_1a927960040591eba171b0dbbfa4b9b5bd">00028</link> &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_class_data_storage_1a927960040591eba171b0dbbfa4b9b5bd">startEvent</link>(&#32;<emphasis role="keywordtype">int</emphasis>&#32;identifier&#32;)&#32;{
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;if&#32;identifier&#32;is&#32;already&#32;measured,&#32;sum&#32;runtimes</emphasis>
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].startTime&#32;!=&#32;<link linkend="__data_storage_8h_1a2ef4192e2c3ccd2ab98db495aa7adab5">invalidTime</link>&#32;&amp;&amp;
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].endTime&#32;!=&#32;<link linkend="__data_storage_8h_1a2ef4192e2c3ccd2ab98db495aa7adab5">invalidTime</link>&#32;)&#32;{
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>&#32;=&#32;high_resolution_clock::now(&#32;)&#32;-
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].<link linkend="_struct_statement_runtime_1a42e14a863f1610e65c35277dd84ccd94">endTime</link>&#32;-
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>&#32;);
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;else&#32;add&#32;timestamp&#32;as&#32;start&#32;time</emphasis>
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>&#32;=&#32;high_resolution_clock::now(&#32;);
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00040 &#32;&#32;&#32;&#32;}
+00041 
+00042 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;end&#32;event&#32;adds&#32;current&#32;timestamp&#32;as&#32;end&#32;time</emphasis>
+<anchor xml:id="__data_storage_8cpp_source_1l00043"/><link linkend="_class_data_storage_1ade8287e335af60ba18c8455d4485094c">00043</link> &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_class_data_storage_1ade8287e335af60ba18c8455d4485094c">endEvent</link>(&#32;<emphasis role="keywordtype">int</emphasis>&#32;identifier&#32;)&#32;{
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;identifier&#32;].<link linkend="_struct_statement_runtime_1a42e14a863f1610e65c35277dd84ccd94">endTime</link>&#32;=&#32;high_resolution_clock::now(&#32;);
+00045 &#32;&#32;&#32;&#32;}
+00046 
+00047 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;print&#32;program&#32;statistics</emphasis>
+<anchor xml:id="__data_storage_8cpp_source_1l00048"/><link linkend="_class_data_storage_1a94ef68ba0c97efa1c78b6f6909eb133c">00048</link> &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_class_data_storage_1a94ef68ba0c97efa1c78b6f6909eb133c">print</link>(&#32;)&#32;{
+00049 
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;calculate&#32;total&#32;runtime</emphasis>
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_measurement_evaluation">MeasurementEvaluation</link>&#32;total;
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;total.<link linkend="_struct_measurement_evaluation_1a1bb78c705675d65cc18660fb2d355202">identifier</link>&#32;=&#32;<emphasis role="stringliteral">&quot;Runtime&quot;</emphasis>;
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;total.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;=&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;0&#32;].<link linkend="_struct_statement_runtime_1a42e14a863f1610e65c35277dd84ccd94">endTime</link>&#32;-&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;0&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>;
+00054 
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;calculate&#32;scope&#32;runtime</emphasis>
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_measurement_evaluation">MeasurementEvaluation</link>&#32;scope;
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;scope.<link linkend="_struct_measurement_evaluation_1a1bb78c705675d65cc18660fb2d355202">identifier</link>&#32;=&#32;<emphasis role="stringliteral">&quot;Scope&quot;</emphasis>;
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;=&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;1&#32;].<link linkend="_struct_statement_runtime_1a42e14a863f1610e65c35277dd84ccd94">endTime</link>&#32;-&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;1&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>;
+00059 
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;sum&#32;of&#32;runtime&#32;of&#32;all&#32;annotated&#32;statements</emphasis>
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::chrono::duration&lt;double,&#32;std::nano&gt;&#32;statementRuntimeSum;
+00062 
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;get&#32;unit&#32;for&#32;runtime&#32;if&#32;scope&#32;measured</emphasis>
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;unit&#32;=&#32;<link linkend="_namespacehlibhelp_1a41fb30c70b12ff8205daf51bc226d456">hlibhelp::getUnit</link>(&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;);
+00065 
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;normally&#32;scope&#32;is&#32;measured</emphasis>
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;scopeIsMeasured&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00068 
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;if&#32;scope&#32;is&#32;not&#32;measured,&#32;calculate&#32;time&#32;between&#32;first&#32;and&#32;last&#32;counter</emphasis>
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>.count(&#32;)&#32;==&#32;0&#32;)&#32;{
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;=&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>&#32;-&#32;1&#32;].<link linkend="_struct_statement_runtime_1a42e14a863f1610e65c35277dd84ccd94">endTime</link>&#32;-
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;2&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>;
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;get&#32;unit&#32;for&#32;runtime</emphasis>
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit&#32;=&#32;<link linkend="_namespacehlibhelp_1a41fb30c70b12ff8205daf51bc226d456">hlibhelp::getUnit</link>(&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;);
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;scopeIsMeasured&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00077 
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;print&#32;the&#32;statistic&#32;banner</emphasis>
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a0e5ff9f6e297dcc25423cdaa15eacb12">hlibhelp::printStatisticBanner</link>(&#32;);
+00080 
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;print&#32;table&#32;header</emphasis>
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0">hlibhelp::printTableSeparator</link>(&#32;104,&#32;<emphasis role="stringliteral">&quot;—&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;top&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c">hlibhelp::printTableRow</link>(&#32;<emphasis role="stringliteral">&quot;ID&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;ClassType&quot;</emphasis>,&#32;0,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Scope&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Total&quot;</emphasis>&#32;);
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0">hlibhelp::printTableSeparator</link>(&#32;104,&#32;<emphasis role="stringliteral">&quot;—&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;middle&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
+00085 
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;iterate&#32;through&#32;all&#32;measured&#32;statements</emphasis>
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(&#32;<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;2;&#32;i&#32;&lt;&#32;<link linkend="_class_data_storage_1ab6591f78fcd463ad1535e42d79673ace">statementRuntimeArraySize</link>;&#32;i++&#32;)&#32;{
+00088 
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;calculate&#32;duration</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_measurement_evaluation">MeasurementEvaluation</link>&#32;currentEvaluation;
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;=&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;i&#32;].<link linkend="_struct_statement_runtime_1a42e14a863f1610e65c35277dd84ccd94">endTime</link>&#32;-&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;i&#32;].<link linkend="_struct_statement_runtime_1af7e13365eec525e12fb6f1baeae91ad8">startTime</link>;
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1a557a2edb652772c15379068ecf6674f5">totalUsage</link>&#32;=&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;/&#32;total.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;*&#32;100;
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1a24549fe6924aa1e0886ed0786d95bd43">scopeUsage</link>&#32;=&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;/&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;*&#32;100;
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;statementRuntimeSum&#32;+=&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>;
+00095 
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;split&#32;identifier&#32;in&#32;id&#32;and&#32;class&#32;type</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;*segments&#32;=&#32;<link linkend="_namespacehlibhelp_1ac68cd92332f70edbe3d4cea4ce986f07">hlibhelp::getSegmentsOfString</link>(&#32;<link linkend="_class_data_storage_1aeb3f69e89ebf1df87ac78912b8b3d8e8">statementRuntimeArray</link>[&#32;i&#32;].identifier&#32;);
+00098 
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;current&#32;evaluation&#32;to&#32;string</emphasis>
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">double</emphasis>&#32;durationBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a74db8c274222acbee3bbae8dfe30f56e">hlibhelp::convertToSpecifiedUnit</link>(&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>,&#32;unit&#32;);
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;scopeUsageBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a621118bb4265d26a13d621b2b2202f65">hlibhelp::getUsageAsString</link>(&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1a24549fe6924aa1e0886ed0786d95bd43">scopeUsage</link>&#32;);
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;totalUsageBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a621118bb4265d26a13d621b2b2202f65">hlibhelp::getUsageAsString</link>(&#32;currentEvaluation.<link linkend="_struct_measurement_evaluation_1a557a2edb652772c15379068ecf6674f5">totalUsage</link>&#32;);
+00103 
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;print&#32;current&#32;evaluation&#32;the&#32;row&#32;table</emphasis>
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c">hlibhelp::printTableRow</link>(&#32;segments[&#32;1&#32;],&#32;segments[&#32;0&#32;],&#32;durationBeautified,&#32;unit,
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;scopeUsageBeautified,&#32;totalUsageBeautified&#32;);
+00107 
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00109 
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;evaluate&#32;hagn&#32;tool&#32;runtime</emphasis>
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_measurement_evaluation">MeasurementEvaluation</link>&#32;hagnTool;
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1a1bb78c705675d65cc18660fb2d355202">identifier</link>&#32;=&#32;<emphasis role="stringliteral">&quot;Hagn-Tool&quot;</emphasis>;
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;=&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;-&#32;statementRuntimeSum;
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1a557a2edb652772c15379068ecf6674f5">totalUsage</link>&#32;=&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;/&#32;total.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;*&#32;100;
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1a24549fe6924aa1e0886ed0786d95bd43">scopeUsage</link>&#32;=&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;/&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>&#32;*&#32;100;
+00116 
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;hagn&#32;tool&#32;evaluation&#32;to&#32;string</emphasis>
+00118 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">double</emphasis>&#32;hagnToolDurationBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a74db8c274222acbee3bbae8dfe30f56e">hlibhelp::convertToSpecifiedUnit</link>(&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>,&#32;unit&#32;);
+00119 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;totalUsageBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a621118bb4265d26a13d621b2b2202f65">hlibhelp::getUsageAsString</link>(&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1a557a2edb652772c15379068ecf6674f5">totalUsage</link>&#32;);
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;scopeUsageBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a621118bb4265d26a13d621b2b2202f65">hlibhelp::getUsageAsString</link>(&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1a24549fe6924aa1e0886ed0786d95bd43">scopeUsage</link>&#32;);
+00121 
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;print&#32;hagnTool&#32;row&#32;table</emphasis>
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c">hlibhelp::printTableRow</link>(&#32;hagnTool.<link linkend="_struct_measurement_evaluation_1a1bb78c705675d65cc18660fb2d355202">identifier</link>,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,&#32;hagnToolDurationBeautified,&#32;unit,&#32;scopeUsageBeautified,
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;totalUsageBeautified&#32;);
+00125 
+00126 
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;check&#32;if&#32;scope&#32;measurement&#32;should&#32;be&#32;printed</emphasis>
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;scopeIsMeasured&#32;)&#32;{
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0">hlibhelp::printTableSeparator</link>(&#32;104,&#32;<emphasis role="stringliteral">&quot;—&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;middle&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">double</emphasis>&#32;scopeDurationBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a74db8c274222acbee3bbae8dfe30f56e">hlibhelp::convertToSpecifiedUnit</link>(&#32;scope.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>,&#32;unit&#32;);
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c">hlibhelp::printTableRow</link>(&#32;scope.<link linkend="_struct_measurement_evaluation_1a1bb78c705675d65cc18660fb2d355202">identifier</link>,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,&#32;scopeDurationBeautified,&#32;unit,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>&#32;);
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0">hlibhelp::printTableSeparator</link>(&#32;104,&#32;<emphasis role="stringliteral">&quot;—&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;middle&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00135 
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;total&#32;duration&#32;to&#32;string</emphasis>
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">double</emphasis>&#32;totalDurationBeautified&#32;=&#32;<link linkend="_namespacehlibhelp_1a74db8c274222acbee3bbae8dfe30f56e">hlibhelp::convertToSpecifiedUnit</link>(&#32;total.<link linkend="_struct_measurement_evaluation_1af0033f4bc17de00a5f6f3d9d9a350115">duration</link>,&#32;unit&#32;);
+00138 
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;print&#32;runtime&#32;row&#32;table</emphasis>
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c">hlibhelp::printTableRow</link>(&#32;total.<link linkend="_struct_measurement_evaluation_1a1bb78c705675d65cc18660fb2d355202">identifier</link>,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,&#32;totalDurationBeautified,&#32;unit,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>&#32;);
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0">hlibhelp::printTableSeparator</link>(&#32;104,&#32;<emphasis role="stringliteral">&quot;—&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;bottom&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n\n&quot;</emphasis>;
+00143 
+00144 &#32;&#32;&#32;&#32;}
+00145 };
+</programlisting></section>

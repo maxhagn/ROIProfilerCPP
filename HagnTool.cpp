@@ -1,52 +1,56 @@
-#include "clang/AST/AST.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/ASTContext.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Frontend/ASTConsumers.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Frontend/FrontendActions.h"
-#include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Tooling.h"
-#include "llvm/Support/CommandLine.h"
-#include "clang/Basic/TokenKinds.h"
-#include "clang/Lex/Lexer.h"
-#include "clang/AST/Stmt.h"
-#include <sys/syscall.h>
-#include <unistd.h>
-#include <fstream>
-#include <iostream>
-#include <stdlib.h>
+#include "HagnTool.h"
 
-using namespace std;
-using namespace clang;
-using namespace clang::driver;
-using namespace clang::tooling;
-using namespace llvm;
+/********************************************//**
+ * ! \brief Returns Location after Token.
+ *  The end location of a function oder stmt returns
+ *  the location before a brace or a semicolon.
+ *  The events have to be called after the end token.
+ *  This location is returned by this function.
+ ***********************************************/
+SourceLocation getLocationAfterToken( SourceLocation sourceLocation, ASTContext *localContext ) {
+    // get the current token at the specified location
+    Optional <Token> currentToken( clang::Lexer::findNextToken(
+            sourceLocation, localContext->getSourceManager( ),
+            localContext->getLangOpts( )));
 
-Rewriter rewriter;
-SourceLocation initializationLocation;
-SourceLocation summaryLocation;
-SourceLocation runtimeStartLocation;
-string currentVisitIdentifier = "start";
-bool transformationSuccess = false;
+    // if token is raw identifier return last token
+    if ( currentToken->getKind( ) == clang::tok::raw_identifier ) {
+        sourceLocation = sourceLocation.getLocWithOffset( -1 );
+    }
+        // if token is semi return this token
+    else if ( currentToken->getKind( ) == clang::tok::semi ) {
+        sourceLocation = sourceLocation.getLocWithOffset( 0 );
+    }
+        // if token is brace return next token
+    else if ( currentToken->getKind( ) == clang::tok::r_brace ) {
+        sourceLocation = sourceLocation.getLocWithOffset( 1 );
+    }
 
-// Common Options and Extra Help definition
-static llvm::cl::OptionCategory MyToolCategory( "hagn-tool options" );
-static cl::extrahelp CommonHelp( CommonOptionsParser::HelpMessage );
-static cl::extrahelp
-        MoreHelp( "\nWith the HagnTool you can add performance counter to different "
-                  "statements in your Code. The Input File is an C File and the "
-                  "Output contains the transformed code \n" );
+    // find location after semicolon
+    SourceLocation locAfterSemi( clang::Lexer::findLocationAfterToken(
+            sourceLocation, clang::tok::semi,
+            localContext->getSourceManager( ),
+            localContext->getLangOpts( ), true ));
 
-// Custom Options definition
-// Option -o to specify a custom output file path
-static cl::opt <string> OutputFile( "o", cl::desc( "Write transformed file to custom location" ),
-                                    cl::value_desc( "output file" ), cl::cat( MyToolCategory ));
+    // find location after brace
+    SourceLocation locAfterBrace( clang::Lexer::findLocationAfterToken(
+            sourceLocation, clang::tok::r_brace,
+            localContext->getSourceManager( ),
+            localContext->getLangOpts( ), true ));
 
-// Option --stmt to specify search and replace depth
-static cl::opt <string> Statement( "stmt", cl::desc( "Specifies the current traversal point" ),
-                                   cl::value_desc( "id of stmt" ), cl::cat( MyToolCategory ));
+    // if loc after semi is valid return locAfterSemi
+    if ( currentToken->getKind( ) != clang::tok::r_brace && locAfterSemi.isValid( )) {
+        sourceLocation = locAfterSemi;
+    }
+        // if loc after brace is valid return locAfterBrace
+    else if ( currentToken->getKind( ) != clang::tok::r_brace && locAfterBrace.isValid( )) {
+        sourceLocation = locAfterBrace;
+    }
+
+    // if token is brace return current location
+
+    return sourceLocation;
+}
 
 /********************************************//**
  * ! \brief Traverses recursively through the body
@@ -55,21 +59,18 @@ static cl::opt <string> Statement( "stmt", cl::desc( "Specifies the current trav
  ***********************************************/
 void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
 
+    // count statements in body and search for parent statements
     int childrenSize = 0;
     Stmt *parentStmt = NULL;
-
-    // visit all children in function compound statement
     for ( Stmt::child_iterator i = funcBody->child_begin( ), e = funcBody->child_end( ); i != e; ++i ) {
         Stmt *currStmt = *i;
-
-        // ignore all return statements
         if ( currStmt->getStmtClass( ) != Stmt::ReturnStmtClass ) {
             childrenSize++;
-
-            // find call expressions and loops
             if ( currStmt->getStmtClass( ) == Stmt::CallExprClass
                  || currStmt->getStmtClass( ) == Stmt::ForStmtClass
                  || currStmt->getStmtClass( ) == Stmt::WhileStmtClass
+                 || currStmt->getStmtClass( ) == Stmt::IfStmtClass
+                 || currStmt->getStmtClass( ) == Stmt::CXXMemberCallExprClass
                     ) {
                 parentStmt = currStmt;
             }
@@ -78,7 +79,9 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
 
     // if body has multiple children, annotate all statements with performance counter
     if ( childrenSize > 1 ) {
-        int childCounter = 0;
+        bool isCompoundedStatement = false;
+        SourceLocation lastEventEndLocation;
+
         for ( Stmt::child_iterator i = funcBody->child_begin( ), e = funcBody->child_end( );
               i != e; ++i ) {
             Stmt *currStmt = *i;
@@ -87,44 +90,89 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
             if ( currStmt->getStmtClass( ) != Stmt::ReturnStmtClass ) {
 
                 SourceLocation beginLoc = currStmt->getBeginLoc( );
-                SourceLocation endLoc = currStmt->getEndLoc( );
+                SourceLocation endLoc = getLocationAfterToken( currStmt->getEndLoc( ), localContext );
 
-                int64_t id = currStmt->getID( *localContext );
-                std::string idString = currStmt->getStmtClassName( ) + std::string( " " ) + std::to_string( id );
+                // if statement runtime is not merged
+                if ( !isCompoundedStatement ) {
 
-                Optional <Token> currentToken( clang::Lexer::findNextToken(
-                        endLoc, localContext->getSourceManager( ),
-                        localContext->getLangOpts( )));
+                    // set start time always
+                    rewriter.InsertText( beginLoc,
+                                         "dataStorage.startEvent(" + std::to_string( internalIdentifier ) + ");\n" );
 
-                if ( currentToken->getKind( ) == clang::tok::raw_identifier ) {
-                    endLoc = endLoc.getLocWithOffset( -1 );
-                } else if ( currentToken->getKind( ) == clang::tok::semi ) {
-                    endLoc = endLoc.getLocWithOffset( 0 );
-                } else if ( currentToken->getKind( ) == clang::tok::r_brace ) {
-                    endLoc = endLoc.getLocWithOffset( 1 );
+                    // if statement is not parent, wait for next statement
+                    if ( currStmt->getStmtClass( ) != Stmt::CallExprClass &&
+                         currStmt->getStmtClass( ) != Stmt::ForStmtClass &&
+                         currStmt->getStmtClass( ) != Stmt::WhileStmtClass &&
+                         currStmt->getStmtClass( ) != Stmt::IfStmtClass &&
+                         currStmt->getStmtClass( ) != Stmt::CXXMemberCallExprClass
+                            ) {
+
+                        lastEventEndLocation = endLoc;
+                        isCompoundedStatement = true;
+
+                        // statement is parent, do not merge runtime
+                    } else {
+                        rewriter.InsertText( endLoc,
+                                             "dataStorage.endEvent(" + std::to_string( internalIdentifier ) + ");\n" );
+                        // concat stmtclass and stmtid and add to identifierString
+                        int64_t id = currStmt->getID( *localContext );
+                        std::string idString =
+                                currStmt->getStmtClassName( ) + std::string( " " ) + std::to_string( id );
+                        identifierString += idString + ",";
+
+                        isCompoundedStatement = false;
+                        internalIdentifier++;
+                    }
+
+                    // if waiting for next statement
+                } else {
+
+                    // if statement is parent, stop last merge and annotate this statement
+                    if ( currStmt->getStmtClass( ) == Stmt::CallExprClass ||
+                         currStmt->getStmtClass( ) == Stmt::ForStmtClass ||
+                         currStmt->getStmtClass( ) == Stmt::WhileStmtClass ||
+                         currStmt->getStmtClass( ) == Stmt::IfStmtClass ||
+                         currStmt->getStmtClass( ) == Stmt::CXXMemberCallExprClass
+                            ) {
+
+                        // end old event
+                        rewriter.InsertText( beginLoc,
+                                             "dataStorage.endEvent(" + std::to_string( internalIdentifier ) +
+                                             ");\n" );
+
+                        // add compound description to identifier string
+                        identifierString += "CustomCompoundStmt i00000" + to_string( internalIdentifier++ ) + ",";
+
+                        // start and end new event around parent function
+                        rewriter.InsertText( beginLoc,
+                                             "dataStorage.startEvent(" + std::to_string( internalIdentifier ) +
+                                             ");\n" );
+                        rewriter.InsertText( endLoc,
+                                             "dataStorage.endEvent(" + std::to_string( internalIdentifier++ ) +
+                                             ");\n" );
+
+                        // concat stmtclass and stmtid and add to identifierString
+                        int64_t id = currStmt->getID( *localContext );
+                        std::string idString =
+                                currStmt->getStmtClassName( ) + std::string( " " ) + std::to_string( id );
+                        identifierString += idString + ",";
+
+                        isCompoundedStatement = false;
+
+                        // wait for next statement again
+                    } else {
+                        lastEventEndLocation = endLoc;
+                        isCompoundedStatement = true;
+                    }
                 }
-
-                SourceLocation locAfterSemi( clang::Lexer::findLocationAfterToken(
-                        endLoc, clang::tok::semi,
-                        localContext->getSourceManager( ),
-                        localContext->getLangOpts( ), true ));
-
-                SourceLocation locAfterBrace( clang::Lexer::findLocationAfterToken(
-                        endLoc, clang::tok::r_brace,
-                        localContext->getSourceManager( ),
-                        localContext->getLangOpts( ), true ));
-
-                if ( currentToken->getKind( ) == clang::tok::r_brace ) { }
-                else if ( locAfterSemi.isValid( )) {
-                    endLoc = locAfterSemi;
-                } else if ( locAfterBrace.isValid( )) {
-                    endLoc = locAfterBrace;
-                }
-
-                rewriter.InsertText( beginLoc, "dataStorage.startEvent(\"" + idString + "\");\n" );
-                rewriter.InsertText( endLoc, "dataStorage.startEvent(\"" + idString + "\");\n" );
-                childCounter++;
             }
+        }
+
+        // end last event
+        if ( isCompoundedStatement && lastEventEndLocation.isValid( )) {
+            rewriter.InsertText( lastEventEndLocation,
+                                 "dataStorage.endEvent(" + std::to_string( internalIdentifier++ ) + ");\n" );
+            identifierString += "CustomCompoundStmt i00000" + to_string( internalIdentifier ) + ",";
         }
 
         // set transformation successful
@@ -133,7 +181,7 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
     }
         // if body has zero or one statements
     else {
-        // if one children is parent of another set of statements
+        // if one child is parent of another set of statements
         // call traverseChildren recursively
         if ( parentStmt != NULL ) {
             if ( parentStmt->getStmtClass( ) == Stmt::CallExprClass ) {
@@ -149,6 +197,16 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
             if ( parentStmt->getStmtClass( ) == Stmt::WhileStmtClass ) {
                 WhileStmt *whileStmt = cast<WhileStmt>( parentStmt );
                 Stmt *nextBody = whileStmt->getBody( );
+                traverseChildren( nextBody, localContext );
+            }
+            if ( parentStmt->getStmtClass( ) == Stmt::IfStmtClass ) {
+                IfStmt *ifStmt = cast<IfStmt>( parentStmt );
+                Stmt *nextBody = ifStmt->getThen( );
+                traverseChildren( nextBody, localContext );
+            }
+            if ( parentStmt->getStmtClass( ) == Stmt::CXXMemberCallExprClass ) {
+                CXXMemberCallExpr *cxxMemberCallExpr = cast<CXXMemberCallExpr>( parentStmt );
+                Stmt *nextBody = cxxMemberCallExpr->getDirectCallee( )->getBody();
                 traverseChildren( nextBody, localContext );
             }
             // if return is the only statement annotate nothing
@@ -171,12 +229,30 @@ public:
                                astContext->getLangOpts( ));
     }
 
+    /********************************************//**
+     * ! \brief Visit every statement linked to input file.
+     *   If a stmt option is specified the tools searches
+     *   for the first occurrence of an statement with the
+     *   specified id. The statement is then casted to
+     *   the matching statement class and body of the
+     *   statement will be extracted and annotated.
+     ***********************************************/
     virtual bool VisitStmt( Stmt *stmt ) {
+        // only statements in main file
         if ( astContext->getSourceManager( ).isInMainFile( stmt->getBeginLoc( ))) {
-            if ( currentVisitIdentifier != "start" ) {
+            // when stmt identifier is specified
+            if ( statementOption != "start" ) {
+
+                // get statement identifier and cast to string
                 int64_t currentId = stmt->getID( *astContext );
                 std::string currentIdString = std::to_string( currentId );
-                if ( currentIdString == currentVisitIdentifier ) {
+
+                // find statement with matching id
+                if ( currentIdString == statementOption ) {
+                    rewriter.InsertText( stmt->getBeginLoc( ), "dataStorage.startEvent(1);\n" );
+                    rewriter.InsertText( getLocationAfterToken( stmt->getEndLoc( ), astContext ),
+                                         "dataStorage.endEvent(1);\n" );
+
                     if ( stmt->getStmtClass( ) == Stmt::CallExprClass ) {
                         CallExpr *expr = cast<CallExpr>( stmt );
                         Stmt *nextBody = expr->getDirectCallee( )->getBody( );
@@ -192,21 +268,56 @@ public:
                         Stmt *nextBody = whileStmt->getBody( );
                         traverseChildren( nextBody, astContext );
                     }
+                    if ( stmt->getStmtClass( ) == Stmt::IfStmtClass ) {
+                        IfStmt *ifStmt = cast<IfStmt>( stmt );
+                        Stmt *nextBody = ifStmt->getThen( );
+                        traverseChildren( nextBody, astContext );
+                    }
+                    if ( stmt->getStmtClass( ) == Stmt::CXXMemberCallExprClass ) {
+                        CXXMemberCallExpr *cxxMemberCallExpr = cast<CXXMemberCallExpr>( stmt );
+                        Stmt *nextBody = cxxMemberCallExpr->getDirectCallee( )->getBody();
+                        traverseChildren( nextBody, astContext );
+                    }
                 }
             }
         }
-        return true;
+        return 1;
     }
 
+    /********************************************//**
+     * ! \brief Visit every function linked to input file.
+     *   The functions are traversed to find locations
+     *   for initialization, runtime performance counter
+     *   and for printing the summary.
+     *   If stmt option is not specified, the main method
+     *   will be traversed.
+     ***********************************************/
     virtual bool VisitFunctionDecl( FunctionDecl *func ) {
 
-        // find initialization location for includes
+        // find initialization location for includes and initialization of hagn lib
         if ( initializationLocation.isInvalid( ) &&
              astContext->getSourceManager( ).isInMainFile( func->getLocation( ))) {
-            initializationLocation = func->getOuterLocStart( );
+
+            SourceLocation lastLocation;
+            for ( auto it = astContext->getSourceManager( ).fileinfo_begin( );
+                  it != astContext->getSourceManager( ).fileinfo_end( ); it++ ) {
+                SourceLocation currentLocation = astContext->getSourceManager( ).getIncludeLoc(
+                        astContext->getSourceManager( ).translateFile( it->first ));
+                if (currentLocation.isValid() && astContext->getSourceManager().isInFileID(currentLocation, astContext->getSourceManager( ).getMainFileID( ))) {
+                    currentLocation.dump(astContext->getSourceManager());
+
+                    if ( astContext->getSourceManager( ).getSpellingLineNumber( lastLocation ) <= astContext->getSourceManager( ).getSpellingLineNumber( currentLocation ) ) {
+                        lastLocation = currentLocation;
+                    }
+                }
+            }
+
+            initializationLocation = astContext->getSourceManager( ).translateFileLineCol(
+                    astContext->getSourceManager( ).getFileEntryForID( astContext->getSourceManager( ).getMainFileID( ) ),
+                    astContext->getSourceManager( ).getSpellingLineNumber( lastLocation )+1, 1 );
         }
 
-        // find first location in main class
+        // find first location in main class for runtime measurement
         if ( runtimeStartLocation.isInvalid( ) &&
              astContext->getSourceManager( ).isInMainFile( func->getLocation( ))) {
             if ( func->isMain( )) {
@@ -219,7 +330,7 @@ public:
             }
         }
 
-        // find summary location in main class
+        // find summary location in main class for ending runtime event and print event
         if ( summaryLocation.isInvalid( ) &&
              astContext->getSourceManager( ).isInMainFile( func->getLocation( ))) {
             if ( func->isMain( )) {
@@ -233,15 +344,16 @@ public:
             }
         }
 
-        // if first call traverse main function
+        // annotate only main function if statement option is start
         if ( astContext->getSourceManager( ).isInMainFile( func->getLocation( ))) {
-            if ( currentVisitIdentifier == "start" ) {
+            if ( statementOption == "start" ) {
                 if ( func->isMain( )) {
                     traverseChildren( func->getBody( ), astContext );
                 }
             }
         }
-        return true;
+
+        return 1;
     }
 
     virtual ~Visitor( ) { }
@@ -290,7 +402,7 @@ public:
 int main( int argc, const char **argv ) {
 
     // runtime start
-    std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now( );
 
     // create Common Option Parser
     auto ExpectedParser = CommonOptionsParser::create( argc, argv, MyToolCategory, llvm::cl::Required );
@@ -323,10 +435,10 @@ int main( int argc, const char **argv ) {
     }
 
     // Print Hagn Tool Information
-    cout << setw(82) << setfill('=') << "\n";
-    cout << setw(45) << setfill(' ') << "Hagn Tool" << setw(25) <<"\n";
-    cout << setw(83) << setfill('=') << "\n\n";
-    cout << "Input File: " << argv[1] << "\n";
+    cout << setw( 82 ) << setfill( '=' ) << "\n";
+    cout << setw( 45 ) << setfill( ' ' ) << "Hagn Tool" << setw( 25 ) << "\n";
+    cout << setw( 83 ) << setfill( '=' ) << "\n\n";
+    cout << "Input File: " << argv[ 1 ] << "\n";
     cout << "Output File: " << outputFilename << "\n";
     // print no statement id notification
     if ( stmtId == "start" ) {
@@ -337,7 +449,7 @@ int main( int argc, const char **argv ) {
     }
 
     // add statement id to global scope
-    currentVisitIdentifier = stmtId;
+    statementOption = stmtId;
 
     // set destination of output file to the specified file
     llvm::raw_fd_ostream dest( outputFilename, err_code );
@@ -354,9 +466,11 @@ int main( int argc, const char **argv ) {
     if ( transformationSuccess ) {
 
         // if initialization Location is valid insert includes and create DataStorage Object
+        identifierString.pop_back( );
         if ( initializationLocation.isValid( )) {
             rewriter.InsertText( initializationLocation,
-                                 "#include \"../lib/DataStorage.cpp\"\n""DataStorage dataStorage;" );
+                                 "#include \"../lib/DataStorage.cpp\"\n""DataStorage dataStorage(\"" +
+                                 identifierString + "\");" );
         } else {
             cerr << "Invalid initializationLocation, Line 356";
             exit( EXIT_FAILURE );
@@ -364,7 +478,7 @@ int main( int argc, const char **argv ) {
 
         // start an event at the beginning of the main function
         if ( runtimeStartLocation.isValid( )) {
-            rewriter.InsertText( runtimeStartLocation, "dataStorage.startEvent(\"Runtime\");\n" );
+            rewriter.InsertText( runtimeStartLocation, "dataStorage.startEvent(0);\n" );
         } else {
             cerr << "Invalid runtimeStartLocation, Line 364";
             exit( EXIT_FAILURE );
@@ -372,18 +486,18 @@ int main( int argc, const char **argv ) {
 
         // start event and insert time summery as last step in the main function
         if ( summaryLocation.isValid( )) {
-            rewriter.InsertText( summaryLocation, "dataStorage.startEvent(\"Runtime\");\ndataStorage.print();" );
+            rewriter.InsertText( summaryLocation, "dataStorage.endEvent(0);\ndataStorage.print();" );
         } else {
             cerr << "Invalid summaryLocation, Line 372";
             exit( EXIT_FAILURE );
         }
 
         // runtime end
-        std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
+        std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now( );
         std::chrono::duration<double, std::milli> ms_double = endTime - startTime;
 
         // print hagn tool runtime
-        cout << "Runtime: " << ms_double.count() << "ms\n";
+        cout << "Runtime: " << ms_double.count( ) << "ms\n";
 
         // print program finished notification
         cout << "Success: Yes\n\n";
