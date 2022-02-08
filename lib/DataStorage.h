@@ -4,6 +4,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
+#include <numeric>
 #include "Helper.cpp"
 
 using namespace std;
@@ -13,12 +15,14 @@ constexpr high_resolution_clock::time_point invalidTime = high_resolution_clock:
 
 struct StatementRuntime {
     string identifier;
+    int called = 0;
     high_resolution_clock::time_point startTime = invalidTime;
     high_resolution_clock::time_point endTime = invalidTime;
 };
 
 struct MeasurementEvaluation {
     string identifier;
+    string called;
     std::chrono::duration<double, std::nano> duration;
     double totalUsage;
     double scopeUsage;

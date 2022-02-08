@@ -1,6 +1,4 @@
 #include "DataStorage.h"
-#include <iostream>
-#include <fstream>
 
 class DataStorage {
 public:
@@ -28,6 +26,7 @@ public:
 
     // start event adds current timestamp as start time
     void startEvent( int identifier ) {
+        statementRuntimeArray[ identifier ].called++;
         // if identifier is already measured, sum runtimes
         if ( statementRuntimeArray[ identifier ].startTime != invalidTime &&
              statementRuntimeArray[ identifier ].endTime != invalidTime ) {
@@ -88,9 +87,11 @@ public:
         hlibhelp::printStatisticBanner( );
 
         // print table header
-        hlibhelp::printTableSeparator( 104, "—", "top", "\n" );
-        hlibhelp::printTableRow( "ID", "ClassType", 0, "", "Scope", "Total" );
-        hlibhelp::printTableSeparator( 104, "—", "middle", "\n" );
+        hlibhelp::printTableSeparator( 115, "—", "top", "\n" );
+        hlibhelp::printTableRow( "ID", "ClassType", 0, "", "Scope", "Total", "Calls" );
+        hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
+
+        int sumCalls;
 
         // iterate through all measured statements
         for ( int i = 2; i < statementRuntimeArraySize; i++ ) {
@@ -100,6 +101,9 @@ public:
             currentEvaluation.duration = statementRuntimeArray[ i ].endTime - statementRuntimeArray[ i ].startTime;
             currentEvaluation.totalUsage = currentEvaluation.duration / total.duration * 100;
             currentEvaluation.scopeUsage = currentEvaluation.duration / scope.duration * 100;
+            sumCalls += statementRuntimeArray[ i ].called;
+            currentEvaluation.called =  std::to_string(statementRuntimeArray[ i ].called );
+
             statementRuntimeSum += currentEvaluation.duration;
 
             // split identifier in id and class type
@@ -112,16 +116,17 @@ public:
 
             // print current evaluation the row table
             hlibhelp::printTableRow( segments[ 1 ], segments[ 0 ], durationBeautified, unit,
-                                     scopeUsageBeautified, totalUsageBeautified );
+                                     scopeUsageBeautified, totalUsageBeautified, currentEvaluation.called );
 
         }
 
         // evaluate hagn tool runtime
         MeasurementEvaluation hagnTool;
-        hagnTool.identifier = "Hagn-Tool";
+        hagnTool.identifier = "Perf Counter";
         hagnTool.duration = scope.duration - statementRuntimeSum;
         hagnTool.totalUsage = hagnTool.duration / total.duration * 100;
         hagnTool.scopeUsage = hagnTool.duration / scope.duration * 100;
+        hagnTool.called = std::to_string(sumCalls*2+2);
 
         // hagn tool evaluation to string
         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool.duration, unit );
@@ -130,24 +135,24 @@ public:
 
         // print hagnTool row table
         hlibhelp::printTableRow( hagnTool.identifier, "", hagnToolDurationBeautified, unit, scopeUsageBeautified,
-                                 totalUsageBeautified );
+                                 totalUsageBeautified, hagnTool.called );
 
 
         // check if scope measurement should be printed
         if ( scopeIsMeasured ) {
-            hlibhelp::printTableSeparator( 104, "—", "middle", "\n" );
+            hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
             double scopeDurationBeautified = hlibhelp::convertToSpecifiedUnit( scope.duration, unit );
-            hlibhelp::printTableRow( scope.identifier, "", scopeDurationBeautified, unit, "", "" );
+            hlibhelp::printTableRow( scope.identifier, "", scopeDurationBeautified, unit, "", "", "" );
         } else {
-            hlibhelp::printTableSeparator( 104, "—", "middle", "\n" );
+            hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
         }
 
         // total duration to string
         double totalDurationBeautified = hlibhelp::convertToSpecifiedUnit( total.duration, unit );
 
         // print runtime row table
-        hlibhelp::printTableRow( total.identifier, "", totalDurationBeautified, unit, "", "" );
-        hlibhelp::printTableSeparator( 104, "—", "bottom", "\n" );
+        hlibhelp::printTableRow( total.identifier, "", totalDurationBeautified, unit, "", "", "" );
+        hlibhelp::printTableSeparator( 115, "—", "bottom", "\n" );
         cout << "\n\n";
 
     }

@@ -18,11 +18,7 @@ namespace hlibhelp {
             return "ms";
         }
 
-        if ( duration.count( ) > 10000000 ) {
-            return "µs";
-        }
-
-        return "ns";
+        return "µs";
     }
 
     // convert usage double to usage string
@@ -52,16 +48,12 @@ namespace hlibhelp {
             return duration.count( ) / 1000000;
         }
 
-        if ( prefix == "µs" ) {
-            return duration.count( ) / 1000;
-        }
-
-        return duration.count( );
+        return duration.count( ) / 1000;
     }
 
     // print one row of the statistic table
     void printTableRow( string identifier, string stmtClass, double duration, string unit, string scopeUsage,
-                        string totalUsage ) {
+                        string totalUsage, string calls ) {
         string percentChar = "  %";
         string separatorChar = "  │  ";
         string hagnToolSeparatorChar = "  │  ";
@@ -105,6 +97,10 @@ namespace hlibhelp {
                 << std::setw( 5 ) << separatorChar
 
                 << std::right << std::setw( 10 ) << std::setprecision( 2 ) << totalUsage + percentChar
+
+                << std::setw( 5 ) << separatorChar
+
+                << std::right << std::setw( 6 ) << std::setprecision( 2 ) << calls
 
                 << std::setw( 5 ) << "   │" << "\n";
     }
