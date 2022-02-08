@@ -1,9 +1,9 @@
 set(LLVM_LINK_COMPONENTS support)
 
-add_clang_executable(hagn-tool
-  HagnTool.cpp
+add_clang_executable(roiwpc
+  RegionProfile.cpp
   )
-target_link_libraries(hagn-tool
+target_link_libraries(roiwpc
   PRIVATE
   clangAST
   clangBasic

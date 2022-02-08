@@ -57,4 +57,4 @@ static cl::opt <string> OutputFile( "o", cl::desc( "Write transformed file to cu
 static cl::opt <string> Statement( "stmt", cl::desc( "Specifies the current traversal point" ),
                                    cl::value_desc( "id of stmt" ), cl::cat( MyToolCategory ));
 
-#endif //CLANG_LLVM_HAGNTOOL_H
+#endif //CLANG_LLVM_REGIONPROFILE_H
