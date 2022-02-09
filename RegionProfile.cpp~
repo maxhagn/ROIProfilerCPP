@@ -216,13 +216,13 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
     }
 }
 
-// AST Tree MyVisitor
-class MyVisitor : public RecursiveASTVisitor<MyVisitor> {
+// AST Tree Visitor
+class Visitor : public RecursiveASTVisitor<Visitor> {
 private:
     ASTContext *astContext; // used for getting additional AST info
 
 public:
-    explicit MyVisitor( ASTContext *Context )
+    explicit Visitor( ASTContext *Context )
             : astContext( Context ) // initialize private members
     {
         rewriter.setSourceMgr( astContext->getSourceManager( ),
@@ -356,7 +356,7 @@ public:
         return 1;
     }
 
-    virtual ~MyVisitor( ) { }
+    virtual ~Visitor( ) { }
 };
 
 /********************************************//**
@@ -366,7 +366,7 @@ public:
  ***********************************************/
 class Consumer : public ASTConsumer {
 private:
-    MyVisitor Visitor;
+    Visitor Visitor;
 
 public:
     explicit Consumer( ASTContext *Context )
