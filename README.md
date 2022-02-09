@@ -18,16 +18,16 @@ Further Information: https://clang.llvm.org/docs/LibTooling.html
    4. cd build
    5. cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DLLVM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
    6. ninja
-3. Checkout Hagn-Tool
+3. Checkout ROIProfilerCPP
    1. cd ../clang/tools
-   2. mkdir hagn-tool
-   3. cd hagn-tool
-   4. git clone https://github.com/maxhagn/hagn-tool.git
+   2. mkdir regionprofile
+   3. cd regionprofile
+   4. git clone https://github.com/maxhagn/ROIProfilerCPP.git
 4. Add hagn-tool to CMakeLists.txt
    1. cd ..
    2. vi CMakeLists.txt
-   3. Add line "add_clang_subdirectory(hagn-tool)"
-5. Build hagn-tool
+   3. Add line "add_clang_subdirectory(regionprofile)"
+5. Build regionprofile
    1. cd ../build 
    2. ninja
 
