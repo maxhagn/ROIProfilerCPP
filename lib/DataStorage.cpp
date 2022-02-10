@@ -56,8 +56,9 @@ public:
         total.identifier = "Runtime";
         total.duration = statementRuntimeArray[ 0 ].endTime - statementRuntimeArray[ 0 ].startTime;
 
-        //ofstream MyFile("time.txt");
-        //MyFile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
+        ofstream outfile;
+        outfile.open("Time_Without_Print.txt", ios_base::app);
+        outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
 
         // calculate scope runtime
         MeasurementEvaluation scope;
@@ -91,7 +92,7 @@ public:
         hlibhelp::printTableRow( "ID", "ClassType", 0, "", "Scope", "Total", "Calls" );
         hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
 
-        int sumCalls;
+        double sumCalls = 0;
 
         // iterate through all measured statements
         for ( int i = 2; i < statementRuntimeArraySize; i++ ) {
@@ -102,7 +103,9 @@ public:
             currentEvaluation.totalUsage = currentEvaluation.duration / total.duration * 100;
             currentEvaluation.scopeUsage = currentEvaluation.duration / scope.duration * 100;
             sumCalls += statementRuntimeArray[ i ].called;
-            currentEvaluation.called =  std::to_string(statementRuntimeArray[ i ].called );
+            std::ostringstream calledToString;
+            calledToString << std::fixed << setprecision(0) << statementRuntimeArray[ i ].called;
+            currentEvaluation.called = calledToString.str();
 
             statementRuntimeSum += currentEvaluation.duration;
 
@@ -126,7 +129,10 @@ public:
         hagnTool.duration = scope.duration - statementRuntimeSum;
         hagnTool.totalUsage = hagnTool.duration / total.duration * 100;
         hagnTool.scopeUsage = hagnTool.duration / scope.duration * 100;
-        hagnTool.called = std::to_string(sumCalls*2+2);
+        std::ostringstream calledToString;
+        sumCalls = sumCalls*2+2;
+        calledToString << std::fixed << setprecision(0) << sumCalls;
+        hagnTool.called = calledToString.str();
 
         // hagn tool evaluation to string
         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool.duration, unit );

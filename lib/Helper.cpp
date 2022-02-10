@@ -100,7 +100,7 @@ namespace hlibhelp {
 
                 << std::setw( 5 ) << separatorChar
 
-                << std::right << std::setw( 6 ) << std::setprecision( 2 ) << calls
+                << std::right << std::setw( 6 ) << std::setprecision( 0 ) << calls
 
                 << std::setw( 5 ) << "   │" << "\n";
     }

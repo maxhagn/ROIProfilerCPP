@@ -304,8 +304,6 @@ public:
                 SourceLocation currentLocation = astContext->getSourceManager( ).getIncludeLoc(
                         astContext->getSourceManager( ).translateFile( it->first ));
                 if (currentLocation.isValid() && astContext->getSourceManager().isInFileID(currentLocation, astContext->getSourceManager( ).getMainFileID( ))) {
-                    currentLocation.dump(astContext->getSourceManager());
-
                     if ( astContext->getSourceManager( ).getSpellingLineNumber( lastLocation ) <= astContext->getSourceManager( ).getSpellingLineNumber( currentLocation ) ) {
                         lastLocation = currentLocation;
                     }
