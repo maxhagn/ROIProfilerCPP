@@ -16,7 +16,7 @@ constexpr high_resolution_clock::time_point invalidTime = high_resolution_clock:
 
 struct StatementRuntime {
     string identifier;
-    int called = 0;
+    double called = 0;
     high_resolution_clock::time_point startTime = invalidTime;
     high_resolution_clock::time_point endTime = invalidTime;
 };
