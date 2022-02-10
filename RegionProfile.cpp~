@@ -216,13 +216,13 @@ void traverseChildren( Stmt *funcBody, ASTContext *localContext ) {
     }
 }
 
-// AST Tree MyVisitor
-class MyVisitor : public RecursiveASTVisitor<MyVisitor> {
+// AST Tree Visitor
+class Visitor : public RecursiveASTVisitor<Visitor> {
 private:
     ASTContext *astContext; // used for getting additional AST info
 
 public:
-    explicit MyVisitor( ASTContext *Context )
+    explicit Visitor( ASTContext *Context )
             : astContext( Context ) // initialize private members
     {
         rewriter.setSourceMgr( astContext->getSourceManager( ),
@@ -304,6 +304,8 @@ public:
                 SourceLocation currentLocation = astContext->getSourceManager( ).getIncludeLoc(
                         astContext->getSourceManager( ).translateFile( it->first ));
                 if (currentLocation.isValid() && astContext->getSourceManager().isInFileID(currentLocation, astContext->getSourceManager( ).getMainFileID( ))) {
+                    currentLocation.dump(astContext->getSourceManager());
+
                     if ( astContext->getSourceManager( ).getSpellingLineNumber( lastLocation ) <= astContext->getSourceManager( ).getSpellingLineNumber( currentLocation ) ) {
                         lastLocation = currentLocation;
                     }
@@ -354,7 +356,7 @@ public:
         return 1;
     }
 
-    virtual ~MyVisitor( ) { }
+    virtual ~Visitor( ) { }
 };
 
 /********************************************//**
@@ -364,7 +366,7 @@ public:
  ***********************************************/
 class Consumer : public ASTConsumer {
 private:
-    MyVisitor Visitor;
+    Visitor Visitor;
 
 public:
     explicit Consumer( ASTContext *Context )
