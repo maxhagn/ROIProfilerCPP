@@ -1,16 +1,17 @@
 #include <iostream>
-#include <fstream>
 #include "../lib/DataStorage.cpp"
-
+DataStorage dataStorage("Runtime,Scope,CustomCompoundStmt i000002,ForStmt 2086033");
 int main(void) {
-    DataStorage dataStorage("Runtime,Scope");
-    dataStorage.startEvent(0);
-    double n, t1 = 0, t2 = 1, nextTerm = 0;
+dataStorage.startEvent(0);
+    dataStorage.startEvent(2);
+double n, t1 = 0, t2 = 1, nextTerm = 0;
     n = 1000;
 
     std::cout << "Fibonacci Series: ";
 
-    for (int i = 1; i <= n; ++i) {
+    dataStorage.endEvent(2);
+dataStorage.startEvent(3);
+for (int i = 1; i <= n; ++i) {
         if(i == 1) {
             std::cout << t1;
             std::cout << ", ";
@@ -25,8 +26,8 @@ int main(void) {
 
         std::cout << nextTerm << ", ";
     }
+dataStorage.endEvent(3);
 
     dataStorage.endEvent(0);
-    dataStorage.print();
-    return 0;
+dataStorage.print();return 0;
 }

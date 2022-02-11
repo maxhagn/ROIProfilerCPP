@@ -1,11 +1,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "../lib/DataStorage.cpp"
 
 int main(void) {
-    DataStorage dataStorage("Runtime,Scope");
-    dataStorage.startEvent(0);
     std::vector <std::string> passwordStorage;
     std::string password;
     char current;
@@ -43,7 +40,5 @@ int main(void) {
         std::cout << currentPassword << '\n';
     }
 
-    dataStorage.endEvent(0);
-    dataStorage.print();
     return 0;
 }

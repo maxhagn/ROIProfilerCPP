@@ -2,17 +2,18 @@
 #include <vector>
 #include <iostream>
 #include "../lib/DataStorage.cpp"
-
+DataStorage dataStorage("Runtime,Scope,ForStmt 2219423,CustomCompoundStmt i000004");
 int main(void) {
-    DataStorage dataStorage("Runtime,Scope");
-    dataStorage.startEvent(0);
+dataStorage.startEvent(0);
     std::vector <std::string> passwordStorage;
     std::string password;
     char current;
 
     for (int passwordCount = 0; passwordCount < 1000000; passwordCount++) {
-        for (int sectionCount = 0; sectionCount < 3; sectionCount++) {
-            for (int sectionLength = 0; sectionLength < 6; sectionLength++) {
+        dataStorage.startEvent(1);
+for (int sectionCount = 0; sectionCount < 3; sectionCount++) {
+            dataStorage.startEvent(2);
+for (int sectionLength = 0; sectionLength < 6; sectionLength++) {
                 char lowerCase = rand() % 26 + 'a';
                 char upperCase = rand() % 26 + 'A';
                 char number = rand() % 10 + '0';
@@ -27,8 +28,12 @@ int main(void) {
                 }
                 password += current;
             }
-            password += '-';
+dataStorage.endEvent(2);
+            dataStorage.startEvent(3);
+password += '-';
+dataStorage.endEvent(3);
         }
+dataStorage.endEvent(1);
         password.pop_back();
         passwordStorage.push_back(password);
         password.clear();
@@ -44,6 +49,5 @@ int main(void) {
     }
 
     dataStorage.endEvent(0);
-    dataStorage.print();
-    return 0;
+dataStorage.print();return 0;
 }

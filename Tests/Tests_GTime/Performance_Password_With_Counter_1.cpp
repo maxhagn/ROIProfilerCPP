@@ -2,15 +2,17 @@
 #include <vector>
 #include <iostream>
 #include "../lib/DataStorage.cpp"
-
+DataStorage dataStorage("Runtime,Scope,CustomCompoundStmt i000002,ForStmt 2219672,CustomCompoundStmt i000005");
 int main(void) {
-    DataStorage dataStorage("Runtime,Scope");
-    dataStorage.startEvent(0);
-    std::vector <std::string> passwordStorage;
+dataStorage.startEvent(0);
+    dataStorage.startEvent(2);
+std::vector <std::string> passwordStorage;
     std::string password;
     char current;
 
-    for (int passwordCount = 0; passwordCount < 1000000; passwordCount++) {
+    dataStorage.endEvent(2);
+dataStorage.startEvent(3);
+for (int passwordCount = 0; passwordCount < 1000000; passwordCount++) {
         for (int sectionCount = 0; sectionCount < 3; sectionCount++) {
             for (int sectionLength = 0; sectionLength < 6; sectionLength++) {
                 char lowerCase = rand() % 26 + 'a';
@@ -33,8 +35,10 @@ int main(void) {
         passwordStorage.push_back(password);
         password.clear();
     }
+dataStorage.endEvent(3);
 
-    std::sort(passwordStorage.begin(), passwordStorage.end());
+    dataStorage.startEvent(4);
+std::sort(passwordStorage.begin(), passwordStorage.end());
     passwordStorage.erase(std::unique(passwordStorage.begin(),
                                             passwordStorage.end()),
                           passwordStorage.end());
@@ -42,8 +46,8 @@ int main(void) {
     for (std::string currentPassword: passwordStorage) {
         std::cout << currentPassword << '\n';
     }
+dataStorage.endEvent(4);
 
     dataStorage.endEvent(0);
-    dataStorage.print();
-    return 0;
+dataStorage.print();return 0;
 }

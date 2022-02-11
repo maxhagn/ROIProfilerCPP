@@ -1,10 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "../lib/DataStorage.cpp"
 
 int main(void) {
-    DataStorage dataStorage("Runtime,Scope");
-    dataStorage.startEvent(0);
     for ( int i = 1; i <= 1000; i++ ) {
         std::cout << "Hello World";
     }
@@ -25,7 +22,5 @@ int main(void) {
         std::sort( shoppingList.begin( ), shoppingList.end( ));
     }
 
-    dataStorage.endEvent(0);
-    dataStorage.print();
     return 0;
 }
