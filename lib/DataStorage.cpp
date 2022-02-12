@@ -130,9 +130,14 @@ public:
         hagnTool.totalUsage = hagnTool.duration / total.duration * 100;
         hagnTool.scopeUsage = hagnTool.duration / scope.duration * 100;
         std::ostringstream calledToString;
-        sumCalls = sumCalls*2+2;
+
+        sumCalls = sumCalls*2;
         calledToString << std::fixed << setprecision(0) << sumCalls;
         hagnTool.called = calledToString.str();
+
+        ofstream callsFile;
+        callsFile.open("Calls.txt", ios_base::app);
+        callsFile << calledToString.str() << "\n";
 
         // hagn tool evaluation to string
         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool.duration, unit );
