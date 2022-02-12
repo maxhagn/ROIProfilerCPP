@@ -1,0 +1,141 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/c-index-test/core_main.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/c-index-test/core_main.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/AST/Mangle\&.h'\fP
+.br
+\fC#include 'clang/Basic/LangOptions\&.h'\fP
+.br
+\fC#include 'clang/CodeGen/ObjectFilePCHContainerOperations\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInvocation\&.h'\fP
+.br
+\fC#include 'clang/Frontend/FrontendAction\&.h'\fP
+.br
+\fC#include 'clang/Index/IndexDataConsumer\&.h'\fP
+.br
+\fC#include 'clang/Index/IndexingAction\&.h'\fP
+.br
+\fC#include 'clang/Index/USRGeneration\&.h'\fP
+.br
+\fC#include 'clang/Lex/Preprocessor\&.h'\fP
+.br
+\fC#include 'clang/Serialization/ASTReader\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/PrettyStackTrace\&.h'\fP
+.br
+\fC#include 'llvm/Support/Program\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/StringSaver\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBoptions\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBindextest_core_main\fP (int argc, const char **argv)"
+.br
+.ti -1c
+.RI "int \fBindextest_perform_shell_execution\fP (const char *command_line)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int indextest_core_main (int argc, const char ** argv)"
+
+.PP
+Definition at line 330 of file core_main\&.cpp\&.
+.PP
+.nf
+330                                                      {
+331   sys::PrintStackTraceOnErrorSignal(argv[0]);
+332   PrettyStackTraceProgram X(argc, argv);
+333   void *MainAddr = (void*) (intptr_t) indextest_core_main;
+334   std::string Executable = llvm::sys::fs::getMainExecutable(argv[0], MainAddr);
+335 
+336   assert(argv[1] == StringRef("core"));
+337   ++argv;
+338   --argc;
+339 
+340   std::vector<const char *> CompArgs;
+341   const char **DoubleDash = std::find(argv, argv + argc, StringRef("--"));
+342   if (DoubleDash != argv + argc) {
+343     CompArgs = std::vector<const char *>(DoubleDash + 1, argv + argc);
+344     argc = DoubleDash - argv;
+345   }
+346 
+347   cl::HideUnrelatedOptions(options::IndexTestCoreCategory);
+348   cl::ParseCommandLineOptions(argc, argv, "index-test-core");
+349 
+350   if (options::Action == ActionType::None) {
+351     errs() << "error: action required; pass '-help' for options\n";
+352     return 1;
+353   }
+354 
+355   if (options::Action == ActionType::PrintSourceSymbols) {
+356     if (!options::ModuleFilePath\&.empty()) {
+357       return printSourceSymbolsFromModule(options::ModuleFilePath,
+358                                           options::ModuleFormat);
+359     }
+360     if (CompArgs\&.empty()) {
+361       errs() << "error: missing compiler args; pass '-- <compiler arguments>'\n";
+362       return 1;
+363     }
+364     return printSourceSymbols(Executable\&.c_str(), CompArgs,
+365                               options::DumpModuleImports,
+366                               options::IncludeLocals, options::IgnoreMacros);
+367   }
+368 
+369   return 0;
+370 }
+.fi
+.PP
+References indextest_core_main()\&.
+.PP
+Referenced by indextest_core_main()\&.
+.SS "int indextest_perform_shell_execution (const char * command_line)"
+
+.PP
+Definition at line 376 of file core_main\&.cpp\&.
+.PP
+.nf
+376                                                                 {
+377   BumpPtrAllocator Alloc;
+378   llvm::StringSaver Saver(Alloc);
+379   SmallVector<const char *, 4> Args;
+380   llvm::cl::TokenizeGNUCommandLine(command_line, Saver, Args);
+381   auto Program = llvm::sys::findProgramByName(Args[0]);
+382   if (std::error_code ec = Program\&.getError()) {
+383     llvm::errs() << "command not found: " << Args[0] << "\n";
+384     return ec\&.value();
+385   }
+386   SmallVector<StringRef, 8> execArgs(Args\&.begin(), Args\&.end());
+387   return llvm::sys::ExecuteAndWait(*Program, execArgs);
+388 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

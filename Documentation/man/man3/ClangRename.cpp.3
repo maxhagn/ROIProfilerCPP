@@ -1,0 +1,237 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-rename/ClangRename.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-rename/ClangRename.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Diagnostic\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticOptions\&.h'\fP
+.br
+\fC#include 'clang/Basic/FileManager\&.h'\fP
+.br
+\fC#include 'clang/Basic/IdentifierTable\&.h'\fP
+.br
+\fC#include 'clang/Basic/LangOptions\&.h'\fP
+.br
+\fC#include 'clang/Basic/SourceManager\&.h'\fP
+.br
+\fC#include 'clang/Basic/TokenKinds\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticPrinter\&.h'\fP
+.br
+\fC#include 'clang/Rewrite/Core/Rewriter\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CommonOptionsParser\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring/Rename/RenamingAction\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring/Rename/USRFindingAction\&.h'\fP
+.br
+\fC#include 'clang/Tooling/ReplacementsYaml\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Tooling\&.h'\fP
+.br
+\fC#include 'llvm/ADT/IntrusiveRefCntPtr\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/YAMLTraits\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <string>\fP
+.br
+\fC#include <system_error>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBRenameAllInfo\fP"
+.br
+.RI "An oldname -> newname rename\&. "
+.ti -1c
+.RI "struct \fBllvm::yaml::MappingTraits< RenameAllInfo >\fP"
+.br
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBllvm\fP"
+.br
+.ti -1c
+.RI " \fBllvm::yaml\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This file implements a clang-rename tool that automatically finds and renames symbols in C++ code\&. 
+.PP
+Definition in file \fBClangRename\&.cpp\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 100 of file ClangRename\&.cpp\&.
+.PP
+.nf
+100                                       {
+101   auto ExpectedParser =
+102       tooling::CommonOptionsParser::create(argc, argv, ClangRenameOptions);
+103   if (!ExpectedParser) {
+104     llvm::errs() << ExpectedParser\&.takeError();
+105     return 1;
+106   }
+107   tooling::CommonOptionsParser &OP = ExpectedParser\&.get();
+108 
+109   if (!Input\&.empty()) {
+110     // Populate QualifiedNames and NewNames from a YAML file\&.
+111     ErrorOr<std::unique_ptr<MemoryBuffer>> Buffer =
+112         llvm::MemoryBuffer::getFile(Input);
+113     if (!Buffer) {
+114       errs() << "clang-rename: failed to read " << Input << ": "
+115              << Buffer\&.getError()\&.message() << "\n";
+116       return 1;
+117     }
+118 
+119     std::vector<RenameAllInfo> Infos;
+120     llvm::yaml::Input YAML(Buffer\&.get()->getBuffer());
+121     YAML >> Infos;
+122     for (const auto &Info : Infos) {
+123       if (!Info\&.QualifiedName\&.empty())
+124         QualifiedNames\&.push_back(Info\&.QualifiedName);
+125       else
+126         SymbolOffsets\&.push_back(Info\&.Offset);
+127       NewNames\&.push_back(Info\&.NewName);
+128     }
+129   }
+130 
+131   // Check the arguments for correctness\&.
+132   if (NewNames\&.empty()) {
+133     errs() << "clang-rename: -new-name must be specified\&.\n\n";
+134     return 1;
+135   }
+136 
+137   if (SymbolOffsets\&.empty() == QualifiedNames\&.empty()) {
+138     errs() << "clang-rename: -offset and -qualified-name can't be present at "
+139               "the same time\&.\n";
+140     return 1;
+141   }
+142 
+143   // Check if NewNames is a valid identifier in C++17\&.
+144   LangOptions Options;
+145   Options\&.CPlusPlus = true;
+146   Options\&.CPlusPlus17 = true;
+147   IdentifierTable Table(Options);
+148   for (const auto &NewName : NewNames) {
+149     auto NewNameTokKind = Table\&.get(NewName)\&.getTokenID();
+150     if (!tok::isAnyIdentifier(NewNameTokKind)) {
+151       errs() << "ERROR: new name is not a valid identifier in C++17\&.\n\n";
+152       return 1;
+153     }
+154   }
+155 
+156   if (SymbolOffsets\&.size() + QualifiedNames\&.size() != NewNames\&.size()) {
+157     errs() << "clang-rename: number of symbol offsets(" << SymbolOffsets\&.size()
+158            << ") + number of qualified names (" << QualifiedNames\&.size()
+159            << ") must be equal to number of new names(" << NewNames\&.size()
+160            << ")\&.\n\n";
+161     cl::PrintHelpMessage();
+162     return 1;
+163   }
+164 
+165   auto Files = OP\&.getSourcePathList();
+166   tooling::RefactoringTool Tool(OP\&.getCompilations(), Files);
+167   tooling::USRFindingAction FindingAction(SymbolOffsets, QualifiedNames, Force);
+168   Tool\&.run(tooling::newFrontendActionFactory(&FindingAction)\&.get());
+169   const std::vector<std::vector<std::string>> &USRList =
+170       FindingAction\&.getUSRList();
+171   const std::vector<std::string> &PrevNames = FindingAction\&.getUSRSpellings();
+172   if (PrintName) {
+173     for (const auto &PrevName : PrevNames) {
+174       outs() << "clang-rename found name: " << PrevName << '\n';
+175     }
+176   }
+177 
+178   if (FindingAction\&.errorOccurred()) {
+179     // Diagnostics are already issued at this point\&.
+180     return 1;
+181   }
+182 
+183   // Perform the renaming\&.
+184   tooling::RenamingAction RenameAction(NewNames, PrevNames, USRList,
+185                                        Tool\&.getReplacements(), PrintLocations);
+186   std::unique_ptr<tooling::FrontendActionFactory> Factory =
+187       tooling::newFrontendActionFactory(&RenameAction);
+188   int ExitCode;
+189 
+190   if (Inplace) {
+191     ExitCode = Tool\&.runAndSave(Factory\&.get());
+192   } else {
+193     ExitCode = Tool\&.run(Factory\&.get());
+194 
+195     if (!ExportFixes\&.empty()) {
+196       std::error_code EC;
+197       llvm::raw_fd_ostream OS(ExportFixes, EC, llvm::sys::fs::OF_None);
+198       if (EC) {
+199         llvm::errs() << "Error opening output file: " << EC\&.message() << '\n';
+200         return 1;
+201       }
+202 
+203       // Export replacements\&.
+204       tooling::TranslationUnitReplacements TUR;
+205       const auto &FileToReplacements = Tool\&.getReplacements();
+206       for (const auto &Entry : FileToReplacements)
+207         TUR\&.Replacements\&.insert(TUR\&.Replacements\&.end(), Entry\&.second\&.begin(),
+208                                 Entry\&.second\&.end());
+209 
+210       yaml::Output YAML(OS);
+211       YAML << TUR;
+212       OS\&.close();
+213       return 0;
+214     }
+215 
+216     // Write every file to stdout\&. Right now we just barf the files without any
+217     // indication of which files start where, other than that we print the files
+218     // in the same order we see them\&.
+219     LangOptions DefaultLangOptions;
+220     IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+221     TextDiagnosticPrinter DiagnosticPrinter(errs(), &*DiagOpts);
+222     DiagnosticsEngine Diagnostics(
+223         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+224         &DiagnosticPrinter, false);
+225     auto &FileMgr = Tool\&.getFiles();
+226     SourceManager Sources(Diagnostics, FileMgr);
+227     Rewriter Rewrite(Sources, DefaultLangOptions);
+228 
+229     Tool\&.applyAllReplacements(Rewrite);
+230     for (const auto &File : Files) {
+231       auto Entry = FileMgr\&.getFile(File);
+232       const auto ID = Sources\&.getOrCreateFileID(*Entry, SrcMgr::C_User);
+233       Rewrite\&.getEditBuffer(ID)\&.write(outs());
+234     }
+235   }
+236 
+237   return ExitCode;
+238 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

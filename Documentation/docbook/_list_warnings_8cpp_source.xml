@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__list_warnings_8cpp_source" xml:lang="en-US">
+<title>ListWarnings.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/diagtool/ListWarnings.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;ListWarnings.h&#32;-&#32;diagtool&#32;tool&#32;for&#32;printing&#32;warning&#32;flags&#32;----------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;provides&#32;a&#32;diagtool&#32;tool&#32;that&#32;displays&#32;warning&#32;flags&#32;for</emphasis>
+00010 <emphasis role="comment">//&#32;diagnostics.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diag_tool_8h">DiagTool.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diagnostic_names_8h">DiagnosticNames.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/AllDiagnostics.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Diagnostic.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringMap.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Format.h&quot;</emphasis>
+00020 
+<anchor xml:id="__list_warnings_8cpp_source_1l00021"/><link linkend="__list_warnings_8cpp_1a8bff0e47dd027a4642e5a3b542da5571">00021</link> <link linkend="__list_warnings_8cpp_1a8bff0e47dd027a4642e5a3b542da5571">DEF_DIAGTOOL</link>(<emphasis role="stringliteral">&quot;list-warnings&quot;</emphasis>,
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;List&#32;warnings&#32;and&#32;their&#32;corresponding&#32;flags&quot;</emphasis>,
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ListWarnings)
+00024 
+00025 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00026 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacediagtool">diagtool</link>;
+00027 
+00028 <emphasis role="keyword">namespace&#32;</emphasis>{
+00029 <emphasis role="keyword">struct&#32;</emphasis>Entry&#32;{
+00030 &#32;&#32;llvm::StringRef&#32;DiagName;
+00031 &#32;&#32;llvm::StringRef&#32;Flag;
+00032 
+00033 &#32;&#32;Entry(llvm::StringRef&#32;diagN,&#32;llvm::StringRef&#32;flag)
+00034 &#32;&#32;&#32;&#32;:&#32;DiagName(diagN),&#32;Flag(flag)&#32;{}
+00035 
+00036 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;operator&lt;(<emphasis role="keyword">const</emphasis>&#32;Entry&#32;&amp;x)<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;DiagName&#32;&lt;&#32;x.DiagName;&#32;}
+00037 };
+00038 }
+00039 
+00040 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printEntries(std::vector&lt;Entry&gt;&#32;&amp;entries,&#32;llvm::raw_ostream&#32;&amp;out)&#32;{
+00041 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;Entry&#32;&amp;E&#32;:&#32;entries)&#32;{
+00042 &#32;&#32;&#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;E.DiagName;
+00043 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!E.Flag.empty())
+00044 &#32;&#32;&#32;&#32;&#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;[-W&quot;</emphasis>&#32;&lt;&lt;&#32;E.Flag&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]&quot;</emphasis>;
+00045 &#32;&#32;&#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00046 &#32;&#32;}
+00047 }
+00048 
+00049 <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1analyze_1a505fccfeb836b113101687366a231f5f">ListWarnings::run</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv,&#32;llvm::raw_ostream&#32;&amp;out)&#32;{
+00050 &#32;&#32;std::vector&lt;Entry&gt;&#32;Flagged,&#32;Unflagged;
+00051 &#32;&#32;llvm::StringMap&lt;std::vector&lt;unsigned&gt;&#32;&gt;&#32;flagHistogram;
+00052 
+00053 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structdiagtool_1_1_diagnostic_record">DiagnosticRecord</link>&#32;&amp;DR&#32;:&#32;<link linkend="_namespacediagtool_1a84e4f971383375d578c37ad94811fd7a">getBuiltinDiagnosticsByName</link>())&#32;{
+00054 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;diagID&#32;=&#32;DR.DiagID;
+00055 
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DiagnosticIDs::isBuiltinNote(diagID))
+00057 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00058 
+00059 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DiagnosticIDs::isBuiltinWarningOrExtension(diagID))
+00060 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00061 
+00062 &#32;&#32;&#32;&#32;Entry&#32;entry(DR.getName(),&#32;DiagnosticIDs::getWarningOptionForDiag(diagID));
+00063 
+00064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(entry.Flag.empty())
+00065 &#32;&#32;&#32;&#32;&#32;&#32;Unflagged.push_back(entry);
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00067 &#32;&#32;&#32;&#32;&#32;&#32;Flagged.push_back(entry);
+00068 &#32;&#32;&#32;&#32;&#32;&#32;flagHistogram[entry.Flag].push_back(diagID);
+00069 &#32;&#32;&#32;&#32;}
+00070 &#32;&#32;}
+00071 
+00072 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Warnings&#32;with&#32;flags&#32;(&quot;</emphasis>&#32;&lt;&lt;&#32;Flagged.size()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;):\n&quot;</emphasis>;
+00073 &#32;&#32;printEntries(Flagged,&#32;out);
+00074 
+00075 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Warnings&#32;without&#32;flags&#32;(&quot;</emphasis>&#32;&lt;&lt;&#32;Unflagged.size()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;):\n&quot;</emphasis>;
+00076 &#32;&#32;printEntries(Unflagged,&#32;out);
+00077 
+00078 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\nSTATISTICS:\n\n&quot;</emphasis>;
+00079 
+00080 &#32;&#32;<emphasis role="keywordtype">double</emphasis>&#32;percentFlagged&#32;=
+00081 &#32;&#32;&#32;&#32;&#32;&#32;((double)Flagged.size())&#32;/&#32;(Flagged.size()&#32;+&#32;Unflagged.size())&#32;*&#32;100.0;
+00082 
+00083 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Percentage&#32;of&#32;warnings&#32;with&#32;flags:&#32;&quot;</emphasis>
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;llvm::format(<emphasis role="stringliteral">&quot;%.4g&quot;</emphasis>,&#32;percentFlagged)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%\n&quot;</emphasis>;
+00085 
+00086 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Number&#32;of&#32;unique&#32;flags:&#32;&quot;</emphasis>
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;flagHistogram.size()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00088 
+00089 &#32;&#32;<emphasis role="keywordtype">double</emphasis>&#32;avgDiagsPerFlag&#32;=&#32;(double)&#32;Flagged.size()&#32;/&#32;flagHistogram.size();
+00090 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Average&#32;number&#32;of&#32;diagnostics&#32;per&#32;flag:&#32;&quot;</emphasis>
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;llvm::format(<emphasis role="stringliteral">&quot;%.4g&quot;</emphasis>,&#32;avgDiagsPerFlag)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00092 
+00093 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Number&#32;in&#32;-Wpedantic&#32;(not&#32;covered&#32;by&#32;other&#32;-W&#32;flags):&#32;&quot;</emphasis>
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;flagHistogram[<emphasis role="stringliteral">&quot;pedantic&quot;</emphasis>].size()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00095 
+00096 &#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00097 
+00098 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00099 }
+00100 
+</programlisting></section>

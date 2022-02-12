@@ -1,0 +1,527 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_code_completion_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCodeCompletion.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCodeCompletion.cpp</primary></indexterm>
+<programlisting>#include &quot;CIndexer.h&quot;
+#include &quot;CIndexDiagnostic.h&quot;
+#include &quot;CLog.h&quot;
+#include &quot;CXCursor.h&quot;
+#include &quot;CXSourceLocation.h&quot;
+#include &quot;CXString.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;clang/AST/Decl.h&quot;
+#include &quot;clang/AST/DeclObjC.h&quot;
+#include &quot;clang/AST/Type.h&quot;
+#include &quot;clang/Basic/FileManager.h&quot;
+#include &quot;clang/Basic/SourceManager.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Sema/CodeCompleteConsumer.h&quot;
+#include &quot;clang/Sema/Sema.h&quot;
+#include &quot;llvm/ADT/SmallString.h&quot;
+#include &quot;llvm/ADT/StringExtras.h&quot;
+#include &quot;llvm/Support/CrashRecoveryContext.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/FormatVariadic.h&quot;
+#include &quot;llvm/Support/MemoryBuffer.h&quot;
+#include &quot;llvm/Support/Program.h&quot;
+#include &quot;llvm/Support/Timer.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+#include &lt;atomic&gt;
+#include &lt;cstdio&gt;
+#include &lt;cstdlib&gt;
+#include &lt;string&gt;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>enum CXCompletionChunkKind <link linkend="__c_index_code_completion_8cpp_1a6ce9754f88dc96e3628a7e479976c4e7">clang_getCompletionChunkKind</link> (CXCompletionString completion_string, unsigned chunk_number)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1a374f74c7bf629362e8da626775301a00">clang_getCompletionChunkText</link> (CXCompletionString completion_string, unsigned chunk_number)</para>
+</listitem>
+            <listitem><para>CXCompletionString <link linkend="__c_index_code_completion_8cpp_1a50babc07437ed1bd140ed2580b7d84b4">clang_getCompletionChunkCompletionString</link> (CXCompletionString completion_string, unsigned chunk_number)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_code_completion_8cpp_1a075fc2a04c95b00ccadf6ccc0ab5b91d">clang_getNumCompletionChunks</link> (CXCompletionString completion_string)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_code_completion_8cpp_1ab31f7dbd962ec8e8cb586bb5e3c78276">clang_getCompletionPriority</link> (CXCompletionString completion_string)</para>
+</listitem>
+            <listitem><para>enum CXAvailabilityKind <link linkend="__c_index_code_completion_8cpp_1a705e9a4bdd5077e49d5a787fe913aeda">clang_getCompletionAvailability</link> (CXCompletionString completion_string)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_code_completion_8cpp_1a8ab31cf1861905f7599d87eb48649c2c">clang_getCompletionNumAnnotations</link> (CXCompletionString completion_string)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1ae2edaae1f93d1b09d474ae8446172037">clang_getCompletionAnnotation</link> (CXCompletionString completion_string, unsigned annotation_number)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1a7255187a485b3364cd0956ccc8a21ba7">clang_getCompletionParent</link> (CXCompletionString completion_string, CXCursorKind *kind)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1a583af69f4c45ceea22b0aacbaebfae23">clang_getCompletionBriefComment</link> (CXCompletionString completion_string)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_code_completion_8cpp_1a2a27263ad8d1070172cea3be70b4d8b9">clang_getCompletionNumFixIts</link> (CXCodeCompleteResults *results, unsigned completion_index)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1a53d507b63fce804bcd705197ef5eda7a">clang_getCompletionFixIt</link> (CXCodeCompleteResults *results, unsigned completion_index, unsigned fixit_index, CXSourceRange *replacement_range)</para>
+</listitem>
+            <listitem><para>CXCodeCompleteResults * <link linkend="__c_index_code_completion_8cpp_1aa00452b93a381eacef696b538f19ca6e">clang_codeCompleteAt</link> (CXTranslationUnit TU, const char *complete_filename, unsigned complete_line, unsigned complete_column, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, unsigned options)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_code_completion_8cpp_1a6cf74c52d33527eeee0b2bd27ef69044">clang_defaultCodeCompleteOptions</link> (void)</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_index_code_completion_8cpp_1ab33453b1d11a0d7c68ccf5c2f3f55bb3">clang_disposeCodeCompleteResults</link> (CXCodeCompleteResults *ResultsIn)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_code_completion_8cpp_1aaa0ec260d3ad875615930d0c009e5dba">clang_codeCompleteGetNumDiagnostics</link> (CXCodeCompleteResults *ResultsIn)</para>
+</listitem>
+            <listitem><para>CXDiagnostic <link linkend="__c_index_code_completion_8cpp_1a2889b7f63ecab662d464c9c64921f4de">clang_codeCompleteGetDiagnostic</link> (CXCodeCompleteResults *ResultsIn, unsigned Index)</para>
+</listitem>
+            <listitem><para>unsigned long long <link linkend="__c_index_code_completion_8cpp_1afc1d7645383b816cb5e62253b85f9b7c">clang_codeCompleteGetContexts</link> (CXCodeCompleteResults *ResultsIn)</para>
+</listitem>
+            <listitem><para>enum CXCursorKind <link linkend="__c_index_code_completion_8cpp_1a6d5d24395b436aaedf13984af8f19afa">clang_codeCompleteGetContainerKind</link> (CXCodeCompleteResults *ResultsIn, unsigned *IsIncomplete)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1aa7fdf1ceb18aed68b458ebd05f5aa6c5">clang_codeCompleteGetContainerUSR</link> (CXCodeCompleteResults *ResultsIn)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_code_completion_8cpp_1a1cee18661b755d3b0b6ee3b44630033f">clang_codeCompleteGetObjCSelector</link> (CXCodeCompleteResults *ResultsIn)</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_index_code_completion_8cpp_1a15ff3b3f6b97479e2516f3e4993a9baa">clang_sortCodeCompletionResults</link> (CXCompletionResult *Results, unsigned NumResults)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__c_index_code_completion_8cpp_1aa00452b93a381eacef696b538f19ca6e"/>    <section>
+    <title>clang_codeCompleteAt()</title>
+<indexterm><primary>clang_codeCompleteAt</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteAt</secondary></indexterm>
+<para><computeroutput>CXCodeCompleteResults* clang_codeCompleteAt (CXTranslationUnit TU, const char * complete_filename, unsigned complete_line, unsigned complete_column, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, unsigned options)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00851">851</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00857 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00858 &#32;&#32;<link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">LOG_FUNC_SECTION</link>&#32;{
+00859 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;TU&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>
+00860 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;complete_filename&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;complete_line&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;complete_column;
+00861 &#32;&#32;}
+00862 
+00863 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_unsaved_files&#32;&amp;&amp;&#32;!unsaved_files)
+00864 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00865 
+00866 &#32;&#32;CXCodeCompleteResults&#32;*result;
+00867 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CodeCompleteAtImpl&#32;=&#32;[=,&#32;&amp;result]()&#32;{
+00868 &#32;&#32;&#32;&#32;result&#32;=&#32;clang_codeCompleteAt_Impl(
+00869 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU,&#32;complete_filename,&#32;complete_line,&#32;complete_column,
+00870 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::makeArrayRef(unsaved_files,&#32;num_unsaved_files),&#32;<link linkend="_namespaceoptions">options</link>);
+00871 &#32;&#32;};
+00872 
+00873 &#32;&#32;llvm::CrashRecoveryContext&#32;CRC;
+00874 
+00875 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(CRC,&#32;CodeCompleteAtImpl))&#32;{
+00876 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;libclang:&#32;crash&#32;detected&#32;in&#32;code&#32;completion\n&quot;</emphasis>);
+00877 &#32;&#32;&#32;&#32;cxtu::getASTUnit(TU)-&gt;setUnsafeToFree(<emphasis role="keyword">true</emphasis>);
+00878 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00879 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_RESOURCE_USAGE&quot;</emphasis>))
+00880 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1aa969857ada50e5f302f7127c78a63018">PrintLibclangResourceUsage</link>(TU);
+00881 
+00882 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00883 }
+</programlisting><para>
+References <link linkend="__c_log_8h_source_1l00100">LOG_FUNC_SECTION</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1a6d5d24395b436aaedf13984af8f19afa"/>    <section>
+    <title>clang_codeCompleteGetContainerKind()</title>
+<indexterm><primary>clang_codeCompleteGetContainerKind</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteGetContainerKind</secondary></indexterm>
+<para><computeroutput>enum CXCursorKind clang_codeCompleteGetContainerKind (CXCodeCompleteResults * ResultsIn, unsigned * IsIncomplete)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00926">926</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00937 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00938 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=
+00939 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults&#32;*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00940 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00941 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_InvalidCode;
+00942 
+00943 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IsIncomplete&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>)&#32;{
+00944 &#32;&#32;&#32;&#32;*IsIncomplete&#32;=&#32;Results-&gt;ContainerIsIncomplete;
+00945 &#32;&#32;}
+00946 &#32;&#32;
+00947 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results-&gt;ContainerKind;
+00948 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1aa7fdf1ceb18aed68b458ebd05f5aa6c5"/>    <section>
+    <title>clang_codeCompleteGetContainerUSR()</title>
+<indexterm><primary>clang_codeCompleteGetContainerUSR</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteGetContainerUSR</secondary></indexterm>
+<para><computeroutput>CXString clang_codeCompleteGetContainerUSR (CXCodeCompleteResults * ResultsIn)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00950">950</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00950 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00951 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=
+00952 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults&#32;*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00953 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00954 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00955 
+00956 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(Results-&gt;ContainerUSR.c_str());
+00957 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1afc1d7645383b816cb5e62253b85f9b7c"/>    <section>
+    <title>clang_codeCompleteGetContexts()</title>
+<indexterm><primary>clang_codeCompleteGetContexts</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteGetContexts</secondary></indexterm>
+<para><computeroutput>unsigned long long clang_codeCompleteGetContexts (CXCodeCompleteResults * ResultsIn)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00926">926</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00926 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00927 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00928 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00929 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00930 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00931 &#32;&#32;
+00932 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results-&gt;Contexts;
+00933 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a2889b7f63ecab662d464c9c64921f4de"/>    <section>
+    <title>clang_codeCompleteGetDiagnostic()</title>
+<indexterm><primary>clang_codeCompleteGetDiagnostic</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteGetDiagnostic</secondary></indexterm>
+<para><computeroutput>CXDiagnostic clang_codeCompleteGetDiagnostic (CXCodeCompleteResults * ResultsIn, unsigned Index)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00909">909</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00910 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00911 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00912 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00913 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results&#32;||&#32;Index&#32;&gt;=&#32;Results-&gt;Diagnostics.size())
+00914 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00915 
+00916 &#32;&#32;<link linkend="_structclang_1_1_c_x_stored_diagnostic">CXStoredDiagnostic</link>&#32;*Diag&#32;=&#32;Results-&gt;DiagnosticsWrappers[Index].get();
+00917 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Diag)
+00918 &#32;&#32;&#32;&#32;Diag&#32;=&#32;(Results-&gt;DiagnosticsWrappers[Index]&#32;=
+00919 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;CXStoredDiagnostic&gt;(
+00920 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Results-&gt;Diagnostics[Index],&#32;Results-&gt;LangOpts))
+00921 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>();
+00922 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Diag;
+00923 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1aaa0ec260d3ad875615930d0c009e5dba"/>    <section>
+    <title>clang_codeCompleteGetNumDiagnostics()</title>
+<indexterm><primary>clang_codeCompleteGetNumDiagnostics</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteGetNumDiagnostics</secondary></indexterm>
+<para><computeroutput>unsigned clang_codeCompleteGetNumDiagnostics (CXCodeCompleteResults * ResultsIn)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00899">899</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00899 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00900 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00901 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00902 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00903 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00904 
+00905 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results-&gt;Diagnostics.size();
+00906 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a1cee18661b755d3b0b6ee3b44630033f"/>    <section>
+    <title>clang_codeCompleteGetObjCSelector()</title>
+<indexterm><primary>clang_codeCompleteGetObjCSelector</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_codeCompleteGetObjCSelector</secondary></indexterm>
+<para><computeroutput>CXString clang_codeCompleteGetObjCSelector (CXCodeCompleteResults * ResultsIn)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00960">960</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00960 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00961 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=
+00962 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults&#32;*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00963 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00964 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00965 &#32;&#32;
+00966 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(Results-&gt;Selector);
+00967 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a6cf74c52d33527eeee0b2bd27ef69044"/>    <section>
+    <title>clang_defaultCodeCompleteOptions()</title>
+<indexterm><primary>clang_defaultCodeCompleteOptions</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_defaultCodeCompleteOptions</secondary></indexterm>
+<para><computeroutput>unsigned clang_defaultCodeCompleteOptions (void )</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00885">885</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00885 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00886 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCodeComplete_IncludeMacros;
+00887 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l02665">perform_code_completion()</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1ab33453b1d11a0d7c68ccf5c2f3f55bb3"/>    <section>
+    <title>clang_disposeCodeCompleteResults()</title>
+<indexterm><primary>clang_disposeCodeCompleteResults</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_disposeCodeCompleteResults</secondary></indexterm>
+<para><computeroutput>void clang_disposeCodeCompleteResults (CXCodeCompleteResults * ResultsIn)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00889">889</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00889 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00890 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ResultsIn)
+00891 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00892 
+00893 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00894 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00895 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;Results;
+00896 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1ae2edaae1f93d1b09d474ae8446172037"/>    <section>
+    <title>clang_getCompletionAnnotation()</title>
+<indexterm><primary>clang_getCompletionAnnotation</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionAnnotation</secondary></indexterm>
+<para><computeroutput>CXString clang_getCompletionAnnotation (CXCompletionString completion_string, unsigned annotation_number)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00210">210</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00212 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00213 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr&#32;?&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(CCStr-&gt;getAnnotation(annotation_number))
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;cxstring::<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">createNull</link>();
+00215 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00050">clang::cxstring::createNull()</link>, and <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1a705e9a4bdd5077e49d5a787fe913aeda"/>    <section>
+    <title>clang_getCompletionAvailability()</title>
+<indexterm><primary>clang_getCompletionAvailability</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionAvailability</secondary></indexterm>
+<para><computeroutput>enum CXAvailabilityKind clang_getCompletionAvailability (CXCompletionString completion_string)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00192">192</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00199 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00200 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr?&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXAvailabilityKind<emphasis role="keyword">&gt;</emphasis>(CCStr-&gt;getAvailability())
+00201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;CXAvailability_Available;
+00202 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a583af69f4c45ceea22b0aacbaebfae23"/>    <section>
+    <title>clang_getCompletionBriefComment()</title>
+<indexterm><primary>clang_getCompletionBriefComment</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionBriefComment</secondary></indexterm>
+<para><computeroutput>CXString clang_getCompletionBriefComment (CXCompletionString completion_string)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00231">231</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00232 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00233 
+00234 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr)
+00235 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00236 
+00237 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(CCStr-&gt;getBriefComment());
+00238 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00050">clang::cxstring::createNull()</link>, and <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1a50babc07437ed1bd140ed2580b7d84b4"/>    <section>
+    <title>clang_getCompletionChunkCompletionString()</title>
+<indexterm><primary>clang_getCompletionChunkCompletionString</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionChunkCompletionString</secondary></indexterm>
+<para><computeroutput>CXCompletionString clang_getCompletionChunkCompletionString (CXCompletionString completion_string, unsigned chunk_number)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00150">150</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00152 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00153 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr&#32;||&#32;chunk_number&#32;&gt;=&#32;CCStr-&gt;size())
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00155 
+00156 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((*CCStr)[chunk_number].Kind)&#32;{
+00157 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_TypedText:
+00158 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Text:
+00159 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Placeholder:
+00160 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_CurrentParameter:
+00161 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Informative:
+00162 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftParen:
+00163 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightParen:
+00164 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBracket:
+00165 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBracket:
+00166 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBrace:
+00167 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBrace:
+00168 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftAngle:
+00169 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightAngle:
+00170 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Comma:
+00171 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_ResultType:
+00172 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Colon:
+00173 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_SemiColon:
+00174 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Equal:
+00175 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_HorizontalSpace:
+00176 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_VerticalSpace:
+00177 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00178 
+00179 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Optional:
+00180 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Note:&#32;treated&#32;as&#32;an&#32;empty&#32;text&#32;block.</emphasis>
+00181 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(*CCStr)[chunk_number].Optional;
+00182 &#32;&#32;}
+00183 
+00184 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;CompletionKind!&quot;</emphasis>);
+00185 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a6ce9754f88dc96e3628a7e479976c4e7"/>    <section>
+    <title>clang_getCompletionChunkKind()</title>
+<indexterm><primary>clang_getCompletionChunkKind</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionChunkKind</secondary></indexterm>
+<para><computeroutput>enum CXCompletionChunkKind clang_getCompletionChunkKind (CXCompletionString completion_string, unsigned chunk_number)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00001">1</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00059 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00060 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr&#32;||&#32;chunk_number&#32;&gt;=&#32;CCStr-&gt;size())
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Text;
+00062 
+00063 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((*CCStr)[chunk_number].Kind)&#32;{
+00064 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_TypedText:
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_TypedText;
+00066 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Text:
+00067 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Text;
+00068 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Optional:
+00069 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Optional;
+00070 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Placeholder:
+00071 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Placeholder;
+00072 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Informative:
+00073 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Informative;
+00074 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_ResultType:
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_ResultType;
+00076 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_CurrentParameter:
+00077 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_CurrentParameter;
+00078 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftParen:
+00079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftParen;
+00080 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightParen:
+00081 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightParen;
+00082 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBracket:
+00083 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftBracket;
+00084 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBracket:
+00085 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightBracket;
+00086 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBrace:
+00087 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftBrace;
+00088 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBrace:
+00089 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightBrace;
+00090 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftAngle:
+00091 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftAngle;
+00092 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightAngle:
+00093 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightAngle;
+00094 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Comma:
+00095 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Comma;
+00096 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Colon:
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Colon;
+00098 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_SemiColon:
+00099 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_SemiColon;
+00100 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Equal:
+00101 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Equal;
+00102 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_HorizontalSpace:
+00103 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_HorizontalSpace;
+00104 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_VerticalSpace:
+00105 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_VerticalSpace;
+00106 &#32;&#32;}
+00107 
+00108 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;CompletionKind!&quot;</emphasis>);
+00109 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a374f74c7bf629362e8da626775301a00"/>    <section>
+    <title>clang_getCompletionChunkText()</title>
+<indexterm><primary>clang_getCompletionChunkText</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionChunkText</secondary></indexterm>
+<para><computeroutput>CXString clang_getCompletionChunkText (CXCompletionString completion_string, unsigned chunk_number)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00111">111</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00113 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00114 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr&#32;||&#32;chunk_number&#32;&gt;=&#32;CCStr-&gt;size())
+00115 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00116 
+00117 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((*CCStr)[chunk_number].Kind)&#32;{
+00118 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_TypedText:
+00119 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Text:
+00120 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Placeholder:
+00121 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_CurrentParameter:
+00122 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Informative:
+00123 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftParen:
+00124 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightParen:
+00125 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBracket:
+00126 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBracket:
+00127 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBrace:
+00128 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBrace:
+00129 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftAngle:
+00130 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightAngle:
+00131 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Comma:
+00132 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_ResultType:
+00133 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Colon:
+00134 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_SemiColon:
+00135 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Equal:
+00136 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_HorizontalSpace:
+00137 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_VerticalSpace:
+00138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>((*CCStr)[chunk_number].Text);
+00139 &#32;&#32;&#32;&#32;&#32;&#32;
+00140 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Optional:
+00141 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Note:&#32;treated&#32;as&#32;an&#32;empty&#32;text&#32;block.</emphasis>
+00142 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00143 &#32;&#32;}
+00144 
+00145 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;CodeCompletionString&#32;Kind!&quot;</emphasis>);
+00146 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>, <link linkend="__c_x_string_8cpp_source_1l00050">clang::cxstring::createNull()</link>, and <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1a53d507b63fce804bcd705197ef5eda7a"/>    <section>
+    <title>clang_getCompletionFixIt()</title>
+<indexterm><primary>clang_getCompletionFixIt</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionFixIt</secondary></indexterm>
+<para><computeroutput>CXString clang_getCompletionFixIt (CXCodeCompleteResults * results, unsigned completion_index, unsigned fixit_index, CXSourceRange * replacement_range)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00322">322</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00326 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*allocated_results&#32;=&#32;(AllocatedCXCodeCompleteResults&#32;*)results;
+00327 
+00328 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!allocated_results&#32;||&#32;allocated_results-&gt;FixItsVector.size()&#32;&lt;=&#32;completion_index)&#32;{
+00329 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacement_range)
+00330 &#32;&#32;&#32;&#32;&#32;&#32;*replacement_range&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1afadb1a95ce51366407cf6c363299a17f">clang_getNullRange</link>();
+00331 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00332 &#32;&#32;}
+00333 
+00334 &#32;&#32;ArrayRef&lt;FixItHint&gt;&#32;FixIts&#32;=&#32;allocated_results-&gt;FixItsVector[completion_index];
+00335 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FixIts.size()&#32;&lt;=&#32;fixit_index)&#32;{
+00336 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacement_range)
+00337 &#32;&#32;&#32;&#32;&#32;&#32;*replacement_range&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1afadb1a95ce51366407cf6c363299a17f">clang_getNullRange</link>();
+00338 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00339 &#32;&#32;}
+00340 
+00341 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FixItHint&#32;&amp;FixIt&#32;=&#32;FixIts[fixit_index];
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacement_range)&#32;{
+00343 &#32;&#32;&#32;&#32;*replacement_range&#32;=&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">cxloc::translateSourceRange</link>(
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*allocated_results-&gt;SourceMgr,&#32;allocated_results-&gt;LangOpts,
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FixIt.RemoveRange);
+00346 &#32;&#32;}
+00347 
+00348 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(FixIt.CodeToInsert.c_str());
+00349 }
+</programlisting><para>
+References <link linkend="__c_x_source_location_8cpp_source_1l00052">clang_getNullRange()</link>, <link linkend="__c_x_string_8cpp_source_1l00050">clang::cxstring::createNull()</link>, <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>, and <link linkend="__c_index_8cpp_source_1l00143">clang::cxloc::translateSourceRange()</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1a8ab31cf1861905f7599d87eb48649c2c"/>    <section>
+    <title>clang_getCompletionNumAnnotations()</title>
+<indexterm><primary>clang_getCompletionNumAnnotations</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionNumAnnotations</secondary></indexterm>
+<para><computeroutput>unsigned clang_getCompletionNumAnnotations (CXCompletionString completion_string)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00204">204</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00205 {
+00206 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00207 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr&#32;?&#32;CCStr-&gt;getAnnotationCount()&#32;:&#32;0;
+00208 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a2a27263ad8d1070172cea3be70b4d8b9"/>    <section>
+    <title>clang_getCompletionNumFixIts()</title>
+<indexterm><primary>clang_getCompletionNumFixIts</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionNumFixIts</secondary></indexterm>
+<para><computeroutput>unsigned clang_getCompletionNumFixIts (CXCodeCompleteResults * results, unsigned completion_index)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00312">312</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00313 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00314 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*allocated_results&#32;=&#32;(AllocatedCXCodeCompleteResults&#32;*)results;
+00315 
+00316 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!allocated_results&#32;||&#32;allocated_results-&gt;FixItsVector.size()&#32;&lt;=&#32;completion_index)
+00317 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00318 
+00319 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">unsigned</emphasis><emphasis role="keyword">&gt;</emphasis>(allocated_results-&gt;FixItsVector[completion_index].size());
+00320 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a7255187a485b3364cd0956ccc8a21ba7"/>    <section>
+    <title>clang_getCompletionParent()</title>
+<indexterm><primary>clang_getCompletionParent</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionParent</secondary></indexterm>
+<para><computeroutput>CXString clang_getCompletionParent (CXCompletionString completion_string, CXCursorKind * kind)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00218">218</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(kind)
+00221 &#32;&#32;&#32;&#32;*kind&#32;=&#32;CXCursor_NotImplemented;
+00222 &#32;&#32;
+00223 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00224 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr)
+00225 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00226 &#32;&#32;
+00227 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(CCStr-&gt;getParentContextName());
+00228 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00050">clang::cxstring::createNull()</link>, and <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>.</para>
+    </section><anchor xml:id="__c_index_code_completion_8cpp_1ab31f7dbd962ec8e8cb586bb5e3c78276"/>    <section>
+    <title>clang_getCompletionPriority()</title>
+<indexterm><primary>clang_getCompletionPriority</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getCompletionPriority</secondary></indexterm>
+<para><computeroutput>unsigned clang_getCompletionPriority (CXCompletionString completion_string)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00192">192</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00193 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00194 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr?&#32;CCStr-&gt;getPriority()&#32;:&#32;unsigned(CCP_Unlikely);
+00195 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a075fc2a04c95b00ccadf6ccc0ab5b91d"/>    <section>
+    <title>clang_getNumCompletionChunks()</title>
+<indexterm><primary>clang_getNumCompletionChunks</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_getNumCompletionChunks</secondary></indexterm>
+<para><computeroutput>unsigned clang_getNumCompletionChunks (CXCompletionString completion_string)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l00187">187</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00188 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00189 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr?&#32;CCStr-&gt;size()&#32;:&#32;0;
+00190 }
+</programlisting>    </section><anchor xml:id="__c_index_code_completion_8cpp_1a15ff3b3f6b97479e2516f3e4993a9baa"/>    <section>
+    <title>clang_sortCodeCompletionResults()</title>
+<indexterm><primary>clang_sortCodeCompletionResults</primary><secondary>CIndexCodeCompletion.cpp</secondary></indexterm>
+<indexterm><primary>CIndexCodeCompletion.cpp</primary><secondary>clang_sortCodeCompletionResults</secondary></indexterm>
+<para><computeroutput>void clang_sortCodeCompletionResults (CXCompletionResult * Results, unsigned NumResults)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_code_completion_8cpp_source_1l01041">1041</link> of file <link linkend="__c_index_code_completion_8cpp_source">CIndexCodeCompletion.cpp</link>.</para>
+<programlisting>01042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01043 &#32;&#32;std::stable_sort(Results,&#32;Results&#32;+&#32;NumResults,&#32;OrderCompletionResults());
+01044 }
+</programlisting></section>
+</section>
+</section>

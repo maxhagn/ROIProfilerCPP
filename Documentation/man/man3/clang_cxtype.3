@@ -1,0 +1,69 @@
+.TH "clang::cxtype" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxtype
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXType \fBMakeCXType\fP (QualType T, CXTranslationUnit TU)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXType clang::cxtype::MakeCXType (QualType T, CXTranslationUnit TU)"
+
+.PP
+Definition at line 126 of file CXType\&.cpp\&.
+.PP
+.nf
+126                                                           {
+127   CXTypeKind TK = CXType_Invalid;
+128 
+129   if (TU && !T\&.isNull()) {
+130     // Handle attributed types as the original type
+131     if (auto *ATT = T->getAs<AttributedType>()) {
+132       if (!(TU->ParsingOptions & CXTranslationUnit_IncludeAttributedTypes)) {
+133         // Return the equivalent type which represents the canonically
+134         // equivalent type\&.
+135         return MakeCXType(ATT->getEquivalentType(), TU);
+136       }
+137     }
+138     // Handle paren types as the original type
+139     if (auto *PTT = T->getAs<ParenType>()) {
+140       return MakeCXType(PTT->getInnerType(), TU);
+141     }
+142 
+143     ASTContext &Ctx = cxtu::getASTUnit(TU)->getASTContext();
+144     if (Ctx\&.getLangOpts()\&.ObjC) {
+145       QualType UnqualT = T\&.getUnqualifiedType();
+146       if (Ctx\&.isObjCIdType(UnqualT))
+147         TK = CXType_ObjCId;
+148       else if (Ctx\&.isObjCClassType(UnqualT))
+149         TK = CXType_ObjCClass;
+150       else if (Ctx\&.isObjCSelType(UnqualT))
+151         TK = CXType_ObjCSel;
+152     }
+153 
+154     /* Handle decayed types as the original type */
+155     if (const DecayedType *DT = T->getAs<DecayedType>()) {
+156       return MakeCXType(DT->getOriginalType(), TU);
+157     }
+158   }
+159   if (TK == CXType_Invalid)
+160     TK = GetTypeKind(T);
+161 
+162   CXType CT = { TK, { TK == CXType_Invalid ? nullptr
+163                                            : T\&.getAsOpaquePtr(), TU } };
+164   return CT;
+165 }
+.fi
+.PP
+Referenced by clang_Cursor_getReceiverType(), clang_getCursorResultType(), clang_getCursorType(), clang_getEnumDeclIntegerType(), clang_getIBOutletCollectionType(), and clang_getTypedefDeclUnderlyingType()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

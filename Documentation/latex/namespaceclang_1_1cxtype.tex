@@ -1,0 +1,68 @@
+\hypertarget{namespaceclang_1_1cxtype}{}\doxysection{clang\+::cxtype Namespace Reference}
+\label{namespaceclang_1_1cxtype}\index{clang::cxtype@{clang::cxtype}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXType \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{Make\+CXType}} (Qual\+Type T, CXTranslation\+Unit TU)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}\label{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}} 
+\index{clang::cxtype@{clang::cxtype}!MakeCXType@{MakeCXType}}
+\index{MakeCXType@{MakeCXType}!clang::cxtype@{clang::cxtype}}
+\doxysubsubsection{\texorpdfstring{MakeCXType()}{MakeCXType()}}
+{\footnotesize\ttfamily CXType clang\+::cxtype\+::\+Make\+CXType (\begin{DoxyParamCaption}\item[{Qual\+Type}]{T,  }\item[{CXTranslation\+Unit}]{TU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 126 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{126                                                           \{}
+\DoxyCodeLine{127   CXTypeKind TK = CXType\_Invalid;}
+\DoxyCodeLine{128 }
+\DoxyCodeLine{129   \textcolor{keywordflow}{if} (TU \&\& !T.isNull()) \{}
+\DoxyCodeLine{130     \textcolor{comment}{// Handle attributed types as the original type}}
+\DoxyCodeLine{131     \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} *ATT = T-\/>getAs<AttributedType>()) \{}
+\DoxyCodeLine{132       \textcolor{keywordflow}{if} (!(TU-\/>ParsingOptions \& CXTranslationUnit\_IncludeAttributedTypes)) \{}
+\DoxyCodeLine{133         \textcolor{comment}{// Return the equivalent type which represents the canonically}}
+\DoxyCodeLine{134         \textcolor{comment}{// equivalent type.}}
+\DoxyCodeLine{135         \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(ATT-\/>getEquivalentType(), TU);}
+\DoxyCodeLine{136       \}}
+\DoxyCodeLine{137     \}}
+\DoxyCodeLine{138     \textcolor{comment}{// Handle paren types as the original type}}
+\DoxyCodeLine{139     \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} *PTT = T-\/>getAs<ParenType>()) \{}
+\DoxyCodeLine{140       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(PTT-\/>getInnerType(), TU);}
+\DoxyCodeLine{141     \}}
+\DoxyCodeLine{142 }
+\DoxyCodeLine{143     ASTContext \&Ctx = cxtu::getASTUnit(TU)-\/>getASTContext();}
+\DoxyCodeLine{144     \textcolor{keywordflow}{if} (Ctx.getLangOpts().ObjC) \{}
+\DoxyCodeLine{145       QualType UnqualT = T.getUnqualifiedType();}
+\DoxyCodeLine{146       \textcolor{keywordflow}{if} (Ctx.isObjCIdType(UnqualT))}
+\DoxyCodeLine{147         TK = CXType\_ObjCId;}
+\DoxyCodeLine{148       \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (Ctx.isObjCClassType(UnqualT))}
+\DoxyCodeLine{149         TK = CXType\_ObjCClass;}
+\DoxyCodeLine{150       \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (Ctx.isObjCSelType(UnqualT))}
+\DoxyCodeLine{151         TK = CXType\_ObjCSel;}
+\DoxyCodeLine{152     \}}
+\DoxyCodeLine{153 }
+\DoxyCodeLine{154     \textcolor{comment}{/* Handle decayed types as the original type */}}
+\DoxyCodeLine{155     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} DecayedType *DT = T-\/>getAs<DecayedType>()) \{}
+\DoxyCodeLine{156       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(DT-\/>getOriginalType(), TU);}
+\DoxyCodeLine{157     \}}
+\DoxyCodeLine{158   \}}
+\DoxyCodeLine{159   \textcolor{keywordflow}{if} (TK == CXType\_Invalid)}
+\DoxyCodeLine{160     TK = GetTypeKind(T);}
+\DoxyCodeLine{161 }
+\DoxyCodeLine{162   CXType CT = \{ TK, \{ TK == CXType\_Invalid ? nullptr}
+\DoxyCodeLine{163                                            : T.getAsOpaquePtr(), TU \} \};}
+\DoxyCodeLine{164   \textcolor{keywordflow}{return} CT;}
+\DoxyCodeLine{165 \}}
+
+\end{DoxyCode}
+
+
+Referenced by clang\+\_\+\+Cursor\+\_\+get\+Receiver\+Type(), clang\+\_\+get\+Cursor\+Result\+Type(), clang\+\_\+get\+Cursor\+Type(), clang\+\_\+get\+Enum\+Decl\+Integer\+Type(), clang\+\_\+get\+IBOutlet\+Collection\+Type(), and clang\+\_\+get\+Typedef\+Decl\+Underlying\+Type().
+

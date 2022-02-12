@@ -1,0 +1,82 @@
+\hypertarget{_clang_refactor_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/refactor/\+Clang\+Refactor.cpp File Reference}
+\label{_clang_refactor_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/refactor/ClangRefactor.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/refactor/ClangRefactor.cpp}}
+{\ttfamily \#include \char`\"{}Test\+Support.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Command\+Line\+Source\+Loc.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Text\+Diagnostic\+Printer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Rewrite/\+Core/\+Rewriter.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Common\+Options\+Parser.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Refactoring.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Refactoring/\+Refactoring\+Action.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Refactoring/\+Refactoring\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Refactoring/\+Rename/\+Renaming\+Action.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Tooling.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$string$>$}\newline
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespaceopts}{opts}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_refactor_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file implements a clang-\/refactor tool that performs various source transformations. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_refactor_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_refactor_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangRefactor.cpp@{ClangRefactor.cpp}!main@{main}}
+\index{main@{main}!ClangRefactor.cpp@{ClangRefactor.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 610 of file Clang\+Refactor.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{610                                       \{}
+\DoxyCodeLine{611   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{612 }
+\DoxyCodeLine{613   ClangRefactorTool RefactorTool;}
+\DoxyCodeLine{614 }
+\DoxyCodeLine{615   \textcolor{keyword}{auto} ExpectedParser = CommonOptionsParser::create(}
+\DoxyCodeLine{616       argc, argv, cl::GeneralCategory, cl::ZeroOrMore,}
+\DoxyCodeLine{617       \textcolor{stringliteral}{"{}Clang-\/based refactoring tool for C, C++ and Objective-\/C"{}});}
+\DoxyCodeLine{618   \textcolor{keywordflow}{if} (!ExpectedParser) \{}
+\DoxyCodeLine{619     llvm::errs() << ExpectedParser.takeError();}
+\DoxyCodeLine{620     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{621   \}}
+\DoxyCodeLine{622   CommonOptionsParser \&Options = ExpectedParser.get();}
+\DoxyCodeLine{623 }
+\DoxyCodeLine{624   \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} Err = RefactorTool.Init()) \{}
+\DoxyCodeLine{625     llvm::errs() << llvm::toString(std::move(Err)) << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{626     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{627   \}}
+\DoxyCodeLine{628 }
+\DoxyCodeLine{629   \textcolor{keyword}{auto} ActionFactory = RefactorTool.getFrontendActionFactory();}
+\DoxyCodeLine{630   \textcolor{keywordflow}{if} (!ActionFactory) \{}
+\DoxyCodeLine{631     llvm::errs() << llvm::toString(ActionFactory.takeError()) << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{632     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{633   \}}
+\DoxyCodeLine{634   ClangTool Tool(Options.getCompilations(), Options.getSourcePathList());}
+\DoxyCodeLine{635   \textcolor{keywordtype}{bool} Failed = \textcolor{keyword}{false};}
+\DoxyCodeLine{636   \textcolor{keywordflow}{if} (Tool.run(ActionFactory-\/>get()) != 0) \{}
+\DoxyCodeLine{637     llvm::errs() << \textcolor{stringliteral}{"{}Failed to run refactoring action on files\(\backslash\)n"{}};}
+\DoxyCodeLine{638     \textcolor{comment}{// It is possible that TUs are broken while changes are generated correctly,}}
+\DoxyCodeLine{639     \textcolor{comment}{// so we still try applying changes.}}
+\DoxyCodeLine{640     Failed = \textcolor{keyword}{true};}
+\DoxyCodeLine{641   \}}
+\DoxyCodeLine{642   \textcolor{keywordflow}{return} RefactorTool.applySourceChanges() || Failed ||}
+\DoxyCodeLine{643          RefactorTool.hasFailed();}
+\DoxyCodeLine{644 \}}
+
+\end{DoxyCode}

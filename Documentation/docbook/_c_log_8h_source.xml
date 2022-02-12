@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_log_8h_source" xml:lang="en-US">
+<title>CLog.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CLog.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CLog.h&#32;-&#32;Logging&#32;Interface&#32;-------------------------------*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CLOG_H</emphasis>
+00010 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CLOG_H</emphasis>
+00011 
+00012 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/IntrusiveRefCntPtr.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringRef.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Compiler.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00020 
+00021 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>&#32;{
+00022 <emphasis role="keyword">class&#32;</emphasis>format_object_base;
+00023 }
+00024 
+00025 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00026 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>FileEntry;
+00027 
+00028 <emphasis role="keyword">namespace&#32;</emphasis>cxindex&#32;{
+00029 
+00030 <emphasis role="keyword">class&#32;</emphasis>Logger;
+<anchor xml:id="__c_log_8h_source_1l00031"/><link linkend="_namespaceclang_1_1cxindex_1a404a46a001568431816a6c375e7cd810">00031</link> <emphasis role="keyword">typedef</emphasis>&#32;IntrusiveRefCntPtr&lt;Logger&gt;&#32;<link linkend="_namespaceclang_1_1cxindex_1a404a46a001568431816a6c375e7cd810">LogRef</link>;
+00032 
+<anchor xml:id="__c_log_8h_source_1l00040"/><link linkend="_classclang_1_1cxindex_1_1_logger">00040</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;RefCountedBase&lt;Logger&gt;&#32;{
+00041 &#32;&#32;std::string&#32;Name;
+00042 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Trace;
+00043 &#32;&#32;SmallString&lt;64&gt;&#32;Msg;
+00044 &#32;&#32;llvm::raw_svector_ostream&#32;LogOS;
+00045 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__c_log_8h_source_1l00046"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a2a80ef2474eacc5200a8e43b66c5ba74">00046</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<link linkend="_classclang_1_1cxindex_1_1_logger_1a2a80ef2474eacc5200a8e43b66c5ba74">getEnvVar</link>()&#32;{
+00047 &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*sCachedVar&#32;=&#32;::getenv(<emphasis role="stringliteral">&quot;LIBCLANG_LOGGING&quot;</emphasis>);
+00048 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;sCachedVar;
+00049 &#32;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00050"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a33f38d28f1208995a7a279c47dc26dee">00050</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a33f38d28f1208995a7a279c47dc26dee">isLoggingEnabled</link>()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a2a80ef2474eacc5200a8e43b66c5ba74">getEnvVar</link>()&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00051"/><link linkend="_classclang_1_1cxindex_1_1_logger_1af9f295bd79ae0f87d8c729cc1e9f8839">00051</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1af9f295bd79ae0f87d8c729cc1e9f8839">isStackTracingEnabled</link>()&#32;{
+00052 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*EnvOpt&#32;=&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a2a80ef2474eacc5200a8e43b66c5ba74">Logger::getEnvVar</link>())
+00053 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::StringRef(EnvOpt)&#32;==&#32;<emphasis role="stringliteral">&quot;2&quot;</emphasis>;
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00055 &#32;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00056"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a3baec221eac793eb7f974cc709b55bb3">00056</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<link linkend="_namespaceclang_1_1cxindex_1a404a46a001568431816a6c375e7cd810">LogRef</link>&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a3baec221eac793eb7f974cc709b55bb3">make</link>(llvm::StringRef&#32;name,
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;trace&#32;=&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1af9f295bd79ae0f87d8c729cc1e9f8839">isStackTracingEnabled</link>())&#32;{
+00058 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_logger_1a33f38d28f1208995a7a279c47dc26dee">isLoggingEnabled</link>())
+00059 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a15d1595c84d887c18f1e95e56b3a4544">Logger</link>(name,&#32;trace);
+00060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00061 &#32;&#32;}
+00062 
+<anchor xml:id="__c_log_8h_source_1l00063"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a15d1595c84d887c18f1e95e56b3a4544">00063</link> &#32;&#32;<emphasis role="keyword">explicit</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a15d1595c84d887c18f1e95e56b3a4544">Logger</link>(llvm::StringRef&#32;name,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;trace)
+00064 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;Name(std::string(name)),&#32;Trace(trace),&#32;LogOS(Msg)&#32;{}
+00065 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger_1a516d6c56208926869892fe963609188b">~Logger</link>();
+00066 
+00067 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(CXTranslationUnit);
+00068 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE);
+00069 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(CXCursor&#32;cursor);
+00070 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(CXSourceLocation);
+00071 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(CXSourceRange);
+00072 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(CXString);
+<anchor xml:id="__c_log_8h_source_1l00073"/><link linkend="_classclang_1_1cxindex_1_1_logger_1aef640ad0edd2bf80ccec7551f2b1660c">00073</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1aef640ad0edd2bf80ccec7551f2b1660c">operator&lt;&lt;</link>(llvm::StringRef&#32;Str)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;Str;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00074"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a56ca8321d71d4b95e57e5125363109bb">00074</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a56ca8321d71d4b95e57e5125363109bb">operator&lt;&lt;</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Str)&#32;{
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Str)
+00076 &#32;&#32;&#32;&#32;&#32;&#32;LogOS&#32;&lt;&lt;&#32;Str;
+00077 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;
+00078 &#32;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00079"/><link linkend="_classclang_1_1cxindex_1_1_logger_1aeb714f5bac1ea79f9a7d4a7576a35e4a">00079</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1aeb714f5bac1ea79f9a7d4a7576a35e4a">operator&lt;&lt;</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;N)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;N;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00080"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a2e8731c4f4ed781d6556deaf9623d4f4">00080</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a2e8731c4f4ed781d6556deaf9623d4f4">operator&lt;&lt;</link>(<emphasis role="keywordtype">long</emphasis>&#32;N)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;N&#32;;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00081"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a822a268e0a363b1f035450f66ce82b7d">00081</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a822a268e0a363b1f035450f66ce82b7d">operator&lt;&lt;</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;N)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;N;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00082"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a1e7c9b69f72574aac0ef7291aae27361">00082</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a1e7c9b69f72574aac0ef7291aae27361">operator&lt;&lt;</link>(<emphasis role="keywordtype">int</emphasis>&#32;N)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;N;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00083"/><link linkend="_classclang_1_1cxindex_1_1_logger_1aa68ba21772241b4dd3e673f4594e1b62">00083</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1aa68ba21772241b4dd3e673f4594e1b62">operator&lt;&lt;</link>(<emphasis role="keywordtype">char</emphasis>&#32;C)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;C;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00084"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a7eb6d48af5cd2c755d2cd1628dd6e29a">00084</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a7eb6d48af5cd2c755d2cd1628dd6e29a">operator&lt;&lt;</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;C)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;C;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+<anchor xml:id="__c_log_8h_source_1l00085"/><link linkend="_classclang_1_1cxindex_1_1_logger_1a824b1b2f5fd27af757af2882d897e5d1">00085</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a824b1b2f5fd27af757af2882d897e5d1">operator&lt;&lt;</link>(<emphasis role="keywordtype">signed</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;C)&#32;{&#32;LogOS&#32;&lt;&lt;&#32;C;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>;&#32;}
+00086 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_logger">Logger</link>&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_logger_1a051287c9aa1d57fb4f8db77f51934cd8">operator&lt;&lt;</link>(<emphasis role="keyword">const</emphasis>&#32;llvm::format_object_base&#32;&amp;Fmt);
+00087 };
+00088 
+00089 }
+00090 }
+00091 
+<anchor xml:id="__c_log_8h_source_1l00098"/><link linkend="__c_log_8h_1ad27ab613fdc5ed190bb7f28282fa3a88">00098</link> <emphasis role="preprocessor">#define&#32;LOG_SECTION(NAME)&#32;\</emphasis>
+00099 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;if&#32;(clang::cxindex::LogRef&#32;Log&#32;=&#32;clang::cxindex::Logger::make(NAME))</emphasis>
+<anchor xml:id="__c_log_8h_source_1l00100"/><link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">00100</link> <emphasis role="preprocessor">#define&#32;LOG_FUNC_SECTION&#32;LOG_SECTION(__func__)</emphasis>
+00101 
+00102 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

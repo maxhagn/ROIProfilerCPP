@@ -1,0 +1,267 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_intercept_8py_source" xml:lang="en-US">
+<title>intercept.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libscanbuild/intercept.py</primary></indexterm>
+<programlisting><anchor xml:id="_intercept_8py_source_1l00001"/><link linkend="_namespacelibscanbuild_1_1intercept">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 <emphasis role="stringliteral">&quot;&quot;&quot;&#32;This&#32;module&#32;is&#32;responsible&#32;to&#32;capture&#32;the&#32;compiler&#32;invocation&#32;of&#32;any</emphasis>
+00006 <emphasis role="stringliteral">build&#32;process.&#32;The&#32;result&#32;of&#32;that&#32;should&#32;be&#32;a&#32;compilation&#32;database.</emphasis>
+00007 <emphasis role="stringliteral"></emphasis>
+00008 <emphasis role="stringliteral">This&#32;implementation&#32;is&#32;using&#32;the&#32;LD_PRELOAD&#32;or&#32;DYLD_INSERT_LIBRARIES</emphasis>
+00009 <emphasis role="stringliteral">mechanisms&#32;provided&#32;by&#32;the&#32;dynamic&#32;linker.&#32;The&#32;related&#32;library&#32;is&#32;implemented</emphasis>
+00010 <emphasis role="stringliteral">in&#32;C&#32;language&#32;and&#32;can&#32;be&#32;found&#32;under&#32;&apos;libear&apos;&#32;directory.</emphasis>
+00011 <emphasis role="stringliteral"></emphasis>
+00012 <emphasis role="stringliteral">The&#32;&apos;libear&apos;&#32;library&#32;is&#32;capturing&#32;all&#32;child&#32;process&#32;creation&#32;and&#32;logging&#32;the</emphasis>
+00013 <emphasis role="stringliteral">relevant&#32;information&#32;about&#32;it&#32;into&#32;separate&#32;files&#32;in&#32;a&#32;specified&#32;directory.</emphasis>
+00014 <emphasis role="stringliteral">The&#32;parameter&#32;of&#32;this&#32;process&#32;is&#32;the&#32;output&#32;directory&#32;name,&#32;where&#32;the&#32;report</emphasis>
+00015 <emphasis role="stringliteral">files&#32;shall&#32;be&#32;placed.&#32;This&#32;parameter&#32;is&#32;passed&#32;as&#32;an&#32;environment&#32;variable.</emphasis>
+00016 <emphasis role="stringliteral"></emphasis>
+00017 <emphasis role="stringliteral">The&#32;module&#32;also&#32;implements&#32;compiler&#32;wrappers&#32;to&#32;intercept&#32;the&#32;compiler&#32;calls.</emphasis>
+00018 <emphasis role="stringliteral"></emphasis>
+00019 <emphasis role="stringliteral">The&#32;module&#32;implements&#32;the&#32;build&#32;command&#32;execution&#32;and&#32;the&#32;post-processing&#32;of</emphasis>
+00020 <emphasis role="stringliteral">the&#32;output&#32;files,&#32;which&#32;will&#32;condensates&#32;into&#32;a&#32;compilation&#32;database.&#32;&quot;&quot;&quot;</emphasis>
+00021 
+00022 <emphasis role="keyword">import</emphasis>&#32;sys
+00023 <emphasis role="keyword">import</emphasis>&#32;os
+00024 <emphasis role="keyword">import</emphasis>&#32;os.path
+00025 <emphasis role="keyword">import</emphasis>&#32;re
+00026 <emphasis role="keyword">import</emphasis>&#32;itertools
+00027 <emphasis role="keyword">import</emphasis>&#32;json
+00028 <emphasis role="keyword">import</emphasis>&#32;glob
+00029 <emphasis role="keyword">import</emphasis>&#32;logging
+00030 <emphasis role="keyword">from</emphasis>&#32;libear&#32;<emphasis role="keyword">import</emphasis>&#32;build_libear,&#32;TemporaryDirectory
+00031 <emphasis role="keyword">from</emphasis>&#32;libscanbuild&#32;<emphasis role="keyword">import</emphasis>&#32;command_entry_point,&#32;compiler_wrapper,&#32;\
+00032 &#32;&#32;&#32;&#32;wrapper_environment,&#32;run_command,&#32;run_build
+00033 <emphasis role="keyword">from</emphasis>&#32;libscanbuild&#32;<emphasis role="keyword">import</emphasis>&#32;duplicate_check
+00034 <emphasis role="keyword">from</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1compilation">libscanbuild.compilation</link>&#32;<emphasis role="keyword">import</emphasis>&#32;split_command
+00035 <emphasis role="keyword">from</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1arguments">libscanbuild.arguments</link>&#32;<emphasis role="keyword">import</emphasis>&#32;parse_args_for_intercept_build
+00036 <emphasis role="keyword">from</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1shell">libscanbuild.shell</link>&#32;<emphasis role="keyword">import</emphasis>&#32;encode,&#32;decode
+00037 
+00038 __all__&#32;=&#32;[<emphasis role="stringliteral">&apos;capture&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;intercept_build&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;intercept_compiler_wrapper&apos;</emphasis>]
+00039 
+<anchor xml:id="_intercept_8py_source_1l00040"/><link linkend="_namespacelibscanbuild_1_1intercept_1a307b2d7b862024676bdb2673d5595776">00040</link> GS&#32;=&#32;chr(0x1d)
+<anchor xml:id="_intercept_8py_source_1l00041"/><link linkend="_namespacelibscanbuild_1_1intercept_1a70509b5a32754857d53f0392c87c9277">00041</link> RS&#32;=&#32;chr(0x1e)
+<anchor xml:id="_intercept_8py_source_1l00042"/><link linkend="_namespacelibscanbuild_1_1intercept_1aefa6b23a1094176aebd5b22501cd30c7">00042</link> US&#32;=&#32;chr(0x1f)
+00043 
+<anchor xml:id="_intercept_8py_source_1l00044"/><link linkend="_namespacelibscanbuild_1_1intercept_1ac3e240b7ff2f76f266fca8f82be986a3">00044</link> COMPILER_WRAPPER_CC&#32;=&#32;<emphasis role="stringliteral">&apos;intercept-cc&apos;</emphasis>
+<anchor xml:id="_intercept_8py_source_1l00045"/><link linkend="_namespacelibscanbuild_1_1intercept_1a6926e333d72d33cd911921f77907bd74">00045</link> COMPILER_WRAPPER_CXX&#32;=&#32;<emphasis role="stringliteral">&apos;intercept-c++&apos;</emphasis>
+<anchor xml:id="_intercept_8py_source_1l00046"/><link linkend="_namespacelibscanbuild_1_1intercept_1a156387fd30e8c79957b8f52932416644">00046</link> TRACE_FILE_EXTENSION&#32;=&#32;<emphasis role="stringliteral">&apos;.cmd&apos;</emphasis>&#32;&#32;<emphasis role="comment">#&#32;same&#32;as&#32;in&#32;ear.c</emphasis>
+<anchor xml:id="_intercept_8py_source_1l00047"/><link linkend="_namespacelibscanbuild_1_1intercept_1a9402d37c0e8842ed432ecf8865248989">00047</link> WRAPPER_ONLY_PLATFORMS&#32;=&#32;frozenset({<emphasis role="stringliteral">&apos;win32&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;cygwin&apos;</emphasis>})
+00048 
+00049 
+00050 <emphasis role="preprocessor">@command_entry_point</emphasis>
+<anchor xml:id="_intercept_8py_source_1l00051"/><link linkend="_namespacelibscanbuild_1_1intercept_1a97809302cad404d232158e3f84bdadff">00051</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1a97809302cad404d232158e3f84bdadff">intercept_build</link>():
+00052 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Entry&#32;point&#32;for&#32;&apos;intercept-build&apos;&#32;command.&#32;&quot;&quot;&quot;</emphasis>
+00053 
+00054 &#32;&#32;&#32;&#32;args&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1arguments_1aab7ce55617922a43040742e5e517f0e3">parse_args_for_intercept_build</link>()
+00055 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a86c3040b1932a4e5ab92fc0208cf7376">capture</link>(args)
+00056 
+00057 
+<anchor xml:id="_intercept_8py_source_1l00058"/><link linkend="_namespacelibscanbuild_1_1intercept_1a86c3040b1932a4e5ab92fc0208cf7376">00058</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1a86c3040b1932a4e5ab92fc0208cf7376">capture</link>(args):
+00059 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;The&#32;entry&#32;point&#32;of&#32;build&#32;command&#32;interception.&#32;&quot;&quot;&quot;</emphasis>
+00060 
+00061 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>post_processing(commands):
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;To&#32;make&#32;a&#32;compilation&#32;database,&#32;it&#32;needs&#32;to&#32;filter&#32;out&#32;commands</emphasis>
+00063 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;which&#32;are&#32;not&#32;compiler&#32;calls.&#32;Needs&#32;to&#32;find&#32;the&#32;source&#32;file&#32;name</emphasis>
+00064 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;from&#32;the&#32;arguments.&#32;And&#32;do&#32;shell&#32;escaping&#32;on&#32;the&#32;command.</emphasis>
+00065 <emphasis role="stringliteral"></emphasis>
+00066 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;To&#32;support&#32;incremental&#32;builds,&#32;it&#32;is&#32;desired&#32;to&#32;read&#32;elements&#32;from</emphasis>
+00067 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;an&#32;existing&#32;compilation&#32;database&#32;from&#32;a&#32;previous&#32;run.&#32;These&#32;elements</emphasis>
+00068 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;shall&#32;be&#32;merged&#32;with&#32;the&#32;new&#32;elements.&#32;&quot;&quot;&quot;</emphasis>
+00069 
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;create&#32;entries&#32;from&#32;the&#32;current&#32;run</emphasis>
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current&#32;=&#32;itertools.chain.from_iterable(
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;creates&#32;a&#32;sequence&#32;of&#32;entry&#32;generators&#32;from&#32;an&#32;exec,</emphasis>
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1ac00ba9fb75849d64f22b13a1e309c930">format_entry</link>(command)&#32;<emphasis role="keywordflow">for</emphasis>&#32;command&#32;<emphasis role="keywordflow">in</emphasis>&#32;commands)
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;read&#32;entries&#32;from&#32;previous&#32;run</emphasis>
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;append&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;args&#32;<emphasis role="keywordflow">and</emphasis>&#32;args.append&#32;<emphasis role="keywordflow">and</emphasis>&#32;os.path.isfile(args.cdb):
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(args.cdb)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;previous&#32;=&#32;iter(json.load(handle))
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;previous&#32;=&#32;iter([])
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;filter&#32;out&#32;duplicate&#32;entries&#32;from&#32;both</emphasis>
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;duplicate&#32;=&#32;<link linkend="_namespacelibscanbuild_1a0ddf12c926f03c7f5e3671f162f92832">duplicate_check</link>(entry_hash)
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(entry
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;entry&#32;<emphasis role="keywordflow">in</emphasis>&#32;itertools.chain(previous,&#32;current)
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;os.path.exists(entry[<emphasis role="stringliteral">&apos;file&apos;</emphasis>])&#32;<emphasis role="keywordflow">and</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;duplicate(entry))
+00085 
+00086 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">TemporaryDirectory</link>(prefix=<emphasis role="stringliteral">&apos;intercept-&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;tmp_dir:
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;run&#32;the&#32;build&#32;command</emphasis>
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;environment&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1aafa42528fad9fb2501fb6a4bf3d7ef89">setup_environment</link>(args,&#32;tmp_dir)
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code&#32;=&#32;<link linkend="_namespacelibscanbuild_1a18b34e68ad68eb5b285d3af3504c9b0c">run_build</link>(args.build,&#32;env=environment)
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;read&#32;the&#32;intercepted&#32;exec&#32;calls</emphasis>
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exec_traces&#32;=&#32;itertools.chain.from_iterable(
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1af3910155fe90f613b662d1d9d513ad9d">parse_exec_trace</link>(os.path.join(tmp_dir,&#32;filename))
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;filename&#32;<emphasis role="keywordflow">in</emphasis>&#32;sorted(glob.iglob(os.path.join(tmp_dir,&#32;<emphasis role="stringliteral">&apos;*.cmd&apos;</emphasis>))))
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;do&#32;post&#32;processing</emphasis>
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;entries&#32;=&#32;post_processing(exec_traces)
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;dump&#32;the&#32;compilation&#32;database</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(args.cdb,&#32;<emphasis role="stringliteral">&apos;w+&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;json.dump(list(entries),&#32;handle,&#32;sort_keys=<emphasis role="keyword">True</emphasis>,&#32;indent=4)
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;exit_code
+00100 
+00101 
+<anchor xml:id="_intercept_8py_source_1l00102"/><link linkend="_namespacelibscanbuild_1_1intercept_1aafa42528fad9fb2501fb6a4bf3d7ef89">00102</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1aafa42528fad9fb2501fb6a4bf3d7ef89">setup_environment</link>(args,&#32;destination):
+00103 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Sets&#32;up&#32;the&#32;environment&#32;for&#32;the&#32;build&#32;command.</emphasis>
+00104 <emphasis role="stringliteral"></emphasis>
+00105 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;It&#32;sets&#32;the&#32;required&#32;environment&#32;variables&#32;and&#32;execute&#32;the&#32;given&#32;command.</emphasis>
+00106 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;The&#32;exec&#32;calls&#32;will&#32;be&#32;logged&#32;by&#32;the&#32;&apos;libear&apos;&#32;preloaded&#32;library&#32;or&#32;by&#32;the</emphasis>
+00107 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&apos;wrapper&apos;&#32;programs.&#32;&quot;&quot;&quot;</emphasis>
+00108 
+00109 &#32;&#32;&#32;&#32;c_compiler&#32;=&#32;args.cc&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;cc&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;args&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;cc&apos;</emphasis>
+00110 &#32;&#32;&#32;&#32;cxx_compiler&#32;=&#32;args.cxx&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;cxx&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;args&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>
+00111 
+00112 &#32;&#32;&#32;&#32;libear_path&#32;=&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;args.override_compiler&#32;<emphasis role="keywordflow">or</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1ac3a5517eb86052c646288cd49281a25c">is_preload_disabled</link>(
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sys.platform)&#32;<emphasis role="keywordflow">else</emphasis>&#32;<link linkend="_namespacelibear_1a817eb807bbbffe9ca98d7fa2777cd182">build_libear</link>(c_compiler,&#32;destination)
+00114 
+00115 &#32;&#32;&#32;&#32;environment&#32;=&#32;dict(os.environ)
+00116 &#32;&#32;&#32;&#32;environment.update({<emphasis role="stringliteral">&apos;INTERCEPT_BUILD_TARGET_DIR&apos;</emphasis>:&#32;destination})
+00117 
+00118 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;libear_path:
+00119 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;intercept&#32;gonna&#32;use&#32;compiler&#32;wrappers&apos;</emphasis>)
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;environment.update(<link linkend="_namespacelibscanbuild_1a618962b6b79f889cbadd9fbc5971c938">wrapper_environment</link>(args))
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;environment.update({
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;CC&apos;</emphasis>:&#32;COMPILER_WRAPPER_CC,
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;CXX&apos;</emphasis>:&#32;COMPILER_WRAPPER_CXX
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;})
+00125 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;sys.platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>:
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;intercept&#32;gonna&#32;preload&#32;libear&#32;on&#32;OSX&apos;</emphasis>)
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;environment.update({
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;DYLD_INSERT_LIBRARIES&apos;</emphasis>:&#32;libear_path,
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;DYLD_FORCE_FLAT_NAMESPACE&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;1&apos;</emphasis>
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;})
+00131 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;intercept&#32;gonna&#32;preload&#32;libear&#32;on&#32;UNIX&apos;</emphasis>)
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;environment.update({<emphasis role="stringliteral">&apos;LD_PRELOAD&apos;</emphasis>:&#32;libear_path})
+00134 
+00135 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;environment
+00136 
+00137 
+00138 <emphasis role="preprocessor">@command_entry_point</emphasis>
+<anchor xml:id="_intercept_8py_source_1l00139"/><link linkend="_namespacelibscanbuild_1_1intercept_1aff99583eaa21de0e61e314e027166dc8">00139</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1aff99583eaa21de0e61e314e027166dc8">intercept_compiler_wrapper</link>():
+00140 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Entry&#32;point&#32;for&#32;`intercept-cc`&#32;and&#32;`intercept-c++`.&#32;&quot;&quot;&quot;</emphasis>
+00141 
+00142 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacelibscanbuild_1a395e584f9f6636d0f86868b62ef35780">compiler_wrapper</link>(intercept_compiler_wrapper_impl)
+00143 
+00144 
+<anchor xml:id="_intercept_8py_source_1l00145"/><link linkend="_namespacelibscanbuild_1_1intercept_1ab9e9bfd15852749d3c6738d260aa52f0">00145</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1ab9e9bfd15852749d3c6738d260aa52f0">intercept_compiler_wrapper_impl</link>(_,&#32;execution):
+00146 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Implement&#32;intercept&#32;compiler&#32;wrapper&#32;functionality.</emphasis>
+00147 <emphasis role="stringliteral"></emphasis>
+00148 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;It&#32;does&#32;generate&#32;execution&#32;report&#32;into&#32;target&#32;directory.</emphasis>
+00149 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;The&#32;target&#32;directory&#32;name&#32;is&#32;from&#32;environment&#32;variables.&#32;&quot;&quot;&quot;</emphasis>
+00150 
+00151 &#32;&#32;&#32;&#32;message_prefix&#32;=&#32;<emphasis role="stringliteral">&apos;execution&#32;report&#32;might&#32;be&#32;incomplete:&#32;%s&apos;</emphasis>
+00152 
+00153 &#32;&#32;&#32;&#32;target_dir&#32;=&#32;os.getenv(<emphasis role="stringliteral">&apos;INTERCEPT_BUILD_TARGET_DIR&apos;</emphasis>)
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;target_dir:
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.warning(message_prefix,&#32;<emphasis role="stringliteral">&apos;missing&#32;target&#32;directory&apos;</emphasis>)
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>
+00157 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;write&#32;current&#32;execution&#32;info&#32;to&#32;the&#32;pid&#32;file</emphasis>
+00158 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target_file_name&#32;=&#32;str(os.getpid())&#32;+&#32;TRACE_FILE_EXTENSION
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target_file&#32;=&#32;os.path.join(target_dir,&#32;target_file_name)
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;writing&#32;execution&#32;report&#32;to:&#32;%s&apos;</emphasis>,&#32;target_file)
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1aa8449b970ebc863de2ae6c19b9666a73">write_exec_trace</link>(target_file,&#32;execution)
+00163 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;IOError:
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.warning(message_prefix,&#32;<emphasis role="stringliteral">&apos;io&#32;problem&apos;</emphasis>)
+00165 
+00166 
+<anchor xml:id="_intercept_8py_source_1l00167"/><link linkend="_namespacelibscanbuild_1_1intercept_1aa8449b970ebc863de2ae6c19b9666a73">00167</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1aa8449b970ebc863de2ae6c19b9666a73">write_exec_trace</link>(filename,&#32;entry):
+00168 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Write&#32;execution&#32;report&#32;file.</emphasis>
+00169 <emphasis role="stringliteral"></emphasis>
+00170 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;This&#32;method&#32;shall&#32;be&#32;sync&#32;with&#32;the&#32;execution&#32;report&#32;writer&#32;in&#32;interception</emphasis>
+00171 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;library.&#32;The&#32;entry&#32;in&#32;the&#32;file&#32;is&#32;a&#32;JSON&#32;objects.</emphasis>
+00172 <emphasis role="stringliteral"></emphasis>
+00173 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;filename:&#32;&#32;&#32;&#32;path&#32;to&#32;the&#32;output&#32;execution&#32;trace&#32;file,</emphasis>
+00174 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;entry:&#32;&#32;&#32;&#32;&#32;&#32;&#32;the&#32;Execution&#32;object&#32;to&#32;append&#32;to&#32;that&#32;file.&#32;&quot;&quot;&quot;</emphasis>
+00175 
+00176 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;ab&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handler:
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pid&#32;=&#32;str(entry.pid)
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;command&#32;=&#32;US.join(entry.cmd)&#32;+&#32;US
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;RS.join([pid,&#32;pid,&#32;<emphasis role="stringliteral">&apos;wrapper&apos;</emphasis>,&#32;entry.cwd,&#32;command])&#32;+&#32;GS
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handler.write(content.encode(<emphasis role="stringliteral">&apos;utf-8&apos;</emphasis>))
+00181 
+00182 
+<anchor xml:id="_intercept_8py_source_1l00183"/><link linkend="_namespacelibscanbuild_1_1intercept_1af3910155fe90f613b662d1d9d513ad9d">00183</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1af3910155fe90f613b662d1d9d513ad9d">parse_exec_trace</link>(filename):
+00184 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Parse&#32;the&#32;file&#32;generated&#32;by&#32;the&#32;&apos;libear&apos;&#32;preloaded&#32;library.</emphasis>
+00185 <emphasis role="stringliteral"></emphasis>
+00186 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Given&#32;filename&#32;points&#32;to&#32;a&#32;file&#32;which&#32;contains&#32;the&#32;basic&#32;report</emphasis>
+00187 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;generated&#32;by&#32;the&#32;interception&#32;library&#32;or&#32;wrapper&#32;command.&#32;A&#32;single</emphasis>
+00188 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;report&#32;file&#32;_might_&#32;contain&#32;multiple&#32;process&#32;creation&#32;info.&#32;&quot;&quot;&quot;</emphasis>
+00189 
+00190 &#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;parse&#32;exec&#32;trace&#32;file:&#32;%s&apos;</emphasis>,&#32;filename)
+00191 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handler:
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;handler.read()
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;group&#32;<emphasis role="keywordflow">in</emphasis>&#32;filter(bool,&#32;content.split(GS)):
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;records&#32;=&#32;group.split(RS)
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;{
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;pid&apos;</emphasis>:&#32;records[0],
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;ppid&apos;</emphasis>:&#32;records[1],
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;function&apos;</emphasis>:&#32;records[2],
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;directory&apos;</emphasis>:&#32;records[3],
+00200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;command&apos;</emphasis>:&#32;records[4].split(US)[:-1]
+00201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00202 
+00203 
+<anchor xml:id="_intercept_8py_source_1l00204"/><link linkend="_namespacelibscanbuild_1_1intercept_1ac00ba9fb75849d64f22b13a1e309c930">00204</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1ac00ba9fb75849d64f22b13a1e309c930">format_entry</link>(exec_trace):
+00205 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Generate&#32;the&#32;desired&#32;fields&#32;for&#32;compilation&#32;database&#32;entries.&#32;&quot;&quot;&quot;</emphasis>
+00206 
+00207 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>abspath(cwd,&#32;name):
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Create&#32;normalized&#32;absolute&#32;path&#32;from&#32;input&#32;filename.&#32;&quot;&quot;&quot;</emphasis>
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fullname&#32;=&#32;name&#32;<emphasis role="keywordflow">if</emphasis>&#32;os.path.isabs(name)&#32;<emphasis role="keywordflow">else</emphasis>&#32;os.path.join(cwd,&#32;name)
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.path.normpath(fullname)
+00211 
+00212 &#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;format&#32;this&#32;command:&#32;%s&apos;</emphasis>,&#32;exec_trace[<emphasis role="stringliteral">&apos;command&apos;</emphasis>])
+00213 &#32;&#32;&#32;&#32;compilation&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1compilation_1ae846942ed0e175486de0bbe3a258852c">split_command</link>(exec_trace[<emphasis role="stringliteral">&apos;command&apos;</emphasis>])
+00214 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;compilation:
+00215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;source&#32;<emphasis role="keywordflow">in</emphasis>&#32;compilation.files:
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;compilation.compiler&#32;==&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;cc&apos;</emphasis>
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;command&#32;=&#32;[compiler,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>]&#32;+&#32;compilation.flags&#32;+&#32;[source]
+00218 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;formated&#32;as:&#32;%s&apos;</emphasis>,&#32;command)
+00219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;{
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;directory&apos;</emphasis>:&#32;exec_trace[<emphasis role="stringliteral">&apos;directory&apos;</emphasis>],
+00221 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;command&apos;</emphasis>:&#32;<link linkend="_namespacelibscanbuild_1_1shell_1ac92beb78a0b5fd06775e27d7b87870ed">encode</link>(command),
+00222 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;abspath(exec_trace[<emphasis role="stringliteral">&apos;directory&apos;</emphasis>],&#32;source)
+00223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00224 
+00225 
+<anchor xml:id="_intercept_8py_source_1l00226"/><link linkend="_namespacelibscanbuild_1_1intercept_1ac3a5517eb86052c646288cd49281a25c">00226</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1ac3a5517eb86052c646288cd49281a25c">is_preload_disabled</link>(platform):
+00227 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Library-based&#32;interposition&#32;will&#32;fail&#32;silently&#32;if&#32;SIP&#32;is&#32;enabled,</emphasis>
+00228 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;so&#32;this&#32;should&#32;be&#32;detected.&#32;You&#32;can&#32;detect&#32;whether&#32;SIP&#32;is&#32;enabled&#32;on</emphasis>
+00229 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Darwin&#32;by&#32;checking&#32;whether&#32;(1)&#32;there&#32;is&#32;a&#32;binary&#32;called&#32;&apos;csrutil&apos;&#32;in</emphasis>
+00230 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;the&#32;path&#32;and,&#32;if&#32;so,&#32;(2)&#32;whether&#32;the&#32;output&#32;of&#32;executing&#32;&apos;csrutil&#32;status&apos;</emphasis>
+00231 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;contains&#32;&apos;System&#32;Integrity&#32;Protection&#32;status:&#32;enabled&apos;.</emphasis>
+00232 <emphasis role="stringliteral"></emphasis>
+00233 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;platform:&#32;name&#32;of&#32;the&#32;platform&#32;(returned&#32;by&#32;sys.platform),</emphasis>
+00234 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;True&#32;if&#32;library&#32;preload&#32;will&#32;fail&#32;by&#32;the&#32;dynamic&#32;linker.&#32;&quot;&quot;&quot;</emphasis>
+00235 
+00236 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;platform&#32;<emphasis role="keywordflow">in</emphasis>&#32;WRAPPER_ONLY_PLATFORMS:
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">True</emphasis>
+00238 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>:
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;command&#32;=&#32;[<emphasis role="stringliteral">&apos;csrutil&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;status&apos;</emphasis>]
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pattern&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;System&#32;Integrity&#32;Protection&#32;status:\s+enabled&apos;</emphasis>)
+00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;any(pattern.match(line)&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1a243b8757d8cfbc0be023301a8b951d6c">run_command</link>(command))
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00245 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00247 
+00248 
+<anchor xml:id="_intercept_8py_source_1l00249"/><link linkend="_namespacelibscanbuild_1_1intercept_1acd8bb59dc861fe2ce32fda65a4226d7c">00249</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1intercept_1acd8bb59dc861fe2ce32fda65a4226d7c">entry_hash</link>(entry):
+00250 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Implement&#32;unique&#32;hash&#32;method&#32;for&#32;compilation&#32;database&#32;entries.&#32;&quot;&quot;&quot;</emphasis>
+00251 
+00252 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;For&#32;faster&#32;lookup&#32;in&#32;set&#32;filename&#32;is&#32;reverted</emphasis>
+00253 &#32;&#32;&#32;&#32;filename&#32;=&#32;entry[<emphasis role="stringliteral">&apos;file&apos;</emphasis>][::-1]
+00254 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;For&#32;faster&#32;lookup&#32;in&#32;set&#32;directory&#32;is&#32;reverted</emphasis>
+00255 &#32;&#32;&#32;&#32;directory&#32;=&#32;entry[<emphasis role="stringliteral">&apos;directory&apos;</emphasis>][::-1]
+00256 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;On&#32;OS&#32;X&#32;the&#32;&apos;cc&apos;&#32;and&#32;&apos;c++&apos;&#32;compilers&#32;are&#32;wrappers&#32;for</emphasis>
+00257 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;&apos;clang&apos;&#32;therefore&#32;both&#32;call&#32;would&#32;be&#32;logged.&#32;To&#32;avoid</emphasis>
+00258 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;this&#32;the&#32;hash&#32;does&#32;not&#32;contain&#32;the&#32;first&#32;word&#32;of&#32;the</emphasis>
+00259 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;command.</emphasis>
+00260 &#32;&#32;&#32;&#32;command&#32;=&#32;<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>.join(<link linkend="_namespacelibscanbuild_1_1shell_1ae2a3d56a48c3f8031021d617491be88c">decode</link>(entry[<emphasis role="stringliteral">&apos;command&apos;</emphasis>])[1:])
+00261 
+00262 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;&lt;&gt;&apos;</emphasis>.join([filename,&#32;directory,&#32;command])
+</programlisting></section>

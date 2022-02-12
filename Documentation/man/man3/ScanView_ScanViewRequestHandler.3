@@ -1,0 +1,859 @@
+.TH "ScanView.ScanViewRequestHandler" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ScanView.ScanViewRequestHandler
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits SimpleHTTPRequestHandler\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBdo_HEAD\fP (self)"
+.br
+.ti -1c
+.RI "def \fBdo_GET\fP (self)"
+.br
+.ti -1c
+.RI "def \fBdo_POST\fP (self)"
+.br
+.ti -1c
+.RI "def \fBlog_message\fP (self, format, *args)"
+.br
+.ti -1c
+.RI "def \fBload_report\fP (self, report)"
+.br
+.ti -1c
+.RI "def \fBload_crashes\fP (self)"
+.br
+.ti -1c
+.RI "def \fBhandle_exception\fP (self, exc)"
+.br
+.ti -1c
+.RI "def \fBget_scalar_field\fP (self, name)"
+.br
+.ti -1c
+.RI "def \fBsubmit_bug\fP (self, c)"
+.br
+.ti -1c
+.RI "def \fBsend_report_submit\fP (self)"
+.br
+.ti -1c
+.RI "def \fBsend_open_report\fP (self, report)"
+.br
+.ti -1c
+.RI "def \fBget_report_context\fP (self, report)"
+.br
+.ti -1c
+.RI "def \fBsend_report\fP (self, report, configOverrides=None)"
+.br
+.ti -1c
+.RI "def \fBsend_head\fP (self, \fBfields\fP=None)"
+.br
+.ti -1c
+.RI "def \fBsend_404\fP (self)"
+.br
+.ti -1c
+.RI "def \fBsend_path\fP (self, path)"
+.br
+.ti -1c
+.RI "def \fBsend_file\fP (self, f, ctype)"
+.br
+.ti -1c
+.RI "def \fBsend_string\fP (self, s, ctype='text/html', headers=True, mtime=None)"
+.br
+.ti -1c
+.RI "def \fBsend_patched_file\fP (self, path, ctype)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBfields\fP"
+.br
+.in -1c
+.SS "Static Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "string \fBserver_version\fP = 'ScanViewServer/' + __version__"
+.br
+.ti -1c
+.RI "\fBdynamic_mtime\fP = time\&.time()"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 220 of file ScanView\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def ScanView\&.ScanViewRequestHandler\&.do_GET ( self)"
+
+.PP
+Definition at line 230 of file ScanView\&.py\&.
+.PP
+.nf
+230     def do_GET(self):
+231         try:
+232             SimpleHTTPRequestHandler\&.do_GET(self)
+233         except Exception as e:
+234             self\&.handle_exception(e)
+235             
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.handle_exception()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.do_HEAD ( self)"
+
+.PP
+Definition at line 224 of file ScanView\&.py\&.
+.PP
+.nf
+224     def do_HEAD(self):
+225         try:
+226             SimpleHTTPRequestHandler\&.do_HEAD(self)
+227         except Exception as e:
+228             self\&.handle_exception(e)
+229             
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.handle_exception()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.do_POST ( self)"
+
+.PP
+.nf
+Serve a POST request.
+.fi
+.PP
+ 
+.PP
+Definition at line 236 of file ScanView\&.py\&.
+.PP
+.nf
+236     def do_POST(self):
+237         """Serve a POST request\&."""
+238         try:
+239             length = self\&.headers\&.getheader('content-length') or "0"
+240             try:
+241                 length = int(length)
+242             except:
+243                 length = 0
+244             content = self\&.rfile\&.read(length)
+245             fields = parse_query(content)
+246             f = self\&.send_head(fields)
+247             if f:
+248                 self\&.copyfile(f, self\&.wfile)
+249                 f\&.close()
+250         except Exception as e:
+251             self\&.handle_exception(e)            
+252 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.handle_exception(), ScanView\&.parse_query(), and ScanView\&.ScanViewRequestHandler\&.send_head()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.get_report_context ( self,  report)"
+
+.PP
+Definition at line 441 of file ScanView\&.py\&.
+.PP
+.nf
+441     def get_report_context(self, report):
+442         class Context(object):
+443             pass
+444         if report is None or report == 'None':
+445             data = self\&.load_crashes()
+446             # Don't allow empty reports\&.
+447             if not data:
+448                 raise ValueError('No crashes detected!')
+449             c = Context()
+450             c\&.title = 'clang static analyzer failures'
+451 
+452             stderrSummary = ""
+453             for item in data:
+454                 if 'stderr' in item:
+455                     path = posixpath\&.join(self\&.server\&.root, item['stderr'])
+456                     if os\&.path\&.exists(path):
+457                         lns = itertools\&.islice(open(path), 0, 10)
+458                         stderrSummary += '%s\n--\n%s' % (item\&.get('src', 
+459                                                                   '<unknown>'),
+460                                                          ''\&.join(lns))
+461 
+462             c\&.description = """\
+463 The clang static analyzer failed on these inputs:
+464 %s
+465 
+466 STDERR Summary
+467 --------------
+468 %s
+469 """ % ('\n'\&.join([item\&.get('src','<unknown>') for item in data]),
+470        stderrSummary)
+471             c\&.reportSource = None
+472             c\&.navMarkup = "Report Crashes > "
+473             c\&.files = []
+474             for item in data:                
+475                 c\&.files\&.append(item\&.get('src',''))
+476                 c\&.files\&.append(posixpath\&.join(self\&.server\&.root,
+477                                               item\&.get('file','')))
+478                 c\&.files\&.append(posixpath\&.join(self\&.server\&.root,
+479                                               item\&.get('clangfile','')))
+480                 c\&.files\&.append(posixpath\&.join(self\&.server\&.root,
+481                                               item\&.get('stderr','')))
+482                 c\&.files\&.append(posixpath\&.join(self\&.server\&.root,
+483                                               item\&.get('info','')))
+484             # Just in case something failed, ignore files which don't
+485             # exist\&.
+486             c\&.files = [f for f in c\&.files
+487                        if os\&.path\&.exists(f) and os\&.path\&.isfile(f)]
+488         else:
+489             # Check that this is a valid report\&.            
+490             path = posixpath\&.join(self\&.server\&.root, 'report-%s\&.html' % report)
+491             if not posixpath\&.exists(path):
+492                 raise ValueError('Invalid report ID')
+493             keys = self\&.load_report(report)
+494             c = Context()
+495             c\&.title = keys\&.get('DESC','clang error (unrecognized')
+496             c\&.description = """\
+497 Bug reported by the clang static analyzer\&.
+498 
+499 Description: %s
+500 File: %s
+501 Line: %s
+502 """%(c\&.title, keys\&.get('FILE','<unknown>'), keys\&.get('LINE', '<unknown>'))
+503             c\&.reportSource = 'report-%s\&.html' % report
+504             c\&.navMarkup = """<a href="/%s">Report %s</a> > """ % (c\&.reportSource,
+505                                                                   report)
+506 
+507             c\&.files = [path]
+508         return c
+509 
+.fi
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_report(), and ScanView\&.ScanViewRequestHandler\&.send_report_submit()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.get_scalar_field ( self,  name)"
+
+.PP
+Definition at line 291 of file ScanView\&.py\&.
+.PP
+.nf
+291     def get_scalar_field(self, name):
+292         if name in self\&.fields:
+293             return self\&.fields[name][0]
+294         else:
+295             return None
+296 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.fields\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_report_submit(), and ScanView\&.ScanViewRequestHandler\&.submit_bug()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.handle_exception ( self,  exc)"
+
+.PP
+Definition at line 281 of file ScanView\&.py\&.
+.PP
+.nf
+281     def handle_exception(self, exc):
+282         import traceback
+283         s = StringIO()
+284         print("INTERNAL ERROR\n", file=s)
+285         traceback\&.print_exc(file=s)
+286         f = self\&.send_string(s\&.getvalue(), 'text/plain')
+287         if f:
+288             self\&.copyfile(f, self\&.wfile)
+289             f\&.close()        
+290             
+.fi
+.PP
+References print(), and ScanView\&.ScanViewRequestHandler\&.send_string()\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.do_GET(), ScanView\&.ScanViewRequestHandler\&.do_HEAD(), and ScanView\&.ScanViewRequestHandler\&.do_POST()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.load_crashes ( self)"
+
+.PP
+Definition at line 270 of file ScanView\&.py\&.
+.PP
+.nf
+270     def load_crashes(self):
+271         path = posixpath\&.join(self\&.server\&.root, 'index\&.html')
+272         data = open(path)\&.read()
+273         problems = []
+274         for item in kReportCrashEntryRE\&.finditer(data):
+275             fieldData = item\&.group(1)
+276             fields = dict([i\&.groups() for i in 
+277                            kReportCrashEntryKeyValueRE\&.finditer(fieldData)])
+278             problems\&.append(fields)
+279         return problems
+280 
+.fi
+.PP
+References startfile\&.open(), and ScanView\&.ReporterThread\&.server\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.load_report ( self,  report)"
+
+.PP
+Definition at line 261 of file ScanView\&.py\&.
+.PP
+.nf
+261     def load_report(self, report):
+262         path = os\&.path\&.join(self\&.server\&.root, 'report-%s\&.html'%report)
+263         data = open(path)\&.read()
+264         keys = {}
+265         for item in kBugKeyValueRE\&.finditer(data):
+266             k,v = item\&.groups()
+267             keys[k] = v
+268         return keys
+269 
+.fi
+.PP
+References startfile\&.open(), and ScanView\&.ReporterThread\&.server\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_open_report()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.log_message ( self,  format, * args)"
+
+.PP
+Definition at line 253 of file ScanView\&.py\&.
+.PP
+.nf
+253     def log_message(self, format, *args):
+254         if self\&.server\&.options\&.debug:
+255             sys\&.stderr\&.write("%s: SERVER: %s - - [%s] %s\n" %
+256                              (sys\&.argv[0],
+257                               self\&.address_string(),
+258                               self\&.log_date_time_string(),
+259                               format%args))
+260 
+.fi
+.PP
+References ScanView\&.ReporterThread\&.server\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_404 ( self)"
+
+.PP
+Definition at line 714 of file ScanView\&.py\&.
+.PP
+.nf
+714     def send_404(self):
+715         self\&.send_error(404, "File not found")
+716         return None
+717 
+.fi
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_patched_file(), and ScanView\&.ScanViewRequestHandler\&.send_path()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_file ( self,  f,  ctype)"
+
+.PP
+Definition at line 736 of file ScanView\&.py\&.
+.PP
+.nf
+736     def send_file(self, f, ctype):
+737         # Patch files to add links, but skip binary files\&.
+738         self\&.send_response(200)
+739         self\&.send_header("Content-type", ctype)
+740         fs = os\&.fstat(f\&.fileno())
+741         self\&.send_header("Content-Length", str(fs[6]))
+742         self\&.send_header("Last-Modified", self\&.date_time_string(fs\&.st_mtime))
+743         self\&.end_headers()
+744         return f
+745 
+.fi
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_path()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_head ( self,  fields = \fCNone\fP)"
+
+.PP
+Definition at line 658 of file ScanView\&.py\&.
+.PP
+.nf
+658     def send_head(self, fields=None):
+659         if (self\&.server\&.options\&.onlyServeLocal and
+660             self\&.client_address[0] != '127\&.0\&.0\&.1'):
+661             return self\&.send_error(401, 'Unauthorized host\&.')
+662 
+663         if fields is None:
+664             fields = {}
+665         self\&.fields = fields
+666 
+667         o = urlparse(self\&.path)
+668         self\&.fields = parse_query(o\&.query, fields)
+669         path = posixpath\&.normpath(unquote(o\&.path))
+670 
+671         # Split the components and strip the root prefix\&.
+672         components = path\&.split('/')[1:]
+673         
+674         # Special case some top-level entries\&.
+675         if components:
+676             name = components[0]
+677             if len(components)==2:
+678                 if name=='report':
+679                     return self\&.send_report(components[1])
+680                 elif name=='open':
+681                     return self\&.send_open_report(components[1])
+682             elif len(components)==1:
+683                 if name=='quit':
+684                     self\&.server\&.halt()
+685                     return self\&.send_string('Goodbye\&.', 'text/plain')
+686                 elif name=='report_submit':
+687                     return self\&.send_report_submit()
+688                 elif name=='report_crashes':
+689                     overrides = { 'ScanView' : {},
+690                                   'Radar' : {},
+691                                   'Email' : {} }
+692                     for i,r in enumerate(self\&.server\&.reporters):
+693                         if r\&.getName() == 'Radar':
+694                             overrides['ScanView']['reporter'] = i
+695                             break
+696                     overrides['Radar']['Component'] = 'llvm - checker'
+697                     overrides['Radar']['Component Version'] = 'X'
+698                     return self\&.send_report(None, overrides)
+699                 elif name=='favicon\&.ico':
+700                     return self\&.send_path(posixpath\&.join(kShare,'bugcatcher\&.ico'))
+701         
+702         # Match directory entries\&.
+703         if components[-1] == '':
+704             components[-1] = 'index\&.html'
+705 
+706         relpath = '/'\&.join(components)
+707         path = posixpath\&.join(self\&.server\&.root, relpath)
+708 
+709         if self\&.server\&.options\&.debug > 1:
+710             print('%s: SERVER: sending path "%s"'%(sys\&.argv[0],
+711                                                                  path), file=sys\&.stderr)
+712         return self\&.send_path(path)
+713 
+.fi
+.PP
+References ScanView\&.ReporterThread\&.server\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.do_POST()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_open_report ( self,  report)"
+
+.PP
+Definition at line 418 of file ScanView\&.py\&.
+.PP
+.nf
+418     def send_open_report(self, report):
+419         try:
+420             keys = self\&.load_report(report)
+421         except IOError:
+422             return self\&.send_error(400, 'Invalid report\&.')
+423 
+424         file = keys\&.get('FILE')
+425         if not file or not posixpath\&.exists(file):
+426             return self\&.send_error(400, 'File does not exist: "%s"' % file)
+427 
+428         import startfile
+429         if self\&.server\&.options\&.debug:
+430             print('%s: SERVER: opening "%s"'%(sys\&.argv[0],
+431                                                             file), file=sys\&.stderr)
+432 
+433         status = startfile\&.open(file)
+434         if status:
+435             res = 'Opened: "%s"' % file
+436         else:
+437             res = 'Open failed: "%s"' % file
+438 
+439         return self\&.send_string(res, 'text/plain')
+440 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.load_report(), startfile\&.open(), print(), ScanView\&.ScanViewRequestHandler\&.send_string(), and ScanView\&.ReporterThread\&.server\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_patched_file ( self,  path,  ctype)"
+
+.PP
+Definition at line 758 of file ScanView\&.py\&.
+.PP
+.nf
+758     def send_patched_file(self, path, ctype):
+759         # Allow a very limited set of variables\&. This is pretty gross\&.
+760         variables = {}
+761         variables['report'] = ''
+762         m = kReportFileRE\&.match(path)
+763         if m:
+764             variables['report'] = m\&.group(2)
+765 
+766         try:
+767             f = open(path,'rb')
+768         except IOError:
+769             return self\&.send_404()
+770         fs = os\&.fstat(f\&.fileno())
+771         data = f\&.read()\&.decode('utf-8')
+772         for a,b in kReportReplacements:
+773             data = a\&.sub(b % variables, data)
+774         return self\&.send_string(data, ctype, mtime=fs\&.st_mtime)
+775 
+776 
+.fi
+.PP
+References libscanbuild\&.shell\&.decode(), startfile\&.open(), ScanView\&.ScanViewRequestHandler\&.send_404(), and ScanView\&.ScanViewRequestHandler\&.send_string()\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_path()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_path ( self,  path)"
+
+.PP
+Definition at line 718 of file ScanView\&.py\&.
+.PP
+.nf
+718     def send_path(self, path):
+719         # If the requested path is outside the root directory, do not open it
+720         rel = os\&.path\&.abspath(path)
+721         if not rel\&.startswith(os\&.path\&.abspath(self\&.server\&.root)):
+722           return self\&.send_404()
+723         
+724         ctype = self\&.guess_type(path)
+725         if ctype\&.startswith('text/'):
+726             # Patch file instead
+727             return self\&.send_patched_file(path, ctype)
+728         else:
+729             mode = 'rb'
+730         try:
+731             f = open(path, mode)
+732         except IOError:
+733             return self\&.send_404()
+734         return self\&.send_file(f, ctype)
+735 
+.fi
+.PP
+References startfile\&.open(), ScanView\&.ScanViewRequestHandler\&.send_404(), ScanView\&.ScanViewRequestHandler\&.send_file(), ScanView\&.ScanViewRequestHandler\&.send_patched_file(), and ScanView\&.ReporterThread\&.server\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_report ( self,  report,  configOverrides = \fCNone\fP)"
+
+.PP
+Definition at line 510 of file ScanView\&.py\&.
+.PP
+.nf
+510     def send_report(self, report, configOverrides=None):
+511         def getConfigOption(section, field):            
+512             if (configOverrides is not None and
+513                 section in configOverrides and
+514                 field in configOverrides[section]):
+515                 return configOverrides[section][field]
+516             return self\&.server\&.config\&.get(section, field)
+517 
+518         # report is None is used for crashes
+519         try:
+520             c = self\&.get_report_context(report)
+521         except ValueError as e:
+522             return self\&.send_error(400, e\&.message)
+523 
+524         title = c\&.title
+525         description= c\&.description
+526         reportingFor = c\&.navMarkup
+527         if c\&.reportSource is None:
+528             extraIFrame = ""
+529         else:
+530             extraIFrame = """\
+531 <iframe src="/%s" width="100%%" height="40%%"
+532         scrolling="auto" frameborder="1">
+533   <a href="/%s">View Bug Report</a>
+534 </iframe>""" % (c\&.reportSource, c\&.reportSource)
+535 
+536         reporterSelections = []
+537         reporterOptions = []
+538 
+539         try:
+540             active = int(getConfigOption('ScanView','reporter'))
+541         except:
+542             active = 0
+543         for i,r in enumerate(self\&.server\&.reporters):
+544             selected = (i == active)
+545             if selected:
+546                 selectedStr = ' selected'
+547             else:
+548                 selectedStr = ''
+549             reporterSelections\&.append('<option value="%d"%s>%s</option>'%(i,selectedStr,r\&.getName()))
+550             options = '\n'\&.join([ o\&.getHTML(r,title,getConfigOption) for o in r\&.getParameters()])
+551             display = ('none','')[selected]
+552             reporterOptions\&.append("""\
+553 <tr id="%sReporterOptions" style="display:%s">
+554   <td class="form_label">%s Options</td>
+555   <td class="form_value">
+556     <table class="form_inner_group">
+557 %s
+558     </table>
+559   </td>
+560 </tr>
+561 """%(r\&.getName(),display,r\&.getName(),options))
+562         reporterSelections = '\n'\&.join(reporterSelections)
+563         reporterOptionsDivs = '\n'\&.join(reporterOptions)
+564         reportersArray = '[%s]'%(','\&.join([repr(r\&.getName()) for r in self\&.server\&.reporters]))
+565 
+566         if c\&.files:
+567             fieldSize = min(5, len(c\&.files))
+568             attachFileOptions = '\n'\&.join(["""\
+569 <option value="%d" selected>%s</option>""" % (i,v) for i,v in enumerate(c\&.files)])
+570             attachFileRow = """\
+571 <tr>
+572   <td class="form_label">Attach:</td>
+573   <td class="form_value">
+574 <select style="width:100%%" name="files" multiple size=%d>
+575 %s
+576 </select>
+577   </td>
+578 </tr>
+579 """ % (min(5, len(c\&.files)), attachFileOptions)
+580         else:
+581             attachFileRow = ""
+582 
+583         result = """<html>
+584 <head>
+585   <title>File Bug</title>
+586   <link rel="stylesheet" type="text/css" href="/scanview\&.css" />
+587 </head>
+588 <script language="javascript" type="text/javascript">
+589 var reporters = %(reportersArray)s;
+590 function updateReporterOptions() {
+591   index = document\&.getElementById('reporter')\&.selectedIndex;
+592   for (var i=0; i < reporters\&.length; ++i) {
+593     o = document\&.getElementById(reporters[i] + "ReporterOptions");
+594     if (i == index) {
+595       o\&.style\&.display = "";
+596     } else {
+597       o\&.style\&.display = "none";
+598     }
+599   }
+600 }
+601 </script>
+602 <body onLoad="updateReporterOptions()">
+603 <h3>
+604 <a href="/">Summary</a> > 
+605 %(reportingFor)s
+606 File Bug</h3>
+607 <form name="form" action="/report_submit" method="post">
+608 <input type="hidden" name="report" value="%(report)s">
+609 
+610 <table class="form">
+611 <tr><td>
+612 <table class="form_group">
+613 <tr>
+614   <td class="form_clabel">Title:</td>
+615   <td class="form_value">
+616     <input type="text" name="title" size="50" value="%(title)s">
+617   </td>
+618 </tr>
+619 <tr>
+620   <td class="form_label">Description:</td>
+621   <td class="form_value">
+622 <textarea rows="10" cols="80" name="description">
+623 %(description)s
+624 </textarea>
+625   </td>
+626 </tr>
+627 
+628 %(attachFileRow)s
+629 
+630 </table>
+631 <br>
+632 <table class="form_group">
+633 <tr>
+634   <td class="form_clabel">Method:</td>
+635   <td class="form_value">
+636     <select id="reporter" name="reporter" onChange="updateReporterOptions()">
+637     %(reporterSelections)s
+638     </select>
+639   </td>
+640 </tr>
+641 %(reporterOptionsDivs)s
+642 </table>
+643 <br>
+644 </td></tr>
+645 <tr><td class="form_submit">
+646   <input align="right" type="submit" name="Submit" value="Submit">
+647 </td></tr>
+648 </table>
+649 </form>
+650 
+651 %(extraIFrame)s
+652 
+653 </body>
+654 </html>"""%locals()
+655 
+656         return self\&.send_string(result)
+657 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.get_report_context(), ScanView\&.ScanViewRequestHandler\&.send_string(), and ScanView\&.ReporterThread\&.server\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_report_submit ( self)"
+
+.PP
+Definition at line 354 of file ScanView\&.py\&.
+.PP
+.nf
+354     def send_report_submit(self):
+355         report = self\&.get_scalar_field('report')
+356         c = self\&.get_report_context(report)
+357         if c\&.reportSource is None:
+358             reportingFor = "Report Crashes > "
+359             fileBug = """\
+360 <a href="/report_crashes">File Bug</a> > """%locals()
+361         else:
+362             reportingFor = '<a href="/%s">Report %s</a> > ' % (c\&.reportSource, 
+363                                                                    report)
+364             fileBug = '<a href="/report/%s">File Bug</a> > ' % report
+365         title = self\&.get_scalar_field('title')
+366         description = self\&.get_scalar_field('description')
+367 
+368         res,message = self\&.submit_bug(c)
+369 
+370         if res:
+371             statusClass = 'SubmitOk'
+372             statusName = 'Succeeded'
+373         else:
+374             statusClass = 'SubmitFail'
+375             statusName = 'Failed'
+376 
+377         result = """
+378 <head>
+379   <title>Bug Submission</title>
+380   <link rel="stylesheet" type="text/css" href="/scanview\&.css" />
+381 </head>
+382 <body>
+383 <h3>
+384 <a href="/">Summary</a> > 
+385 %(reportingFor)s
+386 %(fileBug)s
+387 Submit</h3>
+388 <form name="form" action="">
+389 <table class="form">
+390 <tr><td>
+391 <table class="form_group">
+392 <tr>
+393   <td class="form_clabel">Title:</td>
+394   <td class="form_value">
+395     <input type="text" name="title" size="50" value="%(title)s" disabled>
+396   </td>
+397 </tr>
+398 <tr>
+399   <td class="form_label">Description:</td>
+400   <td class="form_value">
+401 <textarea rows="10" cols="80" name="description" disabled>
+402 %(description)s
+403 </textarea>
+404   </td>
+405 </table>
+406 </td></tr>
+407 </table>
+408 </form>
+409 <h1 class="%(statusClass)s">Submission %(statusName)s</h1>
+410 %(message)s
+411 <p>
+412 <hr>
+413 <a href="/">Return to Summary</a>
+414 </body>
+415 </html>"""%locals()
+416         return self\&.send_string(result)
+417 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.get_report_context(), ScanView\&.ScanViewRequestHandler\&.get_scalar_field(), ScanView\&.ScanViewRequestHandler\&.send_string(), and ScanView\&.ScanViewRequestHandler\&.submit_bug()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.send_string ( self,  s,  ctype = \fC'text/html'\fP,  headers = \fCTrue\fP,  mtime = \fCNone\fP)"
+
+.PP
+Definition at line 746 of file ScanView\&.py\&.
+.PP
+.nf
+746     def send_string(self, s, ctype='text/html', headers=True, mtime=None):
+747         encoded_s = s\&.encode('utf-8')
+748         if headers:
+749             self\&.send_response(200)
+750             self\&.send_header("Content-type", ctype)
+751             self\&.send_header("Content-Length", str(len(encoded_s)))
+752             if mtime is None:
+753                 mtime = self\&.dynamic_mtime
+754             self\&.send_header("Last-Modified", self\&.date_time_string(mtime))
+755             self\&.end_headers()
+756         return BytesIO(encoded_s)
+757 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.dynamic_mtime\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.handle_exception(), ScanView\&.ScanViewRequestHandler\&.send_open_report(), ScanView\&.ScanViewRequestHandler\&.send_patched_file(), ScanView\&.ScanViewRequestHandler\&.send_report(), and ScanView\&.ScanViewRequestHandler\&.send_report_submit()\&.
+.SS "def ScanView\&.ScanViewRequestHandler\&.submit_bug ( self,  c)"
+
+.PP
+Definition at line 297 of file ScanView\&.py\&.
+.PP
+.nf
+297     def submit_bug(self, c):
+298         title = self\&.get_scalar_field('title')
+299         description = self\&.get_scalar_field('description')
+300         report = self\&.get_scalar_field('report')
+301         reporterIndex = self\&.get_scalar_field('reporter')
+302         files = []
+303         for fileID in self\&.fields\&.get('files',[]):
+304             try:
+305                 i = int(fileID)
+306             except:
+307                 i = None
+308             if i is None or i<0 or i>=len(c\&.files):
+309                 return (False, 'Invalid file ID')
+310             files\&.append(c\&.files[i])
+311         
+312         if not title:
+313             return (False, "Missing title\&.")
+314         if not description:
+315             return (False, "Missing description\&.")
+316         try:
+317             reporterIndex = int(reporterIndex)
+318         except:
+319             return (False, "Invalid report method\&.")
+320         
+321         # Get the reporter and parameters\&.
+322         reporter = self\&.server\&.reporters[reporterIndex]
+323         parameters = {}
+324         for o in reporter\&.getParameters():
+325             name = '%s_%s'%(reporter\&.getName(),o\&.getName())
+326             if name not in self\&.fields:
+327                 return (False, 
+328                         'Missing field "%s" for %s report method\&.'%(name,
+329                                                                     reporter\&.getName()))
+330             parameters[o\&.getName()] = self\&.get_scalar_field(name)
+331 
+332         # Update config defaults\&.
+333         if report != 'None':
+334             self\&.server\&.config\&.set('ScanView', 'reporter', reporterIndex)
+335             for o in reporter\&.getParameters():
+336               if o\&.saveConfigValue():
+337                 name = o\&.getName()
+338                 self\&.server\&.config\&.set(reporter\&.getName(), name, parameters[name])
+339 
+340         # Create the report\&.
+341         bug = Reporter\&.BugReport(title, description, files)
+342 
+343         # Kick off a reporting thread\&.
+344         t = ReporterThread(bug, reporter, parameters, self\&.server)
+345         t\&.start()
+346 
+347         # Wait for thread to die\&.\&.\&.
+348         while t\&.isAlive():
+349             time\&.sleep(\&.25)
+350         submitStatus = t\&.status
+351 
+352         return (t\&.success, t\&.status)
+353 
+.fi
+.PP
+References ScanView\&.ScanViewRequestHandler\&.fields, startfile\&.get(), ScanView\&.ScanViewRequestHandler\&.get_scalar_field(), and ScanView\&.ReporterThread\&.server\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_report_submit()\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "ScanView\&.ScanViewRequestHandler\&.dynamic_mtime = time\&.time()\fC [static]\fP"
+
+.PP
+Definition at line 222 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.send_string()\&.
+.SS "ScanView\&.ScanViewRequestHandler\&.fields"
+
+.PP
+Definition at line 665 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.get_scalar_field(), and ScanView\&.ScanViewRequestHandler\&.submit_bug()\&.
+.SS "string ScanView\&.ScanViewRequestHandler\&.server_version = 'ScanViewServer/' + __version__\fC [static]\fP"
+
+.PP
+Definition at line 221 of file ScanView\&.py\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespaceclang_1_1cxdiag" xml:lang="en-US">
+<title>clang::cxdiag Namespace Reference</title>
+<indexterm><primary>clang::cxdiag</primary></indexterm>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link> * <link linkend="_namespaceclang_1_1cxdiag_1a02bce7e16b9a44d64657a2b5f1419351">lazyCreateDiags</link> (CXTranslationUnit TU, bool checkIfChanged=false)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespaceclang_1_1cxdiag_1a02bce7e16b9a44d64657a2b5f1419351"/>    <section>
+    <title>lazyCreateDiags()</title>
+<indexterm><primary>lazyCreateDiags</primary><secondary>clang::cxdiag</secondary></indexterm>
+<indexterm><primary>clang::cxdiag</primary><secondary>lazyCreateDiags</secondary></indexterm>
+<para><computeroutput><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link> * clang::cxdiag::lazyCreateDiags (CXTranslationUnit TU, bool checkIfChanged = <computeroutput>false</computeroutput>
+)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00149">149</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00151 &#32;&#32;ASTUnit&#32;*AU&#32;=&#32;cxtu::getASTUnit(TU);
+00152 
+00153 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TU-&gt;Diagnostics&#32;&amp;&amp;&#32;checkIfChanged)&#32;{
+00154 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;In&#32;normal&#32;use,&#32;ASTUnit&apos;s&#32;diagnostics&#32;should&#32;not&#32;change&#32;unless&#32;we&#32;reparse.</emphasis>
+00155 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Currently&#32;they&#32;can&#32;only&#32;change&#32;by&#32;using&#32;the&#32;internal&#32;testing&#32;flag</emphasis>
+00156 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&apos;-error-on-deserialized-decl&apos;&#32;which&#32;will&#32;error&#32;during&#32;deserialization&#32;of</emphasis>
+00157 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;a&#32;declaration.&#32;What&#32;will&#32;happen&#32;is:</emphasis>
+00158 &#32;&#32;&#32;&#32;<emphasis role="comment">//</emphasis>
+00159 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;-c-index-test&#32;gets&#32;a&#32;CXTranslationUnit</emphasis>
+00160 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;-checks&#32;the&#32;diagnostics,&#32;the&#32;diagnostics&#32;set&#32;is&#32;lazily&#32;created,</emphasis>
+00161 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;no&#32;errors&#32;are&#32;reported</emphasis>
+00162 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;-later&#32;does&#32;an&#32;operation,&#32;like&#32;annotation&#32;of&#32;tokens,&#32;that&#32;triggers</emphasis>
+00163 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;-error-on-deserialized-decl,&#32;that&#32;will&#32;emit&#32;a&#32;diagnostic&#32;error,</emphasis>
+00164 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;that&#32;ASTUnit&#32;will&#32;catch&#32;and&#32;add&#32;to&#32;its&#32;stored&#32;diagnostics&#32;vector.</emphasis>
+00165 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;-c-index-test&#32;wants&#32;to&#32;check&#32;whether&#32;an&#32;error&#32;occurred&#32;after&#32;performing</emphasis>
+00166 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;the&#32;operation&#32;but&#32;can&#32;only&#32;query&#32;the&#32;lazily&#32;created&#32;set.</emphasis>
+00167 &#32;&#32;&#32;&#32;<emphasis role="comment">//</emphasis>
+00168 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;check&#32;here&#32;if&#32;a&#32;new&#32;diagnostic&#32;was&#32;appended&#32;since&#32;the&#32;last&#32;time&#32;the</emphasis>
+00169 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;diagnostic&#32;set&#32;was&#32;created,&#32;in&#32;which&#32;case&#32;we&#32;reset&#32;it.</emphasis>
+00170 
+00171 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*
+00172 &#32;&#32;&#32;&#32;&#32;&#32;Set&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>*<emphasis role="keyword">&gt;</emphasis>(TU-&gt;Diagnostics);
+00173 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(AU-&gt;stored_diag_size()&#32;!=&#32;Set-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl_1a4f8dbf6c6514ec1fdf340268f50409cb">getNumDiagnostics</link>())&#32;{
+00174 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Diagnostics&#32;in&#32;the&#32;ASTUnit&#32;were&#32;updated,&#32;reset&#32;the&#32;associated</emphasis>
+00175 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;diagnostics.</emphasis>
+00176 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;Set;
+00177 &#32;&#32;&#32;&#32;&#32;&#32;TU-&gt;Diagnostics&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00178 &#32;&#32;&#32;&#32;}
+00179 &#32;&#32;}
+00180 
+00181 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU-&gt;Diagnostics)&#32;{
+00182 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*Set&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>();
+00183 &#32;&#32;&#32;&#32;TU-&gt;Diagnostics&#32;=&#32;Set;
+00184 &#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions;
+00185 &#32;&#32;&#32;&#32;CXDiagnosticRenderer&#32;Renderer(AU-&gt;getASTContext().getLangOpts(),
+00186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;*DOpts,&#32;Set);
+00187 &#32;&#32;&#32;&#32;
+00188 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ASTUnit::stored_diag_iterator&#32;it&#32;=&#32;AU-&gt;stored_diag_begin(),
+00189 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ei&#32;=&#32;AU-&gt;stored_diag_end();&#32;it&#32;!=&#32;ei;&#32;++it)&#32;{
+00190 &#32;&#32;&#32;&#32;&#32;&#32;Renderer.emitStoredDiagnostic(*it);
+00191 &#32;&#32;&#32;&#32;}
+00192 &#32;&#32;}
+00193 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>*<emphasis role="keyword">&gt;</emphasis>(TU-&gt;Diagnostics);
+00194 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8h_source_1l00036">clang::CXDiagnosticSetImpl::getNumDiagnostics()</link>.</para>
+<para>
+Referenced by <link linkend="__c_index_diagnostic_8cpp_source_1l00226">clang_getDiagnosticSetFromTU()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00199">clang_getNumDiagnostics()</link>, and <link linkend="__c_x_index_data_consumer_8cpp_source_1l00526">clang::cxindex::CXIndexDataConsumer::indexDiagnostics()</link>.</para>
+</section>
+</section>
+</section>

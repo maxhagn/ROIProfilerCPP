@@ -1,0 +1,1103 @@
+.TH "clang::cxcursor" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxcursor
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBVisitorJob\fP"
+.br
+.ti -1c
+.RI "class \fBCursorVisitor\fP"
+.br
+.ti -1c
+.RI "class \fBMacroExpansionCursor\fP"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef SmallVector< \fBVisitorJob\fP, 10 > \fBVisitorWorkList\fP"
+.br
+.ti -1c
+.RI "typedef llvm::PointerUnion< const OverloadExpr *, const Decl *, OverloadedTemplateStorage * > \fBOverloadedDeclRefStorage\fP"
+.br
+.RI "Internal storage for an overloaded declaration reference cursor;\&. "
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXCursor \fBgetCursor\fP (CXTranslationUnit, SourceLocation)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCXCursor\fP (const clang::Attr *A, const clang::Decl *Parent, CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCXCursor\fP (const clang::Decl *D, CXTranslationUnit TU, SourceRange RegionOfInterest=SourceRange(), bool FirstInDeclGroup=true)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCXCursor\fP (const clang::Stmt *S, const clang::Decl *Parent, CXTranslationUnit TU, SourceRange RegionOfInterest=SourceRange())"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCXCursorInvalid\fP (CXCursorKind K, CXTranslationUnit TU=nullptr)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorObjCSuperClassRef\fP (ObjCInterfaceDecl *Super, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create an Objective-C superclass reference at the given location\&. "
+.ti -1c
+.RI "std::pair< const ObjCInterfaceDecl *, SourceLocation > \fBgetCursorObjCSuperClassRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorObjCProtocolRef\fP (const ObjCProtocolDecl *Proto, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create an Objective-C protocol reference at the given location\&. "
+.ti -1c
+.RI "std::pair< const ObjCProtocolDecl *, SourceLocation > \fBgetCursorObjCProtocolRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorObjCClassRef\fP (const ObjCInterfaceDecl *Class, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create an Objective-C class reference at the given location\&. "
+.ti -1c
+.RI "std::pair< const ObjCInterfaceDecl *, SourceLocation > \fBgetCursorObjCClassRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorTypeRef\fP (const TypeDecl *Type, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create a type reference at the given location\&. "
+.ti -1c
+.RI "std::pair< const TypeDecl *, SourceLocation > \fBgetCursorTypeRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorTemplateRef\fP (const TemplateDecl *Template, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create a reference to a template at the given location\&. "
+.ti -1c
+.RI "std::pair< const TemplateDecl *, SourceLocation > \fBgetCursorTemplateRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorNamespaceRef\fP (const NamedDecl *NS, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "std::pair< const NamedDecl *, SourceLocation > \fBgetCursorNamespaceRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorVariableRef\fP (const VarDecl *Var, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create a reference to a variable at the given location\&. "
+.ti -1c
+.RI "std::pair< const VarDecl *, SourceLocation > \fBgetCursorVariableRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorMemberRef\fP (const FieldDecl *Field, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create a reference to a field at the given location\&. "
+.ti -1c
+.RI "std::pair< const FieldDecl *, SourceLocation > \fBgetCursorMemberRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorCXXBaseSpecifier\fP (const CXXBaseSpecifier *B, CXTranslationUnit TU)"
+.br
+.RI "Create a CXX base specifier cursor\&. "
+.ti -1c
+.RI "const CXXBaseSpecifier * \fBgetCursorCXXBaseSpecifier\fP (CXCursor C)"
+.br
+.RI "Unpack a CXXBaseSpecifier cursor into a CXXBaseSpecifier\&. "
+.ti -1c
+.RI "CXCursor \fBMakePreprocessingDirectiveCursor\fP (SourceRange Range, CXTranslationUnit TU)"
+.br
+.RI "Create a preprocessing directive cursor\&. "
+.ti -1c
+.RI "SourceRange \fBgetCursorPreprocessingDirective\fP (CXCursor C)"
+.br
+.RI "Unpack a given preprocessing directive to retrieve its source range\&. "
+.ti -1c
+.RI "CXCursor \fBMakeMacroDefinitionCursor\fP (const MacroDefinitionRecord *, CXTranslationUnit TU)"
+.br
+.RI "Create a macro definition cursor\&. "
+.ti -1c
+.RI "const MacroDefinitionRecord * \fBgetCursorMacroDefinition\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeMacroExpansionCursor\fP (MacroExpansion *, CXTranslationUnit TU)"
+.br
+.RI "Create a macro expansion cursor\&. "
+.ti -1c
+.RI "CXCursor \fBMakeMacroExpansionCursor\fP (MacroDefinitionRecord *, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeInclusionDirectiveCursor\fP (InclusionDirective *, CXTranslationUnit TU)"
+.br
+.RI "Create an inclusion directive cursor\&. "
+.ti -1c
+.RI "const InclusionDirective * \fBgetCursorInclusionDirective\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorLabelRef\fP (LabelStmt *Label, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.RI "Create a label reference at the given location\&. "
+.ti -1c
+.RI "std::pair< const LabelStmt *, SourceLocation > \fBgetCursorLabelRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBMakeCursorOverloadedDeclRef\fP (const OverloadExpr *E, CXTranslationUnit TU)"
+.br
+.RI "Create a overloaded declaration reference cursor for an expression\&. "
+.ti -1c
+.RI "CXCursor \fBMakeCursorOverloadedDeclRef\fP (const Decl *D, SourceLocation Location, CXTranslationUnit TU)"
+.br
+.RI "Create a overloaded declaration reference cursor for a declaration\&. "
+.ti -1c
+.RI "CXCursor \fBMakeCursorOverloadedDeclRef\fP (TemplateName Template, SourceLocation Location, CXTranslationUnit TU)"
+.br
+.RI "Create a overloaded declaration reference cursor for a template name\&. "
+.ti -1c
+.RI "std::pair< \fBOverloadedDeclRefStorage\fP, SourceLocation > \fBgetCursorOverloadedDeclRef\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "const Decl * \fBgetCursorDecl\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "const Expr * \fBgetCursorExpr\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "const Stmt * \fBgetCursorStmt\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "const Attr * \fBgetCursorAttr\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "ASTContext & \fBgetCursorContext\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "ASTUnit * \fBgetCursorASTUnit\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "CXTranslationUnit \fBgetCursorTU\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "void \fBgetOverriddenCursors\fP (CXCursor cursor, SmallVectorImpl< CXCursor > &overridden)"
+.br
+.ti -1c
+.RI "void * \fBcreateOverridenCXCursorsPool\fP ()"
+.br
+.ti -1c
+.RI "void \fBdisposeOverridenCXCursorsPool\fP (void *pool)"
+.br
+.RI "Dispose of the overridden CXCursors pool\&. "
+.ti -1c
+.RI "std::pair< int, SourceLocation > \fBgetSelectorIdentifierIndexAndLoc\fP (CXCursor)"
+.br
+.ti -1c
+.RI "CXCursor \fBgetSelectorIdentifierCursor\fP (int SelIdx, CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXCursor \fBgetTypeRefCursor\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "bool \fBgetDeclCursorUSR\fP (const Decl *D, SmallVectorImpl< char > &Buf)"
+.br
+.ti -1c
+.RI "bool \fBoperator==\fP (CXCursor X, CXCursor Y)"
+.br
+.ti -1c
+.RI "bool \fBoperator!=\fP (CXCursor X, CXCursor Y)"
+.br
+.ti -1c
+.RI "bool \fBisFirstInDeclGroup\fP (CXCursor C)"
+.br
+.in -1c
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef llvm::PointerUnion<const OverloadExpr *, const Decl *, OverloadedTemplateStorage *> \fBclang::cxcursor::OverloadedDeclRefStorage\fP"
+
+.PP
+Internal storage for an overloaded declaration reference cursor;\&. 
+.PP
+Definition at line 230 of file CXCursor\&.h\&.
+.SS "typedef SmallVector<\fBVisitorJob\fP, 10> \fBclang::cxcursor::VisitorWorkList\fP"
+
+.PP
+Definition at line 60 of file CursorVisitor\&.h\&.
+.SH "Function Documentation"
+.PP 
+.SS "void * clang::cxcursor::createOverridenCXCursorsPool ()"
+Create an opaque pool used for fast generation of overridden CXCursor arrays\&. 
+.PP
+Definition at line 1565 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1565                                              {
+1566   return new OverridenCursorsPool();
+1567 }
+.fi
+.PP
+Referenced by clang::cxtu::MakeCXTranslationUnit()\&.
+.SS "void clang::cxcursor::disposeOverridenCXCursorsPool (void * pool)"
+
+.PP
+Dispose of the overridden CXCursors pool\&. 
+.PP
+Definition at line 1569 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1569                                                        {
+1570   delete static_cast<OverridenCursorsPool *>(pool);
+1571 }
+.fi
+.PP
+Referenced by clang_disposeTranslationUnit()\&.
+.SS "CXCursor clang::cxcursor::getCursor (CXTranslationUnit TU, SourceLocation SLoc)"
+
+.PP
+Definition at line 6123 of file CIndex\&.cpp\&.
+.PP
+.nf
+6123                                                                       {
+6124   assert(TU);
+6125 
+6126   // Guard against an invalid SourceLocation, or we may assert in one
+6127   // of the following calls\&.
+6128   if (SLoc\&.isInvalid())
+6129     return clang_getNullCursor();
+6130 
+6131   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+6132 
+6133   // Translate the given source location to make it point at the beginning of
+6134   // the token under the cursor\&.
+6135   SLoc = Lexer::GetBeginningOfToken(SLoc, CXXUnit->getSourceManager(),
+6136                                     CXXUnit->getASTContext()\&.getLangOpts());
+6137 
+6138   CXCursor Result = MakeCXCursorInvalid(CXCursor_NoDeclFound);
+6139   if (SLoc\&.isValid()) {
+6140     GetCursorData ResultData(CXXUnit->getSourceManager(), SLoc, Result);
+6141     CursorVisitor CursorVis(TU, GetCursorVisitor, &ResultData,
+6142                             /*VisitPreprocessorLast=*/true,
+6143                             /*VisitIncludedEntities=*/false,
+6144                             SourceLocation(SLoc));
+6145     CursorVis\&.visitFileRegion();
+6146   }
+6147 
+6148   return Result;
+6149 }
+.fi
+.PP
+References clang_getNullCursor(), and MakeCXCursorInvalid()\&.
+.SS "ASTUnit * clang::cxcursor::getCursorASTUnit (CXCursor Cursor)"
+
+.PP
+Definition at line 1126 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1126                                                    {
+1127   CXTranslationUnit TU = getCursorTU(Cursor);
+1128   if (!TU)
+1129     return nullptr;
+1130   return cxtu::getASTUnit(TU);
+1131 }
+.fi
+.PP
+Referenced by clang_findReferencesInFile(), clang_getCursorCompletionString(), and getCursorPreprocessingDirective()\&.
+.SS "const Attr * clang::cxcursor::getCursorAttr (CXCursor Cursor)"
+
+.PP
+Definition at line 1118 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1118                                                    {
+1119   return static_cast<const Attr *>(Cursor\&.data[1]);
+1120 }
+.fi
+.PP
+Referenced by clang_getIBOutletCollectionType()\&.
+.SS "ASTContext & clang::cxcursor::getCursorContext (CXCursor Cursor)"
+
+.PP
+Definition at line 1122 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1122                                                       {
+1123   return getCursorASTUnit(Cursor)->getASTContext();
+1124 }
+.fi
+.PP
+Referenced by clang_Cursor_getBriefCommentText(), clang_Cursor_getCommentRange(), clang_Cursor_getRawCommentText(), clang_Cursor_getReceiverType(), clang_Cursor_getSpellingNameRange(), clang_Cursor_isDynamicCall(), clang_getCursorDisplayName(), clang_getCursorLocation(), clang_getCursorPrettyPrinted(), clang_getCursorPrintingPolicy(), clang_getCursorReferenceNameRange(), clang_getCursorSpelling(), clang_getDeclObjCTypeEncoding(), and clang_getFieldDeclBitWidth()\&.
+.SS "const CXXBaseSpecifier * clang::cxcursor::getCursorCXXBaseSpecifier (CXCursor C)"
+
+.PP
+Unpack a CXXBaseSpecifier cursor into a CXXBaseSpecifier\&. 
+.PP
+Definition at line 970 of file CXCursor\&.cpp\&.
+.PP
+.nf
+970                                                                       {
+971   assert(C\&.kind == CXCursor_CXXBaseSpecifier);
+972   return static_cast<const CXXBaseSpecifier *>(C\&.data[0]);
+973 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), clang_getCursorType(), and clang_getCXXAccessSpecifier()\&.
+.SS "const Decl * clang::cxcursor::getCursorDecl (CXCursor Cursor)"
+
+.PP
+Definition at line 1101 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1101                                                    {
+1102   return static_cast<const Decl *>(Cursor\&.data[0]);
+1103 }
+.fi
+.PP
+Referenced by clang_Cursor_getArgument(), clang_Cursor_getBriefCommentText(), clang_Cursor_getCommentRange(), clang_Cursor_getCXXManglings(), clang_Cursor_getMangling(), clang_Cursor_getModule(), clang_Cursor_getNumArguments(), clang_Cursor_getNumTemplateArguments(), clang_Cursor_getObjCDeclQualifiers(), clang_Cursor_getObjCManglings(), clang_Cursor_getObjCPropertyAttributes(), clang_Cursor_getObjCPropertyGetterName(), clang_Cursor_getObjCPropertySetterName(), clang_Cursor_getRawCommentText(), clang_Cursor_getSpellingNameRange(), clang_Cursor_getVarDeclInitializer(), clang_Cursor_hasAttrs(), clang_Cursor_hasVarDeclExternalStorage(), clang_Cursor_hasVarDeclGlobalStorage(), clang_Cursor_isAnonymous(), clang_Cursor_isAnonymousRecordDecl(), clang_Cursor_isBitField(), clang_Cursor_isExternalSymbol(), clang_Cursor_isFunctionInlined(), clang_Cursor_isInlineNamespace(), clang_Cursor_isObjCOptional(), clang_Cursor_isVariadic(), clang_CXXConstructor_isConvertingConstructor(), clang_CXXConstructor_isCopyConstructor(), clang_CXXConstructor_isDefaultConstructor(), clang_CXXConstructor_isMoveConstructor(), clang_CXXField_isMutable(), clang_CXXMethod_isConst(), clang_CXXMethod_isDefaulted(), clang_CXXMethod_isPureVirtual(), clang_CXXMethod_isStatic(), clang_CXXMethod_isVirtual(), clang_CXXRecord_isAbstract(), clang_EnumDecl_isScoped(), clang_getCanonicalCursor(), clang_getCursorCompletionString(), clang_getCursorDefinition(), clang_getCursorDisplayName(), clang_getCursorLexicalParent(), clang_getCursorLinkage(), clang_getCursorPlatformAvailability(), clang_getCursorPrettyPrinted(), clang_getCursorReferenced(), clang_getCursorResultType(), clang_getCursorSemanticParent(), clang_getCursorTLSKind(), clang_getCursorType(), clang_getCursorUSR(), clang_getCursorVisibility(), clang_getDeclObjCTypeEncoding(), clang_getDefinitionSpellingAndExtent(), clang_getEnumConstantDeclUnsignedValue(), clang_getEnumConstantDeclValue(), clang_getEnumDeclIntegerType(), clang_getFieldDeclBitWidth(), clang_getSpecializedCursorTemplate(), clang_getTypedefDeclUnderlyingType(), clang_isInvalidDeclaration(), clang_Type_visitFields(), getOverriddenCursors(), getSelectorIdentifierCursor(), and getSelectorIdentifierIndexAndLoc()\&.
+.SS "const Expr * clang::cxcursor::getCursorExpr (CXCursor Cursor)"
+
+.PP
+Definition at line 1105 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1105                                                    {
+1106   return dyn_cast_or_null<Expr>(getCursorStmt(Cursor));
+1107 }
+.fi
+.PP
+Referenced by clang_Cursor_getArgument(), clang_Cursor_getNumArguments(), clang_Cursor_getReceiverType(), clang_Cursor_getSpellingNameRange(), clang_Cursor_isDynamicCall(), clang_getCursorReferenced(), clang_getCursorReferenceNameRange(), clang_getCursorSpelling(), clang_getCursorType(), getSelectorIdentifierCursor(), getSelectorIdentifierIndexAndLoc(), and getTypeRefCursor()\&.
+.SS "const InclusionDirective * clang::cxcursor::getCursorInclusionDirective (CXCursor C)"
+Unpack a given inclusion directive cursor to retrieve its source range\&. 
+.PP
+Definition at line 1040 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1040                                                                           {
+1041   assert(C\&.kind == CXCursor_InclusionDirective);
+1042   return static_cast<const InclusionDirective *>(C\&.data[0]);
+1043 }
+.fi
+.PP
+Referenced by clang_getIncludedFile()\&.
+.SS "std::pair< const LabelStmt *, SourceLocation > clang::cxcursor::getCursorLabelRef (CXCursor C)"
+Unpack a label reference into the label statement it refers to and the location of the reference\&. 
+.PP
+Definition at line 1055 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1055                                       {
+1056   assert(C\&.kind == CXCursor_LabelRef);
+1057   return std::make_pair(static_cast<const LabelStmt *>(C\&.data[0]),
+1058                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+1059 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), and clang_getCursorSpelling()\&.
+.SS "const MacroDefinitionRecord * clang::cxcursor::getCursorMacroDefinition (CXCursor C)"
+Unpack a given macro definition cursor to retrieve its source range\&. 
+.PP
+Definition at line 998 of file CXCursor\&.cpp\&.
+.PP
+.nf
+998                                                                           {
+999   assert(C\&.kind == CXCursor_MacroDefinition);
+1000   return static_cast<const MacroDefinitionRecord *>(C\&.data[0]);
+1001 }
+.fi
+.PP
+Referenced by clang_getCursorCompletionString()\&.
+.SS "std::pair< const FieldDecl *, SourceLocation > clang::cxcursor::getCursorMemberRef (CXCursor C)"
+Unpack a MemberRef cursor into the field it references and the location where the reference occurred\&. 
+.PP
+Definition at line 958 of file CXCursor\&.cpp\&.
+.PP
+.nf
+958                                        {
+959   assert(C\&.kind == CXCursor_MemberRef);
+960   return std::make_pair(static_cast<const FieldDecl *>(C\&.data[0]),
+961                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+962 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), and clang_getCursorType()\&.
+.SS "std::pair< const NamedDecl *, SourceLocation > clang::cxcursor::getCursorNamespaceRef (CXCursor C)"
+Unpack a NamespaceRef cursor into the namespace or namespace alias it references and the location where the reference occurred\&. 
+.PP
+Definition at line 925 of file CXCursor\&.cpp\&.
+.PP
+.nf
+925                                           {
+926   assert(C\&.kind == CXCursor_NamespaceRef);
+927   return std::make_pair(static_cast<const NamedDecl *>(C\&.data[0]),
+928                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+929 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), and clang_getCursorSpelling()\&.
+.SS "std::pair< const ObjCInterfaceDecl *, SourceLocation > clang::cxcursor::getCursorObjCClassRef (CXCursor C)"
+Unpack an ObjCClassRef cursor into the class it references and optionally the location where the reference occurred\&. 
+.PP
+Definition at line 876 of file CXCursor\&.cpp\&.
+.PP
+.nf
+876                                           {
+877   assert(C\&.kind == CXCursor_ObjCClassRef);
+878   return std::make_pair(static_cast<const ObjCInterfaceDecl *>(C\&.data[0]),
+879                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+880 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), and clang_getCursorType()\&.
+.SS "std::pair< const ObjCProtocolDecl *, SourceLocation > clang::cxcursor::getCursorObjCProtocolRef (CXCursor C)"
+Unpack an ObjCProtocolRef cursor into the protocol it references and optionally the location where the reference occurred\&. 
+.PP
+Definition at line 857 of file CXCursor\&.cpp\&.
+.PP
+.nf
+857                                              {
+858   assert(C\&.kind == CXCursor_ObjCProtocolRef);
+859   return std::make_pair(static_cast<const ObjCProtocolDecl *>(C\&.data[0]),
+860                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+861 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), and clang_getCursorSpelling()\&.
+.SS "std::pair< const ObjCInterfaceDecl *, SourceLocation > clang::cxcursor::getCursorObjCSuperClassRef (CXCursor C)"
+Unpack an ObjCSuperClassRef cursor into the interface it references and optionally the location where the reference occurred\&. 
+.PP
+Definition at line 841 of file CXCursor\&.cpp\&.
+.PP
+.nf
+841                                                {
+842   assert(C\&.kind == CXCursor_ObjCSuperClassRef);
+843   return std::make_pair(static_cast<const ObjCInterfaceDecl *>(C\&.data[0]),
+844                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+845 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), and clang_getCursorType()\&.
+.SS "std::pair< \fBcxcursor::OverloadedDeclRefStorage\fP, SourceLocation > clang::cxcursor::getCursorOverloadedDeclRef (CXCursor C)"
+Unpack an overloaded declaration reference into an expression, declaration, or template name along with the source location\&. 
+.PP
+Definition at line 1094 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1094                                                {
+1095   assert(C\&.kind == CXCursor_OverloadedDeclRef);
+1096   return std::make_pair(OverloadedDeclRefStorage::getFromOpaqueValue(
+1097                             const_cast<void *>(C\&.data[0])),
+1098                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+1099 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), clang_getNumOverloadedDecls(), and clang_getOverloadedDecl()\&.
+.SS "SourceRange clang::cxcursor::getCursorPreprocessingDirective (CXCursor C)"
+
+.PP
+Unpack a given preprocessing directive to retrieve its source range\&. 
+.PP
+Definition at line 984 of file CXCursor\&.cpp\&.
+.PP
+.nf
+984                                                                 {
+985   assert(C\&.kind == CXCursor_PreprocessingDirective);
+986   SourceRange Range(SourceLocation::getFromPtrEncoding(C\&.data[0]),
+987                     SourceLocation::getFromPtrEncoding(C\&.data[1]));
+988   ASTUnit *TU = getCursorASTUnit(C);
+989   return TU->mapRangeFromPreamble(Range);
+990 }
+.fi
+.PP
+References getCursorASTUnit()\&.
+.SS "const Stmt * clang::cxcursor::getCursorStmt (CXCursor Cursor)"
+
+.PP
+Definition at line 1109 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1109                                                    {
+1110   if (Cursor\&.kind == CXCursor_ObjCSuperClassRef ||
+1111       Cursor\&.kind == CXCursor_ObjCProtocolRef ||
+1112       Cursor\&.kind == CXCursor_ObjCClassRef)
+1113     return nullptr;
+1114 
+1115   return static_cast<const Stmt *>(Cursor\&.data[1]);
+1116 }
+.fi
+.PP
+Referenced by clang_Cursor_getSpellingNameRange()\&.
+.SS "std::pair< const TemplateDecl *, SourceLocation > clang::cxcursor::getCursorTemplateRef (CXCursor C)"
+Unpack a TemplateRef cursor into the template it references and the location where the reference occurred\&. 
+.PP
+Definition at line 907 of file CXCursor\&.cpp\&.
+.PP
+.nf
+907                                          {
+908   assert(C\&.kind == CXCursor_TemplateRef);
+909   return std::make_pair(static_cast<const TemplateDecl *>(C\&.data[0]),
+910                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+911 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), and clang_getCursorSpelling()\&.
+.SS "CXTranslationUnit clang::cxcursor::getCursorTU (CXCursor Cursor)"
+
+.PP
+Definition at line 1133 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1133                                                        {
+1134   return static_cast<CXTranslationUnit>(const_cast<void *>(Cursor\&.data[2]));
+1135 }
+.fi
+.PP
+Referenced by clang_Cursor_getArgument(), clang_Cursor_getReceiverType(), clang_Cursor_getTranslationUnit(), clang_Cursor_getVarDeclInitializer(), clang_disposeOverriddenCursors(), clang_getCanonicalCursor(), clang_getCursorDefinition(), clang_getCursorReferenced(), clang_getCursorResultType(), clang_getCursorSpelling(), clang_getCursorType(), clang_getCursorUSR(), clang_getEnumDeclIntegerType(), clang_getIBOutletCollectionType(), clang_getOverloadedDecl(), clang_getOverriddenCursors(), clang_getSpecializedCursorTemplate(), clang_getTypedefDeclUnderlyingType(), clang_visitChildren(), getOverriddenCursors(), and getTypeRefCursor()\&.
+.SS "std::pair< const TypeDecl *, SourceLocation > clang::cxcursor::getCursorTypeRef (CXCursor C)"
+Unpack a TypeRef cursor into the class it references and optionally the location where the reference occurred\&. 
+.PP
+Definition at line 891 of file CXCursor\&.cpp\&.
+.PP
+.nf
+891                                      {
+892   assert(C\&.kind == CXCursor_TypeRef);
+893   return std::make_pair(static_cast<const TypeDecl *>(C\&.data[0]),
+894                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+895 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), and clang_getCursorType()\&.
+.SS "std::pair< const VarDecl *, SourceLocation > clang::cxcursor::getCursorVariableRef (CXCursor C)"
+Unpack a VariableRef cursor into the variable it references and the location where the where the reference occurred\&. 
+.PP
+Definition at line 941 of file CXCursor\&.cpp\&.
+.PP
+.nf
+941                                          {
+942   assert(C\&.kind == CXCursor_VariableRef);
+943   return std::make_pair(static_cast<const VarDecl *>(C\&.data[0]),
+944                         SourceLocation::getFromPtrEncoding(C\&.data[1]));
+945 }
+.fi
+.PP
+Referenced by clang_getCursorLocation(), clang_getCursorSpelling(), and clang_getCursorType()\&.
+.SS "bool clang::cxcursor::getDeclCursorUSR (const Decl * D, SmallVectorImpl< char > & Buf)"
+Generate a USR for 
+.PD 0
+
+.IP "\(bu" 2
+D and put it in 
+.IP "\(bu" 2
+Buf\&. 
+.PP
+\fBReturns\fP
+.RS 4
+true if no USR was computed or the result should be ignored, false otherwise\&. 
+.RE
+.PP
+
+.PP
+
+.PP
+Definition at line 34 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+34                                                                          {
+35   return generateUSRForDecl(D, Buf);
+36 }
+.fi
+.PP
+Referenced by clang_getCursorUSR()\&.
+.SS "void clang::cxcursor::getOverriddenCursors (CXCursor cursor, SmallVectorImpl< CXCursor > & overridden)"
+
+.PP
+Definition at line 1137 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1138                                                                            {
+1139   assert(clang_isDeclaration(cursor\&.kind));
+1140   const NamedDecl *D = dyn_cast_or_null<NamedDecl>(getCursorDecl(cursor));
+1141   if (!D)
+1142     return;
+1143 
+1144   CXTranslationUnit TU = getCursorTU(cursor);
+1145   SmallVector<const NamedDecl *, 8> OverDecls;
+1146   D->getASTContext()\&.getOverriddenMethods(D, OverDecls);
+1147 
+1148   for (SmallVectorImpl<const NamedDecl *>::iterator I = OverDecls\&.begin(),
+1149                                                     E = OverDecls\&.end();
+1150        I != E; ++I) {
+1151     overridden\&.push_back(MakeCXCursor(*I, TU));
+1152   }
+1153 }
+.fi
+.PP
+References clang_isDeclaration(), getCursorDecl(), getCursorTU(), and MakeCXCursor()\&.
+.PP
+Referenced by clang_getOverriddenCursors()\&.
+.SS "CXCursor clang::cxcursor::getSelectorIdentifierCursor (int SelIdx, CXCursor cursor)"
+
+.PP
+Definition at line 1173 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1173                                                                           {
+1174   CXCursor newCursor = cursor;
+1175 
+1176   if (cursor\&.kind == CXCursor_ObjCMessageExpr) {
+1177     if (SelIdx == -1 ||
+1178         unsigned(SelIdx) >=
+1179             cast<ObjCMessageExpr>(getCursorExpr(cursor))->getNumSelectorLocs())
+1180       newCursor\&.xdata = -1;
+1181     else
+1182       newCursor\&.xdata = SelIdx;
+1183   } else if (cursor\&.kind == CXCursor_ObjCClassMethodDecl ||
+1184              cursor\&.kind == CXCursor_ObjCInstanceMethodDecl) {
+1185     if (SelIdx == -1 ||
+1186         unsigned(SelIdx) >=
+1187             cast<ObjCMethodDecl>(getCursorDecl(cursor))->getNumSelectorLocs())
+1188       newCursor\&.xdata = -1;
+1189     else
+1190       newCursor\&.xdata = SelIdx;
+1191   }
+1192 
+1193   return newCursor;
+1194 }
+.fi
+.PP
+References getCursorDecl(), and getCursorExpr()\&.
+.SS "std::pair< int, SourceLocation > clang::cxcursor::getSelectorIdentifierIndexAndLoc (CXCursor cursor)"
+Returns a index/location pair for a selector identifier if the cursor points to one\&. 
+.PP
+Definition at line 1156 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1156                                                           {
+1157   if (cursor\&.kind == CXCursor_ObjCMessageExpr) {
+1158     if (cursor\&.xdata != -1)
+1159       return std::make_pair(cursor\&.xdata,
+1160                             cast<ObjCMessageExpr>(getCursorExpr(cursor))
+1161                                 ->getSelectorLoc(cursor\&.xdata));
+1162   } else if (cursor\&.kind == CXCursor_ObjCClassMethodDecl ||
+1163              cursor\&.kind == CXCursor_ObjCInstanceMethodDecl) {
+1164     if (cursor\&.xdata != -1)
+1165       return std::make_pair(cursor\&.xdata,
+1166                             cast<ObjCMethodDecl>(getCursorDecl(cursor))
+1167                                 ->getSelectorLoc(cursor\&.xdata));
+1168   }
+1169 
+1170   return std::make_pair(-1, SourceLocation());
+1171 }
+.fi
+.PP
+References getCursorDecl(), and getCursorExpr()\&.
+.PP
+Referenced by clang_Cursor_getObjCSelectorIndex()\&.
+.SS "CXCursor clang::cxcursor::getTypeRefCursor (CXCursor cursor)"
+
+.PP
+Definition at line 1196 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1196                                                    {
+1197   if (cursor\&.kind != CXCursor_CallExpr)
+1198     return cursor;
+1199 
+1200   if (cursor\&.xdata == 0)
+1201     return cursor;
+1202 
+1203   const Expr *E = getCursorExpr(cursor);
+1204   TypeSourceInfo *Type = nullptr;
+1205   if (const CXXUnresolvedConstructExpr *UnCtor =
+1206           dyn_cast<CXXUnresolvedConstructExpr>(E)) {
+1207     Type = UnCtor->getTypeSourceInfo();
+1208   } else if (const CXXTemporaryObjectExpr *Tmp =
+1209                  dyn_cast<CXXTemporaryObjectExpr>(E)) {
+1210     Type = Tmp->getTypeSourceInfo();
+1211   }
+1212 
+1213   if (!Type)
+1214     return cursor;
+1215 
+1216   CXTranslationUnit TU = getCursorTU(cursor);
+1217   QualType Ty = Type->getType();
+1218   TypeLoc TL = Type->getTypeLoc();
+1219   SourceLocation Loc = TL\&.getBeginLoc();
+1220 
+1221   if (const ElaboratedType *ElabT = Ty->getAs<ElaboratedType>()) {
+1222     Ty = ElabT->getNamedType();
+1223     ElaboratedTypeLoc ElabTL = TL\&.castAs<ElaboratedTypeLoc>();
+1224     Loc = ElabTL\&.getNamedTypeLoc()\&.getBeginLoc();
+1225   }
+1226 
+1227   if (const TypedefType *Typedef = Ty->getAs<TypedefType>())
+1228     return MakeCursorTypeRef(Typedef->getDecl(), Loc, TU);
+1229   if (const TagType *Tag = Ty->getAs<TagType>())
+1230     return MakeCursorTypeRef(Tag->getDecl(), Loc, TU);
+1231   if (const TemplateTypeParmType *TemplP = Ty->getAs<TemplateTypeParmType>())
+1232     return MakeCursorTypeRef(TemplP->getDecl(), Loc, TU);
+1233 
+1234   return cursor;
+1235 }
+.fi
+.PP
+References getCursorExpr(), getCursorTU(), and MakeCursorTypeRef()\&.
+.SS "bool clang::cxcursor::isFirstInDeclGroup (CXCursor C)"
+Return true if the cursor represents a declaration that is the first in a declaration group\&. 
+.PP
+Definition at line 1244 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1244                                             {
+1245   assert(clang_isDeclaration(C\&.kind));
+1246   return ((uintptr_t)(C\&.data[1])) != 0;
+1247 }
+.fi
+.PP
+References clang_isDeclaration()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorCXXBaseSpecifier (const CXXBaseSpecifier * B, CXTranslationUnit TU)"
+
+.PP
+Create a CXX base specifier cursor\&. 
+.PP
+Definition at line 964 of file CXCursor\&.cpp\&.
+.PP
+.nf
+965                                                                     {
+966   CXCursor C = {CXCursor_CXXBaseSpecifier, 0, {B, nullptr, TU}};
+967   return C;
+968 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::VisitCXXRecordDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorLabelRef (LabelStmt * Label, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create a label reference at the given location\&. 
+.PP
+Definition at line 1045 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1046                                                             {
+1047 
+1048   assert(Label && TU && "Invalid arguments!");
+1049   void *RawLoc = Loc\&.getPtrEncoding();
+1050   CXCursor C = {CXCursor_LabelRef, 0, {Label, RawLoc, TU}};
+1051   return C;
+1052 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::RunVisitorWorkList()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorMemberRef (const FieldDecl * Field, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create a reference to a field at the given location\&. 
+.PP
+Definition at line 947 of file CXCursor\&.cpp\&.
+.PP
+.nf
+949                                                              {
+950 
+951   assert(Field && TU && "Invalid arguments!");
+952   void *RawLoc = Loc\&.getPtrEncoding();
+953   CXCursor C = {CXCursor_MemberRef, 0, {Field, RawLoc, TU}};
+954   return C;
+955 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::RunVisitorWorkList(), and clang::cxcursor::CursorVisitor::VisitObjCPropertyImplDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorNamespaceRef (const NamedDecl * NS, SourceLocation Loc, CXTranslationUnit TU)"
+Create a reference to a namespace or namespace alias at the given location\&. 
+.PP
+Definition at line 913 of file CXCursor\&.cpp\&.
+.PP
+.nf
+915                                                                 {
+916 
+917   assert(NS && (isa<NamespaceDecl>(NS) || isa<NamespaceAliasDecl>(NS)) && TU &&
+918          "Invalid arguments!");
+919   void *RawLoc = Loc\&.getPtrEncoding();
+920   CXCursor C = {CXCursor_NamespaceRef, 0, {NS, RawLoc, TU}};
+921   return C;
+922 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::VisitNamespaceAliasDecl(), clang::cxcursor::CursorVisitor::VisitNestedNameSpecifier(), clang::cxcursor::CursorVisitor::VisitNestedNameSpecifierLoc(), and clang::cxcursor::CursorVisitor::VisitUsingDirectiveDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorObjCClassRef (const ObjCInterfaceDecl * Class, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create an Objective-C class reference at the given location\&. 
+.PP
+Definition at line 863 of file CXCursor\&.cpp\&.
+.PP
+.nf
+865                                                                 {
+866   // 'Class' can be null for invalid code\&.
+867   if (!Class)
+868     return MakeCXCursorInvalid(CXCursor_InvalidCode);
+869   assert(TU && "Invalid arguments!");
+870   void *RawLoc = Loc\&.getPtrEncoding();
+871   CXCursor C = {CXCursor_ObjCClassRef, 0, {Class, RawLoc, TU}};
+872   return C;
+873 }
+.fi
+.PP
+References MakeCXCursorInvalid()\&.
+.PP
+Referenced by clang::cxindex::AttrListInfo::AttrListInfo(), clang::cxindex::CXIndexDataConsumer::handleObjCCategory(), clang::cxindex::CXIndexDataConsumer::handleObjCCategoryImpl(), clang::cxindex::CXIndexDataConsumer::handleObjCInterface(), clang::cxcursor::CursorVisitor::VisitObjCCategoryDecl(), clang::cxcursor::CursorVisitor::VisitObjCCategoryImplDecl(), and clang::cxcursor::CursorVisitor::VisitObjCInterfaceDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorObjCProtocolRef (const ObjCProtocolDecl * Proto, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create an Objective-C protocol reference at the given location\&. 
+.PP
+Definition at line 847 of file CXCursor\&.cpp\&.
+.PP
+.nf
+849                                                                    {
+850   assert(Proto && TU && "Invalid arguments!");
+851   void *RawLoc = Loc\&.getPtrEncoding();
+852   CXCursor C = {CXCursor_ObjCProtocolRef, 0, {Proto, RawLoc, TU}};
+853   return C;
+854 }
+.fi
+.PP
+Referenced by clang::cxindex::CXIndexDataConsumer::handleObjCProtocol(), clang::cxcursor::CursorVisitor::VisitObjCCategoryDecl(), clang::cxcursor::CursorVisitor::VisitObjCInterfaceDecl(), and clang::cxcursor::CursorVisitor::VisitObjCProtocolDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorObjCSuperClassRef (ObjCInterfaceDecl * Super, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create an Objective-C superclass reference at the given location\&. 
+.PP
+Definition at line 831 of file CXCursor\&.cpp\&.
+.PP
+.nf
+833                                                                      {
+834   assert(Super && TU && "Invalid arguments!");
+835   void *RawLoc = Loc\&.getPtrEncoding();
+836   CXCursor C = {CXCursor_ObjCSuperClassRef, 0, {Super, RawLoc, TU}};
+837   return C;
+838 }
+.fi
+.PP
+Referenced by clang::cxindex::CXIndexDataConsumer::handleObjCInterface(), clang::cxcursor::CursorVisitor::VisitObjCImplementationDecl(), and clang::cxcursor::CursorVisitor::VisitObjCInterfaceDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorOverloadedDeclRef (const Decl * D, SourceLocation Location, CXTranslationUnit TU)"
+
+.PP
+Create a overloaded declaration reference cursor for a declaration\&. 
+.PP
+Definition at line 1071 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1073                                                                      {
+1074   assert(D && TU && "Invalid arguments!");
+1075   void *RawLoc = Loc\&.getPtrEncoding();
+1076   OverloadedDeclRefStorage Storage(D);
+1077   CXCursor C = {
+1078       CXCursor_OverloadedDeclRef, 0, {Storage\&.getOpaqueValue(), RawLoc, TU}};
+1079   return C;
+1080 }
+.fi
+.SS "CXCursor clang::cxcursor::MakeCursorOverloadedDeclRef (const OverloadExpr * E, CXTranslationUnit TU)"
+
+.PP
+Create a overloaded declaration reference cursor for an expression\&. 
+.PP
+Definition at line 1061 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1062                                                                      {
+1063   assert(E && TU && "Invalid arguments!");
+1064   OverloadedDeclRefStorage Storage(E);
+1065   void *RawLoc = E->getNameLoc()\&.getPtrEncoding();
+1066   CXCursor C = {
+1067       CXCursor_OverloadedDeclRef, 0, {Storage\&.getOpaqueValue(), RawLoc, TU}};
+1068   return C;
+1069 }
+.fi
+.PP
+Referenced by clang_getCursorDefinition(), clang_getCursorReferenced(), clang::cxcursor::CursorVisitor::VisitTemplateName(), and clang::cxcursor::CursorVisitor::VisitUsingDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorOverloadedDeclRef (TemplateName Template, SourceLocation Location, CXTranslationUnit TU)"
+
+.PP
+Create a overloaded declaration reference cursor for a template name\&. 
+.PP
+Definition at line 1082 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1084                                                                      {
+1085   assert(Name\&.getAsOverloadedTemplate() && TU && "Invalid arguments!");
+1086   void *RawLoc = Loc\&.getPtrEncoding();
+1087   OverloadedDeclRefStorage Storage(Name\&.getAsOverloadedTemplate());
+1088   CXCursor C = {
+1089       CXCursor_OverloadedDeclRef, 0, {Storage\&.getOpaqueValue(), RawLoc, TU}};
+1090   return C;
+1091 }
+.fi
+.SS "CXCursor clang::cxcursor::MakeCursorTemplateRef (const TemplateDecl * Template, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create a reference to a template at the given location\&. 
+.PP
+Definition at line 897 of file CXCursor\&.cpp\&.
+.PP
+.nf
+899                                                                {
+900   assert(Template && TU && "Invalid arguments!");
+901   void *RawLoc = Loc\&.getPtrEncoding();
+902   CXCursor C = {CXCursor_TemplateRef, 0, {Template, RawLoc, TU}};
+903   return C;
+904 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::VisitTemplateName()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorTypeRef (const TypeDecl * Type, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create a type reference at the given location\&. 
+.PP
+Definition at line 882 of file CXCursor\&.cpp\&.
+.PP
+.nf
+883                                                            {
+884   assert(Type && TU && "Invalid arguments!");
+885   void *RawLoc = Loc\&.getPtrEncoding();
+886   CXCursor C = {CXCursor_TypeRef, 0, {Type, RawLoc, TU}};
+887   return C;
+888 }
+.fi
+.PP
+Referenced by getTypeRefCursor(), clang::cxcursor::CursorVisitor::VisitNestedNameSpecifier(), and clang::cxcursor::CursorVisitor::VisitTagTypeLoc()\&.
+.SS "CXCursor clang::cxcursor::MakeCursorVariableRef (const VarDecl * Var, SourceLocation Loc, CXTranslationUnit TU)"
+
+.PP
+Create a reference to a variable at the given location\&. 
+.PP
+Definition at line 931 of file CXCursor\&.cpp\&.
+.PP
+.nf
+932                                                                {
+933 
+934   assert(Var && TU && "Invalid arguments!");
+935   void *RawLoc = Loc\&.getPtrEncoding();
+936   CXCursor C = {CXCursor_VariableRef, 0, {Var, RawLoc, TU}};
+937   return C;
+938 }
+.fi
+.SS "CXCursor clang::cxcursor::MakeCXCursor (const clang::Attr * A, const clang::Decl * Parent, CXTranslationUnit TU)"
+
+.PP
+Referenced by clang::cxindex::AttrListInfo::AttrListInfo(), clang_Cursor_getArgument(), clang_Cursor_getVarDeclInitializer(), clang_getCanonicalCursor(), clang_getCursorDefinition(), clang_getCursorLexicalParent(), clang_getCursorReferenced(), clang_getCursorSemanticParent(), clang_getOverloadedDecl(), clang_getSpecializedCursorTemplate(), clang_Type_visitFields(), clang::cxcursor::CursorVisitor::EnqueueWorkList(), getOverriddenCursors(), clang::cxcursor::CursorVisitor::RunVisitorWorkList(), clang::cxcursor::CursorVisitor::VisitArrayTypeLoc(), clang::cxcursor::CursorVisitor::VisitAttributes(), clang::cxcursor::CursorVisitor::VisitBlockDecl(), clang::cxcursor::CursorVisitor::VisitDecompositionDecl(), clang::cxcursor::CursorVisitor::VisitEnumConstantDecl(), clang::cxcursor::CursorVisitor::VisitFieldDecl(), clang::cxcursor::CursorVisitor::VisitFriendDecl(), clang::cxcursor::CursorVisitor::VisitFunctionTypeLoc(), clang::cxcursor::CursorVisitor::VisitNonTypeTemplateParmDecl(), clang::cxcursor::CursorVisitor::VisitObjCMethodDecl(), clang::cxcursor::CursorVisitor::VisitObjCPropertyDecl(), clang::cxcursor::CursorVisitor::VisitObjCTypeParamList(), clang::cxcursor::CursorVisitor::VisitStaticAssertDecl(), clang::cxcursor::CursorVisitor::VisitTagTypeLoc(), clang::cxcursor::CursorVisitor::VisitTemplateArgumentLoc(), clang::cxcursor::CursorVisitor::VisitTemplateParameters(), clang::cxcursor::CursorVisitor::VisitTemplateTypeParmDecl(), clang::cxcursor::CursorVisitor::VisitTypeAliasTemplateDecl(), and clang::cxcursor::CursorVisitor::VisitVarDecl()\&.
+.SS "CXCursor clang::cxcursor::MakeCXCursor (const clang::Decl * D, CXTranslationUnit TU, SourceRange RegionOfInterest = \fCSourceRange()\fP, bool FirstInDeclGroup = \fCtrue\fP)"
+
+.SS "CXCursor clang::cxcursor::MakeCXCursor (const clang::Stmt * S, const clang::Decl * Parent, CXTranslationUnit TU, SourceRange RegionOfInterest = \fCSourceRange()\fP)"
+
+.SS "CXCursor clang::cxcursor::MakeCXCursorInvalid (CXCursorKind K, CXTranslationUnit TU = \fCnullptr\fP)"
+
+.PP
+Definition at line 34 of file CXCursor\&.cpp\&.
+.PP
+.nf
+34                                                                            {
+35   assert(K >= CXCursor_FirstInvalid && K <= CXCursor_LastInvalid);
+36   CXCursor C = {K, 0, {nullptr, nullptr, TU}};
+37   return C;
+38 }
+.fi
+.PP
+Referenced by clang_getNullCursor(), clang_getOverriddenCursors(), clang_getTypeDeclaration(), getCursor(), llvm::DenseMapInfo< CXCursor >::getEmptyKey(), llvm::DenseMapInfo< CXCursor >::getTombstoneKey(), and MakeCursorObjCClassRef()\&.
+.SS "CXCursor clang::cxcursor::MakeInclusionDirectiveCursor (InclusionDirective * ID, CXTranslationUnit TU)"
+
+.PP
+Create an inclusion directive cursor\&. 
+.PP
+Definition at line 1034 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1035                                                                       {
+1036   CXCursor C = {CXCursor_InclusionDirective, 0, {ID, nullptr, TU}};
+1037   return C;
+1038 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::visitPreprocessedEntities()\&.
+.SS "CXCursor clang::cxcursor::MakeMacroDefinitionCursor (const MacroDefinitionRecord * MI, CXTranslationUnit TU)"
+
+.PP
+Create a macro definition cursor\&. 
+.PP
+Definition at line 992 of file CXCursor\&.cpp\&.
+.PP
+.nf
+993                                                                    {
+994   CXCursor C = {CXCursor_MacroDefinition, 0, {MI, nullptr, TU}};
+995   return C;
+996 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::visitPreprocessedEntities()\&.
+.SS "CXCursor clang::cxcursor::MakeMacroExpansionCursor (MacroDefinitionRecord * MI, SourceLocation Loc, CXTranslationUnit TU)"
+Create a 'pseudo' macro expansion cursor, using a macro definition and a source location\&. 
+.PP
+Definition at line 1009 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1011                                                                   {
+1012   assert(Loc\&.isValid());
+1013   CXCursor C = {CXCursor_MacroExpansion, 0, {MI, Loc\&.getPtrEncoding(), TU}};
+1014   return C;
+1015 }
+.fi
+.SS "CXCursor clang::cxcursor::MakeMacroExpansionCursor (MacroExpansion * MI, CXTranslationUnit TU)"
+
+.PP
+Create a macro expansion cursor\&. 
+.PP
+Definition at line 1003 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1004                                                                   {
+1005   CXCursor C = {CXCursor_MacroExpansion, 0, {MI, nullptr, TU}};
+1006   return C;
+1007 }
+.fi
+.PP
+Referenced by clang::cxcursor::CursorVisitor::visitPreprocessedEntities()\&.
+.SS "CXCursor clang::cxcursor::MakePreprocessingDirectiveCursor (SourceRange Range, CXTranslationUnit TU)"
+
+.PP
+Create a preprocessing directive cursor\&. 
+.PP
+Definition at line 975 of file CXCursor\&.cpp\&.
+.PP
+.nf
+976                                                                           {
+977   CXCursor C = {
+978       CXCursor_PreprocessingDirective,
+979       0,
+980       {Range\&.getBegin()\&.getPtrEncoding(), Range\&.getEnd()\&.getPtrEncoding(), TU}};
+981   return C;
+982 }
+.fi
+.SS "bool clang::cxcursor::operator!= (CXCursor X, CXCursor Y)\fC [inline]\fP"
+
+.PP
+Definition at line 284 of file CXCursor\&.h\&.
+.PP
+.nf
+284 { return !(X == Y); }
+.fi
+.SS "bool clang::cxcursor::operator== (CXCursor X, CXCursor Y)"
+
+.PP
+Definition at line 1237 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1237                                                 {
+1238   return X\&.kind == Y\&.kind && X\&.data[0] == Y\&.data[0] && X\&.data[1] == Y\&.data[1] &&
+1239          X\&.data[2] == Y\&.data[2];
+1240 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

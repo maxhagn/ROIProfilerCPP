@@ -1,0 +1,568 @@
+\hypertarget{namespacelibscanbuild_1_1intercept}{}\doxysection{libscanbuild.\+intercept Namespace Reference}
+\label{namespacelibscanbuild_1_1intercept}\index{libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a97809302cad404d232158e3f84bdadff}{intercept\+\_\+build}} ()
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a86c3040b1932a4e5ab92fc0208cf7376}{capture}} (args)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aafa42528fad9fb2501fb6a4bf3d7ef89}{setup\+\_\+environment}} (args, destination)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aff99583eaa21de0e61e314e027166dc8}{intercept\+\_\+compiler\+\_\+wrapper}} ()
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ab9e9bfd15852749d3c6738d260aa52f0}{intercept\+\_\+compiler\+\_\+wrapper\+\_\+impl}} (\+\_\+, execution)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aa8449b970ebc863de2ae6c19b9666a73}{write\+\_\+exec\+\_\+trace}} (filename, entry)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_af3910155fe90f613b662d1d9d513ad9d}{parse\+\_\+exec\+\_\+trace}} (filename)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac00ba9fb75849d64f22b13a1e309c930}{format\+\_\+entry}} (exec\+\_\+trace)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac3a5517eb86052c646288cd49281a25c}{is\+\_\+preload\+\_\+disabled}} (platform)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_acd8bb59dc861fe2ce32fda65a4226d7c}{entry\+\_\+hash}} (entry)
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a307b2d7b862024676bdb2673d5595776}{GS}} = chr(0x1d)
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a70509b5a32754857d53f0392c87c9277}{RS}} = chr(0x1e)
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aefa6b23a1094176aebd5b22501cd30c7}{US}} = chr(0x1f)
+\item 
+string \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac3e240b7ff2f76f266fca8f82be986a3}{COMPILER\+\_\+\+WRAPPER\+\_\+\+CC}} = \textquotesingle{}intercept-\/cc\textquotesingle{}
+\item 
+string \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a6926e333d72d33cd911921f77907bd74}{COMPILER\+\_\+\+WRAPPER\+\_\+\+CXX}} = \textquotesingle{}intercept-\/c++\textquotesingle{}
+\item 
+string \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a156387fd30e8c79957b8f52932416644}{TRACE\+\_\+\+FILE\+\_\+\+EXTENSION}} = \textquotesingle{}.cmd\textquotesingle{}
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a9402d37c0e8842ed432ecf8865248989}{WRAPPER\+\_\+\+ONLY\+\_\+\+PLATFORMS}} = frozenset(\{\textquotesingle{}win32\textquotesingle{}, \textquotesingle{}cygwin\textquotesingle{}\})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a86c3040b1932a4e5ab92fc0208cf7376}\label{namespacelibscanbuild_1_1intercept_a86c3040b1932a4e5ab92fc0208cf7376}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!capture@{capture}}
+\index{capture@{capture}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{capture()}{capture()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+capture (\begin{DoxyParamCaption}\item[{}]{args }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} The entry point of build command interception. \end{DoxyVerb}
+ 
+
+Definition at line 58 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{58 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a86c3040b1932a4e5ab92fc0208cf7376}{capture}}(args):}
+\DoxyCodeLine{59     \textcolor{stringliteral}{"{}"{}"{} The entry point of build command interception. "{}"{}"{}}}
+\DoxyCodeLine{60 }
+\DoxyCodeLine{61     \textcolor{keyword}{def }post\_processing(commands):}
+\DoxyCodeLine{62         \textcolor{stringliteral}{"{}"{}"{} To make a compilation database, it needs to filter out commands}}
+\DoxyCodeLine{63 \textcolor{stringliteral}{        which are not compiler calls. Needs to find the source file name}}
+\DoxyCodeLine{64 \textcolor{stringliteral}{        from the arguments. And do shell escaping on the command.}}
+\DoxyCodeLine{65 \textcolor{stringliteral}{}}
+\DoxyCodeLine{66 \textcolor{stringliteral}{        To support incremental builds, it is desired to read elements from}}
+\DoxyCodeLine{67 \textcolor{stringliteral}{        an existing compilation database from a previous run. These elements}}
+\DoxyCodeLine{68 \textcolor{stringliteral}{        shall be merged with the new elements. "{}"{}"{}}}
+\DoxyCodeLine{69 }
+\DoxyCodeLine{70         \textcolor{comment}{\# create entries from the current run}}
+\DoxyCodeLine{71         current = itertools.chain.from\_iterable(}
+\DoxyCodeLine{72             \textcolor{comment}{\# creates a sequence of entry generators from an exec,}}
+\DoxyCodeLine{73             \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac00ba9fb75849d64f22b13a1e309c930}{format\_entry}}(command) \textcolor{keywordflow}{for} command \textcolor{keywordflow}{in} commands)}
+\DoxyCodeLine{74         \textcolor{comment}{\# read entries from previous run}}
+\DoxyCodeLine{75         \textcolor{keywordflow}{if} \textcolor{stringliteral}{'append'} \textcolor{keywordflow}{in} args \textcolor{keywordflow}{and} args.append \textcolor{keywordflow}{and} os.path.isfile(args.cdb):}
+\DoxyCodeLine{76             \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(args.cdb) \textcolor{keyword}{as} handle:}
+\DoxyCodeLine{77                 previous = iter(json.load(handle))}
+\DoxyCodeLine{78         \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{79             previous = iter([])}
+\DoxyCodeLine{80         \textcolor{comment}{\# filter out duplicate entries from both}}
+\DoxyCodeLine{81         duplicate = \mbox{\hyperlink{namespacelibscanbuild_a0ddf12c926f03c7f5e3671f162f92832}{duplicate\_check}}(entry\_hash)}
+\DoxyCodeLine{82         \textcolor{keywordflow}{return} (entry}
+\DoxyCodeLine{83                 \textcolor{keywordflow}{for} entry \textcolor{keywordflow}{in} itertools.chain(previous, current)}
+\DoxyCodeLine{84                 \textcolor{keywordflow}{if} os.path.exists(entry[\textcolor{stringliteral}{'file'}]) \textcolor{keywordflow}{and} \textcolor{keywordflow}{not} duplicate(entry))}
+\DoxyCodeLine{85 }
+\DoxyCodeLine{86     \textcolor{keyword}{with} \mbox{\hyperlink{namespacelibear_a44657565063241a3d383ec724243c023}{TemporaryDirectory}}(prefix=\textcolor{stringliteral}{'intercept-\/'}) \textcolor{keyword}{as} tmp\_dir:}
+\DoxyCodeLine{87         \textcolor{comment}{\# run the build command}}
+\DoxyCodeLine{88         environment = \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aafa42528fad9fb2501fb6a4bf3d7ef89}{setup\_environment}}(args, tmp\_dir)}
+\DoxyCodeLine{89         exit\_code = \mbox{\hyperlink{namespacelibscanbuild_a18b34e68ad68eb5b285d3af3504c9b0c}{run\_build}}(args.build, env=environment)}
+\DoxyCodeLine{90         \textcolor{comment}{\# read the intercepted exec calls}}
+\DoxyCodeLine{91         exec\_traces = itertools.chain.from\_iterable(}
+\DoxyCodeLine{92             \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_af3910155fe90f613b662d1d9d513ad9d}{parse\_exec\_trace}}(os.path.join(tmp\_dir, filename))}
+\DoxyCodeLine{93             \textcolor{keywordflow}{for} filename \textcolor{keywordflow}{in} sorted(glob.iglob(os.path.join(tmp\_dir, \textcolor{stringliteral}{'*.cmd'}))))}
+\DoxyCodeLine{94         \textcolor{comment}{\# do post processing}}
+\DoxyCodeLine{95         entries = post\_processing(exec\_traces)}
+\DoxyCodeLine{96         \textcolor{comment}{\# dump the compilation database}}
+\DoxyCodeLine{97         \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(args.cdb, \textcolor{stringliteral}{'w+'}) \textcolor{keyword}{as} handle:}
+\DoxyCodeLine{98             json.dump(list(entries), handle, sort\_keys=\textcolor{keyword}{True}, indent=4)}
+\DoxyCodeLine{99         \textcolor{keywordflow}{return} exit\_code}
+\DoxyCodeLine{100 }
+\DoxyCodeLine{101 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+duplicate\+\_\+check(), libscanbuild.\+intercept.\+format\+\_\+entry(), startfile.\+open(), libscanbuild.\+intercept.\+parse\+\_\+exec\+\_\+trace(), libscanbuild.\+run\+\_\+build(), libscanbuild.\+intercept.\+setup\+\_\+environment(), and libear.\+Temporary\+Directory().
+
+
+
+Referenced by libscanbuild.\+intercept.\+intercept\+\_\+build(), and libscanbuild.\+analyze.\+scan\+\_\+build().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_acd8bb59dc861fe2ce32fda65a4226d7c}\label{namespacelibscanbuild_1_1intercept_acd8bb59dc861fe2ce32fda65a4226d7c}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!entry\_hash@{entry\_hash}}
+\index{entry\_hash@{entry\_hash}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{entry\_hash()}{entry\_hash()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+entry\+\_\+hash (\begin{DoxyParamCaption}\item[{}]{entry }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Implement unique hash method for compilation database entries. \end{DoxyVerb}
+ 
+
+Definition at line 249 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{249 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_acd8bb59dc861fe2ce32fda65a4226d7c}{entry\_hash}}(entry):}
+\DoxyCodeLine{250     \textcolor{stringliteral}{"{}"{}"{} Implement unique hash method for compilation database entries. "{}"{}"{}}}
+\DoxyCodeLine{251 }
+\DoxyCodeLine{252     \textcolor{comment}{\# For faster lookup in set filename is reverted}}
+\DoxyCodeLine{253     filename = entry[\textcolor{stringliteral}{'file'}][::-\/1]}
+\DoxyCodeLine{254     \textcolor{comment}{\# For faster lookup in set directory is reverted}}
+\DoxyCodeLine{255     directory = entry[\textcolor{stringliteral}{'directory'}][::-\/1]}
+\DoxyCodeLine{256     \textcolor{comment}{\# On OS X the 'cc' and 'c++' compilers are wrappers for}}
+\DoxyCodeLine{257     \textcolor{comment}{\# 'clang' therefore both call would be logged. To avoid}}
+\DoxyCodeLine{258     \textcolor{comment}{\# this the hash does not contain the first word of the}}
+\DoxyCodeLine{259     \textcolor{comment}{\# command.}}
+\DoxyCodeLine{260     command = \textcolor{stringliteral}{' '}.join(\mbox{\hyperlink{namespacelibscanbuild_1_1shell_ae2a3d56a48c3f8031021d617491be88c}{decode}}(entry[\textcolor{stringliteral}{'command'}])[1:])}
+\DoxyCodeLine{261 }
+\DoxyCodeLine{262     \textcolor{keywordflow}{return} \textcolor{stringliteral}{'<>'}.join([filename, directory, command])}
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+shell.\+decode().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_ac00ba9fb75849d64f22b13a1e309c930}\label{namespacelibscanbuild_1_1intercept_ac00ba9fb75849d64f22b13a1e309c930}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!format\_entry@{format\_entry}}
+\index{format\_entry@{format\_entry}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{format\_entry()}{format\_entry()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+format\+\_\+entry (\begin{DoxyParamCaption}\item[{}]{exec\+\_\+trace }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Generate the desired fields for compilation database entries. \end{DoxyVerb}
+ 
+
+Definition at line 204 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{204 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac00ba9fb75849d64f22b13a1e309c930}{format\_entry}}(exec\_trace):}
+\DoxyCodeLine{205     \textcolor{stringliteral}{"{}"{}"{} Generate the desired fields for compilation database entries. "{}"{}"{}}}
+\DoxyCodeLine{206 }
+\DoxyCodeLine{207     \textcolor{keyword}{def }abspath(cwd, name):}
+\DoxyCodeLine{208         \textcolor{stringliteral}{"{}"{}"{} Create normalized absolute path from input filename. "{}"{}"{}}}
+\DoxyCodeLine{209         fullname = name \textcolor{keywordflow}{if} os.path.isabs(name) \textcolor{keywordflow}{else} os.path.join(cwd, name)}
+\DoxyCodeLine{210         \textcolor{keywordflow}{return} os.path.normpath(fullname)}
+\DoxyCodeLine{211 }
+\DoxyCodeLine{212     logging.debug(\textcolor{stringliteral}{'format this command: \%s'}, exec\_trace[\textcolor{stringliteral}{'command'}])}
+\DoxyCodeLine{213     compilation = \mbox{\hyperlink{namespacelibscanbuild_1_1compilation_ae846942ed0e175486de0bbe3a258852c}{split\_command}}(exec\_trace[\textcolor{stringliteral}{'command'}])}
+\DoxyCodeLine{214     \textcolor{keywordflow}{if} compilation:}
+\DoxyCodeLine{215         \textcolor{keywordflow}{for} source \textcolor{keywordflow}{in} compilation.files:}
+\DoxyCodeLine{216             compiler = \textcolor{stringliteral}{'c++'} \textcolor{keywordflow}{if} compilation.compiler == \textcolor{stringliteral}{'c++'} \textcolor{keywordflow}{else} \textcolor{stringliteral}{'cc'}}
+\DoxyCodeLine{217             command = [compiler, \textcolor{stringliteral}{'-\/c'}] + compilation.flags + [source]}
+\DoxyCodeLine{218             logging.debug(\textcolor{stringliteral}{'formated as: \%s'}, command)}
+\DoxyCodeLine{219             \textcolor{keywordflow}{yield} \{}
+\DoxyCodeLine{220                 \textcolor{stringliteral}{'directory'}: exec\_trace[\textcolor{stringliteral}{'directory'}],}
+\DoxyCodeLine{221                 \textcolor{stringliteral}{'command'}: \mbox{\hyperlink{namespacelibscanbuild_1_1shell_ac92beb78a0b5fd06775e27d7b87870ed}{encode}}(command),}
+\DoxyCodeLine{222                 \textcolor{stringliteral}{'file'}: abspath(exec\_trace[\textcolor{stringliteral}{'directory'}], source)}
+\DoxyCodeLine{223             \}}
+\DoxyCodeLine{224 }
+\DoxyCodeLine{225 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+shell.\+encode(), and libscanbuild.\+compilation.\+split\+\_\+command().
+
+
+
+Referenced by libscanbuild.\+intercept.\+capture().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a97809302cad404d232158e3f84bdadff}\label{namespacelibscanbuild_1_1intercept_a97809302cad404d232158e3f84bdadff}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!intercept\_build@{intercept\_build}}
+\index{intercept\_build@{intercept\_build}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{intercept\_build()}{intercept\_build()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+intercept\+\_\+build (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Entry point for 'intercept-build' command. \end{DoxyVerb}
+ 
+
+Definition at line 51 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{51 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a97809302cad404d232158e3f84bdadff}{intercept\_build}}():}
+\DoxyCodeLine{52     \textcolor{stringliteral}{"{}"{}"{} Entry point for 'intercept-\/build' command. "{}"{}"{}}}
+\DoxyCodeLine{53 }
+\DoxyCodeLine{54     args = \mbox{\hyperlink{namespacelibscanbuild_1_1arguments_aab7ce55617922a43040742e5e517f0e3}{parse\_args\_for\_intercept\_build}}()}
+\DoxyCodeLine{55     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_a86c3040b1932a4e5ab92fc0208cf7376}{capture}}(args)}
+\DoxyCodeLine{56 }
+\DoxyCodeLine{57 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+intercept.\+capture(), and libscanbuild.\+arguments.\+parse\+\_\+args\+\_\+for\+\_\+intercept\+\_\+build().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_aff99583eaa21de0e61e314e027166dc8}\label{namespacelibscanbuild_1_1intercept_aff99583eaa21de0e61e314e027166dc8}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!intercept\_compiler\_wrapper@{intercept\_compiler\_wrapper}}
+\index{intercept\_compiler\_wrapper@{intercept\_compiler\_wrapper}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{intercept\_compiler\_wrapper()}{intercept\_compiler\_wrapper()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+intercept\+\_\+compiler\+\_\+wrapper (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Entry point for `intercept-cc` and `intercept-c++`. \end{DoxyVerb}
+ 
+
+Definition at line 139 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{139 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aff99583eaa21de0e61e314e027166dc8}{intercept\_compiler\_wrapper}}():}
+\DoxyCodeLine{140     \textcolor{stringliteral}{"{}"{}"{} Entry point for `intercept-\/cc` and `intercept-\/c++`. "{}"{}"{}}}
+\DoxyCodeLine{141 }
+\DoxyCodeLine{142     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespacelibscanbuild_a395e584f9f6636d0f86868b62ef35780}{compiler\_wrapper}}(intercept\_compiler\_wrapper\_impl)}
+\DoxyCodeLine{143 }
+\DoxyCodeLine{144 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+compiler\+\_\+wrapper().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_ab9e9bfd15852749d3c6738d260aa52f0}\label{namespacelibscanbuild_1_1intercept_ab9e9bfd15852749d3c6738d260aa52f0}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!intercept\_compiler\_wrapper\_impl@{intercept\_compiler\_wrapper\_impl}}
+\index{intercept\_compiler\_wrapper\_impl@{intercept\_compiler\_wrapper\_impl}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{intercept\_compiler\_wrapper\_impl()}{intercept\_compiler\_wrapper\_impl()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+intercept\+\_\+compiler\+\_\+wrapper\+\_\+impl (\begin{DoxyParamCaption}\item[{}]{\+\_\+,  }\item[{}]{execution }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Implement intercept compiler wrapper functionality.
+
+It does generate execution report into target directory.
+The target directory name is from environment variables. \end{DoxyVerb}
+ 
+
+Definition at line 145 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{145 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ab9e9bfd15852749d3c6738d260aa52f0}{intercept\_compiler\_wrapper\_impl}}(\_, execution):}
+\DoxyCodeLine{146     \textcolor{stringliteral}{"{}"{}"{} Implement intercept compiler wrapper functionality.}}
+\DoxyCodeLine{147 \textcolor{stringliteral}{}}
+\DoxyCodeLine{148 \textcolor{stringliteral}{    It does generate execution report into target directory.}}
+\DoxyCodeLine{149 \textcolor{stringliteral}{    The target directory name is from environment variables. "{}"{}"{}}}
+\DoxyCodeLine{150 }
+\DoxyCodeLine{151     message\_prefix = \textcolor{stringliteral}{'execution report might be incomplete: \%s'}}
+\DoxyCodeLine{152 }
+\DoxyCodeLine{153     target\_dir = os.getenv(\textcolor{stringliteral}{'INTERCEPT\_BUILD\_TARGET\_DIR'})}
+\DoxyCodeLine{154     \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} target\_dir:}
+\DoxyCodeLine{155         logging.warning(message\_prefix, \textcolor{stringliteral}{'missing target directory'})}
+\DoxyCodeLine{156         \textcolor{keywordflow}{return}}
+\DoxyCodeLine{157     \textcolor{comment}{\# write current execution info to the pid file}}
+\DoxyCodeLine{158     \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{159         target\_file\_name = str(os.getpid()) + TRACE\_FILE\_EXTENSION}
+\DoxyCodeLine{160         target\_file = os.path.join(target\_dir, target\_file\_name)}
+\DoxyCodeLine{161         logging.debug(\textcolor{stringliteral}{'writing execution report to: \%s'}, target\_file)}
+\DoxyCodeLine{162         \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aa8449b970ebc863de2ae6c19b9666a73}{write\_exec\_trace}}(target\_file, execution)}
+\DoxyCodeLine{163     \textcolor{keywordflow}{except} IOError:}
+\DoxyCodeLine{164         logging.warning(message\_prefix, \textcolor{stringliteral}{'io problem'})}
+\DoxyCodeLine{165 }
+\DoxyCodeLine{166 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+intercept.\+write\+\_\+exec\+\_\+trace().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_ac3a5517eb86052c646288cd49281a25c}\label{namespacelibscanbuild_1_1intercept_ac3a5517eb86052c646288cd49281a25c}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!is\_preload\_disabled@{is\_preload\_disabled}}
+\index{is\_preload\_disabled@{is\_preload\_disabled}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{is\_preload\_disabled()}{is\_preload\_disabled()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+is\+\_\+preload\+\_\+disabled (\begin{DoxyParamCaption}\item[{}]{platform }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Library-based interposition will fail silently if SIP is enabled,
+so this should be detected. You can detect whether SIP is enabled on
+Darwin by checking whether (1) there is a binary called 'csrutil' in
+the path and, if so, (2) whether the output of executing 'csrutil status'
+contains 'System Integrity Protection status: enabled'.
+
+:param platform: name of the platform (returned by sys.platform),
+:return: True if library preload will fail by the dynamic linker. \end{DoxyVerb}
+ 
+
+Definition at line 226 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{226 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac3a5517eb86052c646288cd49281a25c}{is\_preload\_disabled}}(platform):}
+\DoxyCodeLine{227     \textcolor{stringliteral}{"{}"{}"{} Library-\/based interposition will fail silently if SIP is enabled,}}
+\DoxyCodeLine{228 \textcolor{stringliteral}{    so this should be detected. You can detect whether SIP is enabled on}}
+\DoxyCodeLine{229 \textcolor{stringliteral}{    Darwin by checking whether (1) there is a binary called 'csrutil' in}}
+\DoxyCodeLine{230 \textcolor{stringliteral}{    the path and, if so, (2) whether the output of executing 'csrutil status'}}
+\DoxyCodeLine{231 \textcolor{stringliteral}{    contains 'System Integrity Protection status: enabled'.}}
+\DoxyCodeLine{232 \textcolor{stringliteral}{}}
+\DoxyCodeLine{233 \textcolor{stringliteral}{    :param platform: name of the platform (returned by sys.platform),}}
+\DoxyCodeLine{234 \textcolor{stringliteral}{    :return: True if library preload will fail by the dynamic linker. "{}"{}"{}}}
+\DoxyCodeLine{235 }
+\DoxyCodeLine{236     \textcolor{keywordflow}{if} platform \textcolor{keywordflow}{in} WRAPPER\_ONLY\_PLATFORMS:}
+\DoxyCodeLine{237         \textcolor{keywordflow}{return} \textcolor{keyword}{True}}
+\DoxyCodeLine{238     \textcolor{keywordflow}{elif} platform == \textcolor{stringliteral}{'darwin'}:}
+\DoxyCodeLine{239         command = [\textcolor{stringliteral}{'csrutil'}, \textcolor{stringliteral}{'status'}]}
+\DoxyCodeLine{240         pattern = re.compile(\textcolor{stringliteral}{r'System Integrity Protection status:\(\backslash\)s+enabled'})}
+\DoxyCodeLine{241         \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{242             \textcolor{keywordflow}{return} any(pattern.match(line) \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} \mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\_command}}(command))}
+\DoxyCodeLine{243         \textcolor{keywordflow}{except}:}
+\DoxyCodeLine{244             \textcolor{keywordflow}{return} \textcolor{keyword}{False}}
+\DoxyCodeLine{245     \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{246         \textcolor{keywordflow}{return} \textcolor{keyword}{False}}
+\DoxyCodeLine{247 }
+\DoxyCodeLine{248 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+run\+\_\+command().
+
+
+
+Referenced by libscanbuild.\+intercept.\+setup\+\_\+environment().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_af3910155fe90f613b662d1d9d513ad9d}\label{namespacelibscanbuild_1_1intercept_af3910155fe90f613b662d1d9d513ad9d}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!parse\_exec\_trace@{parse\_exec\_trace}}
+\index{parse\_exec\_trace@{parse\_exec\_trace}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{parse\_exec\_trace()}{parse\_exec\_trace()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+parse\+\_\+exec\+\_\+trace (\begin{DoxyParamCaption}\item[{}]{filename }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Parse the file generated by the 'libear' preloaded library.
+
+Given filename points to a file which contains the basic report
+generated by the interception library or wrapper command. A single
+report file _might_ contain multiple process creation info. \end{DoxyVerb}
+ 
+
+Definition at line 183 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{183 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_af3910155fe90f613b662d1d9d513ad9d}{parse\_exec\_trace}}(filename):}
+\DoxyCodeLine{184     \textcolor{stringliteral}{"{}"{}"{} Parse the file generated by the 'libear' preloaded library.}}
+\DoxyCodeLine{185 \textcolor{stringliteral}{}}
+\DoxyCodeLine{186 \textcolor{stringliteral}{    Given filename points to a file which contains the basic report}}
+\DoxyCodeLine{187 \textcolor{stringliteral}{    generated by the interception library or wrapper command. A single}}
+\DoxyCodeLine{188 \textcolor{stringliteral}{    report file \_might\_ contain multiple process creation info. "{}"{}"{}}}
+\DoxyCodeLine{189 }
+\DoxyCodeLine{190     logging.debug(\textcolor{stringliteral}{'parse exec trace file: \%s'}, filename)}
+\DoxyCodeLine{191     \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(filename, \textcolor{stringliteral}{'r'}) \textcolor{keyword}{as} handler:}
+\DoxyCodeLine{192         content = handler.read()}
+\DoxyCodeLine{193         \textcolor{keywordflow}{for} group \textcolor{keywordflow}{in} filter(bool, content.split(GS)):}
+\DoxyCodeLine{194             records = group.split(RS)}
+\DoxyCodeLine{195             \textcolor{keywordflow}{yield} \{}
+\DoxyCodeLine{196                 \textcolor{stringliteral}{'pid'}: records[0],}
+\DoxyCodeLine{197                 \textcolor{stringliteral}{'ppid'}: records[1],}
+\DoxyCodeLine{198                 \textcolor{stringliteral}{'function'}: records[2],}
+\DoxyCodeLine{199                 \textcolor{stringliteral}{'directory'}: records[3],}
+\DoxyCodeLine{200                 \textcolor{stringliteral}{'command'}: records[4].split(US)[:-\/1]}
+\DoxyCodeLine{201             \}}
+\DoxyCodeLine{202 }
+\DoxyCodeLine{203 }
+
+\end{DoxyCode}
+
+
+References startfile.\+open().
+
+
+
+Referenced by libscanbuild.\+intercept.\+capture().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_aafa42528fad9fb2501fb6a4bf3d7ef89}\label{namespacelibscanbuild_1_1intercept_aafa42528fad9fb2501fb6a4bf3d7ef89}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!setup\_environment@{setup\_environment}}
+\index{setup\_environment@{setup\_environment}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{setup\_environment()}{setup\_environment()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+setup\+\_\+environment (\begin{DoxyParamCaption}\item[{}]{args,  }\item[{}]{destination }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Sets up the environment for the build command.
+
+It sets the required environment variables and execute the given command.
+The exec calls will be logged by the 'libear' preloaded library or by the
+'wrapper' programs. \end{DoxyVerb}
+ 
+
+Definition at line 102 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{102 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aafa42528fad9fb2501fb6a4bf3d7ef89}{setup\_environment}}(args, destination):}
+\DoxyCodeLine{103     \textcolor{stringliteral}{"{}"{}"{} Sets up the environment for the build command.}}
+\DoxyCodeLine{104 \textcolor{stringliteral}{}}
+\DoxyCodeLine{105 \textcolor{stringliteral}{    It sets the required environment variables and execute the given command.}}
+\DoxyCodeLine{106 \textcolor{stringliteral}{    The exec calls will be logged by the 'libear' preloaded library or by the}}
+\DoxyCodeLine{107 \textcolor{stringliteral}{    'wrapper' programs. "{}"{}"{}}}
+\DoxyCodeLine{108 }
+\DoxyCodeLine{109     c\_compiler = args.cc \textcolor{keywordflow}{if} \textcolor{stringliteral}{'cc'} \textcolor{keywordflow}{in} args \textcolor{keywordflow}{else} \textcolor{stringliteral}{'cc'}}
+\DoxyCodeLine{110     cxx\_compiler = args.cxx \textcolor{keywordflow}{if} \textcolor{stringliteral}{'cxx'} \textcolor{keywordflow}{in} args \textcolor{keywordflow}{else} \textcolor{stringliteral}{'c++'}}
+\DoxyCodeLine{111 }
+\DoxyCodeLine{112     libear\_path = \textcolor{keywordtype}{None} \textcolor{keywordflow}{if} args.override\_compiler \textcolor{keywordflow}{or} \mbox{\hyperlink{namespacelibscanbuild_1_1intercept_ac3a5517eb86052c646288cd49281a25c}{is\_preload\_disabled}}(}
+\DoxyCodeLine{113         sys.platform) \textcolor{keywordflow}{else} \mbox{\hyperlink{namespacelibear_a817eb807bbbffe9ca98d7fa2777cd182}{build\_libear}}(c\_compiler, destination)}
+\DoxyCodeLine{114 }
+\DoxyCodeLine{115     environment = dict(os.environ)}
+\DoxyCodeLine{116     environment.update(\{\textcolor{stringliteral}{'INTERCEPT\_BUILD\_TARGET\_DIR'}: destination\})}
+\DoxyCodeLine{117 }
+\DoxyCodeLine{118     \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} libear\_path:}
+\DoxyCodeLine{119         logging.debug(\textcolor{stringliteral}{'intercept gonna use compiler wrappers'})}
+\DoxyCodeLine{120         environment.update(\mbox{\hyperlink{namespacelibscanbuild_a618962b6b79f889cbadd9fbc5971c938}{wrapper\_environment}}(args))}
+\DoxyCodeLine{121         environment.update(\{}
+\DoxyCodeLine{122             \textcolor{stringliteral}{'CC'}: COMPILER\_WRAPPER\_CC,}
+\DoxyCodeLine{123             \textcolor{stringliteral}{'CXX'}: COMPILER\_WRAPPER\_CXX}
+\DoxyCodeLine{124         \})}
+\DoxyCodeLine{125     \textcolor{keywordflow}{elif} sys.platform == \textcolor{stringliteral}{'darwin'}:}
+\DoxyCodeLine{126         logging.debug(\textcolor{stringliteral}{'intercept gonna preload libear on OSX'})}
+\DoxyCodeLine{127         environment.update(\{}
+\DoxyCodeLine{128             \textcolor{stringliteral}{'DYLD\_INSERT\_LIBRARIES'}: libear\_path,}
+\DoxyCodeLine{129             \textcolor{stringliteral}{'DYLD\_FORCE\_FLAT\_NAMESPACE'}: \textcolor{stringliteral}{'1'}}
+\DoxyCodeLine{130         \})}
+\DoxyCodeLine{131     \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{132         logging.debug(\textcolor{stringliteral}{'intercept gonna preload libear on UNIX'})}
+\DoxyCodeLine{133         environment.update(\{\textcolor{stringliteral}{'LD\_PRELOAD'}: libear\_path\})}
+\DoxyCodeLine{134 }
+\DoxyCodeLine{135     \textcolor{keywordflow}{return} environment}
+\DoxyCodeLine{136 }
+\DoxyCodeLine{137 }
+\DoxyCodeLine{138 \textcolor{preprocessor}{@command\_entry\_point}}
+
+\end{DoxyCode}
+
+
+References libear.\+build\+\_\+libear(), libscanbuild.\+intercept.\+is\+\_\+preload\+\_\+disabled(), and libscanbuild.\+wrapper\+\_\+environment().
+
+
+
+Referenced by libscanbuild.\+intercept.\+capture().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_aa8449b970ebc863de2ae6c19b9666a73}\label{namespacelibscanbuild_1_1intercept_aa8449b970ebc863de2ae6c19b9666a73}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!write\_exec\_trace@{write\_exec\_trace}}
+\index{write\_exec\_trace@{write\_exec\_trace}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{write\_exec\_trace()}{write\_exec\_trace()}}
+{\footnotesize\ttfamily def libscanbuild.\+intercept.\+write\+\_\+exec\+\_\+trace (\begin{DoxyParamCaption}\item[{}]{filename,  }\item[{}]{entry }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Write execution report file.
+
+This method shall be sync with the execution report writer in interception
+library. The entry in the file is a JSON objects.
+
+:param filename:    path to the output execution trace file,
+:param entry:       the Execution object to append to that file. \end{DoxyVerb}
+ 
+
+Definition at line 167 of file intercept.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{167 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1intercept_aa8449b970ebc863de2ae6c19b9666a73}{write\_exec\_trace}}(filename, entry):}
+\DoxyCodeLine{168     \textcolor{stringliteral}{"{}"{}"{} Write execution report file.}}
+\DoxyCodeLine{169 \textcolor{stringliteral}{}}
+\DoxyCodeLine{170 \textcolor{stringliteral}{    This method shall be sync with the execution report writer in interception}}
+\DoxyCodeLine{171 \textcolor{stringliteral}{    library. The entry in the file is a JSON objects.}}
+\DoxyCodeLine{172 \textcolor{stringliteral}{}}
+\DoxyCodeLine{173 \textcolor{stringliteral}{    :param filename:    path to the output execution trace file,}}
+\DoxyCodeLine{174 \textcolor{stringliteral}{    :param entry:       the Execution object to append to that file. "{}"{}"{}}}
+\DoxyCodeLine{175 }
+\DoxyCodeLine{176     \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(filename, \textcolor{stringliteral}{'ab'}) \textcolor{keyword}{as} handler:}
+\DoxyCodeLine{177         pid = str(entry.pid)}
+\DoxyCodeLine{178         command = US.join(entry.cmd) + US}
+\DoxyCodeLine{179         content = RS.join([pid, pid, \textcolor{stringliteral}{'wrapper'}, entry.cwd, command]) + GS}
+\DoxyCodeLine{180         handler.write(content.encode(\textcolor{stringliteral}{'utf-\/8'}))}
+\DoxyCodeLine{181 }
+\DoxyCodeLine{182 }
+
+\end{DoxyCode}
+
+
+References startfile.\+open().
+
+
+
+Referenced by libscanbuild.\+intercept.\+intercept\+\_\+compiler\+\_\+wrapper\+\_\+impl().
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_ac3e240b7ff2f76f266fca8f82be986a3}\label{namespacelibscanbuild_1_1intercept_ac3e240b7ff2f76f266fca8f82be986a3}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!COMPILER\_WRAPPER\_CC@{COMPILER\_WRAPPER\_CC}}
+\index{COMPILER\_WRAPPER\_CC@{COMPILER\_WRAPPER\_CC}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{COMPILER\_WRAPPER\_CC}{COMPILER\_WRAPPER\_CC}}
+{\footnotesize\ttfamily string libscanbuild.\+intercept.\+COMPILER\+\_\+\+WRAPPER\+\_\+\+CC = \textquotesingle{}intercept-\/cc\textquotesingle{}}
+
+
+
+Definition at line 44 of file intercept.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a6926e333d72d33cd911921f77907bd74}\label{namespacelibscanbuild_1_1intercept_a6926e333d72d33cd911921f77907bd74}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!COMPILER\_WRAPPER\_CXX@{COMPILER\_WRAPPER\_CXX}}
+\index{COMPILER\_WRAPPER\_CXX@{COMPILER\_WRAPPER\_CXX}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{COMPILER\_WRAPPER\_CXX}{COMPILER\_WRAPPER\_CXX}}
+{\footnotesize\ttfamily string libscanbuild.\+intercept.\+COMPILER\+\_\+\+WRAPPER\+\_\+\+CXX = \textquotesingle{}intercept-\/c++\textquotesingle{}}
+
+
+
+Definition at line 45 of file intercept.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a307b2d7b862024676bdb2673d5595776}\label{namespacelibscanbuild_1_1intercept_a307b2d7b862024676bdb2673d5595776}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!GS@{GS}}
+\index{GS@{GS}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{GS}{GS}}
+{\footnotesize\ttfamily libscanbuild.\+intercept.\+GS = chr(0x1d)}
+
+
+
+Definition at line 40 of file intercept.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a70509b5a32754857d53f0392c87c9277}\label{namespacelibscanbuild_1_1intercept_a70509b5a32754857d53f0392c87c9277}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!RS@{RS}}
+\index{RS@{RS}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{RS}{RS}}
+{\footnotesize\ttfamily libscanbuild.\+intercept.\+RS = chr(0x1e)}
+
+
+
+Definition at line 41 of file intercept.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a156387fd30e8c79957b8f52932416644}\label{namespacelibscanbuild_1_1intercept_a156387fd30e8c79957b8f52932416644}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!TRACE\_FILE\_EXTENSION@{TRACE\_FILE\_EXTENSION}}
+\index{TRACE\_FILE\_EXTENSION@{TRACE\_FILE\_EXTENSION}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{TRACE\_FILE\_EXTENSION}{TRACE\_FILE\_EXTENSION}}
+{\footnotesize\ttfamily string libscanbuild.\+intercept.\+TRACE\+\_\+\+FILE\+\_\+\+EXTENSION = \textquotesingle{}.cmd\textquotesingle{}}
+
+
+
+Definition at line 46 of file intercept.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_aefa6b23a1094176aebd5b22501cd30c7}\label{namespacelibscanbuild_1_1intercept_aefa6b23a1094176aebd5b22501cd30c7}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!US@{US}}
+\index{US@{US}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{US}{US}}
+{\footnotesize\ttfamily libscanbuild.\+intercept.\+US = chr(0x1f)}
+
+
+
+Definition at line 42 of file intercept.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1intercept_a9402d37c0e8842ed432ecf8865248989}\label{namespacelibscanbuild_1_1intercept_a9402d37c0e8842ed432ecf8865248989}} 
+\index{libscanbuild.intercept@{libscanbuild.intercept}!WRAPPER\_ONLY\_PLATFORMS@{WRAPPER\_ONLY\_PLATFORMS}}
+\index{WRAPPER\_ONLY\_PLATFORMS@{WRAPPER\_ONLY\_PLATFORMS}!libscanbuild.intercept@{libscanbuild.intercept}}
+\doxysubsubsection{\texorpdfstring{WRAPPER\_ONLY\_PLATFORMS}{WRAPPER\_ONLY\_PLATFORMS}}
+{\footnotesize\ttfamily libscanbuild.\+intercept.\+WRAPPER\+\_\+\+ONLY\+\_\+\+PLATFORMS = frozenset(\{\textquotesingle{}win32\textquotesingle{}, \textquotesingle{}cygwin\textquotesingle{}\})}
+
+
+
+Definition at line 47 of file intercept.\+py.
+

@@ -1,0 +1,108 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-check/ClangCheck.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-check/ClangCheck.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/AST/ASTConsumer\&.h'\fP
+.br
+\fC#include 'clang/CodeGen/ObjectFilePCHContainerOperations\&.h'\fP
+.br
+\fC#include 'clang/Driver/Options\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTConsumers\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Rewrite/Frontend/FixItRewriter\&.h'\fP
+.br
+\fC#include 'clang/Rewrite/Frontend/FrontendActions\&.h'\fP
+.br
+\fC#include 'clang/StaticAnalyzer/Frontend/FrontendActions\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CommonOptionsParser\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Syntax/BuildTree\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Syntax/Tokens\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Syntax/Tree\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Tooling\&.h'\fP
+.br
+\fC#include 'llvm/ADT/STLExtras\&.h'\fP
+.br
+\fC#include 'llvm/Option/OptTable\&.h'\fP
+.br
+\fC#include 'llvm/Support/Path\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 188 of file ClangCheck\&.cpp\&.
+.PP
+.nf
+188                                       {
+189   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+190 
+191   // Initialize targets for clang module support\&.
+192   llvm::InitializeAllTargets();
+193   llvm::InitializeAllTargetMCs();
+194   llvm::InitializeAllAsmPrinters();
+195   llvm::InitializeAllAsmParsers();
+196 
+197   auto ExpectedParser =
+198       CommonOptionsParser::create(argc, argv, ClangCheckCategory);
+199   if (!ExpectedParser) {
+200     llvm::errs() << ExpectedParser\&.takeError();
+201     return 1;
+202   }
+203   CommonOptionsParser &OptionsParser = ExpectedParser\&.get();
+204   ClangTool Tool(OptionsParser\&.getCompilations(),
+205                  OptionsParser\&.getSourcePathList());
+206 
+207   // Clear adjusters because -fsyntax-only is inserted by the default chain\&.
+208   Tool\&.clearArgumentsAdjusters();
+209   Tool\&.appendArgumentsAdjuster(getClangStripOutputAdjuster());
+210   Tool\&.appendArgumentsAdjuster(getClangStripDependencyFileAdjuster());
+211 
+212   // Running the analyzer requires --analyze\&. Other modes can work with the
+213   // -fsyntax-only option\&.
+214   Tool\&.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+215       Analyze ? "--analyze" : "-fsyntax-only", ArgumentInsertPosition::BEGIN));
+216 
+217   ClangCheckActionFactory CheckFactory;
+218   std::unique_ptr<FrontendActionFactory> FrontendFactory;
+219 
+220   // Choose the correct factory based on the selected mode\&.
+221   if (Analyze)
+222     FrontendFactory = newFrontendActionFactory<clang::ento::AnalysisAction>();
+223   else if (Fixit)
+224     FrontendFactory = newFrontendActionFactory<ClangCheckFixItAction>();
+225   else if (SyntaxTreeDump || TokensDump)
+226     FrontendFactory = newFrontendActionFactory<DumpSyntaxTree>();
+227   else
+228     FrontendFactory = newFrontendActionFactory(&CheckFactory);
+229 
+230   return Tool\&.run(FrontendFactory\&.get());
+231 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

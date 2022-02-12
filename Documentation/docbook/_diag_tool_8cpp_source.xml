@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__diag_tool_8cpp_source" xml:lang="en-US">
+<title>DiagTool.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/diagtool/DiagTool.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;DiagTool.cpp&#32;-&#32;Classes&#32;for&#32;defining&#32;diagtool&#32;tools&#32;-------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;the&#32;boilerplate&#32;for&#32;defining&#32;diagtool&#32;tools.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diag_tool_8h">DiagTool.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringMap.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&lt;vector&gt;</emphasis>
+00016 
+00017 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacediagtool">diagtool</link>;
+00018 
+<anchor xml:id="__diag_tool_8cpp_source_1l00019"/><link linkend="_classdiagtool_1_1_diag_tool_1a7b882ee66061b88f2e303dcb214b8c6f">00019</link> <link linkend="_classdiagtool_1_1_diag_tool_1a7b882ee66061b88f2e303dcb214b8c6f">DiagTool::DiagTool</link>(llvm::StringRef&#32;toolCmd,&#32;llvm::StringRef&#32;toolDesc)
+00020 &#32;&#32;&#32;&#32;:&#32;cmd(std::string(toolCmd)),&#32;description(std::string(toolDesc))&#32;{}
+00021 
+<anchor xml:id="__diag_tool_8cpp_source_1l00022"/><link linkend="_classdiagtool_1_1_diag_tool_1ad1b55bb70cc53b6387ca72af0eaa013b">00022</link> <link linkend="_classdiagtool_1_1_diag_tool_1ad1b55bb70cc53b6387ca72af0eaa013b">DiagTool::~DiagTool</link>()&#32;{}
+00023 
+<anchor xml:id="__diag_tool_8cpp_source_1l00024"/><link linkend="__diag_tool_8cpp_1a57572db403ffa8892cfb0ee3a8750b20">00024</link> <emphasis role="keyword">typedef</emphasis>&#32;llvm::StringMap&lt;DiagTool&#32;*&gt;&#32;<link linkend="__diag_tool_8cpp_1a57572db403ffa8892cfb0ee3a8750b20">ToolMap</link>;
+00025 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<link linkend="__diag_tool_8cpp_1a57572db403ffa8892cfb0ee3a8750b20">ToolMap</link>&#32;*getTools(<emphasis role="keywordtype">void</emphasis>&#32;*v)&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="__diag_tool_8cpp_1a57572db403ffa8892cfb0ee3a8750b20">ToolMap</link>*<emphasis role="keyword">&gt;</emphasis>(v);&#32;}
+00026 
+<anchor xml:id="__diag_tool_8cpp_source_1l00027"/><link linkend="_classdiagtool_1_1_diag_tools_1a3d54b2f91b0ac6e5e687fa1cd20f931b">00027</link> <link linkend="_classdiagtool_1_1_diag_tools_1a3d54b2f91b0ac6e5e687fa1cd20f931b">DiagTools::DiagTools</link>()&#32;:&#32;tools(new&#32;<link linkend="__diag_tool_8cpp_1a57572db403ffa8892cfb0ee3a8750b20">ToolMap</link>())&#32;{}
+<anchor xml:id="__diag_tool_8cpp_source_1l00028"/><link linkend="_classdiagtool_1_1_diag_tools_1ad08eda204c1bf21ee24ab1aaed75a20f">00028</link> <link linkend="_classdiagtool_1_1_diag_tools_1ad08eda204c1bf21ee24ab1aaed75a20f">DiagTools::~DiagTools</link>()&#32;{&#32;<emphasis role="keyword">delete</emphasis>&#32;getTools(tools);&#32;}
+00029 
+<anchor xml:id="__diag_tool_8cpp_source_1l00030"/><link linkend="_classdiagtool_1_1_diag_tools_1ac78bdbd165a94e9a0bf170344437f02a">00030</link> <link linkend="_classdiagtool_1_1_diag_tool">DiagTool</link>&#32;*<link linkend="_classdiagtool_1_1_diag_tools_1ac78bdbd165a94e9a0bf170344437f02a">DiagTools::getTool</link>(llvm::StringRef&#32;toolCmd)&#32;{
+00031 &#32;&#32;ToolMap::iterator&#32;it&#32;=&#32;getTools(tools)-&gt;find(toolCmd);
+00032 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(it&#32;==&#32;getTools(tools)-&gt;end())&#32;?&#32;nullptr&#32;:&#32;it-&gt;getValue();
+00033 }
+00034 
+<anchor xml:id="__diag_tool_8cpp_source_1l00035"/><link linkend="_classdiagtool_1_1_diag_tools_1a4b114fe81b04ff1903766778967b6288">00035</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classdiagtool_1_1_diag_tools_1a4b114fe81b04ff1903766778967b6288">DiagTools::registerTool</link>(<link linkend="_classdiagtool_1_1_diag_tool">DiagTool</link>&#32;*tool)&#32;{
+00036 &#32;&#32;(*getTools(tools))[tool-&gt;<link linkend="_classdiagtool_1_1_diag_tool_1a1673876dd0a23c6dc5a1fcc65eb48af0">getName</link>()]&#32;=&#32;tool;
+00037 }
+00038 
+<anchor xml:id="__diag_tool_8cpp_source_1l00039"/><link linkend="_classdiagtool_1_1_diag_tools_1a6e18f4876ef5c1f90754b96dac399f1a">00039</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classdiagtool_1_1_diag_tools_1a6e18f4876ef5c1f90754b96dac399f1a">DiagTools::printCommands</link>(llvm::raw_ostream&#32;&amp;out)&#32;{
+00040 &#32;&#32;std::vector&lt;llvm::StringRef&gt;&#32;toolNames;
+00041 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;maxName&#32;=&#32;0;
+00042 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ToolMap::iterator&#32;it&#32;=&#32;getTools(tools)-&gt;begin(),
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;ei&#32;=&#32;getTools(tools)-&gt;end();&#32;it&#32;!=&#32;ei;&#32;++it)&#32;{
+00044 &#32;&#32;&#32;&#32;toolNames.push_back(it-&gt;getKey());
+00045 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;len&#32;=&#32;it-&gt;getKey().size();
+00046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(len&#32;&gt;&#32;maxName)
+00047 &#32;&#32;&#32;&#32;&#32;&#32;maxName&#32;=&#32;len;&#32;&#32;&#32;&#32;
+00048 &#32;&#32;}
+00049 &#32;&#32;llvm::sort(toolNames);
+00050 
+00051 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(std::vector&lt;llvm::StringRef&gt;::iterator&#32;it&#32;=&#32;toolNames.begin(),
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;ei&#32;=&#32;toolNames.end();&#32;it&#32;!=&#32;ei;&#32;++it)&#32;{
+00053 
+00054 &#32;&#32;&#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;(*it);
+00055 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;spaces&#32;=&#32;(maxName&#32;+&#32;3)&#32;-&#32;(it-&gt;size());
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;&lt;&#32;spaces;&#32;++i)
+00057 &#32;&#32;&#32;&#32;&#32;&#32;out&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>;
+00058 &#32;&#32;&#32;&#32;
+00059 &#32;&#32;&#32;&#32;out&#32;&lt;&lt;&#32;<link linkend="_classdiagtool_1_1_diag_tools_1ac78bdbd165a94e9a0bf170344437f02a">getTool</link>(*it)-&gt;<link linkend="_classdiagtool_1_1_diag_tool_1a3354e06ecca922a78e610f27754dcaff">getDescription</link>()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;&#32;&#32;&#32;&#32;
+00060 &#32;&#32;}
+00061 }
+00062 
+00063 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespacediagtool">diagtool</link>&#32;{
+<anchor xml:id="__diag_tool_8cpp_source_1l00064"/><link linkend="_namespacediagtool_1a4962265c638f02cbb1aea128417c4ae7">00064</link> &#32;&#32;llvm::ManagedStatic&lt;DiagTools&gt;&#32;<link linkend="_namespacediagtool_1a4962265c638f02cbb1aea128417c4ae7">diagTools</link>;
+00065 }
+</programlisting></section>

@@ -1,0 +1,311 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_exec_2main_8c_source" xml:lang="en-US">
+<title>main.c</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/functional/exec/main.c</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">/*&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 <emphasis role="comment">*/</emphasis>
+00006 
+00007 <emphasis role="preprocessor">#include&#32;&quot;config.h&quot;</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&lt;sys/wait.h&gt;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&lt;unistd.h&gt;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&lt;stdio.h&gt;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&lt;stdlib.h&gt;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&lt;paths.h&gt;</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#if&#32;defined&#32;HAVE_POSIX_SPAWN&#32;||&#32;defined&#32;HAVE_POSIX_SPAWNP</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&lt;spawn.h&gt;</emphasis>
+00017 <emphasis role="preprocessor">#endif</emphasis>
+00018 
+00019 <emphasis role="comment">//&#32;..::&#32;environment&#32;access&#32;fixer&#32;-&#32;begin&#32;::..</emphasis>
+00020 <emphasis role="preprocessor">#ifdef&#32;HAVE_NSGETENVIRON</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&lt;crt_externs.h&gt;</emphasis>
+00022 <emphasis role="preprocessor">#else</emphasis>
+00023 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**<link linkend="_exec_2main_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link>;
+00024 <emphasis role="preprocessor">#endif</emphasis>
+00025 
+<anchor xml:id="_exec_2main_8c_source_1l00026"/><link linkend="_exec_2main_8c_1a05ff887a5cf1186f4994ff4978e0babd">00026</link> <emphasis role="keywordtype">char</emphasis>&#32;**<link linkend="_exec_2main_8c_1a05ff887a5cf1186f4994ff4978e0babd">get_environ</link>()&#32;{
+00027 <emphasis role="preprocessor">#ifdef&#32;HAVE_NSGETENVIRON</emphasis>
+00028 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*_NSGetEnviron();
+00029 <emphasis role="preprocessor">#else</emphasis>
+00030 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_exec_2main_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link>;
+00031 <emphasis role="preprocessor">#endif</emphasis>
+00032 }
+00033 <emphasis role="comment">//&#32;..::&#32;environment&#32;access&#32;fixer&#32;-&#32;end&#32;::..</emphasis>
+00034 
+00035 <emphasis role="comment">//&#32;..::&#32;test&#32;fixtures&#32;-&#32;begin&#32;::..</emphasis>
+00036 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*cwd&#32;=&#32;NULL;
+00037 <emphasis role="keyword">static</emphasis>&#32;FILE&#32;*fd&#32;=&#32;NULL;
+00038 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;need_comma&#32;=&#32;0;
+00039 
+<anchor xml:id="_exec_2main_8c_source_1l00040"/><link linkend="_exec_2main_8c_1abc2ce631a5451a2b3d28a0177a10b9a3">00040</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_exec_2main_8c_1abc2ce631a5451a2b3d28a0177a10b9a3">expected_out_open</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*expected)&#32;{
+00041 &#32;&#32;&#32;&#32;cwd&#32;=&#32;getcwd(NULL,&#32;0);
+00042 &#32;&#32;&#32;&#32;fd&#32;=&#32;fopen(expected,&#32;<emphasis role="stringliteral">&quot;w&quot;</emphasis>);
+00043 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!fd)&#32;{
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;fopen&quot;</emphasis>);
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00046 &#32;&#32;&#32;&#32;}
+00047 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;[\n&quot;</emphasis>);
+00048 &#32;&#32;&#32;&#32;need_comma&#32;=&#32;0;
+00049 }
+00050 
+<anchor xml:id="_exec_2main_8c_source_1l00051"/><link linkend="_exec_2main_8c_1ae9fedc92bf36b0cbea0df186b69b092d">00051</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_exec_2main_8c_1ae9fedc92bf36b0cbea0df186b69b092d">expected_out_close</link>()&#32;{
+00052 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;]\n&quot;</emphasis>);
+00053 &#32;&#32;&#32;&#32;fclose(fd);
+00054 &#32;&#32;&#32;&#32;fd&#32;=&#32;NULL;
+00055 
+00056 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)cwd);
+00057 &#32;&#32;&#32;&#32;cwd&#32;=&#32;NULL;
+00058 }
+00059 
+<anchor xml:id="_exec_2main_8c_source_1l00060"/><link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">00060</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file)&#32;{
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(need_comma)
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;,\n&quot;</emphasis>);
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;need_comma&#32;=&#32;1;
+00065 
+00066 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;{\n&quot;</emphasis>);
+00067 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;\&quot;directory\&quot;:&#32;\&quot;%s\&quot;,\n&quot;</emphasis>,&#32;cwd);
+00068 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;\&quot;command\&quot;:&#32;\&quot;cc&#32;-c&#32;%s\&quot;,\n&quot;</emphasis>,&#32;file);
+00069 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;\&quot;file\&quot;:&#32;\&quot;%s/%s\&quot;\n&quot;</emphasis>,&#32;cwd,&#32;file);
+00070 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>);
+00071 }
+00072 
+<anchor xml:id="_exec_2main_8c_source_1l00073"/><link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">00073</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(<emphasis role="keywordtype">char</emphasis>&#32;*file)&#32;{
+00074 &#32;&#32;&#32;&#32;FILE&#32;*fd&#32;=&#32;fopen(file,&#32;<emphasis role="stringliteral">&quot;w&quot;</emphasis>);
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!fd)&#32;{
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;fopen&quot;</emphasis>);
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00078 &#32;&#32;&#32;&#32;}
+00079 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;typedef&#32;int&#32;score;\n&quot;</emphasis>);
+00080 &#32;&#32;&#32;&#32;fclose(fd);
+00081 }
+00082 
+<anchor xml:id="_exec_2main_8c_source_1l00083"/><link linkend="_exec_2main_8c_1aee7ecb4c93e15a61ec544fc01296047e">00083</link> <emphasis role="keyword">typedef</emphasis>&#32;void&#32;(*<link linkend="_exec_2main_8c_1aee7ecb4c93e15a61ec544fc01296047e">exec_fun</link>)();
+00084 
+<anchor xml:id="_exec_2main_8c_source_1l00085"/><link linkend="_exec_2main_8c_1acbe7e21c386275cdd7ca214c0ca60daa">00085</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_exec_2main_8c_1acbe7e21c386275cdd7ca214c0ca60daa">wait_for</link>(pid_t&#32;child)&#32;{
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;status;
+00087 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(-1&#32;==&#32;waitpid(child,&#32;&amp;status,&#32;0))&#32;{
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;wait&quot;</emphasis>);
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00090 &#32;&#32;&#32;&#32;}
+00091 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(WIFEXITED(status)&#32;?&#32;WEXITSTATUS(status)&#32;:&#32;EXIT_FAILURE)&#32;{
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;children&#32;process&#32;has&#32;non&#32;zero&#32;exit&#32;code\n&quot;</emphasis>);
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00094 &#32;&#32;&#32;&#32;}
+00095 }
+00096 
+<anchor xml:id="_exec_2main_8c_source_1l00097"/><link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">00097</link> <emphasis role="preprocessor">#define&#32;FORK(FUNC)&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00098 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00099 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pid_t&#32;child&#32;=&#32;fork();&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00100 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;if&#32;(-1&#32;==&#32;child)&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00101 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(&quot;fork&quot;</emphasis>);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;else&#32;if&#32;(0&#32;==&#32;child)&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FUNC&#32;fprintf(stderr,&#32;&quot;children&#32;process&#32;failed&#32;to&#32;exec\n&quot;);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;else&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;wait_for(child);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00109 &#32;&#32;&#32;&#32;}
+00110 <emphasis role="comment">//&#32;..::&#32;test&#32;fixtures&#32;-&#32;end&#32;::..</emphasis>
+00111 
+00112 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECV</emphasis>
+00113 <emphasis role="keywordtype">void</emphasis>&#32;call_execv()&#32;{
+00114 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execv.c&quot;</emphasis>;
+00115 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>;
+00116 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{<emphasis role="stringliteral">&quot;cc&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00117 
+00118 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00119 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00120 
+00121 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execv(compiler,&#32;argv);)
+00122 }
+00123 <emphasis role="preprocessor">#endif</emphasis>
+00124 
+00125 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVE</emphasis>
+00126 <emphasis role="keywordtype">void</emphasis>&#32;call_execve()&#32;{
+00127 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execve.c&quot;</emphasis>;
+00128 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>;
+00129 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00130 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]&#32;=&#32;{<emphasis role="stringliteral">&quot;THIS=THAT&quot;</emphasis>,&#32;0};
+00131 
+00132 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00133 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00134 
+00135 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execve(compiler,&#32;argv,&#32;envp);)
+00136 }
+00137 <emphasis role="preprocessor">#endif</emphasis>
+00138 
+00139 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP</emphasis>
+00140 <emphasis role="keywordtype">void</emphasis>&#32;call_execvp()&#32;{
+00141 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execvp.c&quot;</emphasis>;
+00142 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>;
+00143 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00144 
+00145 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00146 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00147 
+00148 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execvp(compiler,&#32;argv);)
+00149 }
+00150 <emphasis role="preprocessor">#endif</emphasis>
+00151 
+00152 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP2</emphasis>
+00153 <emphasis role="keywordtype">void</emphasis>&#32;call_execvP()&#32;{
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execv_p.c&quot;</emphasis>;
+00155 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>;
+00156 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00157 
+00158 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00159 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00160 
+00161 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execvP(compiler,&#32;_PATH_DEFPATH,&#32;argv);)
+00162 }
+00163 <emphasis role="preprocessor">#endif</emphasis>
+00164 
+00165 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVPE</emphasis>
+00166 <emphasis role="keywordtype">void</emphasis>&#32;call_execvpe()&#32;{
+00167 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execvpe.c&quot;</emphasis>;
+00168 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>;
+00169 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00170 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]&#32;=&#32;{<emphasis role="stringliteral">&quot;THIS=THAT&quot;</emphasis>,&#32;0};
+00171 
+00172 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00173 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00174 
+00175 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execvpe(compiler,&#32;argv,&#32;envp);)
+00176 }
+00177 <emphasis role="preprocessor">#endif</emphasis>
+00178 
+00179 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECT</emphasis>
+00180 <emphasis role="keywordtype">void</emphasis>&#32;call_exect()&#32;{
+00181 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;exect.c&quot;</emphasis>;
+00182 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>;
+00183 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00184 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]&#32;=&#32;{<emphasis role="stringliteral">&quot;THIS=THAT&quot;</emphasis>,&#32;0};
+00185 
+00186 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00187 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00188 
+00189 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(exect(compiler,&#32;argv,&#32;envp);)
+00190 }
+00191 <emphasis role="preprocessor">#endif</emphasis>
+00192 
+00193 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECL</emphasis>
+00194 <emphasis role="keywordtype">void</emphasis>&#32;call_execl()&#32;{
+00195 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execl.c&quot;</emphasis>;
+00196 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>;
+00197 
+00198 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00199 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00200 
+00201 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execl(compiler,&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*)0);)
+00202 }
+00203 <emphasis role="preprocessor">#endif</emphasis>
+00204 
+00205 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLP</emphasis>
+00206 <emphasis role="keywordtype">void</emphasis>&#32;call_execlp()&#32;{
+00207 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execlp.c&quot;</emphasis>;
+00208 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>;
+00209 
+00210 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00211 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00212 
+00213 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execlp(compiler,&#32;compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*)0);)
+00214 }
+00215 <emphasis role="preprocessor">#endif</emphasis>
+00216 
+00217 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLE</emphasis>
+00218 <emphasis role="keywordtype">void</emphasis>&#32;call_execle()&#32;{
+00219 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;execle.c&quot;</emphasis>;
+00220 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>;
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]&#32;=&#32;{<emphasis role="stringliteral">&quot;THIS=THAT&quot;</emphasis>,&#32;0};
+00222 
+00223 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00224 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00225 
+00226 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(execle(compiler,&#32;compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*)0,&#32;envp);)
+00227 }
+00228 <emphasis role="preprocessor">#endif</emphasis>
+00229 
+00230 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWN</emphasis>
+00231 <emphasis role="keywordtype">void</emphasis>&#32;call_posix_spawn()&#32;{
+00232 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;posix_spawn.c&quot;</emphasis>;
+00233 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>;
+00234 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00235 
+00236 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00237 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00238 
+00239 &#32;&#32;&#32;&#32;pid_t&#32;child;
+00240 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;!=&#32;posix_spawn(&amp;child,&#32;<emphasis role="stringliteral">&quot;/usr/bin/cc&quot;</emphasis>,&#32;0,&#32;0,&#32;argv,&#32;<link linkend="_exec_2main_8c_1a05ff887a5cf1186f4994ff4978e0babd">get_environ</link>()))&#32;{
+00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;posix_spawn&quot;</emphasis>);
+00242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00243 &#32;&#32;&#32;&#32;}
+00244 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1acbe7e21c386275cdd7ca214c0ca60daa">wait_for</link>(child);
+00245 }
+00246 <emphasis role="preprocessor">#endif</emphasis>
+00247 
+00248 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWNP</emphasis>
+00249 <emphasis role="keywordtype">void</emphasis>&#32;call_posix_spawnp()&#32;{
+00250 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;file&#32;=&#32;<emphasis role="stringliteral">&quot;posix_spawnp.c&quot;</emphasis>;
+00251 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;compiler&#32;=&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>;
+00252 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]&#32;=&#32;{compiler,&#32;<emphasis role="stringliteral">&quot;-c&quot;</emphasis>,&#32;file,&#32;0};
+00253 
+00254 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link>(file);
+00255 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link>(file);
+00256 
+00257 &#32;&#32;&#32;&#32;pid_t&#32;child;
+00258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;!=&#32;posix_spawnp(&amp;child,&#32;<emphasis role="stringliteral">&quot;cc&quot;</emphasis>,&#32;0,&#32;0,&#32;argv,&#32;<link linkend="_exec_2main_8c_1a05ff887a5cf1186f4994ff4978e0babd">get_environ</link>()))&#32;{
+00259 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;posix_spawnp&quot;</emphasis>);
+00260 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00261 &#32;&#32;&#32;&#32;}
+00262 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1acbe7e21c386275cdd7ca214c0ca60daa">wait_for</link>(child);
+00263 }
+00264 <emphasis role="preprocessor">#endif</emphasis>
+00265 
+<anchor xml:id="_exec_2main_8c_source_1l00266"/><link linkend="_exec_2main_8c_1af3ed9c200de85b53c94cd18764b246a2">00266</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_exec_2main_8c_1af3ed9c200de85b53c94cd18764b246a2">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00267 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;!=&#32;2)
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00269 
+00270 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1abc2ce631a5451a2b3d28a0177a10b9a3">expected_out_open</link>(argv[1]);
+00271 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECV</emphasis>
+00272 &#32;&#32;&#32;&#32;call_execv();
+00273 <emphasis role="preprocessor">#endif</emphasis>
+00274 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVE</emphasis>
+00275 &#32;&#32;&#32;&#32;call_execve();
+00276 <emphasis role="preprocessor">#endif</emphasis>
+00277 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP</emphasis>
+00278 &#32;&#32;&#32;&#32;call_execvp();
+00279 <emphasis role="preprocessor">#endif</emphasis>
+00280 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP2</emphasis>
+00281 &#32;&#32;&#32;&#32;call_execvP();
+00282 <emphasis role="preprocessor">#endif</emphasis>
+00283 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVPE</emphasis>
+00284 &#32;&#32;&#32;&#32;call_execvpe();
+00285 <emphasis role="preprocessor">#endif</emphasis>
+00286 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECT</emphasis>
+00287 &#32;&#32;&#32;&#32;call_exect();
+00288 <emphasis role="preprocessor">#endif</emphasis>
+00289 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECL</emphasis>
+00290 &#32;&#32;&#32;&#32;call_execl();
+00291 <emphasis role="preprocessor">#endif</emphasis>
+00292 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLP</emphasis>
+00293 &#32;&#32;&#32;&#32;call_execlp();
+00294 <emphasis role="preprocessor">#endif</emphasis>
+00295 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLE</emphasis>
+00296 &#32;&#32;&#32;&#32;call_execle();
+00297 <emphasis role="preprocessor">#endif</emphasis>
+00298 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWN</emphasis>
+00299 &#32;&#32;&#32;&#32;call_posix_spawn();
+00300 <emphasis role="preprocessor">#endif</emphasis>
+00301 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWNP</emphasis>
+00302 &#32;&#32;&#32;&#32;call_posix_spawnp();
+00303 <emphasis role="preprocessor">#endif</emphasis>
+00304 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ae9fedc92bf36b0cbea0df186b69b092d">expected_out_close</link>();
+00305 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00306 }
+</programlisting></section>

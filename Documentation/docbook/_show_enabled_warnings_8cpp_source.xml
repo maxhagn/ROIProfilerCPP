@@ -1,0 +1,150 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__show_enabled_warnings_8cpp_source" xml:lang="en-US">
+<title>ShowEnabledWarnings.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/diagtool/ShowEnabledWarnings.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;ShowEnabledWarnings&#32;-&#32;diagtool&#32;tool&#32;for&#32;printing&#32;enabled&#32;flags&#32;-----===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diag_tool_8h">DiagTool.h</link>&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diagnostic_names_8h">DiagnosticNames.h</link>&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticBuffer.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticPrinter.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/Utils.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/TargetSelect.h&quot;</emphasis>
+00017 
+<anchor xml:id="__show_enabled_warnings_8cpp_source_1l00018"/><link linkend="__show_enabled_warnings_8cpp_1a98665a240506d92171f0738c3dd6eac3">00018</link> <link linkend="__show_enabled_warnings_8cpp_1a98665a240506d92171f0738c3dd6eac3">DEF_DIAGTOOL</link>(<emphasis role="stringliteral">&quot;show-enabled&quot;</emphasis>,
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Show&#32;which&#32;warnings&#32;are&#32;enabled&#32;for&#32;a&#32;given&#32;command&#32;line&quot;</emphasis>,
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ShowEnabledWarnings)
+00021 
+00022 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00023 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacediagtool">diagtool</link>;
+00024 
+00025 <emphasis role="keyword">namespace&#32;</emphasis>{
+00026 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>PrettyDiag&#32;{
+00027 &#32;&#32;&#32;&#32;StringRef&#32;Name;
+00028 &#32;&#32;&#32;&#32;StringRef&#32;Flag;
+00029 &#32;&#32;&#32;&#32;DiagnosticsEngine::Level&#32;Level;
+00030 
+00031 &#32;&#32;&#32;&#32;PrettyDiag(StringRef&#32;name,&#32;StringRef&#32;flag,&#32;DiagnosticsEngine::Level&#32;level)
+00032 &#32;&#32;&#32;&#32;:&#32;Name(name),&#32;Flag(flag),&#32;Level(level)&#32;{}
+00033 
+00034 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;operator&lt;(<emphasis role="keyword">const</emphasis>&#32;PrettyDiag&#32;&amp;x)<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Name&#32;&lt;&#32;x.Name;&#32;}
+00035 &#32;&#32;};
+00036 }
+00037 
+00038 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printUsage()&#32;{
+00039 &#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Usage:&#32;diagtool&#32;show-enabled&#32;[&lt;flags&gt;]&#32;&lt;single-input.c&gt;\n&quot;</emphasis>;
+00040 }
+00041 
+00042 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;getCharForLevel(DiagnosticsEngine::Level&#32;Level)&#32;{
+00043 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(Level)&#32;{
+00044 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;DiagnosticsEngine::Ignored:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>;
+00045 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;DiagnosticsEngine::Note:&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="charliteral">&apos;-&apos;</emphasis>;
+00046 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;DiagnosticsEngine::Remark:&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="charliteral">&apos;R&apos;</emphasis>;
+00047 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;DiagnosticsEngine::Warning:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="charliteral">&apos;W&apos;</emphasis>;
+00048 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;DiagnosticsEngine::Error:&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="charliteral">&apos;E&apos;</emphasis>;
+00049 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;DiagnosticsEngine::Fatal:&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="charliteral">&apos;F&apos;</emphasis>;
+00050 &#32;&#32;}
+00051 
+00052 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Unknown&#32;diagnostic&#32;level&quot;</emphasis>);
+00053 }
+00054 
+00055 <emphasis role="keyword">static</emphasis>&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;
+00056 createDiagnostics(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00057 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagIDs(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00058 
+00059 &#32;&#32;<emphasis role="comment">//&#32;Buffer&#32;diagnostics&#32;from&#32;argument&#32;parsing&#32;so&#32;that&#32;we&#32;can&#32;output&#32;them&#32;using&#32;a</emphasis>
+00060 &#32;&#32;<emphasis role="comment">//&#32;well&#32;formed&#32;diagnostic&#32;object.</emphasis>
+00061 &#32;&#32;TextDiagnosticBuffer&#32;*DiagsBuffer&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;TextDiagnosticBuffer;
+00062 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;InterimDiags(
+00063 &#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticsEngine(DiagIDs,&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions(),&#32;DiagsBuffer));
+00064 
+00065 &#32;&#32;<emphasis role="comment">//&#32;Try&#32;to&#32;build&#32;a&#32;CompilerInvocation.</emphasis>
+00066 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;Args;
+00067 &#32;&#32;Args.push_back(<emphasis role="stringliteral">&quot;diagtool&quot;</emphasis>);
+00068 &#32;&#32;Args.append(argv,&#32;argv&#32;+&#32;argc);
+00069 &#32;&#32;std::unique_ptr&lt;CompilerInvocation&gt;&#32;Invocation&#32;=
+00070 &#32;&#32;&#32;&#32;&#32;&#32;createInvocationFromCommandLine(Args,&#32;InterimDiags);
+00071 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Invocation)
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00073 
+00074 &#32;&#32;<emphasis role="comment">//&#32;Build&#32;the&#32;diagnostics&#32;parser</emphasis>
+00075 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;FinalDiags&#32;=
+00076 &#32;&#32;&#32;&#32;CompilerInstance::createDiagnostics(&amp;Invocation-&gt;getDiagnosticOpts());
+00077 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FinalDiags)
+00078 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00079 
+00080 &#32;&#32;<emphasis role="comment">//&#32;Flush&#32;any&#32;errors&#32;created&#32;when&#32;initializing&#32;everything.&#32;This&#32;could&#32;happen</emphasis>
+00081 &#32;&#32;<emphasis role="comment">//&#32;for&#32;invalid&#32;command&#32;lines,&#32;which&#32;will&#32;probably&#32;give&#32;non-sensical&#32;results.</emphasis>
+00082 &#32;&#32;DiagsBuffer-&gt;FlushDiagnostics(*FinalDiags);
+00083 
+00084 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FinalDiags;
+00085 }
+00086 
+00087 <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1analyze_1a505fccfeb836b113101687366a231f5f">ShowEnabledWarnings::run</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv,&#32;raw_ostream&#32;&amp;Out)&#32;{
+00088 &#32;&#32;<emphasis role="comment">//&#32;First&#32;check&#32;our&#32;one&#32;flag&#32;(--levels).</emphasis>
+00089 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ShouldShowLevels&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00090 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;0)&#32;{
+00091 &#32;&#32;&#32;&#32;StringRef&#32;FirstArg(*argv);
+00092 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FirstArg.equals(<emphasis role="stringliteral">&quot;--no-levels&quot;</emphasis>))&#32;{
+00093 &#32;&#32;&#32;&#32;&#32;&#32;ShouldShowLevels&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00094 &#32;&#32;&#32;&#32;&#32;&#32;--argc;
+00095 &#32;&#32;&#32;&#32;&#32;&#32;++argv;
+00096 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FirstArg.equals(<emphasis role="stringliteral">&quot;--levels&quot;</emphasis>))&#32;{
+00097 &#32;&#32;&#32;&#32;&#32;&#32;ShouldShowLevels&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00098 &#32;&#32;&#32;&#32;&#32;&#32;--argc;
+00099 &#32;&#32;&#32;&#32;&#32;&#32;++argv;
+00100 &#32;&#32;&#32;&#32;}
+00101 &#32;&#32;}
+00102 
+00103 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;the&#32;diagnostic&#32;engine.</emphasis>
+00104 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;Diags&#32;=&#32;createDiagnostics(argc,&#32;argv);
+00105 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Diags)&#32;{
+00106 &#32;&#32;&#32;&#32;printUsage();
+00107 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_FAILURE;
+00108 &#32;&#32;}
+00109 
+00110 &#32;&#32;<emphasis role="comment">//&#32;Now&#32;we&#32;have&#32;our&#32;diagnostics.&#32;Iterate&#32;through&#32;EVERY&#32;diagnostic&#32;and&#32;see</emphasis>
+00111 &#32;&#32;<emphasis role="comment">//&#32;which&#32;ones&#32;are&#32;turned&#32;on.</emphasis>
+00112 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;It&#32;would&#32;be&#32;very&#32;nice&#32;to&#32;print&#32;which&#32;flags&#32;are&#32;turning&#32;on&#32;which</emphasis>
+00113 &#32;&#32;<emphasis role="comment">//&#32;diagnostics,&#32;but&#32;this&#32;can&#32;be&#32;done&#32;with&#32;a&#32;diff.</emphasis>
+00114 &#32;&#32;std::vector&lt;PrettyDiag&gt;&#32;Active;
+00115 
+00116 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structdiagtool_1_1_diagnostic_record">DiagnosticRecord</link>&#32;&amp;DR&#32;:&#32;<link linkend="_namespacediagtool_1a84e4f971383375d578c37ad94811fd7a">getBuiltinDiagnosticsByName</link>())&#32;{
+00117 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;DiagID&#32;=&#32;DR.DiagID;
+00118 
+00119 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DiagnosticIDs::isBuiltinNote(DiagID))
+00120 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00121 
+00122 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DiagnosticIDs::isBuiltinWarningOrExtension(DiagID))
+00123 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00124 
+00125 &#32;&#32;&#32;&#32;DiagnosticsEngine::Level&#32;DiagLevel&#32;=
+00126 &#32;&#32;&#32;&#32;&#32;&#32;Diags-&gt;getDiagnosticLevel(DiagID,&#32;SourceLocation());
+00127 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DiagLevel&#32;==&#32;DiagnosticsEngine::Ignored)
+00128 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00129 
+00130 &#32;&#32;&#32;&#32;StringRef&#32;WarningOpt&#32;=&#32;DiagnosticIDs::getWarningOptionForDiag(DiagID);
+00131 &#32;&#32;&#32;&#32;Active.push_back(PrettyDiag(DR.getName(),&#32;WarningOpt,&#32;DiagLevel));
+00132 &#32;&#32;}
+00133 
+00134 &#32;&#32;<emphasis role="comment">//&#32;Print&#32;them&#32;all&#32;out.</emphasis>
+00135 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;PrettyDiag&#32;&amp;PD&#32;:&#32;Active)&#32;{
+00136 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ShouldShowLevels)
+00137 &#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;getCharForLevel(PD.Level)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&quot;</emphasis>;
+00138 &#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;PD.Name;
+00139 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PD.Flag.empty())
+00140 &#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;[-W&quot;</emphasis>&#32;&lt;&lt;&#32;PD.Flag&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]&quot;</emphasis>;
+00141 &#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00142 &#32;&#32;}
+00143 
+00144 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_SUCCESS;
+00145 }
+</programlisting></section>

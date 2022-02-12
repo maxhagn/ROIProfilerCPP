@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_classclang_1_1cxindex_1_1_attr_list_info" xml:lang="en-US">
+<title>clang::cxindex::AttrListInfo Class Reference</title>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary></indexterm>
+<para>
+<computeroutput>#include &lt;CXIndexDataConsumer.h&gt;</computeroutput>
+</para>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1ab4c0f6e62031bbf3926f5b95e316c081">AttrListInfo</link> (const Decl *D, <link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link> &amp;IdxCtx)</para>
+</listitem>
+            <listitem><para>const CXIdxAttrInfo *const  * <link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a83642ebee33dc97bfa99c42fecb3e4d9">getAttrs</link> () const</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a97758fd2b4c338d7e304cfe7ff125e11">getNumAttrs</link> () const</para>
+</listitem>
+            <listitem><para>void <link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a55bb98add85e69a71489afe3f5bd012e">Retain</link> ()</para>
+</listitem>
+            <listitem><para>void <link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1acaf8c614a6d443ed9fae597cc19f7089">Release</link> ()</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Static Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>static IntrusiveRefCntPtr&lt; <link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link> &gt; <link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a3376ff1780ab325a8d140c6f063a1f5b">create</link> (const Decl *D, <link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link> &amp;IdxCtx)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+<para>
+Definition at line <link linkend="__c_x_index_data_consumer_8h_source_1l00239">239</link> of file <link linkend="__c_x_index_data_consumer_8h_source">CXIndexDataConsumer.h</link>.</para>
+</section>
+<section>
+<title>Constructor &amp; Destructor Documentation</title>
+<anchor xml:id="_classclang_1_1cxindex_1_1_attr_list_info_1ab4c0f6e62031bbf3926f5b95e316c081"/>    <section>
+    <title>AttrListInfo()</title>
+<indexterm><primary>AttrListInfo</primary><secondary>clang::cxindex::AttrListInfo</secondary></indexterm>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary><secondary>AttrListInfo</secondary></indexterm>
+<para><computeroutput>AttrListInfo::AttrListInfo (const Decl * D, <link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link> &amp; IdxCtx)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_index_data_consumer_8cpp_source_1l00279">279</link> of file <link linkend="__c_x_index_data_consumer_8cpp_source">CXIndexDataConsumer.cpp</link>.</para>
+<programlisting>00280 &#32;&#32;:&#32;SA(IdxCtx),&#32;ref_cnt(0)&#32;{
+00281 
+00282 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D-&gt;hasAttrs())
+00283 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00284 
+00285 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*A&#32;:&#32;D-&gt;attrs())&#32;{
+00286 &#32;&#32;&#32;&#32;CXCursor&#32;C&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(A,&#32;D,&#32;IdxCtx.CXTU);
+00287 &#32;&#32;&#32;&#32;CXIdxLoc&#32;Loc&#32;=&#32;&#32;IdxCtx.getIndexLoc(A-&gt;getLocation());
+00288 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C.kind)&#32;{
+00289 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00290 &#32;&#32;&#32;&#32;&#32;&#32;Attrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_Unexposed,&#32;C,&#32;Loc,&#32;A));
+00291 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00292 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_IBActionAttr:
+00293 &#32;&#32;&#32;&#32;&#32;&#32;Attrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_IBAction,&#32;C,&#32;Loc,&#32;A));
+00294 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00295 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_IBOutletAttr:
+00296 &#32;&#32;&#32;&#32;&#32;&#32;Attrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_IBOutlet,&#32;C,&#32;Loc,&#32;A));
+00297 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00298 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_IBOutletCollectionAttr:
+00299 &#32;&#32;&#32;&#32;&#32;&#32;IBCollAttrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>(C,&#32;Loc,&#32;A));
+00300 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00301 &#32;&#32;&#32;&#32;}
+00302 &#32;&#32;}
+00303 
+00304 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;IBCollAttrs.size();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00305 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;&amp;IBInfo&#32;=&#32;IBCollAttrs[i];
+00306 &#32;&#32;&#32;&#32;CXAttrs.push_back(&amp;IBInfo);
+00307 
+00308 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IBOutletCollectionAttr&#32;*
+00309 &#32;&#32;&#32;&#32;&#32;&#32;IBAttr&#32;=&#32;cast&lt;IBOutletCollectionAttr&gt;(IBInfo.<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>);
+00310 &#32;&#32;&#32;&#32;SourceLocation&#32;InterfaceLocStart&#32;=
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBAttr-&gt;getInterfaceLoc()-&gt;getTypeLoc().getBeginLoc();
+00312 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.attrInfo&#32;=&#32;&amp;IBInfo;
+00313 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classLoc&#32;=&#32;IdxCtx.getIndexLoc(InterfaceLocStart);
+00314 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00315 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classCursor&#32;=&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00316 &#32;&#32;&#32;&#32;QualType&#32;Ty&#32;=&#32;IBAttr-&gt;getInterface();
+00317 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*ObjectTy&#32;=&#32;Ty-&gt;getAs&lt;ObjCObjectType&gt;())&#32;{
+00318 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*InterD&#32;=&#32;ObjectTy-&gt;getInterface())&#32;{
+00319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.getEntityInfo(InterD,&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>,&#32;SA);
+00320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;&amp;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>;
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classCursor&#32;=
+00322 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(InterD,&#32;InterfaceLocStart,&#32;IdxCtx.CXTU);
+00323 &#32;&#32;&#32;&#32;&#32;&#32;}
+00324 &#32;&#32;&#32;&#32;}
+00325 &#32;&#32;}
+00326 
+00327 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;Attrs.size();&#32;i&#32;!=&#32;e;&#32;++i)
+00328 &#32;&#32;&#32;&#32;CXAttrs.push_back(&amp;Attrs[i]);
+00329 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8h_source_1l00212">clang::cxindex::AttrInfo::A</link>, <link linkend="__c_index_8cpp_source_1l05901">clang_getNullCursor()</link>, <link linkend="__c_x_index_data_consumer_8h_source_1l00223">clang::cxindex::IBOutletCollectionInfo::ClassInfo</link>, <link linkend="__c_x_index_data_consumer_8h_source_1l00224">clang::cxindex::IBOutletCollectionInfo::IBCollInfo</link>, <link linkend="__c_x_cursor_8cpp_source_1l00863">clang::cxcursor::MakeCursorObjCClassRef()</link>, and <link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">clang::cxcursor::MakeCXCursor()</link>.</para>
+</section>
+</section>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_classclang_1_1cxindex_1_1_attr_list_info_1a3376ff1780ab325a8d140c6f063a1f5b"/>    <section>
+    <title>create()</title>
+<indexterm><primary>create</primary><secondary>clang::cxindex::AttrListInfo</secondary></indexterm>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary><secondary>create</secondary></indexterm>
+<para><computeroutput>IntrusiveRefCntPtr&lt; <link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link> &gt; AttrListInfo::create (const Decl * D, <link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link> &amp; IdxCtx)<computeroutput>[static]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__c_x_index_data_consumer_8cpp_source_1l00332">332</link> of file <link linkend="__c_x_index_data_consumer_8cpp_source">CXIndexDataConsumer.cpp</link>.</para>
+<programlisting>00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00333 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(IdxCtx);
+00334 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&#32;*attrs&#32;=&#32;SA.<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a71642187ca6f26d231a5426b5a4aa254">allocate</link>&lt;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&gt;();
+00335 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;(attrs)&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>(D,&#32;IdxCtx);
+00336 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8h_source_1l00495">clang::cxindex::ScratchAlloc::allocate()</link>.</para>
+    </section><anchor xml:id="_classclang_1_1cxindex_1_1_attr_list_info_1a83642ebee33dc97bfa99c42fecb3e4d9"/>    <section>
+    <title>getAttrs()</title>
+<indexterm><primary>getAttrs</primary><secondary>clang::cxindex::AttrListInfo</secondary></indexterm>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary><secondary>getAttrs</secondary></indexterm>
+<para><computeroutput>const CXIdxAttrInfo* const* clang::cxindex::AttrListInfo::getAttrs ( ) const<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__c_x_index_data_consumer_8h_source_1l00255">255</link> of file <link linkend="__c_x_index_data_consumer_8h_source">CXIndexDataConsumer.h</link>.</para>
+<programlisting>00255 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00256 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CXAttrs.empty())
+00257 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXAttrs.data();
+00259 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_classclang_1_1cxindex_1_1_attr_list_info_1a97758fd2b4c338d7e304cfe7ff125e11"/>    <section>
+    <title>getNumAttrs()</title>
+<indexterm><primary>getNumAttrs</primary><secondary>clang::cxindex::AttrListInfo</secondary></indexterm>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary><secondary>getNumAttrs</secondary></indexterm>
+<para><computeroutput>unsigned clang::cxindex::AttrListInfo::getNumAttrs ( ) const<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__c_x_index_data_consumer_8h_source_1l00260">260</link> of file <link linkend="__c_x_index_data_consumer_8h_source">CXIndexDataConsumer.h</link>.</para>
+<programlisting>00260 {&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>)CXAttrs.size();&#32;}
+</programlisting>    </section><anchor xml:id="_classclang_1_1cxindex_1_1_attr_list_info_1acaf8c614a6d443ed9fae597cc19f7089"/>    <section>
+    <title>Release()</title>
+<indexterm><primary>Release</primary><secondary>clang::cxindex::AttrListInfo</secondary></indexterm>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary><secondary>Release</secondary></indexterm>
+<para><computeroutput>void clang::cxindex::AttrListInfo::Release ( )<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__c_x_index_data_consumer_8h_source_1l00266">266</link> of file <link linkend="__c_x_index_data_consumer_8h_source">CXIndexDataConsumer.h</link>.</para>
+<programlisting>00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00267 &#32;&#32;&#32;&#32;assert&#32;(ref_cnt&#32;&gt;&#32;0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Reference&#32;count&#32;is&#32;already&#32;zero.&quot;</emphasis>);
+00268 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(--ref_cnt&#32;==&#32;0)&#32;{
+00269 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Memory&#32;is&#32;allocated&#32;from&#32;a&#32;BumpPtrAllocator,&#32;no&#32;need&#32;to&#32;delete&#32;it.</emphasis>
+00270 &#32;&#32;&#32;&#32;&#32;&#32;this-&gt;~AttrListInfo();
+00271 &#32;&#32;&#32;&#32;}
+00272 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_classclang_1_1cxindex_1_1_attr_list_info_1a55bb98add85e69a71489afe3f5bd012e"/>    <section>
+    <title>Retain()</title>
+<indexterm><primary>Retain</primary><secondary>clang::cxindex::AttrListInfo</secondary></indexterm>
+<indexterm><primary>clang::cxindex::AttrListInfo</primary><secondary>Retain</secondary></indexterm>
+<para><computeroutput>void clang::cxindex::AttrListInfo::Retain ( )<computeroutput>[inline]</computeroutput></computeroutput></para>
+<para>Retain/Release only useful when we allocate a <link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link> from the BumpPtrAllocator, and not from the stack; so that we keep a pointer </para>
+<para>
+Definition at line <link linkend="__c_x_index_data_consumer_8h_source_1l00265">265</link> of file <link linkend="__c_x_index_data_consumer_8h_source">CXIndexDataConsumer.h</link>.</para>
+<programlisting>00265 {&#32;++ref_cnt;&#32;}
+</programlisting></section>
+<para>
+The documentation for this class was generated from the following files:</para>
+/Users/maximilian/clang-llvm/clang/tools/libclang/<link linkend="__c_x_index_data_consumer_8h">CXIndexDataConsumer.h</link>/Users/maximilian/clang-llvm/clang/tools/libclang/<link linkend="__c_x_index_data_consumer_8cpp">CXIndexDataConsumer.cpp</link></section>
+</section>

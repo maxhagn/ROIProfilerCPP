@@ -1,0 +1,390 @@
+.TH "libscanbuild.clang" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libscanbuild.clang
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBClangErrorException\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBget_version\fP (clang)"
+.br
+.ti -1c
+.RI "def \fBget_arguments\fP (command, cwd)"
+.br
+.ti -1c
+.RI "def \fBget_active_checkers\fP (clang, plugins)"
+.br
+.ti -1c
+.RI "def \fBis_active\fP (checkers)"
+.br
+.ti -1c
+.RI "def \fBparse_checkers\fP (stream)"
+.br
+.ti -1c
+.RI "def \fBget_checkers\fP (clang, plugins)"
+.br
+.ti -1c
+.RI "def \fBis_ctu_capable\fP (extdef_map_cmd)"
+.br
+.ti -1c
+.RI "def \fBget_triple_arch\fP (command, cwd)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBACTIVE_CHECKER_PATTERN\fP = re\&.compile(r'^\-analyzer\-checker=(\&.*)$')"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def libscanbuild\&.clang\&.get_active_checkers ( clang,  plugins)"
+
+.PP
+.nf
+ Get the active checker list.
+
+:param clang:   the compiler we are using
+:param plugins: list of plugins which was requested by the user
+:return:        list of checker names which are active
+
+To get the default checkers we execute Clang to print how this
+compilation would be called. And take out the enabled checker from the
+arguments. For input file we specify stdin and pass only language
+information. 
+.fi
+.PP
+ 
+.PP
+Definition at line 58 of file clang\&.py\&.
+.PP
+.nf
+58 def get_active_checkers(clang, plugins):
+59     """ Get the active checker list\&.
+60 
+61     :param clang:   the compiler we are using
+62     :param plugins: list of plugins which was requested by the user
+63     :return:        list of checker names which are active
+64 
+65     To get the default checkers we execute Clang to print how this
+66     compilation would be called\&. And take out the enabled checker from the
+67     arguments\&. For input file we specify stdin and pass only language
+68     information\&. """
+69 
+70     def get_active_checkers_for(language):
+71         """ Returns a list of active checkers for the given language\&. """
+72 
+73         load_args = [arg
+74                      for plugin in plugins
+75                      for arg in ['-Xclang', '-load', '-Xclang', plugin]]
+76         cmd = [clang, '--analyze'] + load_args + ['-x', language, '-']
+77         return [ACTIVE_CHECKER_PATTERN\&.match(arg)\&.group(1)
+78                 for arg in get_arguments(cmd, '\&.')
+79                 if ACTIVE_CHECKER_PATTERN\&.match(arg)]
+80 
+81     result = set()
+82     for language in ['c', 'c++', 'objective-c', 'objective-c++']:
+83         result\&.update(get_active_checkers_for(language))
+84     return frozenset(result)
+85 
+86 
+.fi
+.PP
+References libscanbuild\&.clang\&.get_arguments()\&.
+.PP
+Referenced by libscanbuild\&.clang\&.get_checkers()\&.
+.SS "def libscanbuild\&.clang\&.get_arguments ( command,  cwd)"
+
+.PP
+.nf
+ Capture Clang invocation.
+
+:param command: the compilation command
+:param cwd:     the current working directory
+:return:        the detailed front-end invocation command 
+.fi
+.PP
+ 
+.PP
+Definition at line 38 of file clang\&.py\&.
+.PP
+.nf
+38 def get_arguments(command, cwd):
+39     """ Capture Clang invocation\&.
+40 
+41     :param command: the compilation command
+42     :param cwd:     the current working directory
+43     :return:        the detailed front-end invocation command """
+44 
+45     cmd = command[:]
+46     cmd\&.insert(1, '-###')
+47     cmd\&.append('-fno-color-diagnostics')
+48 
+49     output = run_command(cmd, cwd=cwd)
+50     # The relevant information is in the last line of the output\&.
+51     # Don't check if finding last line fails, would throw exception anyway\&.
+52     last_line = output[-1]
+53     if re\&.search(r'clang(\&.*): error:', last_line):
+54         raise ClangErrorException(last_line)
+55     return decode(last_line)
+56 
+57 
+.fi
+.PP
+References libscanbuild\&.shell\&.decode(), and libscanbuild\&.run_command()\&.
+.PP
+Referenced by libscanbuild\&.clang\&.get_active_checkers(), libscanbuild\&.clang\&.get_triple_arch(), libscanbuild\&.analyze\&.report_failure(), and libscanbuild\&.analyze\&.run_analyzer()\&.
+.SS "def libscanbuild\&.clang\&.get_checkers ( clang,  plugins)"
+
+.PP
+.nf
+ Get all the available checkers from default and from the plugins.
+
+:param clang:   the compiler we are using
+:param plugins: list of plugins which was requested by the user
+:return:        a dictionary of all available checkers and its status
+
+{<checker name>: (<checker description>, <is active by default>)} 
+.fi
+.PP
+ 
+.PP
+Definition at line 138 of file clang\&.py\&.
+.PP
+.nf
+138 def get_checkers(clang, plugins):
+139     """ Get all the available checkers from default and from the plugins\&.
+140 
+141     :param clang:   the compiler we are using
+142     :param plugins: list of plugins which was requested by the user
+143     :return:        a dictionary of all available checkers and its status
+144 
+145     {<checker name>: (<checker description>, <is active by default>)} """
+146 
+147     load = [elem for plugin in plugins for elem in ['-load', plugin]]
+148     cmd = [clang, '-cc1'] + load + ['-analyzer-checker-help']
+149 
+150     lines = run_command(cmd)
+151 
+152     is_active_checker = is_active(get_active_checkers(clang, plugins))
+153 
+154     checkers = {
+155         name: (description, is_active_checker(name))
+156         for name, description in parse_checkers(lines)
+157     }
+158     if not checkers:
+159         raise Exception('Could not query Clang for available checkers\&.')
+160 
+161     return checkers
+162 
+163 
+.fi
+.PP
+References libscanbuild\&.clang\&.get_active_checkers(), libscanbuild\&.clang\&.is_active(), libscanbuild\&.clang\&.parse_checkers(), and libscanbuild\&.run_command()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.validate_args_for_analyze()\&.
+.SS "def libscanbuild\&.clang\&.get_triple_arch ( command,  cwd)"
+
+.PP
+.nf
+Returns the architecture part of the target triple for the given
+compilation command. 
+.fi
+.PP
+ 
+.PP
+Definition at line 175 of file clang\&.py\&.
+.PP
+.nf
+175 def get_triple_arch(command, cwd):
+176     """Returns the architecture part of the target triple for the given
+177     compilation command\&. """
+178 
+179     cmd = get_arguments(command, cwd)
+180     try:
+181         separator = cmd\&.index("-triple")
+182         return cmd[separator + 1]
+183     except (IndexError, ValueError):
+184         return ""
+.fi
+.PP
+References libscanbuild\&.clang\&.get_arguments()\&.
+.PP
+Referenced by libscanbuild\&.analyze\&.ctu_collect_phase(), and libscanbuild\&.analyze\&.dispatch_ctu()\&.
+.SS "def libscanbuild\&.clang\&.get_version ( clang)"
+
+.PP
+.nf
+ Returns the compiler version as string.
+
+:param clang:   the compiler we are using
+:return:        the version string printed to stderr 
+.fi
+.PP
+ 
+.PP
+Definition at line 27 of file clang\&.py\&.
+.PP
+.nf
+27 def get_version(clang):
+28     """ Returns the compiler version as string\&.
+29 
+30     :param clang:   the compiler we are using
+31     :return:        the version string printed to stderr """
+32 
+33     output = run_command([clang, '-v'])
+34     # the relevant version info is in the first line
+35     return output[0]
+36 
+37 
+.fi
+.PP
+References libscanbuild\&.run_command()\&.
+.PP
+Referenced by libscanbuild\&.report\&.assemble_cover(), and libscanbuild\&.analyze\&.report_failure()\&.
+.SS "def libscanbuild\&.clang\&.is_active ( checkers)"
+
+.PP
+.nf
+ Returns a method, which classifies the checker active or not,
+based on the received checker name list. 
+.fi
+.PP
+ 
+.PP
+Definition at line 87 of file clang\&.py\&.
+.PP
+.nf
+87 def is_active(checkers):
+88     """ Returns a method, which classifies the checker active or not,
+89     based on the received checker name list\&. """
+90 
+91     def predicate(checker):
+92         """ Returns True if the given checker is active\&. """
+93 
+94         return any(pattern\&.match(checker) for pattern in predicate\&.patterns)
+95 
+96     predicate\&.patterns = [re\&.compile(r'^' + a + r'(\\&.|$)') for a in checkers]
+97     return predicate
+98 
+99 
+.fi
+.PP
+Referenced by libscanbuild\&.clang\&.get_checkers()\&.
+.SS "def libscanbuild\&.clang\&.is_ctu_capable ( extdef_map_cmd)"
+
+.PP
+.nf
+ Detects if the current (or given) clang and external definition mapping
+executables are CTU compatible. 
+.fi
+.PP
+ 
+.PP
+Definition at line 164 of file clang\&.py\&.
+.PP
+.nf
+164 def is_ctu_capable(extdef_map_cmd):
+165     """ Detects if the current (or given) clang and external definition mapping
+166     executables are CTU compatible\&. """
+167 
+168     try:
+169         run_command([extdef_map_cmd, '-version'])
+170     except (OSError, subprocess\&.CalledProcessError):
+171         return False
+172     return True
+173 
+174 
+.fi
+.PP
+References libscanbuild\&.run_command()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.validate_args_for_analyze()\&.
+.SS "def libscanbuild\&.clang\&.parse_checkers ( stream)"
+
+.PP
+.nf
+ Parse clang -analyzer-checker-help output.
+
+Below the line 'CHECKERS:' are there the name description pairs.
+Many of them are in one line, but some long named checker has the
+name and the description in separate lines.
+
+The checker name is always prefixed with two space character. The
+name contains no whitespaces. Then followed by newline (if it's
+too long) or other space characters comes the description of the
+checker. The description ends with a newline character.
+
+:param stream:  list of lines to parse
+:return:        generator of tuples
+
+(<checker name>, <checker description>) 
+.fi
+.PP
+ 
+.PP
+Definition at line 100 of file clang\&.py\&.
+.PP
+.nf
+100 def parse_checkers(stream):
+101     """ Parse clang -analyzer-checker-help output\&.
+102 
+103     Below the line 'CHECKERS:' are there the name description pairs\&.
+104     Many of them are in one line, but some long named checker has the
+105     name and the description in separate lines\&.
+106 
+107     The checker name is always prefixed with two space character\&. The
+108     name contains no whitespaces\&. Then followed by newline (if it's
+109     too long) or other space characters comes the description of the
+110     checker\&. The description ends with a newline character\&.
+111 
+112     :param stream:  list of lines to parse
+113     :return:        generator of tuples
+114 
+115     (<checker name>, <checker description>) """
+116 
+117     lines = iter(stream)
+118     # find checkers header
+119     for line in lines:
+120         if re\&.match(r'^CHECKERS:', line):
+121             break
+122     # find entries
+123     state = None
+124     for line in lines:
+125         if state and not re\&.match(r'^\s\s\S', line):
+126             yield (state, line\&.strip())
+127             state = None
+128         elif re\&.match(r'^\s\s\S+$', line\&.rstrip()):
+129             state = line\&.strip()
+130         else:
+131             pattern = re\&.compile(r'^\s\s(?P<key>\S*)\s*(?P<value>\&.*)')
+132             match = pattern\&.match(line\&.rstrip())
+133             if match:
+134                 current = match\&.groupdict()
+135                 yield (current['key'], current['value'])
+136 
+137 
+.fi
+.PP
+Referenced by libscanbuild\&.clang\&.get_checkers()\&.
+.SH "Variable Documentation"
+.PP 
+.SS "libscanbuild\&.clang\&.ACTIVE_CHECKER_PATTERN = re\&.compile(r'^\-analyzer\-checker=(\&.*)$')"
+
+.PP
+Definition at line 19 of file clang\&.py\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

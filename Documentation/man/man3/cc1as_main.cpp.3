@@ -1,0 +1,180 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/driver/cc1as_main.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/driver/cc1as_main.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Diagnostic\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticOptions\&.h'\fP
+.br
+\fC#include 'clang/Driver/DriverDiagnostic\&.h'\fP
+.br
+\fC#include 'clang/Driver/Options\&.h'\fP
+.br
+\fC#include 'clang/Frontend/FrontendDiagnostic\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticPrinter\&.h'\fP
+.br
+\fC#include 'clang/Frontend/Utils\&.h'\fP
+.br
+\fC#include 'llvm/ADT/STLExtras\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringSwitch\&.h'\fP
+.br
+\fC#include 'llvm/ADT/Triple\&.h'\fP
+.br
+\fC#include 'llvm/IR/DataLayout\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCAsmBackend\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCAsmInfo\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCCodeEmitter\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCContext\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCInstrInfo\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCObjectFileInfo\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCObjectWriter\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCParser/MCAsmParser\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCParser/MCTargetAsmParser\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCRegisterInfo\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCSectionMachO\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCStreamer\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCSubtargetInfo\&.h'\fP
+.br
+\fC#include 'llvm/MC/MCTargetOptions\&.h'\fP
+.br
+\fC#include 'llvm/Option/Arg\&.h'\fP
+.br
+\fC#include 'llvm/Option/ArgList\&.h'\fP
+.br
+\fC#include 'llvm/Option/OptTable\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorHandling\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/FormattedStream\&.h'\fP
+.br
+\fC#include 'llvm/Support/Host\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Path\&.h'\fP
+.br
+\fC#include 'llvm/Support/Process\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/SourceMgr\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetRegistry\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+\fC#include 'llvm/Support/Timer\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <memory>\fP
+.br
+\fC#include <system_error>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBcc1as_main\fP (ArrayRef< const char * > Argv, const char *Argv0, void *MainAddr)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int cc1as_main (ArrayRef< const char * > Argv, const char * Argv0, void * MainAddr)"
+
+.PP
+Definition at line 563 of file cc1as_main\&.cpp\&.
+.PP
+.nf
+563                                                                                {
+564   // Initialize targets and assembly printers/parsers\&.
+565   InitializeAllTargetInfos();
+566   InitializeAllTargetMCs();
+567   InitializeAllAsmParsers();
+568 
+569   // Construct our diagnostic client\&.
+570   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+571   TextDiagnosticPrinter *DiagClient
+572     = new TextDiagnosticPrinter(errs(), &*DiagOpts);
+573   DiagClient->setPrefix("clang -cc1as");
+574   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+575   DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
+576 
+577   // Set an error handler, so that any LLVM backend diagnostics go through our
+578   // error handler\&.
+579   ScopedFatalErrorHandler FatalErrorHandler
+580     (LLVMErrorHandler, static_cast<void*>(&Diags));
+581 
+582   // Parse the arguments\&.
+583   AssemblerInvocation Asm;
+584   if (!AssemblerInvocation::CreateFromArgs(Asm, Argv, Diags))
+585     return 1;
+586 
+587   if (Asm\&.ShowHelp) {
+588     getDriverOptTable()\&.printHelp(
+589         llvm::outs(), "clang -cc1as [options] file\&.\&.\&.",
+590         "Clang Integrated Assembler",
+591         /*Include=*/driver::options::CC1AsOption, /*Exclude=*/0,
+592         /*ShowAllAliases=*/false);
+593     return 0;
+594   }
+595 
+596   // Honor -version\&.
+597   //
+598   // FIXME: Use a better -version message?
+599   if (Asm\&.ShowVersion) {
+600     llvm::cl::PrintVersionMessage();
+601     return 0;
+602   }
+603 
+604   // Honor -mllvm\&.
+605   //
+606   // FIXME: Remove this, one day\&.
+607   if (!Asm\&.LLVMArgs\&.empty()) {
+608     unsigned NumArgs = Asm\&.LLVMArgs\&.size();
+609     auto Args = std::make_unique<const char*[]>(NumArgs + 2);
+610     Args[0] = "clang (LLVM option parsing)";
+611     for (unsigned i = 0; i != NumArgs; ++i)
+612       Args[i + 1] = Asm\&.LLVMArgs[i]\&.c_str();
+613     Args[NumArgs + 1] = nullptr;
+614     llvm::cl::ParseCommandLineOptions(NumArgs + 1, Args\&.get());
+615   }
+616 
+617   // Execute the invocation, unless there were parsing errors\&.
+618   bool Failed = Diags\&.hasErrorOccurred() || ExecuteAssembler(Asm, Diags);
+619 
+620   // If any timers were active but haven't been destroyed yet, print their
+621   // results now\&.
+622   TimerGroup::printAll(errs());
+623   TimerGroup::clearAll();
+624 
+625   return !!Failed;
+626 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

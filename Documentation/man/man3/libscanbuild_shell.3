@@ -1,0 +1,108 @@
+.TH "libscanbuild.shell" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libscanbuild.shell
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBencode\fP (command)"
+.br
+.ti -1c
+.RI "def \fBdecode\fP (string)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def libscanbuild\&.shell\&.decode ( string)"
+
+.PP
+.nf
+ Takes a command string and returns as a list. 
+.fi
+.PP
+ 
+.PP
+Definition at line 54 of file shell\&.py\&.
+.PP
+.nf
+54 def decode(string):
+55     """ Takes a command string and returns as a list\&. """
+56 
+57     def unescape(arg):
+58         """ Gets rid of the escaping characters\&. """
+59 
+60         if len(arg) >= 2 and arg[0] == arg[-1] and arg[0] == '"':
+61             arg = arg[1:-1]
+62             return re\&.sub(r'\\(["\\])', r'\1', arg)
+63         return re\&.sub(r'\\([\\ $%&\(\)\[\]\{\}\*|<>@?!])', r'\1', arg)
+64 
+65     return [unescape(arg) for arg in shlex\&.split(string)]
+.fi
+.PP
+Referenced by libscanbuild\&.intercept\&.entry_hash(), libscanbuild\&.clang\&.get_arguments(), libscanbuild\&.analyze\&.run(), and ScanView\&.ScanViewRequestHandler\&.send_patched_file()\&.
+.SS "def libscanbuild\&.shell\&.encode ( command)"
+
+.PP
+.nf
+ Takes a command as list and returns a string. 
+.fi
+.PP
+ 
+.PP
+Definition at line 13 of file shell\&.py\&.
+.PP
+.nf
+13 def encode(command):
+14     """ Takes a command as list and returns a string\&. """
+15 
+16     def needs_quote(word):
+17         """ Returns true if arguments needs to be protected by quotes\&.
+18 
+19         Previous implementation was shlex\&.split method, but that's not good
+20         for this job\&. Currently is running through the string with a basic
+21         state checking\&. """
+22 
+23         reserved = {' ', '$', '%', '&', '(', ')', '[', ']', '{', '}', '*', '|',
+24                     '<', '>', '@', '?', '!'}
+25         state = 0
+26         for current in word:
+27             if state == 0 and current in reserved:
+28                 return True
+29             elif state == 0 and current == '\\':
+30                 state = 1
+31             elif state == 1 and current in reserved | {'\\'}:
+32                 state = 0
+33             elif state == 0 and current == '"':
+34                 state = 2
+35             elif state == 2 and current == '"':
+36                 state = 0
+37             elif state == 0 and current == "'":
+38                 state = 3
+39             elif state == 3 and current == "'":
+40                 state = 0
+41         return state != 0
+42 
+43     def escape(word):
+44         """ Do protect argument if that's needed\&. """
+45 
+46         table = {'\\': '\\\\', '"': '\\"'}
+47         escaped = ''\&.join([table\&.get(c, c) for c in word])
+48 
+49         return '"' + escaped + '"' if needs_quote(word) else escaped
+50 
+51     return " "\&.join([escape(arg) for arg in command])
+52 
+53 
+.fi
+.PP
+References libscanbuild\&.report\&.escape()\&.
+.PP
+Referenced by libscanbuild\&.report\&.encode_value(), libscanbuild\&.intercept\&.format_entry(), and clang\-format\&.main()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

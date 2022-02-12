@@ -1,0 +1,202 @@
+.TH "libear" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libear
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBToolset\fP"
+.br
+.ti -1c
+.RI "class \fBDarwinToolset\fP"
+.br
+.ti -1c
+.RI "class \fBUnixToolset\fP"
+.br
+.ti -1c
+.RI "class \fBLinuxToolset\fP"
+.br
+.ti -1c
+.RI "class \fBConfigure\fP"
+.br
+.ti -1c
+.RI "class \fBSharedLibrary\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBbuild_libear\fP (compiler, dst_dir)"
+.br
+.ti -1c
+.RI "def \fBexecute\fP (cmd, *args, **kwargs)"
+.br
+.ti -1c
+.RI "def \fBTemporaryDirectory\fP (**kwargs)"
+.br
+.ti -1c
+.RI "def \fBmake_toolset\fP (src_dir)"
+.br
+.ti -1c
+.RI "def \fBdo_configure\fP (toolset)"
+.br
+.ti -1c
+.RI "def \fBcreate_shared_library\fP (name, toolset)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def libear\&.build_libear ( compiler,  dst_dir)"
+
+.PP
+.nf
+ Returns the full path to the 'libear' library. 
+.fi
+.PP
+ 
+.PP
+Definition at line 19 of file __init__\&.py\&.
+.PP
+.nf
+19 def build_libear(compiler, dst_dir):
+20     """ Returns the full path to the 'libear' library\&. """
+21 
+22     try:
+23         src_dir = os\&.path\&.dirname(os\&.path\&.realpath(__file__))
+24         toolset = make_toolset(src_dir)
+25         toolset\&.set_compiler(compiler)
+26         toolset\&.set_language_standard('c99')
+27         toolset\&.add_definitions(['-D_GNU_SOURCE'])
+28 
+29         configure = do_configure(toolset)
+30         configure\&.check_function_exists('execve', 'HAVE_EXECVE')
+31         configure\&.check_function_exists('execv', 'HAVE_EXECV')
+32         configure\&.check_function_exists('execvpe', 'HAVE_EXECVPE')
+33         configure\&.check_function_exists('execvp', 'HAVE_EXECVP')
+34         configure\&.check_function_exists('execvP', 'HAVE_EXECVP2')
+35         configure\&.check_function_exists('exect', 'HAVE_EXECT')
+36         configure\&.check_function_exists('execl', 'HAVE_EXECL')
+37         configure\&.check_function_exists('execlp', 'HAVE_EXECLP')
+38         configure\&.check_function_exists('execle', 'HAVE_EXECLE')
+39         configure\&.check_function_exists('posix_spawn', 'HAVE_POSIX_SPAWN')
+40         configure\&.check_function_exists('posix_spawnp', 'HAVE_POSIX_SPAWNP')
+41         configure\&.check_symbol_exists('_NSGetEnviron', 'crt_externs\&.h',
+42                                       'HAVE_NSGETENVIRON')
+43         configure\&.write_by_template(
+44             os\&.path\&.join(src_dir, 'config\&.h\&.in'),
+45             os\&.path\&.join(dst_dir, 'config\&.h'))
+46 
+47         target = create_shared_library('ear', toolset)
+48         target\&.add_include(dst_dir)
+49         target\&.add_sources('ear\&.c')
+50         target\&.link_against(toolset\&.dl_libraries())
+51         target\&.link_against(['pthread'])
+52         target\&.build_release(dst_dir)
+53 
+54         return os\&.path\&.join(dst_dir, target\&.name)
+55 
+56     except Exception:
+57         logging\&.info("Could not build interception library\&.", exc_info=True)
+58         return None
+59 
+60 
+.fi
+.PP
+References create_shared_library(), do_configure(), and make_toolset()\&.
+.PP
+Referenced by libscanbuild\&.intercept\&.setup_environment()\&.
+.SS "def libear\&.create_shared_library ( name,  toolset)"
+
+.PP
+Definition at line 258 of file __init__\&.py\&.
+.PP
+.nf
+258 def create_shared_library(name, toolset):
+259     return SharedLibrary(name, toolset)
+.fi
+.PP
+Referenced by build_libear()\&.
+.SS "def libear\&.do_configure ( toolset)"
+
+.PP
+Definition at line 221 of file __init__\&.py\&.
+.PP
+.nf
+221 def do_configure(toolset):
+222     return Configure(toolset)
+223 
+224 
+.fi
+.PP
+Referenced by build_libear()\&.
+.SS "def libear\&.execute ( cmd, * args, ** kwargs)"
+
+.PP
+.nf
+ Make subprocess execution silent. 
+.fi
+.PP
+ 
+.PP
+Definition at line 61 of file __init__\&.py\&.
+.PP
+.nf
+61 def execute(cmd, *args, **kwargs):
+62     """ Make subprocess execution silent\&. """
+63 
+64     import subprocess
+65     kwargs\&.update({'stdout': subprocess\&.PIPE, 'stderr': subprocess\&.STDOUT})
+66     return subprocess\&.check_call(cmd, *args, **kwargs)
+67 
+68 
+69 @contextlib\&.contextmanager
+.fi
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release(), and tests\&.functional\&.cases\&.test_exec_anatomy\&.run()\&.
+.SS "def libear\&.make_toolset ( src_dir)"
+
+.PP
+Definition at line 150 of file __init__\&.py\&.
+.PP
+.nf
+150 def make_toolset(src_dir):
+151     platform = sys\&.platform
+152     if platform in {'win32', 'cygwin'}:
+153         raise RuntimeError('not implemented on this platform')
+154     elif platform == 'darwin':
+155         return DarwinToolset(src_dir)
+156     elif platform in {'linux', 'linux2'}:
+157         return LinuxToolset(src_dir)
+158     else:
+159         return UnixToolset(src_dir)
+160 
+161 
+.fi
+.PP
+Referenced by build_libear()\&.
+.SS "def libear\&.TemporaryDirectory (** kwargs)"
+
+.PP
+Definition at line 70 of file __init__\&.py\&.
+.PP
+.nf
+70 def TemporaryDirectory(**kwargs):
+71     name = tempfile\&.mkdtemp(**kwargs)
+72     try:
+73         yield name
+74     finally:
+75         shutil\&.rmtree(name)
+76 
+77 
+.fi
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries(), libscanbuild\&.intercept\&.capture(), tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.run_analyzer(), tests\&.unit\&.test_report\&.run_bug_parse(), tests\&.unit\&.test_report\&.run_crash_parse(), tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.test_all_exec_calls(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_append_to_existing_cdb(), tests\&.functional\&.cases\&.test_from_cdb\&.FailureReportTest\&.test_broken_creates_failure_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.FailureReportTest\&.test_broken_does_not_creates_failure_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code_if_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code_if_asked_from_plist(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_default_only_creates_html_report(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_default_title_in_report(), tests\&.unit\&.test_analyze\&.ReportDirectoryTest\&.test_directory_name_comparison(), tests\&.unit\&.test_clang\&.ClangGetArgumentsTest\&.test_get_clang_arguments(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_given_title_in_report(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cxx_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_library_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_wrapper_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cxx_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_works(), tests\&.unit\&.test_report\&.MergeSarifTest\&.test_merge_updates_embedded_link(), tests\&.unit\&.test_report\&.MergeSarifTest\&.test_merging_sarif(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_not_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_not_successful_build(), tests\&.unit\&.test_report\&.MergeSarifTest\&.test_overflow_run_count(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_overwrite_existing_cdb(), tests\&.unit\&.test_report\&.ParseFileTest\&.test_parse_real_crash(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_and_html_creates_html_and_plist_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_only_creates_plist_report(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_does_not_set_exit_code(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_regular_keeps_report_dir(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_regular_keeps_report_dir(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_sets_exit_code_if_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_sets_exit_code_if_asked_from_plist(), tests\&.unit\&.test_analyze\&.ReportFailureTest\&.test_report_failure_create_files(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_and_html_creates_sarif_and_html_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_only_creates_sarif_result(), tests\&.unit\&.test_intercept\&.InterceptUtilTest\&.test_sip(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_all_in_one(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_on_empty_env(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_parallel(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_with_wrapper()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

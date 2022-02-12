@@ -1,0 +1,129 @@
+\hypertarget{namespaceinit__convenience}{}\doxysection{init\+\_\+convenience Namespace Reference}
+\label{namespaceinit__convenience}\index{init\_convenience@{init\_convenience}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classinit__convenience_1_1_test_diagnostic_consumer}{Test\+Diagnostic\+Consumer}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::unique\+\_\+ptr$<$ Compiler\+Instance $>$ \mbox{\hyperlink{namespaceinit__convenience_a3a792e4d52dcac7d452c453d92cefedb}{Build\+Compiler\+Instance}} ()
+\item 
+std\+::unique\+\_\+ptr$<$ ASTContext $>$ \mbox{\hyperlink{namespaceinit__convenience_ad79d228a70afd330881778896518e14f}{Build\+ASTContext}} (Compiler\+Instance \&CI, Selector\+Table \&ST, Builtin\+::\+Context \&BC)
+\item 
+std\+::unique\+\_\+ptr$<$ Code\+Generator $>$ \mbox{\hyperlink{namespaceinit__convenience_a68375e72bc1be6e612bf4afc9a1d2afd}{Build\+Code\+Gen}} (Compiler\+Instance \&CI, llvm\+::\+LLVMContext \&LLVMCtx)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceinit__convenience_ad79d228a70afd330881778896518e14f}\label{namespaceinit__convenience_ad79d228a70afd330881778896518e14f}} 
+\index{init\_convenience@{init\_convenience}!BuildASTContext@{BuildASTContext}}
+\index{BuildASTContext@{BuildASTContext}!init\_convenience@{init\_convenience}}
+\doxysubsubsection{\texorpdfstring{BuildASTContext()}{BuildASTContext()}}
+{\footnotesize\ttfamily std\+::unique\+\_\+ptr$<$ASTContext$>$ init\+\_\+convenience\+::\+Build\+ASTContext (\begin{DoxyParamCaption}\item[{Compiler\+Instance \&}]{CI,  }\item[{Selector\+Table \&}]{ST,  }\item[{Builtin\+::\+Context \&}]{BC }\end{DoxyParamCaption})}
+
+
+
+Definition at line 220 of file clang-\/import-\/test.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{220                                                                              \{}
+\DoxyCodeLine{221   \textcolor{keyword}{auto} AST = std::make\_unique<ASTContext>(}
+\DoxyCodeLine{222       CI.getLangOpts(), CI.getSourceManager(),}
+\DoxyCodeLine{223       CI.getPreprocessor().getIdentifierTable(), ST, BC);}
+\DoxyCodeLine{224   AST-\/>InitBuiltinTypes(CI.getTarget());}
+\DoxyCodeLine{225   \textcolor{keywordflow}{return} AST;}
+\DoxyCodeLine{226 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{namespaceinit__convenience_a68375e72bc1be6e612bf4afc9a1d2afd}\label{namespaceinit__convenience_a68375e72bc1be6e612bf4afc9a1d2afd}} 
+\index{init\_convenience@{init\_convenience}!BuildCodeGen@{BuildCodeGen}}
+\index{BuildCodeGen@{BuildCodeGen}!init\_convenience@{init\_convenience}}
+\doxysubsubsection{\texorpdfstring{BuildCodeGen()}{BuildCodeGen()}}
+{\footnotesize\ttfamily std\+::unique\+\_\+ptr$<$Code\+Generator$>$ init\+\_\+convenience\+::\+Build\+Code\+Gen (\begin{DoxyParamCaption}\item[{Compiler\+Instance \&}]{CI,  }\item[{llvm\+::\+LLVMContext \&}]{LLVMCtx }\end{DoxyParamCaption})}
+
+
+
+Definition at line 228 of file clang-\/import-\/test.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{229                                                                       \{}
+\DoxyCodeLine{230   StringRef ModuleName(\textcolor{stringliteral}{"{}\$\_\_module"{}});}
+\DoxyCodeLine{231   \textcolor{keywordflow}{return} std::unique\_ptr<CodeGenerator>(CreateLLVMCodeGen(}
+\DoxyCodeLine{232       CI.getDiagnostics(), ModuleName, CI.getHeaderSearchOpts(),}
+\DoxyCodeLine{233       CI.getPreprocessorOpts(), CI.getCodeGenOpts(), LLVMCtx));}
+\DoxyCodeLine{234 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{namespaceinit__convenience_a3a792e4d52dcac7d452c453d92cefedb}\label{namespaceinit__convenience_a3a792e4d52dcac7d452c453d92cefedb}} 
+\index{init\_convenience@{init\_convenience}!BuildCompilerInstance@{BuildCompilerInstance}}
+\index{BuildCompilerInstance@{BuildCompilerInstance}!init\_convenience@{init\_convenience}}
+\doxysubsubsection{\texorpdfstring{BuildCompilerInstance()}{BuildCompilerInstance()}}
+{\footnotesize\ttfamily std\+::unique\+\_\+ptr$<$Compiler\+Instance$>$ init\+\_\+convenience\+::\+Build\+Compiler\+Instance (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 163 of file clang-\/import-\/test.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{163                                                         \{}
+\DoxyCodeLine{164   \textcolor{keyword}{auto} Ins = std::make\_unique<CompilerInstance>();}
+\DoxyCodeLine{165   \textcolor{keyword}{auto} DC = std::make\_unique<TestDiagnosticConsumer>();}
+\DoxyCodeLine{166   \textcolor{keyword}{const} \textcolor{keywordtype}{bool} ShouldOwnClient = \textcolor{keyword}{true};}
+\DoxyCodeLine{167   Ins-\/>createDiagnostics(DC.release(), ShouldOwnClient);}
+\DoxyCodeLine{168 }
+\DoxyCodeLine{169   \textcolor{keyword}{auto} Inv = std::make\_unique<CompilerInvocation>();}
+\DoxyCodeLine{170 }
+\DoxyCodeLine{171   std::vector<const char *> ClangArgv(ClangArgs.size());}
+\DoxyCodeLine{172   std::transform(ClangArgs.begin(), ClangArgs.end(), ClangArgv.begin(),}
+\DoxyCodeLine{173                  [](\textcolor{keyword}{const} std::string \&s) -\/> \textcolor{keyword}{const} \textcolor{keywordtype}{char} * \{ return s.data(); \});}
+\DoxyCodeLine{174   CompilerInvocation::CreateFromArgs(*Inv, ClangArgv, Ins-\/>getDiagnostics());}
+\DoxyCodeLine{175 }
+\DoxyCodeLine{176   \{}
+\DoxyCodeLine{177     \textcolor{keyword}{using namespace }driver::types;}
+\DoxyCodeLine{178     ID Id = lookupTypeForTypeSpecifier(Input.c\_str());}
+\DoxyCodeLine{179     assert(Id != TY\_INVALID);}
+\DoxyCodeLine{180     \textcolor{keywordflow}{if} (isCXX(Id)) \{}
+\DoxyCodeLine{181       Inv-\/>getLangOpts()-\/>CPlusPlus = \textcolor{keyword}{true};}
+\DoxyCodeLine{182       Inv-\/>getLangOpts()-\/>CPlusPlus11 = \textcolor{keyword}{true};}
+\DoxyCodeLine{183       Inv-\/>getHeaderSearchOpts().UseLibcxx = \textcolor{keyword}{true};}
+\DoxyCodeLine{184     \}}
+\DoxyCodeLine{185     \textcolor{keywordflow}{if} (isObjC(Id)) \{}
+\DoxyCodeLine{186       Inv-\/>getLangOpts()-\/>ObjC = 1;}
+\DoxyCodeLine{187     \}}
+\DoxyCodeLine{188   \}}
+\DoxyCodeLine{189   Inv-\/>getLangOpts()-\/>ObjCAutoRefCount = ObjCARC;}
+\DoxyCodeLine{190 }
+\DoxyCodeLine{191   Inv-\/>getLangOpts()-\/>Bool = \textcolor{keyword}{true};}
+\DoxyCodeLine{192   Inv-\/>getLangOpts()-\/>WChar = \textcolor{keyword}{true};}
+\DoxyCodeLine{193   Inv-\/>getLangOpts()-\/>Blocks = \textcolor{keyword}{true};}
+\DoxyCodeLine{194   Inv-\/>getLangOpts()-\/>DebuggerSupport = \textcolor{keyword}{true};}
+\DoxyCodeLine{195   Inv-\/>getLangOpts()-\/>SpellChecking = \textcolor{keyword}{false};}
+\DoxyCodeLine{196   Inv-\/>getLangOpts()-\/>ThreadsafeStatics = \textcolor{keyword}{false};}
+\DoxyCodeLine{197   Inv-\/>getLangOpts()-\/>AccessControl = \textcolor{keyword}{false};}
+\DoxyCodeLine{198   Inv-\/>getLangOpts()-\/>DollarIdents = \textcolor{keyword}{true};}
+\DoxyCodeLine{199   Inv-\/>getLangOpts()-\/>Exceptions = \textcolor{keyword}{true};}
+\DoxyCodeLine{200   Inv-\/>getLangOpts()-\/>CXXExceptions = \textcolor{keyword}{true};}
+\DoxyCodeLine{201   \textcolor{comment}{// Needed for testing dynamic\_cast.}}
+\DoxyCodeLine{202   Inv-\/>getLangOpts()-\/>RTTI = \textcolor{keyword}{true};}
+\DoxyCodeLine{203   Inv-\/>getCodeGenOpts().setDebugInfo(codegenoptions::FullDebugInfo);}
+\DoxyCodeLine{204   Inv-\/>getTargetOpts().Triple = llvm::sys::getDefaultTargetTriple();}
+\DoxyCodeLine{205 }
+\DoxyCodeLine{206   Ins-\/>setInvocation(std::move(Inv));}
+\DoxyCodeLine{207 }
+\DoxyCodeLine{208   TargetInfo *TI = TargetInfo::CreateTargetInfo(}
+\DoxyCodeLine{209       Ins-\/>getDiagnostics(), Ins-\/>getInvocation().TargetOpts);}
+\DoxyCodeLine{210   Ins-\/>setTarget(TI);}
+\DoxyCodeLine{211   Ins-\/>getTarget().adjust(Ins-\/>getDiagnostics(), Ins-\/>getLangOpts());}
+\DoxyCodeLine{212   Ins-\/>createFileManager();}
+\DoxyCodeLine{213   Ins-\/>createSourceManager(Ins-\/>getFileManager());}
+\DoxyCodeLine{214   Ins-\/>createPreprocessor(TU\_Complete);}
+\DoxyCodeLine{215 }
+\DoxyCodeLine{216   \textcolor{keywordflow}{return} Ins;}
+\DoxyCodeLine{217 \}}
+
+\end{DoxyCode}

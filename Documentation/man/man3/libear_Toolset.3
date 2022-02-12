@@ -1,0 +1,211 @@
+.TH "libear.Toolset" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libear.Toolset
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits object\&.
+.PP
+Inherited by \fBlibear\&.DarwinToolset\fP, and \fBlibear\&.UnixToolset\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self, \fBsrc_dir\fP)"
+.br
+.ti -1c
+.RI "def \fBset_compiler\fP (self, \fBcompiler\fP)"
+.br
+.ti -1c
+.RI "def \fBset_language_standard\fP (self, standard)"
+.br
+.ti -1c
+.RI "def \fBadd_definitions\fP (self, defines)"
+.br
+.ti -1c
+.RI "def \fBdl_libraries\fP (self)"
+.br
+.ti -1c
+.RI "def \fBshared_library_name\fP (self, name)"
+.br
+.ti -1c
+.RI "def \fBshared_library_c_flags\fP (self, release)"
+.br
+.ti -1c
+.RI "def \fBshared_library_ld_flags\fP (self, release, name)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBsrc_dir\fP"
+.br
+.ti -1c
+.RI "\fBcompiler\fP"
+.br
+.ti -1c
+.RI "\fBc_flags\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+
+.PP
+.nf
+ Abstract class to represent different toolset. 
+.fi
+.PP
+ 
+.PP
+Definition at line 78 of file __init__\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def libear\&.Toolset\&.__init__ ( self,  src_dir)"
+
+.PP
+Reimplemented in \fBlibear\&.LinuxToolset\fP, \fBlibear\&.UnixToolset\fP, and \fBlibear\&.DarwinToolset\fP\&.
+.PP
+Definition at line 81 of file __init__\&.py\&.
+.PP
+.nf
+81     def __init__(self, src_dir):
+82         self\&.src_dir = src_dir
+83         self\&.compiler = None
+84         self\&.c_flags = []
+85 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def libear\&.Toolset\&.add_definitions ( self,  defines)"
+
+.PP
+.nf
+ part of public interface 
+.fi
+.PP
+ 
+.PP
+Definition at line 94 of file __init__\&.py\&.
+.PP
+.nf
+94     def add_definitions(self, defines):
+95         """ part of public interface """
+96         self\&.c_flags\&.extend(defines)
+97 
+.fi
+.PP
+References libear\&.Toolset\&.c_flags\&.
+.SS "def libear\&.Toolset\&.dl_libraries ( self)"
+
+.PP
+Reimplemented in \fBlibear\&.LinuxToolset\fP, \fBlibear\&.UnixToolset\fP, and \fBlibear\&.DarwinToolset\fP\&.
+.PP
+Definition at line 98 of file __init__\&.py\&.
+.PP
+.nf
+98     def dl_libraries(self):
+99         raise NotImplementedError()
+100 
+.fi
+.SS "def libear\&.Toolset\&.set_compiler ( self,  compiler)"
+
+.PP
+.nf
+ part of public interface 
+.fi
+.PP
+ 
+.PP
+Definition at line 86 of file __init__\&.py\&.
+.PP
+.nf
+86     def set_compiler(self, compiler):
+87         """ part of public interface """
+88         self\&.compiler = compiler
+89 
+.fi
+.PP
+References libear\&.Toolset\&.compiler\&.
+.SS "def libear\&.Toolset\&.set_language_standard ( self,  standard)"
+
+.PP
+.nf
+ part of public interface 
+.fi
+.PP
+ 
+.PP
+Definition at line 90 of file __init__\&.py\&.
+.PP
+.nf
+90     def set_language_standard(self, standard):
+91         """ part of public interface """
+92         self\&.c_flags\&.append('-std=' + standard)
+93 
+.fi
+.PP
+References libear\&.Toolset\&.c_flags\&.
+.SS "def libear\&.Toolset\&.shared_library_c_flags ( self,  release)"
+
+.PP
+Definition at line 104 of file __init__\&.py\&.
+.PP
+.nf
+104     def shared_library_c_flags(self, release):
+105         extra = ['-DNDEBUG', '-O3'] if release else []
+106         return extra + ['-fPIC'] + self\&.c_flags
+107 
+.fi
+.PP
+References libear\&.Toolset\&.c_flags\&.
+.SS "def libear\&.Toolset\&.shared_library_ld_flags ( self,  release,  name)"
+
+.PP
+Reimplemented in \fBlibear\&.UnixToolset\fP, and \fBlibear\&.DarwinToolset\fP\&.
+.PP
+Definition at line 108 of file __init__\&.py\&.
+.PP
+.nf
+108     def shared_library_ld_flags(self, release, name):
+109         raise NotImplementedError()
+110 
+111 
+.fi
+.SS "def libear\&.Toolset\&.shared_library_name ( self,  name)"
+
+.PP
+Reimplemented in \fBlibear\&.UnixToolset\fP, and \fBlibear\&.DarwinToolset\fP\&.
+.PP
+Definition at line 101 of file __init__\&.py\&.
+.PP
+.nf
+101     def shared_library_name(self, name):
+102         raise NotImplementedError()
+103 
+.fi
+.SH "Member Data Documentation"
+.PP 
+.SS "libear\&.Toolset\&.c_flags"
+
+.PP
+Definition at line 84 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.Toolset\&.add_definitions(), libear\&.Toolset\&.set_language_standard(), and libear\&.Toolset\&.shared_library_c_flags()\&.
+.SS "libear\&.Toolset\&.compiler"
+
+.PP
+Definition at line 83 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.Toolset\&.set_compiler()\&.
+.SS "libear\&.Toolset\&.src_dir"
+
+.PP
+Definition at line 82 of file __init__\&.py\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

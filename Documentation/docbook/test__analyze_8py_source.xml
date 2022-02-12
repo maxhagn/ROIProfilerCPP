@@ -1,0 +1,434 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_test__analyze_8py_source" xml:lang="en-US">
+<title>test_analyze.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/unit/test_analyze.py</primary></indexterm>
+<programlisting><anchor xml:id="_test__analyze_8py_source_1l00001"/><link linkend="_namespacetests_1_1unit_1_1test__analyze">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 
+00006 <emphasis role="keyword">import</emphasis>&#32;unittest
+00007 <emphasis role="keyword">import</emphasis>&#32;re
+00008 <emphasis role="keyword">import</emphasis>&#32;os
+00009 <emphasis role="keyword">import</emphasis>&#32;os.path
+00010 <emphasis role="keyword">import</emphasis>&#32;libear
+00011 <emphasis role="keyword">import</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1analyze">libscanbuild.analyze</link>&#32;<emphasis role="keyword">as</emphasis>&#32;sut
+00012 
+00013 
+<anchor xml:id="_test__analyze_8py_source_1l00014"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_directory_test">00014</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_directory_test">ReportDirectoryTest</link>(unittest.TestCase):
+00015 
+00016 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Test&#32;that&#32;successive&#32;report&#32;directory&#32;names&#32;ascend&#32;in&#32;lexicographic</emphasis>
+00017 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;order.&#32;This&#32;is&#32;required&#32;so&#32;that&#32;report&#32;directories&#32;from&#32;two&#32;runs&#32;of</emphasis>
+00018 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;scan-build&#32;can&#32;be&#32;easily&#32;matched&#32;up&#32;to&#32;compare&#32;results.</emphasis>
+<anchor xml:id="_test__analyze_8py_source_1l00019"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_directory_test_1a3cbe71a968960c63aa5021773d52f4e5">00019</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_directory_test_1a3cbe71a968960c63aa5021773d52f4e5">test_directory_name_comparison</link>(self):
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir,&#32;\
+00021 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.report_directory(tmpdir,&#32;<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&apos;html&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;report_dir1,&#32;\
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.report_directory(tmpdir,&#32;<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&apos;html&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;report_dir2,&#32;\
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.report_directory(tmpdir,&#32;<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&apos;html&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;report_dir3:
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertLess(report_dir1,&#32;report_dir2)
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertLess(report_dir2,&#32;report_dir3)
+00026 
+00027 
+<anchor xml:id="_test__analyze_8py_source_1l00028"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test">00028</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test">FilteringFlagsTest</link>(unittest.TestCase):
+00029 
+<anchor xml:id="_test__analyze_8py_source_1l00030"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a51700863710d60ffb5f1618dc15bc8e2">00030</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a51700863710d60ffb5f1618dc15bc8e2">test_language_captured</link>(self):
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(flags):
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmd&#32;=&#32;[<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;source.c&apos;</emphasis>]&#32;+&#32;flags
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts&#32;=&#32;sut.classify_parameters(cmd)
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;opts[<emphasis role="stringliteral">&apos;language&apos;</emphasis>]
+00035 
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="keywordtype">None</emphasis>,&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([]))
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;-x&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>]))
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="stringliteral">&apos;cpp&apos;</emphasis>,&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;-x&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;cpp&apos;</emphasis>]))
+00039 
+<anchor xml:id="_test__analyze_8py_source_1l00040"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1af37807c49fcc66b23f6c31a86068a366">00040</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1af37807c49fcc66b23f6c31a86068a366">test_arch</link>(self):
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(flags):
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmd&#32;=&#32;[<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;source.c&apos;</emphasis>]&#32;+&#32;flags
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts&#32;=&#32;sut.classify_parameters(cmd)
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;opts[<emphasis role="stringliteral">&apos;arch_list&apos;</emphasis>]
+00045 
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([],&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([]))
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;mips&apos;</emphasis>],&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;-arch&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;mips&apos;</emphasis>]))
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;mips&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;i386&apos;</emphasis>],
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;-arch&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;mips&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-arch&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;i386&apos;</emphasis>]))
+00050 
+<anchor xml:id="_test__analyze_8py_source_1l00051"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1aa8efdedbf9b3abfacb1c37516f35ba82">00051</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1aa8efdedbf9b3abfacb1c37516f35ba82">assertFlagsChanged</link>(self,&#32;expected,&#32;flags):
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmd&#32;=&#32;[<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;source.c&apos;</emphasis>]&#32;+&#32;flags
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts&#32;=&#32;sut.classify_parameters(cmd)
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(expected,&#32;opts[<emphasis role="stringliteral">&apos;flags&apos;</emphasis>])
+00055 
+<anchor xml:id="_test__analyze_8py_source_1l00056"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">00056</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>(self,&#32;flags):
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1aa8efdedbf9b3abfacb1c37516f35ba82">assertFlagsChanged</link>assertFlagsChanged(flags,&#32;flags)
+00058 
+<anchor xml:id="_test__analyze_8py_source_1l00059"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">00059</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>(self,&#32;flags):
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1aa8efdedbf9b3abfacb1c37516f35ba82">assertFlagsChanged</link>assertFlagsChanged([],&#32;flags)
+00061 
+<anchor xml:id="_test__analyze_8py_source_1l00062"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1ad3ef9c1de8648c35bd6c779bc4e49caf">00062</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1ad3ef9c1de8648c35bd6c779bc4e49caf">test_optimalizations_pass</link>(self):
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-O&apos;</emphasis>])
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-O1&apos;</emphasis>])
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-Os&apos;</emphasis>])
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-O2&apos;</emphasis>])
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-O3&apos;</emphasis>])
+00068 
+<anchor xml:id="_test__analyze_8py_source_1l00069"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a6d99c9135201bcd40482b4b3c9cbedd1">00069</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a6d99c9135201bcd40482b4b3c9cbedd1">test_include_pass</link>(self):
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([])
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-include&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/usr/local/include&apos;</emphasis>])
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-I.&apos;</emphasis>])
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-I&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;.&apos;</emphasis>])
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-I/usr/local/include&apos;</emphasis>])
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-I&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/usr/local/include&apos;</emphasis>])
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-I/opt&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-I&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/opt/otp/include&apos;</emphasis>])
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-isystem&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/path&apos;</emphasis>])
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-isystem=/path&apos;</emphasis>])
+00079 
+<anchor xml:id="_test__analyze_8py_source_1l00080"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1adb9ff2ec93d5db92b7a3255fd7eeebbf">00080</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1adb9ff2ec93d5db92b7a3255fd7eeebbf">test_define_pass</link>(self):
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-DNDEBUG&apos;</emphasis>])
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-UNDEBUG&apos;</emphasis>])
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-Dvar1=val1&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Dvar2=val2&apos;</emphasis>])
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-Dvar=&quot;val&#32;ues&quot;&apos;</emphasis>])
+00085 
+<anchor xml:id="_test__analyze_8py_source_1l00086"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a6984ce4e5108ab8f0eb69895bd44b4e3">00086</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a6984ce4e5108ab8f0eb69895bd44b4e3">test_output_filtered</link>(self):
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-o&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;source.o&apos;</emphasis>])
+00088 
+<anchor xml:id="_test__analyze_8py_source_1l00089"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1aab6b7021c5fd3c303bb89ade7291061d">00089</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1aab6b7021c5fd3c303bb89ade7291061d">test_some_warning_filtered</link>(self):
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-Wall&apos;</emphasis>])
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-Wnoexcept&apos;</emphasis>])
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-Wreorder&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Wunused&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Wundef&apos;</emphasis>])
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-Wno-reorder&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Wno-unused&apos;</emphasis>])
+00094 
+<anchor xml:id="_test__analyze_8py_source_1l00095"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1acc16850d684d7670684ce2caaf9239b8">00095</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1acc16850d684d7670684ce2caaf9239b8">test_compile_only_flags_pass</link>(self):
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-std=C99&apos;</emphasis>])
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-nostdinc&apos;</emphasis>])
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-isystem&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/image/debian&apos;</emphasis>])
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-iprefix&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/usr/local&apos;</emphasis>])
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-iquote=me&apos;</emphasis>])
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-iquote&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;me&apos;</emphasis>])
+00102 
+<anchor xml:id="_test__analyze_8py_source_1l00103"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1abe37295580fa660f8f7fdce2de59dc42">00103</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1abe37295580fa660f8f7fdce2de59dc42">test_compile_and_link_flags_pass</link>(self):
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-fsinged-char&apos;</emphasis>])
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-fPIC&apos;</emphasis>])
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-stdlib=libc++&apos;</emphasis>])
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;--sysroot&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/&apos;</emphasis>])
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a940f4b309fa9c71aa74fb4b11e268cfa">assertFlagsUnchanged</link>assertFlagsUnchanged([<emphasis role="stringliteral">&apos;-isysroot&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;/&apos;</emphasis>])
+00109 
+<anchor xml:id="_test__analyze_8py_source_1l00110"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a4366344ed838bb861ee31163f056806e">00110</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a4366344ed838bb861ee31163f056806e">test_some_flags_filtered</link>(self):
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-g&apos;</emphasis>])
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-fsyntax-only&apos;</emphasis>])
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-save-temps&apos;</emphasis>])
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-init&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;my_init&apos;</emphasis>])
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_filtering_flags_test_1a921f78fe09e73e4563bca61b961d397c">assertFlagsFiltered</link>assertFlagsFiltered([<emphasis role="stringliteral">&apos;-sectorder&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;a&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;b&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>])
+00116 
+00117 
+<anchor xml:id="_test__analyze_8py_source_1l00118"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">00118</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>(object):
+<anchor xml:id="_test__analyze_8py_source_1l00119"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1a651adc9b5308ccb49ff12916fc915d7e">00119</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1a651adc9b5308ccb49ff12916fc915d7e">__init__</link>(self):
+<anchor xml:id="_test__analyze_8py_source_1l00120"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1ad55b63af958ccfcf9144010af3c7ade1">00120</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1ad55b63af958ccfcf9144010af3c7ade1">arg</link>arg&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+<anchor xml:id="_test__analyze_8py_source_1l00121"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1a7f18c423f9b961dfc9ce3b828099b00b">00121</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1a7f18c423f9b961dfc9ce3b828099b00b">success</link>success&#32;=&#32;0
+00122 
+<anchor xml:id="_test__analyze_8py_source_1l00123"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1ae5eebe137aeb1c3f5b7300657d7e92d0">00123</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1ae5eebe137aeb1c3f5b7300657d7e92d0">call</link>(self,&#32;params):
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1ad55b63af958ccfcf9144010af3c7ade1">arg</link>arg&#32;=&#32;params
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy_1a7f18c423f9b961dfc9ce3b828099b00b">success</link>success
+00126 
+00127 
+<anchor xml:id="_test__analyze_8py_source_1l00128"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test">00128</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test">RunAnalyzerTest</link>(unittest.TestCase):
+00129 
+00130 &#32;&#32;&#32;&#32;<emphasis role="preprocessor">@staticmethod</emphasis>
+<anchor xml:id="_test__analyze_8py_source_1l00131"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1a1f6707f9c73cc0beb6ff8ba64d5b1afe">00131</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1a1f6707f9c73cc0beb6ff8ba64d5b1afe">run_analyzer</link>(content,&#32;failures_report,&#32;output_format=&apos;plist&apos;):
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename&#32;=&#32;os.path.join(tmpdir,&#32;<emphasis role="stringliteral">&apos;test.cpp&apos;</emphasis>)
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(content)
+00136 
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts&#32;=&#32;{
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;clang&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;directory&apos;</emphasis>:&#32;os.getcwd(),
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[],
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;direct_args&apos;</emphasis>:&#32;[],
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;filename,
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;output_dir&apos;</emphasis>:&#32;tmpdir,
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;output_format&apos;</emphasis>:&#32;output_format,
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;output_failures&apos;</emphasis>:&#32;failures_report
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;sut.run_analyzer(opts,&#32;spy.call)
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;output_files&#32;=&#32;[]
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;entry&#32;<emphasis role="keywordflow">in</emphasis>&#32;os.listdir(tmpdir):
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;output_files.append(entry)
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(result,&#32;spy.arg,&#32;output_files)
+00153 
+<anchor xml:id="_test__analyze_8py_source_1l00154"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1a702dcd34442c191fdf3725d9421cc75a">00154</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1a702dcd34442c191fdf3725d9421cc75a">test_run_analyzer</link>(self):
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;<emphasis role="stringliteral">&quot;int&#32;div(int&#32;n,&#32;int&#32;d)&#32;{&#32;return&#32;n&#32;/&#32;d;&#32;}&quot;</emphasis>
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(result,&#32;fwds,&#32;_)&#32;=&#32;RunAnalyzerTest.run_analyzer(content,&#32;<emphasis role="keyword">False</emphasis>)
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="keywordtype">None</emphasis>,&#32;fwds)
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(0,&#32;result[<emphasis role="stringliteral">&apos;exit_code&apos;</emphasis>])
+00159 
+<anchor xml:id="_test__analyze_8py_source_1l00160"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1a3ba6c9e6496dd0a88243bf8c0c18aa83">00160</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1a3ba6c9e6496dd0a88243bf8c0c18aa83">test_run_analyzer_crash</link>(self):
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;<emphasis role="stringliteral">&quot;int&#32;div(int&#32;n,&#32;int&#32;d)&#32;{&#32;return&#32;n&#32;/&#32;d&#32;}&quot;</emphasis>
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(result,&#32;fwds,&#32;_)&#32;=&#32;RunAnalyzerTest.run_analyzer(content,&#32;<emphasis role="keyword">False</emphasis>)
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="keywordtype">None</emphasis>,&#32;fwds)
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(1,&#32;result[<emphasis role="stringliteral">&apos;exit_code&apos;</emphasis>])
+00165 
+<anchor xml:id="_test__analyze_8py_source_1l00166"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1aee571060a4c53847ba18fa647bc41fb0">00166</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1aee571060a4c53847ba18fa647bc41fb0">test_run_analyzer_crash_and_forwarded</link>(self):
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;<emphasis role="stringliteral">&quot;int&#32;div(int&#32;n,&#32;int&#32;d)&#32;{&#32;return&#32;n&#32;/&#32;d&#32;}&quot;</emphasis>
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(_,&#32;fwds,&#32;_)&#32;=&#32;RunAnalyzerTest.run_analyzer(content,&#32;<emphasis role="keyword">True</emphasis>)
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(1,&#32;fwds[<emphasis role="stringliteral">&apos;exit_code&apos;</emphasis>])
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(len(fwds[<emphasis role="stringliteral">&apos;error_output&apos;</emphasis>])&#32;&gt;&#32;0)
+00171 
+<anchor xml:id="_test__analyze_8py_source_1l00172"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1ad7106ee26eff984ee2d0f8f75d28ce9c">00172</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_1ad7106ee26eff984ee2d0f8f75d28ce9c">test_run_analyzer_with_sarif</link>(self):
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;<emphasis role="stringliteral">&quot;int&#32;div(int&#32;n,&#32;int&#32;d)&#32;{&#32;return&#32;n&#32;/&#32;d;&#32;}&quot;</emphasis>
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(result,&#32;fwds,&#32;output_files)&#32;=&#32;RunAnalyzerTest.run_analyzer(content,&#32;<emphasis role="keyword">False</emphasis>,&#32;output_format=<emphasis role="stringliteral">&apos;sarif&apos;</emphasis>)
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="keywordtype">None</emphasis>,&#32;fwds)
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(0,&#32;result[<emphasis role="stringliteral">&apos;exit_code&apos;</emphasis>])
+00177 
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pattern&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;^result-.+\.sarif$&apos;</emphasis>)
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;f&#32;<emphasis role="keywordflow">in</emphasis>&#32;output_files:
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;re.match(pattern,&#32;f):
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.fail(<emphasis role="stringliteral">&apos;no&#32;result&#32;sarif&#32;files&#32;found&#32;in&#32;output&apos;</emphasis>)
+00183 
+00184 
+<anchor xml:id="_test__analyze_8py_source_1l00185"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test">00185</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test">ReportFailureTest</link>(unittest.TestCase):
+00186 
+<anchor xml:id="_test__analyze_8py_source_1l00187"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test_1a9adea754ee2d568e911e28390adb5c15">00187</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test_1a9adea754ee2d568e911e28390adb5c15">assertUnderFailures</link>(self,&#32;path):
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="stringliteral">&apos;failures&apos;</emphasis>,&#32;os.path.basename(os.path.dirname(path)))
+00189 
+<anchor xml:id="_test__analyze_8py_source_1l00190"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test_1a816218f84f033a7cc83bd1ca76e8c8b8">00190</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test_1a816218f84f033a7cc83bd1ca76e8c8b8">test_report_failure_create_files</link>(self):
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;create&#32;input&#32;file</emphasis>
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename&#32;=&#32;os.path.join(tmpdir,&#32;<emphasis role="stringliteral">&apos;test.c&apos;</emphasis>)
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<emphasis role="stringliteral">&apos;int&#32;main()&#32;{&#32;return&#32;0&apos;</emphasis>)
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;uname_msg&#32;=&#32;<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>.join(os.uname())&#32;+&#32;os.linesep
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;error_msg&#32;=&#32;<emphasis role="stringliteral">&apos;this&#32;is&#32;my&#32;error&#32;output&apos;</emphasis>
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;execute&#32;test</emphasis>
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts&#32;=&#32;{
+00200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;clang&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,
+00201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;directory&apos;</emphasis>:&#32;os.getcwd(),
+00202 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[],
+00203 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;filename,
+00204 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;output_dir&apos;</emphasis>:&#32;tmpdir,
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;error_type&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;other_error&apos;</emphasis>,
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;error_output&apos;</emphasis>:&#32;error_msg,
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;exit_code&apos;</emphasis>:&#32;13
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.report_failure(opts)
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;verify&#32;the&#32;result</emphasis>
+00212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;dict()
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pp_file&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;root,&#32;_,&#32;files&#32;<emphasis role="keywordflow">in</emphasis>&#32;os.walk(tmpdir):
+00215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;keys&#32;=&#32;[os.path.join(root,&#32;name)&#32;<emphasis role="keywordflow">for</emphasis>&#32;name&#32;<emphasis role="keywordflow">in</emphasis>&#32;files]
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;key&#32;<emphasis role="keywordflow">in</emphasis>&#32;keys:
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(key,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00218 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result[key]&#32;=&#32;handle.readlines()
+00219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;re.match(<emphasis role="stringliteral">r&apos;^(.*/)+clang(.*)\.i$&apos;</emphasis>,&#32;key):
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pp_file&#32;=&#32;key
+00221 
+00222 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;prepocessor&#32;file&#32;generated</emphasis>
+00223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_report_failure_test_1a9adea754ee2d568e911e28390adb5c15">assertUnderFailures</link>assertUnderFailures(pp_file)
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;info&#32;file&#32;generated&#32;and&#32;content&#32;dumped</emphasis>
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;info_file&#32;=&#32;pp_file&#32;+&#32;<emphasis role="stringliteral">&apos;.info.txt&apos;</emphasis>
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(info_file&#32;<emphasis role="keywordflow">in</emphasis>&#32;result)
+00227 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="stringliteral">&apos;Other&#32;Error\n&apos;</emphasis>,&#32;result[info_file][1])
+00228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(uname_msg,&#32;result[info_file][3])
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;error&#32;file&#32;generated&#32;and&#32;content&#32;dumped</emphasis>
+00230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;error_file&#32;=&#32;pp_file&#32;+&#32;<emphasis role="stringliteral">&apos;.stderr.txt&apos;</emphasis>
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(error_file&#32;<emphasis role="keywordflow">in</emphasis>&#32;result)
+00232 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([error_msg],&#32;result[error_file])
+00233 
+00234 
+<anchor xml:id="_test__analyze_8py_source_1l00235"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test">00235</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test">AnalyzerTest</link>(unittest.TestCase):
+00236 
+<anchor xml:id="_test__analyze_8py_source_1l00237"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a39ea692e660a457f87852335f8de39a4">00237</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a39ea692e660a457f87852335f8de39a4">test_nodebug_macros_appended</link>(self):
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(flags):
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts&#32;=&#32;{<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;flags,&#32;<emphasis role="stringliteral">&apos;force_debug&apos;</emphasis>:&#32;<emphasis role="keyword">True</emphasis>}
+00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(spy.success,
+00242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.filter_debug_flags(opts,&#32;spy.call))
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;spy.arg[<emphasis role="stringliteral">&apos;flags&apos;</emphasis>]
+00244 
+00245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;-UNDEBUG&apos;</emphasis>],&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([]))
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;-DNDEBUG&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-UNDEBUG&apos;</emphasis>],&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;-DNDEBUG&apos;</emphasis>]))
+00247 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;-DSomething&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-UNDEBUG&apos;</emphasis>],&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;-DSomething&apos;</emphasis>]))
+00248 
+<anchor xml:id="_test__analyze_8py_source_1l00249"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a7725584d7f64259ee00f483cbbef597e">00249</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a7725584d7f64259ee00f483cbbef597e">test_set_language_fall_through</link>(self):
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>language(expected,&#32;input):
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00252 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;input.update({<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;test.c&apos;</emphasis>})
+00253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(spy.success,&#32;sut.language_check(input,&#32;spy.call))
+00254 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(expected,&#32;spy.arg[<emphasis role="stringliteral">&apos;language&apos;</emphasis>])
+00255 
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;&#32;&#32;{<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[]})
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[]})
+00258 
+<anchor xml:id="_test__analyze_8py_source_1l00259"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a1c70f6f9c5158de1a1f7b8ece3700475">00259</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a1c70f6f9c5158de1a1f7b8ece3700475">test_set_language_stops_on_not_supported</link>(self):
+00260 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00261 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;input&#32;=&#32;{
+00262 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,
+00263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[],
+00264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;test.java&apos;</emphasis>,
+00265 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;java&apos;</emphasis>
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertIsNone(sut.language_check(input,&#32;spy.call))
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertIsNone(spy.arg)
+00269 
+<anchor xml:id="_test__analyze_8py_source_1l00270"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1ab3912adedab3915c1622f2ed47423288">00270</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1ab3912adedab3915c1622f2ed47423288">test_set_language_sets_flags</link>(self):
+00271 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>flags(expected,&#32;input):
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;input.update({<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;test.c&apos;</emphasis>})
+00274 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(spy.success,&#32;sut.language_check(input,&#32;spy.call))
+00275 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(expected,&#32;spy.arg[<emphasis role="stringliteral">&apos;flags&apos;</emphasis>])
+00276 
+00277 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;flags([<emphasis role="stringliteral">&apos;-x&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>],&#32;&#32;&#32;{<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[]})
+00278 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;flags([<emphasis role="stringliteral">&apos;-x&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>],&#32;{<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[]})
+00279 
+<anchor xml:id="_test__analyze_8py_source_1l00280"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a57cb7910c5ec91655188a3f5ee299154">00280</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a57cb7910c5ec91655188a3f5ee299154">test_set_language_from_filename</link>(self):
+00281 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>language(expected,&#32;input):
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;input.update({<emphasis role="stringliteral">&apos;language&apos;</emphasis>:&#32;<emphasis role="keywordtype">None</emphasis>,&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[]})
+00284 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(spy.success,&#32;sut.language_check(input,&#32;spy.call))
+00285 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(expected,&#32;spy.arg[<emphasis role="stringliteral">&apos;language&apos;</emphasis>])
+00286 
+00287 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;&#32;&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>,&#32;&#32;&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>})
+00288 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>,&#32;&#32;&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>})
+00289 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.cxx&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>})
+00290 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.cxx&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>})
+00291 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.cpp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>})
+00292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c-cpp-output&apos;</emphasis>,&#32;&#32;&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.i&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>})
+00293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;language(<emphasis role="stringliteral">&apos;c++-cpp-output&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;file.i&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>})
+00294 
+<anchor xml:id="_test__analyze_8py_source_1l00295"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a2c40cb5cec85d0a5539ab6bdfd21f23b">00295</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1a2c40cb5cec85d0a5539ab6bdfd21f23b">test_arch_loop_sets_flags</link>(self):
+00296 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>flags(archs):
+00297 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00298 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;input&#32;=&#32;{<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[],&#32;<emphasis role="stringliteral">&apos;arch_list&apos;</emphasis>:&#32;archs}
+00299 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.arch_check(input,&#32;spy.call)
+00300 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;spy.arg[<emphasis role="stringliteral">&apos;flags&apos;</emphasis>]
+00301 
+00302 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([],&#32;flags([]))
+00303 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;-arch&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;i386&apos;</emphasis>],&#32;flags([<emphasis role="stringliteral">&apos;i386&apos;</emphasis>]))
+00304 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;-arch&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;i386&apos;</emphasis>],&#32;flags([<emphasis role="stringliteral">&apos;i386&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ppc&apos;</emphasis>]))
+00305 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual([<emphasis role="stringliteral">&apos;-arch&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;sparc&apos;</emphasis>],&#32;flags([<emphasis role="stringliteral">&apos;i386&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;sparc&apos;</emphasis>]))
+00306 
+<anchor xml:id="_test__analyze_8py_source_1l00307"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1adfbb1e158e254c33b8533f9bda90315d">00307</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_analyzer_test_1adfbb1e158e254c33b8533f9bda90315d">test_arch_loop_stops_on_not_supported</link>(self):
+00308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>stop(archs):
+00309 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;spy&#32;=&#32;<link linkend="_classtests_1_1unit_1_1test__analyze_1_1_spy">Spy</link>()
+00310 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;input&#32;=&#32;{<emphasis role="stringliteral">&apos;flags&apos;</emphasis>:&#32;[],&#32;<emphasis role="stringliteral">&apos;arch_list&apos;</emphasis>:&#32;archs}
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertIsNone(sut.arch_check(input,&#32;spy.call))
+00312 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertIsNone(spy.arg)
+00313 
+00314 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stop([<emphasis role="stringliteral">&apos;ppc&apos;</emphasis>])
+00315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stop([<emphasis role="stringliteral">&apos;ppc64&apos;</emphasis>])
+00316 
+00317 
+00318 <emphasis role="preprocessor">@sut.require([])</emphasis>
+<anchor xml:id="_test__analyze_8py_source_1l00319"/><link linkend="_namespacetests_1_1unit_1_1test__analyze_1a38b90ae2acf72503461f02e4fa1662f7">00319</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1unit_1_1test__analyze_1a38b90ae2acf72503461f02e4fa1662f7">method_without_expecteds</link>(opts):
+00320 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0
+00321 
+00322 
+00323 <emphasis role="preprocessor">@sut.require([&apos;this&apos;,&#32;&apos;that&apos;])</emphasis>
+<anchor xml:id="_test__analyze_8py_source_1l00324"/><link linkend="_namespacetests_1_1unit_1_1test__analyze_1a0e508c7b11bc322b16292987f0195734">00324</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1unit_1_1test__analyze_1a0e508c7b11bc322b16292987f0195734">method_with_expecteds</link>(opts):
+00325 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0
+00326 
+00327 
+00328 <emphasis role="preprocessor">@sut.require([])</emphasis>
+<anchor xml:id="_test__analyze_8py_source_1l00329"/><link linkend="_namespacetests_1_1unit_1_1test__analyze_1a93da4b413864ba13455a0907a1f49993">00329</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1unit_1_1test__analyze_1a93da4b413864ba13455a0907a1f49993">method_exception_from_inside</link>(opts):
+00330 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;Exception(<emphasis role="stringliteral">&apos;here&#32;is&#32;one&apos;</emphasis>)
+00331 
+00332 
+<anchor xml:id="_test__analyze_8py_source_1l00333"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test">00333</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test">RequireDecoratorTest</link>(unittest.TestCase):
+00334 
+<anchor xml:id="_test__analyze_8py_source_1l00335"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test_1a488f1977a95c331994f4693a9e2e30d6">00335</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test_1a488f1977a95c331994f4693a9e2e30d6">test_method_without_expecteds</link>(self):
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<link linkend="_namespacetests_1_1unit_1_1test__analyze_1a38b90ae2acf72503461f02e4fa1662f7">method_without_expecteds</link>(dict()),&#32;0)
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<link linkend="_namespacetests_1_1unit_1_1test__analyze_1a38b90ae2acf72503461f02e4fa1662f7">method_without_expecteds</link>({}),&#32;0)
+00338 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<link linkend="_namespacetests_1_1unit_1_1test__analyze_1a38b90ae2acf72503461f02e4fa1662f7">method_without_expecteds</link>({<emphasis role="stringliteral">&apos;this&apos;</emphasis>:&#32;2}),&#32;0)
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<link linkend="_namespacetests_1_1unit_1_1test__analyze_1a38b90ae2acf72503461f02e4fa1662f7">method_without_expecteds</link>({<emphasis role="stringliteral">&apos;that&apos;</emphasis>:&#32;3}),&#32;0)
+00340 
+<anchor xml:id="_test__analyze_8py_source_1l00341"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test_1ac04913432aaffdded59603bc5a390bdd">00341</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test_1ac04913432aaffdded59603bc5a390bdd">test_method_with_expecteds</link>(self):
+00342 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertRaises(KeyError,&#32;method_with_expecteds,&#32;dict())
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertRaises(KeyError,&#32;method_with_expecteds,&#32;{})
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertRaises(KeyError,&#32;method_with_expecteds,&#32;{<emphasis role="stringliteral">&apos;this&apos;</emphasis>:&#32;2})
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertRaises(KeyError,&#32;method_with_expecteds,&#32;{<emphasis role="stringliteral">&apos;that&apos;</emphasis>:&#32;3})
+00346 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<link linkend="_namespacetests_1_1unit_1_1test__analyze_1a0e508c7b11bc322b16292987f0195734">method_with_expecteds</link>({<emphasis role="stringliteral">&apos;this&apos;</emphasis>:&#32;0,&#32;<emphasis role="stringliteral">&apos;that&apos;</emphasis>:&#32;3}),&#32;0)
+00347 
+<anchor xml:id="_test__analyze_8py_source_1l00348"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test_1a88d06349cb119ca7ed6f7382af9ca7c3">00348</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_require_decorator_test_1a88d06349cb119ca7ed6f7382af9ca7c3">test_method_exception_not_caught</link>(self):
+00349 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertRaises(Exception,&#32;method_exception_from_inside,&#32;dict())
+00350 
+00351 
+<anchor xml:id="_test__analyze_8py_source_1l00352"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_prefix_with_test">00352</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_prefix_with_test">PrefixWithTest</link>(unittest.TestCase):
+00353 
+<anchor xml:id="_test__analyze_8py_source_1l00354"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_prefix_with_test_1ad35d47fc2cd637d52cba0ad008d487e5">00354</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_prefix_with_test_1ad35d47fc2cd637d52cba0ad008d487e5">test_gives_empty_on_empty</link>(self):
+00355 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;res&#32;=&#32;sut.prefix_with(0,&#32;[])
+00356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(res)
+00357 
+<anchor xml:id="_test__analyze_8py_source_1l00358"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_prefix_with_test_1ac628f3c8ab510d41b78812830624c00a">00358</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_prefix_with_test_1ac628f3c8ab510d41b78812830624c00a">test_interleaves_prefix</link>(self):
+00359 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;res&#32;=&#32;sut.prefix_with(0,&#32;[1,&#32;2,&#32;3])
+00360 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertListEqual([0,&#32;1,&#32;0,&#32;2,&#32;0,&#32;3],&#32;res)
+00361 
+00362 
+<anchor xml:id="_test__analyze_8py_source_1l00363"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test">00363</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test">MergeCtuMapTest</link>(unittest.TestCase):
+00364 
+<anchor xml:id="_test__analyze_8py_source_1l00365"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1a20a5250fb153905ae116b75d3005e9eb">00365</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1a20a5250fb153905ae116b75d3005e9eb">test_no_map_gives_empty</link>(self):
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pairs&#32;=&#32;sut.create_global_ctu_extdef_map([])
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(pairs)
+00368 
+<anchor xml:id="_test__analyze_8py_source_1l00369"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1aa417c4c3dc5b85c57fd23323975e8518">00369</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1aa417c4c3dc5b85c57fd23323975e8518">test_multiple_maps_merged</link>(self):
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;concat_map&#32;=&#32;[<emphasis role="stringliteral">&apos;c:@F@fun1#I#&#32;ast/fun1.c.ast&apos;</emphasis>,
+00371 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@fun2#I#&#32;ast/fun2.c.ast&apos;</emphasis>,
+00372 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@fun3#I#&#32;ast/fun3.c.ast&apos;</emphasis>]
+00373 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pairs&#32;=&#32;sut.create_global_ctu_extdef_map(concat_map)
+00374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun1#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun1.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00375 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun2#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun2.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00376 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun3#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun3.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00377 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(3,&#32;len(pairs))
+00378 
+<anchor xml:id="_test__analyze_8py_source_1l00379"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1a03e0177f7fb859c4fa74d6d080e71937">00379</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1a03e0177f7fb859c4fa74d6d080e71937">test_not_unique_func_left_out</link>(self):
+00380 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;concat_map&#32;=&#32;[<emphasis role="stringliteral">&apos;c:@F@fun1#I#&#32;ast/fun1.c.ast&apos;</emphasis>,
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@fun2#I#&#32;ast/fun2.c.ast&apos;</emphasis>,
+00382 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@fun1#I#&#32;ast/fun7.c.ast&apos;</emphasis>]
+00383 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pairs&#32;=&#32;sut.create_global_ctu_extdef_map(concat_map)
+00384 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse((<emphasis role="stringliteral">&apos;c:@F@fun1#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun1.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00385 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse((<emphasis role="stringliteral">&apos;c:@F@fun1#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun7.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00386 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun2#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun2.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00387 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(1,&#32;len(pairs))
+00388 
+<anchor xml:id="_test__analyze_8py_source_1l00389"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1ac28a5fede7a6adf2d2ed68b2da53b2d0">00389</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1ac28a5fede7a6adf2d2ed68b2da53b2d0">test_duplicates_are_kept</link>(self):
+00390 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;concat_map&#32;=&#32;[<emphasis role="stringliteral">&apos;c:@F@fun1#I#&#32;ast/fun1.c.ast&apos;</emphasis>,
+00391 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@fun2#I#&#32;ast/fun2.c.ast&apos;</emphasis>,
+00392 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@fun1#I#&#32;ast/fun1.c.ast&apos;</emphasis>]
+00393 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pairs&#32;=&#32;sut.create_global_ctu_extdef_map(concat_map)
+00394 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun1#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun1.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00395 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun2#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/fun2.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00396 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(2,&#32;len(pairs))
+00397 
+<anchor xml:id="_test__analyze_8py_source_1l00398"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1a9eb3788111733fce019dede7846826b3">00398</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_merge_ctu_map_test_1a9eb3788111733fce019dede7846826b3">test_space_handled_in_source</link>(self):
+00399 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;concat_map&#32;=&#32;[<emphasis role="stringliteral">&apos;c:@F@fun1#I#&#32;ast/f&#32;un.c.ast&apos;</emphasis>]
+00400 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pairs&#32;=&#32;sut.create_global_ctu_extdef_map(concat_map)
+00401 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue((<emphasis role="stringliteral">&apos;c:@F@fun1#I#&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;ast/f&#32;un.c.ast&apos;</emphasis>)&#32;<emphasis role="keywordflow">in</emphasis>&#32;pairs)
+00402 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(1,&#32;len(pairs))
+00403 
+00404 
+<anchor xml:id="_test__analyze_8py_source_1l00405"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test">00405</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test">ExtdefMapSrcToAstTest</link>(unittest.TestCase):
+00406 
+<anchor xml:id="_test__analyze_8py_source_1l00407"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test_1a3c8ee5953d2bf710c6b41bbd81a4b870">00407</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test_1a3c8ee5953d2bf710c6b41bbd81a4b870">test_empty_gives_empty</link>(self):
+00408 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fun_ast_lst&#32;=&#32;sut.extdef_map_list_src_to_ast([])
+00409 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(fun_ast_lst)
+00410 
+<anchor xml:id="_test__analyze_8py_source_1l00411"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test_1a4aacfa34a6d1bc91de2ee79f05734e9c">00411</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test_1a4aacfa34a6d1bc91de2ee79f05734e9c">test_sources_to_asts</link>(self):
+00412 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fun_src_lst&#32;=&#32;[<emphasis role="stringliteral">&apos;c:@F@f1#I#&#32;&apos;</emphasis>&#32;+&#32;os.path.join(os.sep&#32;+&#32;<emphasis role="stringliteral">&apos;path&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;f1.c&apos;</emphasis>),
+00413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;c:@F@f2#I#&#32;&apos;</emphasis>&#32;+&#32;os.path.join(os.sep&#32;+&#32;<emphasis role="stringliteral">&apos;path&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;f2.c&apos;</emphasis>)]
+00414 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fun_ast_lst&#32;=&#32;sut.extdef_map_list_src_to_ast(fun_src_lst)
+00415 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;c:@F@f1#I#&#32;&apos;</emphasis>&#32;+
+00416 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(<emphasis role="stringliteral">&apos;ast&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;path&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;f1.c.ast&apos;</emphasis>)
+00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">in</emphasis>&#32;fun_ast_lst)
+00418 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;c:@F@f2#I#&#32;&apos;</emphasis>&#32;+
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(<emphasis role="stringliteral">&apos;ast&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;path&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;f2.c.ast&apos;</emphasis>)
+00420 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">in</emphasis>&#32;fun_ast_lst)
+00421 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(2,&#32;len(fun_ast_lst))
+00422 
+<anchor xml:id="_test__analyze_8py_source_1l00423"/><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test_1ab0e54e8d7dec4e4d226d70e343c1eb00">00423</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__analyze_1_1_extdef_map_src_to_ast_test_1ab0e54e8d7dec4e4d226d70e343c1eb00">test_spaces_handled</link>(self):
+00424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fun_src_lst&#32;=&#32;[<emphasis role="stringliteral">&apos;c:@F@f1#I#&#32;&apos;</emphasis>&#32;+&#32;os.path.join(os.sep&#32;+&#32;<emphasis role="stringliteral">&apos;path&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;f&#32;1.c&apos;</emphasis>)]
+00425 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fun_ast_lst&#32;=&#32;sut.extdef_map_list_src_to_ast(fun_src_lst)
+00426 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;c:@F@f1#I#&#32;&apos;</emphasis>&#32;+
+00427 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(<emphasis role="stringliteral">&apos;ast&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;path&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;f&#32;1.c.ast&apos;</emphasis>)
+00428 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">in</emphasis>&#32;fun_ast_lst)
+00429 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(1,&#32;len(fun_ast_lst))
+</programlisting></section>

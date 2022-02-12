@@ -1,0 +1,955 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__indexing_8cpp_source" xml:lang="en-US">
+<title>Indexing.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/Indexing.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;Indexing.cpp&#32;-&#32;Higher&#32;level&#32;API&#32;functions&#32;--------------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_index_diagnostic_8h">CIndexDiagnostic.h</link>&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_indexer_8h">CIndexer.h</link>&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_log_8h">CLog.h</link>&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_index_data_consumer_8h">CXIndexDataConsumer.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_source_location_8h">CXSourceLocation.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTConsumer.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInvocation.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/FrontendAction.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/MultiplexConsumer.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/Utils.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Index/IndexingAction.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/HeaderSearch.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/PPCallbacks.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/PPConditionalDirectiveRecord.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/Preprocessor.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/PreprocessorOptions.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CrashRecoveryContext.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&lt;cstdio&gt;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&lt;mutex&gt;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&lt;utility&gt;</emphasis>
+00035 
+00036 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00037 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1index">clang::index</link>;
+00038 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxtu;
+00039 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxindex;
+00040 
+00041 <emphasis role="keyword">namespace&#32;</emphasis>{
+00042 
+00043 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00044 <emphasis role="comment">//&#32;Skip&#32;Parsed&#32;Bodies</emphasis>
+00045 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00046 
+00070 <emphasis role="keyword">class&#32;</emphasis>PPRegion&#32;{
+00071 &#32;&#32;llvm::sys::fs::UniqueID&#32;UniqueID;
+00072 &#32;&#32;time_t&#32;ModTime;
+00073 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset;
+00074 <emphasis role="keyword">public</emphasis>:
+00075 &#32;&#32;PPRegion()&#32;:&#32;UniqueID(0,&#32;0),&#32;ModTime(),&#32;Offset()&#32;{}
+00076 &#32;&#32;PPRegion(llvm::sys::fs::UniqueID&#32;UniqueID,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;offset,&#32;time_t&#32;modTime)
+00077 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;UniqueID(UniqueID),&#32;ModTime(modTime),&#32;Offset(offset)&#32;{}
+00078 
+00079 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::sys::fs::UniqueID&#32;&amp;getUniqueID()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;UniqueID;&#32;}
+00080 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;getOffset()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Offset;&#32;}
+00081 &#32;&#32;time_t&#32;getModTime()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;ModTime;&#32;}
+00082 
+00083 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isInvalid()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;*<emphasis role="keyword">this</emphasis>&#32;==&#32;PPRegion();&#32;}
+00084 
+00085 &#32;&#32;<emphasis role="keyword">friend</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eba9b639ae06e944e28d8a44767cf72">operator==</link>(<emphasis role="keyword">const</emphasis>&#32;PPRegion&#32;&amp;lhs,&#32;<emphasis role="keyword">const</emphasis>&#32;PPRegion&#32;&amp;rhs)&#32;{
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;lhs.UniqueID&#32;==&#32;rhs.UniqueID&#32;&amp;&amp;&#32;lhs.Offset&#32;==&#32;rhs.Offset&#32;&amp;&amp;
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lhs.ModTime&#32;==&#32;rhs.ModTime;
+00088 &#32;&#32;}
+00089 };
+00090 
+00091 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00092 
+00093 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>&#32;{
+00094 
+00095 &#32;&#32;<emphasis role="keyword">template</emphasis>&#32;&lt;&gt;
+<anchor xml:id="__indexing_8cpp_source_1l00096"/><link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4">00096</link> &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>DenseMapInfo&lt;PPRegion&gt;&#32;{
+<anchor xml:id="__indexing_8cpp_source_1l00097"/><link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1a59e01592dab2974dbe839250e40acb10">00097</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;PPRegion&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1a59e01592dab2974dbe839250e40acb10">getEmptyKey</link>()&#32;{
+00098 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PPRegion(llvm::sys::fs::UniqueID(0,&#32;0),&#32;<emphasis role="keywordtype">unsigned</emphasis>(-1),&#32;0);
+00099 &#32;&#32;&#32;&#32;}
+<anchor xml:id="__indexing_8cpp_source_1l00100"/><link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1a280238137b9390b521bf3b9d3533239a">00100</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;PPRegion&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1a280238137b9390b521bf3b9d3533239a">getTombstoneKey</link>()&#32;{
+00101 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PPRegion(llvm::sys::fs::UniqueID(0,&#32;0),&#32;<emphasis role="keywordtype">unsigned</emphasis>(-2),&#32;0);
+00102 &#32;&#32;&#32;&#32;}
+00103 
+<anchor xml:id="__indexing_8cpp_source_1l00104"/><link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1ab73c971555be6ed3fe4ea62629918237">00104</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1ab73c971555be6ed3fe4ea62629918237">getHashValue</link>(<emphasis role="keyword">const</emphasis>&#32;PPRegion&#32;&amp;S)&#32;{
+00105 &#32;&#32;&#32;&#32;&#32;&#32;llvm::FoldingSetNodeID&#32;ID;
+00106 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::sys::fs::UniqueID&#32;&amp;UniqueID&#32;=&#32;S.getUniqueID();
+00107 &#32;&#32;&#32;&#32;&#32;&#32;ID.AddInteger(UniqueID.getFile());
+00108 &#32;&#32;&#32;&#32;&#32;&#32;ID.AddInteger(UniqueID.getDevice());
+00109 &#32;&#32;&#32;&#32;&#32;&#32;ID.AddInteger(S.getOffset());
+00110 &#32;&#32;&#32;&#32;&#32;&#32;ID.AddInteger(S.getModTime());
+00111 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ID.ComputeHash();
+00112 &#32;&#32;&#32;&#32;}
+00113 
+<anchor xml:id="__indexing_8cpp_source_1l00114"/><link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1af9ef901ef9da9d111a578801be3f34a1">00114</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_1af9ef901ef9da9d111a578801be3f34a1">isEqual</link>(<emphasis role="keyword">const</emphasis>&#32;PPRegion&#32;&amp;LHS,&#32;<emphasis role="keyword">const</emphasis>&#32;PPRegion&#32;&amp;RHS)&#32;{
+00115 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LHS&#32;==&#32;RHS;
+00116 &#32;&#32;&#32;&#32;}
+00117 &#32;&#32;};
+00118 }
+00119 
+00120 <emphasis role="keyword">namespace&#32;</emphasis>{
+00121 
+00125 <emphasis role="keyword">class&#32;</emphasis>ThreadSafeParsedRegions&#32;{
+00126 &#32;&#32;<emphasis role="keyword">mutable</emphasis>&#32;std::mutex&#32;Mutex;
+00127 &#32;&#32;llvm::DenseSet&lt;PPRegion&gt;&#32;ParsedRegions;
+00128 
+00129 <emphasis role="keyword">public</emphasis>:
+00130 &#32;&#32;~ThreadSafeParsedRegions()&#32;=&#32;<emphasis role="keywordflow">default</emphasis>;
+00131 
+00132 &#32;&#32;llvm::DenseSet&lt;PPRegion&gt;&#32;getParsedRegions()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00133 &#32;&#32;&#32;&#32;std::lock_guard&lt;std::mutex&gt;&#32;MG(Mutex);
+00134 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ParsedRegions;
+00135 &#32;&#32;}
+00136 
+00137 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;addParsedRegions(ArrayRef&lt;PPRegion&gt;&#32;Regions)&#32;{
+00138 &#32;&#32;&#32;&#32;std::lock_guard&lt;std::mutex&gt;&#32;MG(Mutex);
+00139 &#32;&#32;&#32;&#32;ParsedRegions.insert(Regions.begin(),&#32;Regions.end());
+00140 &#32;&#32;}
+00141 };
+00142 
+00147 <emphasis role="keyword">class&#32;</emphasis>ParsedSrcLocationsTracker&#32;{
+00148 &#32;&#32;ThreadSafeParsedRegions&#32;&amp;ParsedRegionsStorage;
+00149 &#32;&#32;PPConditionalDirectiveRecord&#32;&amp;PPRec;
+00150 &#32;&#32;Preprocessor&#32;&amp;PP;
+00151 
+00154 &#32;&#32;llvm::DenseSet&lt;PPRegion&gt;&#32;ParsedRegionsSnapshot;
+00156 &#32;&#32;SmallVector&lt;PPRegion,&#32;32&gt;&#32;NewParsedRegions;
+00157 
+00159 &#32;&#32;PPRegion&#32;LastRegion;
+00160 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;LastIsParsed;
+00161 
+00162 <emphasis role="keyword">public</emphasis>:
+00164 &#32;&#32;ParsedSrcLocationsTracker(ThreadSafeParsedRegions&#32;&amp;ParsedRegionsStorage,
+00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PPConditionalDirectiveRecord&#32;&amp;ppRec,
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Preprocessor&#32;&amp;pp)
+00167 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;ParsedRegionsStorage(ParsedRegionsStorage),&#32;PPRec(ppRec),&#32;PP(pp),
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ParsedRegionsSnapshot(ParsedRegionsStorage.getParsedRegions())&#32;{}
+00169 
+00174 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;hasAlredyBeenParsed(SourceLocation&#32;Loc,&#32;FileID&#32;FID,
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE)&#32;{
+00176 &#32;&#32;&#32;&#32;assert(FE);
+00177 &#32;&#32;&#32;&#32;PPRegion&#32;region&#32;=&#32;getRegion(Loc,&#32;FID,&#32;FE);
+00178 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(region.isInvalid())
+00179 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00180 
+00181 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;common&#32;case,&#32;consecutive&#32;functions&#32;in&#32;the&#32;same&#32;region.</emphasis>
+00182 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(LastRegion&#32;==&#32;region)
+00183 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LastIsParsed;
+00184 
+00185 &#32;&#32;&#32;&#32;LastRegion&#32;=&#32;region;
+00186 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Source&#32;locations&#32;can&apos;t&#32;be&#32;revisited&#32;during&#32;single&#32;TU&#32;parsing.</emphasis>
+00187 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;That&#32;means&#32;if&#32;we&#32;hit&#32;the&#32;same&#32;region&#32;again,&#32;it&apos;s&#32;a&#32;different&#32;location&#32;in</emphasis>
+00188 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;the&#32;same&#32;region&#32;and&#32;so&#32;the&#32;&quot;is&#32;parsed&quot;&#32;value&#32;from&#32;the&#32;snapshot&#32;is&#32;still</emphasis>
+00189 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;correct.</emphasis>
+00190 &#32;&#32;&#32;&#32;LastIsParsed&#32;=&#32;ParsedRegionsSnapshot.count(region);
+00191 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LastIsParsed)
+00192 &#32;&#32;&#32;&#32;&#32;&#32;NewParsedRegions.emplace_back(std::move(region));
+00193 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LastIsParsed;
+00194 &#32;&#32;}
+00195 
+00197 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;syncWithStorage()&#32;{
+00198 &#32;&#32;&#32;&#32;ParsedRegionsStorage.addParsedRegions(NewParsedRegions);
+00199 &#32;&#32;}
+00200 
+00201 <emphasis role="keyword">private</emphasis>:
+00202 &#32;&#32;PPRegion&#32;getRegion(SourceLocation&#32;Loc,&#32;FileID&#32;FID,&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE)&#32;{
+00203 &#32;&#32;&#32;&#32;assert(FE);
+00204 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Bail&#32;=&#32;[<emphasis role="keyword">this</emphasis>,&#32;FE]()&#32;{
+00205 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isParsedOnceInclude(FE))&#32;{
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::sys::fs::UniqueID&#32;&amp;ID&#32;=&#32;FE-&gt;getUniqueID();
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PPRegion(ID,&#32;0,&#32;FE-&gt;getModificationTime());
+00208 &#32;&#32;&#32;&#32;&#32;&#32;}
+00209 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PPRegion();
+00210 &#32;&#32;&#32;&#32;};
+00211 
+00212 &#32;&#32;&#32;&#32;SourceLocation&#32;RegionLoc&#32;=&#32;PPRec.findConditionalDirectiveRegionLoc(Loc);
+00213 &#32;&#32;&#32;&#32;assert(RegionLoc.isFileID());
+00214 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RegionLoc.isInvalid())
+00215 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Bail();
+00216 
+00217 &#32;&#32;&#32;&#32;FileID&#32;RegionFID;
+00218 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;RegionOffset;
+00219 &#32;&#32;&#32;&#32;std::tie(RegionFID,&#32;RegionOffset)&#32;=
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PPRec.getSourceManager().getDecomposedLoc(RegionLoc);
+00221 
+00222 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RegionFID&#32;!=&#32;FID)
+00223 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Bail();
+00224 
+00225 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::sys::fs::UniqueID&#32;&amp;ID&#32;=&#32;FE-&gt;getUniqueID();
+00226 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PPRegion(ID,&#32;RegionOffset,&#32;FE-&gt;getModificationTime());
+00227 &#32;&#32;}
+00228 
+00229 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isParsedOnceInclude(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE)&#32;{
+00230 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PP.getHeaderSearchInfo().isFileMultipleIncludeGuarded(FE)&#32;||
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PP.getHeaderSearchInfo().hasFileBeenImported(FE);
+00232 &#32;&#32;}
+00233 };
+00234 
+00235 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00236 <emphasis role="comment">//&#32;IndexPPCallbacks</emphasis>
+00237 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00238 
+00239 <emphasis role="keyword">class&#32;</emphasis>IndexPPCallbacks&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;PPCallbacks&#32;{
+00240 &#32;&#32;Preprocessor&#32;&amp;PP;
+00241 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer;
+00242 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IsMainFileEntered;
+00243 
+00244 <emphasis role="keyword">public</emphasis>:
+00245 &#32;&#32;IndexPPCallbacks(Preprocessor&#32;&amp;PP,&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;dataConsumer)
+00246 &#32;&#32;&#32;&#32;:&#32;PP(PP),&#32;DataConsumer(dataConsumer),&#32;IsMainFileEntered(false)&#32;{&#32;}
+00247 
+00248 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;FileChanged(SourceLocation&#32;Loc,&#32;FileChangeReason&#32;Reason,
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SrcMgr::CharacteristicKind&#32;FileType,&#32;FileID&#32;PrevFID)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00250 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IsMainFileEntered)
+00251 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00252 
+00253 &#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;PP.getSourceManager();
+00254 &#32;&#32;&#32;&#32;SourceLocation&#32;MainFileLoc&#32;=&#32;SM.getLocForStartOfFile(SM.getMainFileID());
+00255 
+00256 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc&#32;==&#32;MainFileLoc&#32;&amp;&amp;&#32;Reason&#32;==&#32;PPCallbacks::EnterFile)&#32;{
+00257 &#32;&#32;&#32;&#32;&#32;&#32;IsMainFileEntered&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00258 &#32;&#32;&#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5c669f287c160f0a54004247471fa65e">enteredMainFile</link>(SM.getFileEntryForID(SM.getMainFileID()));
+00259 &#32;&#32;&#32;&#32;}
+00260 &#32;&#32;}
+00261 
+00262 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;InclusionDirective(SourceLocation&#32;HashLoc,&#32;<emphasis role="keyword">const</emphasis>&#32;Token&#32;&amp;IncludeTok,
+00263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;FileName,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IsAngled,
+00264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CharSourceRange&#32;FilenameRange,&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00265 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;SearchPath,&#32;StringRef&#32;RelativePath,
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Module&#32;*Imported,
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SrcMgr::CharacteristicKind&#32;FileType)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00268 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isImport&#32;=&#32;(IncludeTok.is(tok::identifier)&#32;&amp;&amp;
+00269 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IncludeTok.getIdentifierInfo()-&gt;getPPKeywordID()&#32;==&#32;tok::pp_import);
+00270 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b4e93bdd5828aee90dfbb5d09596c55">ppIncludedFile</link>(HashLoc,&#32;FileName,&#32;File,&#32;isImport,&#32;IsAngled,
+00271 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Imported);
+00272 &#32;&#32;}
+00273 
+00275 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;MacroDefined(<emphasis role="keyword">const</emphasis>&#32;Token&#32;&amp;Id,&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDirective&#32;*MD)<emphasis role="keyword">&#32;override&#32;</emphasis>{}
+00276 
+00279 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;MacroUndefined(<emphasis role="keyword">const</emphasis>&#32;Token&#32;&amp;MacroNameTok,
+00280 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDefinition&#32;&amp;MD,
+00281 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDirective&#32;*UD)<emphasis role="keyword">&#32;override&#32;</emphasis>{}
+00282 
+00284 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;MacroExpands(<emphasis role="keyword">const</emphasis>&#32;Token&#32;&amp;MacroNameTok,&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDefinition&#32;&amp;MD,
+00285 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;Range,&#32;<emphasis role="keyword">const</emphasis>&#32;MacroArgs&#32;*Args)<emphasis role="keyword">&#32;override&#32;</emphasis>{}
+00286 
+00290 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;SourceRangeSkipped(SourceRange&#32;Range,&#32;SourceLocation&#32;EndifLoc)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00291 &#32;&#32;}
+00292 };
+00293 
+00294 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00295 <emphasis role="comment">//&#32;IndexingConsumer</emphasis>
+00296 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00297 
+00298 <emphasis role="keyword">class&#32;</emphasis>IndexingConsumer&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ASTConsumer&#32;{
+00299 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer;
+00300 
+00301 <emphasis role="keyword">public</emphasis>:
+00302 &#32;&#32;IndexingConsumer(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;dataConsumer,
+00303 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ParsedSrcLocationsTracker&#32;*parsedLocsTracker)
+00304 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;DataConsumer(dataConsumer)&#32;{}
+00305 
+00306 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;Initialize(ASTContext&#32;&amp;Context)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00307 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a4f34d3862aaca2e111d2d6fc283c16dd">setASTContext</link>(Context);
+00308 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b2dd8a844240181f6b09b91bfb25e7a">startedTranslationUnit</link>();
+00309 &#32;&#32;}
+00310 
+00311 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HandleTopLevelDecl(DeclGroupRef&#32;DG)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00312 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7448058a9a24e004514ecaacc168ea1a">shouldAbort</link>();
+00313 &#32;&#32;}
+00314 };
+00315 
+00316 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00317 <emphasis role="comment">//&#32;CaptureDiagnosticConsumer</emphasis>
+00318 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00319 
+00320 <emphasis role="keyword">class&#32;</emphasis>CaptureDiagnosticConsumer&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;DiagnosticConsumer&#32;{
+00321 &#32;&#32;SmallVector&lt;StoredDiagnostic,&#32;4&gt;&#32;Errors;
+00322 <emphasis role="keyword">public</emphasis>:
+00323 
+00324 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;HandleDiagnostic(DiagnosticsEngine::Level&#32;level,
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Diagnostic&#32;&amp;Info)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00326 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(level&#32;&gt;=&#32;DiagnosticsEngine::Error)
+00327 &#32;&#32;&#32;&#32;&#32;&#32;Errors.push_back(StoredDiagnostic(level,&#32;Info));
+00328 &#32;&#32;}
+00329 };
+00330 
+00331 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00332 <emphasis role="comment">//&#32;IndexingFrontendAction</emphasis>
+00333 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00334 
+00335 <emphasis role="keyword">class&#32;</emphasis>IndexingFrontendAction&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ASTFrontendAction&#32;{
+00336 &#32;&#32;std::shared_ptr&lt;CXIndexDataConsumer&gt;&#32;DataConsumer;
+00337 &#32;&#32;IndexingOptions&#32;Opts;
+00338 
+00339 &#32;&#32;ThreadSafeParsedRegions&#32;*SKData;
+00340 &#32;&#32;std::unique_ptr&lt;ParsedSrcLocationsTracker&gt;&#32;ParsedLocsTracker;
+00341 
+00342 <emphasis role="keyword">public</emphasis>:
+00343 &#32;&#32;IndexingFrontendAction(std::shared_ptr&lt;CXIndexDataConsumer&gt;&#32;dataConsumer,
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IndexingOptions&#32;&amp;Opts,
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ThreadSafeParsedRegions&#32;*skData)
+00346 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;DataConsumer(std::move(dataConsumer)),&#32;Opts(Opts),&#32;SKData(skData)&#32;{}
+00347 
+00348 &#32;&#32;std::unique_ptr&lt;ASTConsumer&gt;&#32;CreateASTConsumer(CompilerInstance&#32;&amp;CI,
+00349 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;InFile)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00350 &#32;&#32;&#32;&#32;PreprocessorOptions&#32;&amp;PPOpts&#32;=&#32;CI.getPreprocessorOpts();
+00351 
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PPOpts.ImplicitPCHInclude.empty())&#32;{
+00353 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;File&#32;=&#32;CI.getFileManager().getFile(PPOpts.ImplicitPCHInclude);
+00354 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(File)
+00355 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DataConsumer-&gt;importedPCH(*File);
+00356 &#32;&#32;&#32;&#32;}
+00357 
+00358 &#32;&#32;&#32;&#32;DataConsumer-&gt;setASTContext(CI.getASTContext());
+00359 &#32;&#32;&#32;&#32;Preprocessor&#32;&amp;PP&#32;=&#32;CI.getPreprocessor();
+00360 &#32;&#32;&#32;&#32;PP.addPPCallbacks(std::make_unique&lt;IndexPPCallbacks&gt;(PP,&#32;*DataConsumer));
+00361 &#32;&#32;&#32;&#32;DataConsumer-&gt;setPreprocessor(CI.getPreprocessorPtr());
+00362 
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SKData)&#32;{
+00364 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*PPRec&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;PPConditionalDirectiveRecord(PP.getSourceManager());
+00365 &#32;&#32;&#32;&#32;&#32;&#32;PP.addPPCallbacks(std::unique_ptr&lt;PPCallbacks&gt;(PPRec));
+00366 &#32;&#32;&#32;&#32;&#32;&#32;ParsedLocsTracker&#32;=
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;ParsedSrcLocationsTracker&gt;(*SKData,&#32;*PPRec,&#32;PP);
+00368 &#32;&#32;&#32;&#32;}
+00369 
+00370 &#32;&#32;&#32;&#32;std::vector&lt;std::unique_ptr&lt;ASTConsumer&gt;&gt;&#32;Consumers;
+00371 &#32;&#32;&#32;&#32;Consumers.push_back(std::make_unique&lt;IndexingConsumer&gt;(
+00372 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*DataConsumer,&#32;ParsedLocsTracker.get()));
+00373 &#32;&#32;&#32;&#32;Consumers.push_back(createIndexingASTConsumer(
+00374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DataConsumer,&#32;Opts,&#32;CI.getPreprocessorPtr(),
+00375 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="keyword">this</emphasis>](<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{&#32;return&#32;this-&gt;shouldSkipFunctionBody(D);&#32;}));
+00376 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;MultiplexConsumer&gt;(std::move(Consumers));
+00377 &#32;&#32;}
+00378 
+00379 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;shouldSkipFunctionBody(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{
+00380 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ParsedLocsTracker)&#32;{
+00381 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Always&#32;skip&#32;bodies.</emphasis>
+00382 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00383 &#32;&#32;&#32;&#32;}
+00384 
+00385 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM&#32;=&#32;D-&gt;getASTContext().getSourceManager();
+00386 &#32;&#32;&#32;&#32;SourceLocation&#32;Loc&#32;=&#32;D-&gt;getLocation();
+00387 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isMacroID())
+00388 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00389 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SM.isInSystemHeader(Loc))
+00390 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;&#32;<emphasis role="comment">//&#32;always&#32;skip&#32;bodies&#32;from&#32;system&#32;headers.</emphasis>
+00391 
+00392 &#32;&#32;&#32;&#32;FileID&#32;FID;
+00393 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset;
+00394 &#32;&#32;&#32;&#32;std::tie(FID,&#32;Offset)&#32;=&#32;SM.getDecomposedLoc(Loc);
+00395 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Don&apos;t&#32;skip&#32;bodies&#32;from&#32;main&#32;files;&#32;this&#32;may&#32;be&#32;revisited.</emphasis>
+00396 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SM.getMainFileID()&#32;==&#32;FID)
+00397 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00398 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE&#32;=&#32;SM.getFileEntryForID(FID);
+00399 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FE)
+00400 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00401 
+00402 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ParsedLocsTracker-&gt;hasAlredyBeenParsed(Loc,&#32;FID,&#32;FE);
+00403 &#32;&#32;}
+00404 
+00405 &#32;&#32;TranslationUnitKind&#32;getTranslationUnitKind()<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00406 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DataConsumer-&gt;shouldIndexImplicitTemplateInsts())
+00407 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TU_Complete;
+00408 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00409 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TU_Prefix;
+00410 &#32;&#32;}
+00411 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;hasCodeCompletionSupport()<emphasis role="keyword">&#32;const&#32;override&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;}
+00412 
+00413 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;EndSourceFileAction()<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00414 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ParsedLocsTracker)
+00415 &#32;&#32;&#32;&#32;&#32;&#32;ParsedLocsTracker-&gt;syncWithStorage();
+00416 &#32;&#32;}
+00417 };
+00418 
+00419 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00420 <emphasis role="comment">//&#32;clang_indexSourceFileUnit&#32;Implementation</emphasis>
+00421 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00422 
+00423 <emphasis role="keyword">static</emphasis>&#32;IndexingOptions&#32;getIndexingOptionsFromCXOptions(<emphasis role="keywordtype">unsigned</emphasis>&#32;index_options)&#32;{
+00424 &#32;&#32;IndexingOptions&#32;IdxOpts;
+00425 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(index_options&#32;&amp;&#32;CXIndexOpt_IndexFunctionLocalSymbols)
+00426 &#32;&#32;&#32;&#32;IdxOpts.IndexFunctionLocals&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00427 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(index_options&#32;&amp;&#32;CXIndexOpt_IndexImplicitTemplateInstantiations)
+00428 &#32;&#32;&#32;&#32;IdxOpts.IndexImplicitInstantiation&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00429 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;IdxOpts;
+00430 }
+00431 
+00432 <emphasis role="keyword">struct&#32;</emphasis>IndexSessionData&#32;{
+00433 &#32;&#32;CXIndex&#32;CIdx;
+00434 &#32;&#32;std::unique_ptr&lt;ThreadSafeParsedRegions&gt;&#32;SkipBodyData&#32;=
+00435 &#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;ThreadSafeParsedRegions&gt;();
+00436 
+00437 &#32;&#32;<emphasis role="keyword">explicit</emphasis>&#32;IndexSessionData(CXIndex&#32;cIdx)&#32;:&#32;CIdx(cIdx)&#32;{}
+00438 };
+00439 
+00440 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00441 
+00442 <emphasis role="keyword">static</emphasis>&#32;CXErrorCode&#32;clang_indexSourceFile_Impl(
+00443 &#32;&#32;&#32;&#32;CXIndexAction&#32;cxIdxAction,&#32;CXClientData&#32;client_data,
+00444 &#32;&#32;&#32;&#32;IndexerCallbacks&#32;*client_index_callbacks,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_callbacks_size,
+00445 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_options,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*source_filename,
+00446 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*command_line_args,&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_command_line_args,
+00447 &#32;&#32;&#32;&#32;ArrayRef&lt;CXUnsavedFile&gt;&#32;unsaved_files,&#32;CXTranslationUnit&#32;*out_TU,
+00448 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;TU_options)&#32;{
+00449 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(out_TU)
+00450 &#32;&#32;&#32;&#32;*out_TU&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00451 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;requestedToGetTU&#32;=&#32;(out_TU&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>);
+00452 
+00453 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!cxIdxAction)&#32;{
+00454 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00455 &#32;&#32;}
+00456 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!client_index_callbacks&#32;||&#32;index_callbacks_size&#32;==&#32;0)&#32;{
+00457 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00458 &#32;&#32;}
+00459 
+00460 &#32;&#32;IndexerCallbacks&#32;CB;
+00461 &#32;&#32;memset(&amp;CB,&#32;0,&#32;<emphasis role="keyword">sizeof</emphasis>(CB));
+00462 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ClientCBSize&#32;=&#32;index_callbacks_size&#32;&lt;&#32;<emphasis role="keyword">sizeof</emphasis>(CB)
+00463 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;index_callbacks_size&#32;:&#32;<emphasis role="keyword">sizeof</emphasis>(CB);
+00464 &#32;&#32;memcpy(&amp;CB,&#32;client_index_callbacks,&#32;ClientCBSize);
+00465 
+00466 &#32;&#32;IndexSessionData&#32;*IdxSession&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>IndexSessionData&#32;*<emphasis role="keyword">&gt;</emphasis>(cxIdxAction);
+00467 &#32;&#32;<link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;*CXXIdx&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(IdxSession-&gt;CIdx);
+00468 
+00469 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1a226e7b660fe75abfc7e93f72021a8db3">isOptEnabled</link>(CXGlobalOpt_ThreadBackgroundPriorityForIndexing))
+00470 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1ab1c32e4de49bdf7a50374807a6d2701c">setThreadBackgroundPriority</link>();
+00471 
+00472 &#32;&#32;CaptureDiagsKind&#32;CaptureDiagnostics&#32;=&#32;CaptureDiagsKind::All;
+00473 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TU_options&#32;&amp;&#32;CXTranslationUnit_IgnoreNonErrorsFromIncludedFiles)
+00474 &#32;&#32;&#32;&#32;CaptureDiagnostics&#32;=&#32;CaptureDiagsKind::AllWithoutNonErrorsFromIncludes;
+00475 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logger::isLoggingEnabled())
+00476 &#32;&#32;&#32;&#32;CaptureDiagnostics&#32;=&#32;CaptureDiagsKind::None;
+00477 
+00478 &#32;&#32;CaptureDiagnosticConsumer&#32;*CaptureDiag&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00479 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CaptureDiagnostics&#32;!=&#32;CaptureDiagsKind::None)
+00480 &#32;&#32;&#32;&#32;CaptureDiag&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;CaptureDiagnosticConsumer();
+00481 
+00482 &#32;&#32;<emphasis role="comment">//&#32;Configure&#32;the&#32;diagnostics.</emphasis>
+00483 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;
+00484 &#32;&#32;&#32;&#32;Diags(CompilerInstance::createDiagnostics(<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions,
+00485 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CaptureDiag,
+00486 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*ShouldOwnClient=*/</emphasis><emphasis role="keyword">true</emphasis>));
+00487 
+00488 &#32;&#32;<emphasis role="comment">//&#32;Recover&#32;resources&#32;if&#32;we&#32;crash&#32;before&#32;exiting&#32;this&#32;function.</emphasis>
+00489 &#32;&#32;llvm::CrashRecoveryContextCleanupRegistrar&lt;DiagnosticsEngine,
+00490 &#32;&#32;&#32;&#32;llvm::CrashRecoveryContextReleaseRefCleanup&lt;DiagnosticsEngine&gt;&#32;&gt;
+00491 &#32;&#32;&#32;&#32;DiagCleanup(Diags.get());
+00492 
+00493 &#32;&#32;std::unique_ptr&lt;std::vector&lt;const&#32;char&#32;*&gt;&gt;&#32;Args(
+00494 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;std::vector&lt;const&#32;char&#32;*&gt;());
+00495 
+00496 &#32;&#32;<emphasis role="comment">//&#32;Recover&#32;resources&#32;if&#32;we&#32;crash&#32;before&#32;exiting&#32;this&#32;method.</emphasis>
+00497 &#32;&#32;llvm::CrashRecoveryContextCleanupRegistrar&lt;std::vector&lt;const&#32;char*&gt;&#32;&gt;
+00498 &#32;&#32;&#32;&#32;ArgsCleanup(Args.get());
+00499 &#32;&#32;
+00500 &#32;&#32;Args-&gt;insert(Args-&gt;end(),&#32;command_line_args,
+00501 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;command_line_args&#32;+&#32;num_command_line_args);
+00502 
+00503 &#32;&#32;<emphasis role="comment">//&#32;The&#32;&apos;source_filename&apos;&#32;argument&#32;is&#32;optional.&#32;&#32;If&#32;the&#32;caller&#32;does&#32;not</emphasis>
+00504 &#32;&#32;<emphasis role="comment">//&#32;specify&#32;it&#32;then&#32;it&#32;is&#32;assumed&#32;that&#32;the&#32;source&#32;file&#32;is&#32;specified</emphasis>
+00505 &#32;&#32;<emphasis role="comment">//&#32;in&#32;the&#32;actual&#32;argument&#32;list.</emphasis>
+00506 &#32;&#32;<emphasis role="comment">//&#32;Put&#32;the&#32;source&#32;file&#32;after&#32;command_line_args&#32;otherwise&#32;if&#32;&apos;-x&apos;&#32;flag&#32;is</emphasis>
+00507 &#32;&#32;<emphasis role="comment">//&#32;present&#32;it&#32;will&#32;be&#32;unused.</emphasis>
+00508 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(source_filename)
+00509 &#32;&#32;&#32;&#32;Args-&gt;push_back(source_filename);
+00510 
+00511 &#32;&#32;std::shared_ptr&lt;CompilerInvocation&gt;&#32;CInvok&#32;=
+00512 &#32;&#32;&#32;&#32;&#32;&#32;createInvocationFromCommandLine(*Args,&#32;Diags);
+00513 
+00514 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CInvok)
+00515 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Failure;
+00516 
+00517 &#32;&#32;<emphasis role="comment">//&#32;Recover&#32;resources&#32;if&#32;we&#32;crash&#32;before&#32;exiting&#32;this&#32;function.</emphasis>
+00518 &#32;&#32;llvm::CrashRecoveryContextCleanupRegistrar&lt;
+00519 &#32;&#32;&#32;&#32;&#32;&#32;std::shared_ptr&lt;CompilerInvocation&gt;,
+00520 &#32;&#32;&#32;&#32;&#32;&#32;llvm::CrashRecoveryContextDestructorCleanup&lt;
+00521 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::shared_ptr&lt;CompilerInvocation&gt;&gt;&gt;
+00522 &#32;&#32;&#32;&#32;&#32;&#32;CInvokCleanup(&amp;CInvok);
+00523 
+00524 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CInvok-&gt;getFrontendOpts().Inputs.empty())
+00525 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Failure;
+00526 
+00527 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;SmallVector&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;,&#32;8&gt;&#32;MemBufferOwner;
+00528 &#32;&#32;std::unique_ptr&lt;MemBufferOwner&gt;&#32;BufOwner(<emphasis role="keyword">new</emphasis>&#32;MemBufferOwner);
+00529 
+00530 &#32;&#32;<emphasis role="comment">//&#32;Recover&#32;resources&#32;if&#32;we&#32;crash&#32;before&#32;exiting&#32;this&#32;method.</emphasis>
+00531 &#32;&#32;llvm::CrashRecoveryContextCleanupRegistrar&lt;MemBufferOwner&gt;&#32;BufOwnerCleanup(
+00532 &#32;&#32;&#32;&#32;&#32;&#32;BufOwner.get());
+00533 
+00534 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;UF&#32;:&#32;unsaved_files)&#32;{
+00535 &#32;&#32;&#32;&#32;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&#32;MB&#32;=
+00536 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getMemBufferCopy(getContents(UF),&#32;UF.Filename);
+00537 &#32;&#32;&#32;&#32;CInvok-&gt;getPreprocessorOpts().addRemappedFile(UF.Filename,&#32;MB.get());
+00538 &#32;&#32;&#32;&#32;BufOwner-&gt;push_back(std::move(MB));
+00539 &#32;&#32;}
+00540 
+00541 &#32;&#32;<emphasis role="comment">//&#32;Since&#32;libclang&#32;is&#32;primarily&#32;used&#32;by&#32;batch&#32;tools&#32;dealing&#32;with</emphasis>
+00542 &#32;&#32;<emphasis role="comment">//&#32;(often&#32;very&#32;broken)&#32;source&#32;code,&#32;where&#32;spell-checking&#32;can&#32;have&#32;a</emphasis>
+00543 &#32;&#32;<emphasis role="comment">//&#32;significant&#32;negative&#32;impact&#32;on&#32;performance&#32;(particularly&#32;when&#32;</emphasis>
+00544 &#32;&#32;<emphasis role="comment">//&#32;precompiled&#32;headers&#32;are&#32;involved),&#32;we&#32;disable&#32;it.</emphasis>
+00545 &#32;&#32;CInvok-&gt;getLangOpts()-&gt;SpellChecking&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00546 
+00547 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(index_options&#32;&amp;&#32;CXIndexOpt_SuppressWarnings)
+00548 &#32;&#32;&#32;&#32;CInvok-&gt;getDiagnosticOpts().IgnoreWarnings&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00549 
+00550 &#32;&#32;<emphasis role="comment">//&#32;Make&#32;sure&#32;to&#32;use&#32;the&#32;raw&#32;module&#32;format.</emphasis>
+00551 &#32;&#32;CInvok-&gt;getHeaderSearchOpts().ModuleFormat&#32;=&#32;std::string(
+00552 &#32;&#32;&#32;&#32;&#32;&#32;CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1aca55b1e223fa5e22564d21c796f83b53">getPCHContainerOperations</link>()-&gt;getRawReader().getFormat());
+00553 
+00554 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Unit&#32;=&#32;ASTUnit::create(CInvok,&#32;Diags,&#32;CaptureDiagnostics,
+00555 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*UserFilesAreVolatile=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00556 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Unit)
+00557 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00558 
+00559 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*UPtr&#32;=&#32;Unit.get();
+00560 &#32;&#32;std::unique_ptr&lt;CXTUOwner&gt;&#32;CXTU(
+00561 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_classclang_1_1cxtu_1_1_c_x_t_u_owner">CXTUOwner</link>(<link linkend="_namespaceclang_1_1cxtu_1a00c98a9560b39abf66fa58c2059de48e">MakeCXTranslationUnit</link>(CXXIdx,&#32;std::move(Unit))));
+00562 
+00563 &#32;&#32;<emphasis role="comment">//&#32;Recover&#32;resources&#32;if&#32;we&#32;crash&#32;before&#32;exiting&#32;this&#32;method.</emphasis>
+00564 &#32;&#32;llvm::CrashRecoveryContextCleanupRegistrar&lt;CXTUOwner&gt;
+00565 &#32;&#32;&#32;&#32;CXTUCleanup(CXTU.get());
+00566 
+00567 &#32;&#32;<emphasis role="comment">//&#32;Enable&#32;the&#32;skip-parsed-bodies&#32;optimization&#32;only&#32;for&#32;C++;&#32;this&#32;may&#32;be</emphasis>
+00568 &#32;&#32;<emphasis role="comment">//&#32;revisited.</emphasis>
+00569 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;SkipBodies&#32;=&#32;(index_options&#32;&amp;&#32;CXIndexOpt_SkipParsedBodiesInSession)&#32;&amp;&amp;
+00570 &#32;&#32;&#32;&#32;&#32;&#32;CInvok-&gt;getLangOpts()-&gt;CPlusPlus;
+00571 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SkipBodies)
+00572 &#32;&#32;&#32;&#32;CInvok-&gt;getFrontendOpts().SkipFunctionBodies&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00573 
+00574 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;DataConsumer&#32;=
+00575 &#32;&#32;&#32;&#32;std::make_shared&lt;CXIndexDataConsumer&gt;(client_data,&#32;CB,&#32;index_options,
+00576 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTU-&gt;getTU());
+00577 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;IndexAction&#32;=&#32;std::make_unique&lt;IndexingFrontendAction&gt;(
+00578 &#32;&#32;&#32;&#32;&#32;&#32;DataConsumer,&#32;getIndexingOptionsFromCXOptions(index_options),
+00579 &#32;&#32;&#32;&#32;&#32;&#32;SkipBodies&#32;?&#32;IdxSession-&gt;SkipBodyData.get()&#32;:&#32;<emphasis role="keyword">nullptr</emphasis>);
+00580 
+00581 &#32;&#32;<emphasis role="comment">//&#32;Recover&#32;resources&#32;if&#32;we&#32;crash&#32;before&#32;exiting&#32;this&#32;method.</emphasis>
+00582 &#32;&#32;llvm::CrashRecoveryContextCleanupRegistrar&lt;FrontendAction&gt;
+00583 &#32;&#32;&#32;&#32;IndexActionCleanup(IndexAction.get());
+00584 
+00585 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Persistent&#32;=&#32;requestedToGetTU;
+00586 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;OnlyLocalDecls&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00587 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;PrecompilePreamble&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00588 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CreatePreambleOnFirstParse&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00589 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CacheCodeCompletionResults&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00590 &#32;&#32;PreprocessorOptions&#32;&amp;PPOpts&#32;=&#32;CInvok-&gt;getPreprocessorOpts();&#32;
+00591 &#32;&#32;PPOpts.AllowPCHWithCompilerErrors&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00592 
+00593 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(requestedToGetTU)&#32;{
+00594 &#32;&#32;&#32;&#32;OnlyLocalDecls&#32;=&#32;CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1ab98bc58a97c08a74688c5201ee108e99">getOnlyLocalDecls</link>();
+00595 &#32;&#32;&#32;&#32;PrecompilePreamble&#32;=&#32;TU_options&#32;&amp;&#32;CXTranslationUnit_PrecompiledPreamble;
+00596 &#32;&#32;&#32;&#32;CreatePreambleOnFirstParse&#32;=
+00597 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU_options&#32;&amp;&#32;CXTranslationUnit_CreatePreambleOnFirstParse;
+00598 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Add&#32;a&#32;flag&#32;for&#32;modules.</emphasis>
+00599 &#32;&#32;&#32;&#32;CacheCodeCompletionResults
+00600 &#32;&#32;&#32;&#32;&#32;&#32;=&#32;TU_options&#32;&amp;&#32;CXTranslationUnit_CacheCompletionResults;
+00601 &#32;&#32;}
+00602 
+00603 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TU_options&#32;&amp;&#32;CXTranslationUnit_DetailedPreprocessingRecord)&#32;{
+00604 &#32;&#32;&#32;&#32;PPOpts.DetailedRecord&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00605 &#32;&#32;}
+00606 
+00607 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!requestedToGetTU&#32;&amp;&amp;&#32;!CInvok-&gt;getLangOpts()-&gt;Modules)
+00608 &#32;&#32;&#32;&#32;PPOpts.DetailedRecord&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00609 
+00610 &#32;&#32;<emphasis role="comment">//&#32;Unless&#32;the&#32;user&#32;specified&#32;that&#32;they&#32;want&#32;the&#32;preamble&#32;on&#32;the&#32;first&#32;parse</emphasis>
+00611 &#32;&#32;<emphasis role="comment">//&#32;set&#32;it&#32;up&#32;to&#32;be&#32;created&#32;on&#32;the&#32;first&#32;reparse.&#32;This&#32;makes&#32;the&#32;first&#32;parse</emphasis>
+00612 &#32;&#32;<emphasis role="comment">//&#32;faster,&#32;trading&#32;for&#32;a&#32;slower&#32;(first)&#32;reparse.</emphasis>
+00613 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;PrecompilePreambleAfterNParses&#32;=
+00614 &#32;&#32;&#32;&#32;&#32;&#32;!PrecompilePreamble&#32;?&#32;0&#32;:&#32;2&#32;-&#32;CreatePreambleOnFirstParse;
+00615 &#32;&#32;DiagnosticErrorTrap&#32;DiagTrap(*Diags);
+00616 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Success&#32;=&#32;ASTUnit::LoadFromCompilerInvocationAction(
+00617 &#32;&#32;&#32;&#32;&#32;&#32;std::move(CInvok),&#32;CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1aca55b1e223fa5e22564d21c796f83b53">getPCHContainerOperations</link>(),&#32;Diags,
+00618 &#32;&#32;&#32;&#32;&#32;&#32;IndexAction.get(),&#32;UPtr,&#32;Persistent,&#32;CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1a4b292906114303ecabb75bec7ff17a92">getClangResourcesPath</link>(),
+00619 &#32;&#32;&#32;&#32;&#32;&#32;OnlyLocalDecls,&#32;CaptureDiagnostics,&#32;PrecompilePreambleAfterNParses,
+00620 &#32;&#32;&#32;&#32;&#32;&#32;CacheCodeCompletionResults,&#32;<emphasis role="comment">/*UserFilesAreVolatile=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00621 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DiagTrap.hasErrorOccurred()&#32;&amp;&amp;&#32;CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1ae579d1e9618455a663f4e882eaa86234">getDisplayDiagnostics</link>())
+00622 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxindex_1a134d158252a9bfcc3db346dd2e65f09f">printDiagsToStderr</link>(UPtr);
+00623 
+00624 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_namespaceclang_1_1cxtu_1a780a13d3a9c39b2898045b05ff18c05e">isASTReadError</link>(UPtr))
+00625 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_ASTReadError;
+00626 
+00627 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Success)
+00628 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Failure;
+00629 
+00630 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(out_TU)
+00631 &#32;&#32;&#32;&#32;*out_TU&#32;=&#32;CXTU-&gt;takeTU();
+00632 
+00633 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00634 }
+00635 
+00636 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00637 <emphasis role="comment">//&#32;clang_indexTranslationUnit&#32;Implementation</emphasis>
+00638 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00639 
+00640 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;indexPreprocessingRecord(ASTUnit&#32;&amp;Unit,&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx)&#32;{
+00641 &#32;&#32;Preprocessor&#32;&amp;PP&#32;=&#32;Unit.getPreprocessor();
+00642 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PP.getPreprocessingRecord())
+00643 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00644 
+00645 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Only&#32;deserialize&#32;inclusion&#32;directives.</emphasis>
+00646 
+00647 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isModuleFile&#32;=&#32;Unit.isModuleFile();
+00648 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(PreprocessedEntity&#32;*PPE&#32;:&#32;Unit.getLocalPreprocessingEntities())&#32;{
+00649 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InclusionDirective&#32;*ID&#32;=&#32;dyn_cast&lt;InclusionDirective&gt;(PPE))&#32;{
+00650 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc&#32;=&#32;ID-&gt;getSourceRange().getBegin();
+00651 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Modules&#32;have&#32;synthetic&#32;main&#32;files&#32;as&#32;input,&#32;give&#32;an&#32;invalid&#32;location</emphasis>
+00652 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;if&#32;the&#32;location&#32;points&#32;to&#32;such&#32;a&#32;file.</emphasis>
+00653 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isModuleFile&#32;&amp;&amp;&#32;Unit.isInMainFileID(Loc))
+00654 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Loc&#32;=&#32;SourceLocation();
+00655 &#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b4e93bdd5828aee90dfbb5d09596c55">ppIncludedFile</link>(Loc,&#32;ID-&gt;getFileName(),
+00656 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ID-&gt;getFile(),
+00657 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ID-&gt;getKind()&#32;==&#32;InclusionDirective::Import,
+00658 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;!ID-&gt;wasInQuotes(),&#32;ID-&gt;importedModule());
+00659 &#32;&#32;&#32;&#32;}
+00660 &#32;&#32;}
+00661 }
+00662 
+00663 <emphasis role="keyword">static</emphasis>&#32;CXErrorCode&#32;clang_indexTranslationUnit_Impl(
+00664 &#32;&#32;&#32;&#32;CXIndexAction&#32;idxAction,&#32;CXClientData&#32;client_data,
+00665 &#32;&#32;&#32;&#32;IndexerCallbacks&#32;*client_index_callbacks,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_callbacks_size,
+00666 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_options,&#32;CXTranslationUnit&#32;TU)&#32;{
+00667 &#32;&#32;<emphasis role="comment">//&#32;Check&#32;arguments.</emphasis>
+00668 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isNotUsableTU(TU))&#32;{
+00669 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(TU);
+00670 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00671 &#32;&#32;}
+00672 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!client_index_callbacks&#32;||&#32;index_callbacks_size&#32;==&#32;0)&#32;{
+00673 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00674 &#32;&#32;}
+00675 
+00676 &#32;&#32;<link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;*CXXIdx&#32;=&#32;TU-&gt;CIdx;
+00677 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1a226e7b660fe75abfc7e93f72021a8db3">isOptEnabled</link>(CXGlobalOpt_ThreadBackgroundPriorityForIndexing))
+00678 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1ab1c32e4de49bdf7a50374807a6d2701c">setThreadBackgroundPriority</link>();
+00679 
+00680 &#32;&#32;IndexerCallbacks&#32;CB;
+00681 &#32;&#32;memset(&amp;CB,&#32;0,&#32;<emphasis role="keyword">sizeof</emphasis>(CB));
+00682 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ClientCBSize&#32;=&#32;index_callbacks_size&#32;&lt;&#32;<emphasis role="keyword">sizeof</emphasis>(CB)
+00683 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;index_callbacks_size&#32;:&#32;<emphasis role="keyword">sizeof</emphasis>(CB);
+00684 &#32;&#32;memcpy(&amp;CB,&#32;client_index_callbacks,&#32;ClientCBSize);
+00685 
+00686 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;DataConsumer(client_data,&#32;CB,&#32;index_options,&#32;TU);
+00687 
+00688 &#32;&#32;ASTUnit&#32;*Unit&#32;=&#32;cxtu::getASTUnit(TU);
+00689 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Unit)
+00690 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Failure;
+00691 
+00692 &#32;&#32;ASTUnit::ConcurrencyCheck&#32;Check(*Unit);
+00693 
+00694 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*PCHFile&#32;=&#32;Unit-&gt;getPCHFile())
+00695 &#32;&#32;&#32;&#32;DataConsumer.importedPCH(PCHFile);
+00696 
+00697 &#32;&#32;FileManager&#32;&amp;FileMgr&#32;=&#32;Unit-&gt;getFileManager();
+00698 
+00699 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Unit-&gt;getOriginalSourceFileName().empty())
+00700 &#32;&#32;&#32;&#32;DataConsumer.enteredMainFile(<emphasis role="keyword">nullptr</emphasis>);
+00701 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;MainFile&#32;=&#32;FileMgr.getFile(Unit-&gt;getOriginalSourceFileName()))
+00702 &#32;&#32;&#32;&#32;DataConsumer.enteredMainFile(*MainFile);
+00703 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00704 &#32;&#32;&#32;&#32;DataConsumer.enteredMainFile(<emphasis role="keyword">nullptr</emphasis>);
+00705 
+00706 &#32;&#32;DataConsumer.setASTContext(Unit-&gt;getASTContext());
+00707 &#32;&#32;DataConsumer.startedTranslationUnit();
+00708 
+00709 &#32;&#32;indexPreprocessingRecord(*Unit,&#32;DataConsumer);
+00710 &#32;&#32;indexASTUnit(*Unit,&#32;DataConsumer,&#32;getIndexingOptionsFromCXOptions(index_options));
+00711 &#32;&#32;DataConsumer.indexDiagnostics();
+00712 
+00713 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00714 }
+00715 
+00716 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00717 <emphasis role="comment">//&#32;libclang&#32;public&#32;APIs.</emphasis>
+00718 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00719 
+<anchor xml:id="__indexing_8cpp_source_1l00720"/><link linkend="__indexing_8cpp_1aa218aee51ef76115268b7e9bc5ea1589">00720</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__indexing_8cpp_1aa218aee51ef76115268b7e9bc5ea1589">clang_index_isEntityObjCContainerKind</link>(CXIdxEntityKind&#32;K)&#32;{
+00721 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCClass&#32;&lt;=&#32;K&#32;&amp;&amp;&#32;K&#32;&lt;=&#32;CXIdxEntity_ObjCCategory;
+00722 }
+00723 
+00724 <emphasis role="keyword">const</emphasis>&#32;CXIdxObjCContainerDeclInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00725"/><link linkend="__indexing_8cpp_1a5009ec9a006f9b9c275e8501147be820">00725</link> <link linkend="__indexing_8cpp_1a5009ec9a006f9b9c275e8501147be820">clang_index_getObjCContainerDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxDeclInfo&#32;*DInfo)&#32;{
+00726 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00727 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00728 
+00729 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00730 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;*
+00731 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ContInfo&#32;=&#32;dyn_cast&lt;ObjCContainerDeclInfo&gt;(DI))
+00732 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ContInfo-&gt;ObjCContDeclInfo;
+00733 
+00734 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00735 }
+00736 
+00737 <emphasis role="keyword">const</emphasis>&#32;CXIdxObjCInterfaceDeclInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00738"/><link linkend="__indexing_8cpp_1a4fd62151af19e4c04d4885c1de582a5a">00738</link> <link linkend="__indexing_8cpp_1a4fd62151af19e4c04d4885c1de582a5a">clang_index_getObjCInterfaceDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxDeclInfo&#32;*DInfo)&#32;{
+00739 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00740 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00741 
+00742 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00743 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">ObjCInterfaceDeclInfo</link>&#32;*
+00744 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InterInfo&#32;=&#32;dyn_cast&lt;ObjCInterfaceDeclInfo&gt;(DI))
+00745 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;InterInfo-&gt;ObjCInterDeclInfo;
+00746 
+00747 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00748 }
+00749 
+00750 <emphasis role="keyword">const</emphasis>&#32;CXIdxObjCCategoryDeclInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00751"/><link linkend="__indexing_8cpp_1a4f42a70f90d010e75213a54e4efb71e4">00751</link> <link linkend="__indexing_8cpp_1a4f42a70f90d010e75213a54e4efb71e4">clang_index_getObjCCategoryDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxDeclInfo&#32;*DInfo){
+00752 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00753 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00754 
+00755 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00756 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;*
+00757 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CatInfo&#32;=&#32;dyn_cast&lt;ObjCCategoryDeclInfo&gt;(DI))
+00758 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;CatInfo-&gt;ObjCCatDeclInfo;
+00759 
+00760 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00761 }
+00762 
+00763 <emphasis role="keyword">const</emphasis>&#32;CXIdxObjCProtocolRefListInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00764"/><link linkend="__indexing_8cpp_1a84557aa0abab4f20cc678ebb033fc35d">00764</link> <link linkend="__indexing_8cpp_1a84557aa0abab4f20cc678ebb033fc35d">clang_index_getObjCProtocolRefListInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxDeclInfo&#32;*DInfo)&#32;{
+00765 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00766 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00767 
+00768 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00769 &#32;&#32;
+00770 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">ObjCInterfaceDeclInfo</link>&#32;*
+00771 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InterInfo&#32;=&#32;dyn_cast&lt;ObjCInterfaceDeclInfo&gt;(DI))
+00772 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;InterInfo-&gt;ObjCInterDeclInfo.protocols;
+00773 &#32;&#32;
+00774 &#32;&#32;if&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info">ObjCProtocolDeclInfo</link>&#32;*
+00775 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ProtInfo&#32;=&#32;dyn_cast&lt;ObjCProtocolDeclInfo&gt;(DI))
+00776 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ProtInfo-&gt;ObjCProtoRefListInfo;
+00777 
+00778 &#32;&#32;if&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;*CatInfo&#32;=&#32;dyn_cast&lt;ObjCCategoryDeclInfo&gt;(DI))
+00779 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CatInfo-&gt;ObjCCatDeclInfo.protocols;
+00780 
+00781 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00782 }
+00783 
+00784 <emphasis role="keyword">const</emphasis>&#32;CXIdxObjCPropertyDeclInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00785"/><link linkend="__indexing_8cpp_1acb9210ebcc65a6c1b4c560485b27c9b1">00785</link> <link linkend="__indexing_8cpp_1acb9210ebcc65a6c1b4c560485b27c9b1">clang_index_getObjCPropertyDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxDeclInfo&#32;*DInfo)&#32;{
+00786 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00787 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00788 
+00789 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00790 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info">ObjCPropertyDeclInfo</link>&#32;*PropInfo&#32;=&#32;dyn_cast&lt;ObjCPropertyDeclInfo&gt;(DI))
+00791 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;PropInfo-&gt;ObjCPropDeclInfo;
+00792 
+00793 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00794 }
+00795 
+00796 <emphasis role="keyword">const</emphasis>&#32;CXIdxIBOutletCollectionAttrInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00797"/><link linkend="__indexing_8cpp_1ab8d88ec6239274232ca690786d2742c8">00797</link> <link linkend="__indexing_8cpp_1ab8d88ec6239274232ca690786d2742c8">clang_index_getIBOutletCollectionAttrInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxAttrInfo&#32;*AInfo)&#32;{
+00798 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AInfo)
+00799 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00800 
+00801 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(AInfo);
+00802 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;*
+00803 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBInfo&#32;=&#32;dyn_cast&lt;IBOutletCollectionInfo&gt;(DI))
+00804 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;IBInfo-&gt;IBCollInfo;
+00805 
+00806 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00807 }
+00808 
+00809 <emphasis role="keyword">const</emphasis>&#32;CXIdxCXXClassDeclInfo&#32;*
+<anchor xml:id="__indexing_8cpp_source_1l00810"/><link linkend="__indexing_8cpp_1a99ab66a0a0f83e87a0e37af7eeb46025">00810</link> <link linkend="__indexing_8cpp_1a99ab66a0a0f83e87a0e37af7eeb46025">clang_index_getCXXClassDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxDeclInfo&#32;*DInfo)&#32;{
+00811 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00812 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00813 
+00814 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00815 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info">CXXClassDeclInfo</link>&#32;*ClassInfo&#32;=&#32;dyn_cast&lt;CXXClassDeclInfo&gt;(DI))
+00816 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ClassInfo-&gt;CXXClassInfo;
+00817 
+00818 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00819 }
+00820 
+00821 CXIdxClientContainer
+<anchor xml:id="__indexing_8cpp_source_1l00822"/><link linkend="__indexing_8cpp_1a3bb9e55b3928a84a4d3aa3857116fc97">00822</link> <link linkend="__indexing_8cpp_1a3bb9e55b3928a84a4d3aa3857116fc97">clang_index_getClientContainer</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxContainerInfo&#32;*info)&#32;{
+00823 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00824 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00825 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*Container&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00826 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aab567cd0d93550e824a2e8f8e037d1f0">getClientContainerForDC</link>(Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">DC</link>);
+00827 }
+00828 
+<anchor xml:id="__indexing_8cpp_source_1l00829"/><link linkend="__indexing_8cpp_1aa2eac57f19b74e513bad40df9a9d4a98">00829</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__indexing_8cpp_1aa2eac57f19b74e513bad40df9a9d4a98">clang_index_setClientContainer</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxContainerInfo&#32;*info,
+00830 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxClientContainer&#32;client)&#32;{
+00831 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00832 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00833 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*Container&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00834 &#32;&#32;Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa606355afc24ae5ef78a5e1ae8e612c0">addContainerInMap</link>(Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">DC</link>,&#32;client);
+00835 }
+00836 
+<anchor xml:id="__indexing_8cpp_source_1l00837"/><link linkend="__indexing_8cpp_1af693d0089f071ec97c7d484394d26569">00837</link> CXIdxClientEntity&#32;<link linkend="__indexing_8cpp_1af693d0089f071ec97c7d484394d26569">clang_index_getClientEntity</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxEntityInfo&#32;*info)&#32;{
+00838 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00839 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00840 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*Entity&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00841 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a758cad6aecad503d6dbda574e8f11f1b">getClientEntity</link>(Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">Dcl</link>);
+00842 }
+00843 
+<anchor xml:id="__indexing_8cpp_source_1l00844"/><link linkend="__indexing_8cpp_1a9e9292a9d331944b3acd1d1a6192a9ee">00844</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__indexing_8cpp_1a9e9292a9d331944b3acd1d1a6192a9ee">clang_index_setClientEntity</link>(<emphasis role="keyword">const</emphasis>&#32;CXIdxEntityInfo&#32;*info,
+00845 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxClientEntity&#32;client)&#32;{
+00846 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00847 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00848 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*Entity&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00849 &#32;&#32;Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8410b188890a57a9e2034f3c5275be7e">setClientEntity</link>(Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">Dcl</link>,&#32;client);
+00850 }
+00851 
+<anchor xml:id="__indexing_8cpp_source_1l00852"/><link linkend="__indexing_8cpp_1a8951fd3fa3c59e24ac8ae72118363e9a">00852</link> CXIndexAction&#32;<link linkend="__indexing_8cpp_1a8951fd3fa3c59e24ac8ae72118363e9a">clang_IndexAction_create</link>(CXIndex&#32;CIdx)&#32;{
+00853 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;IndexSessionData(CIdx);
+00854 }
+00855 
+<anchor xml:id="__indexing_8cpp_source_1l00856"/><link linkend="__indexing_8cpp_1af00707f4579b5c8637e16ae9fb9d6fc4">00856</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__indexing_8cpp_1af00707f4579b5c8637e16ae9fb9d6fc4">clang_IndexAction_dispose</link>(CXIndexAction&#32;idxAction)&#32;{
+00857 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(idxAction)
+00858 &#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>IndexSessionData&#32;*<emphasis role="keyword">&gt;</emphasis>(idxAction);
+00859 }
+00860 
+<anchor xml:id="__indexing_8cpp_source_1l00861"/><link linkend="__indexing_8cpp_1aa28c1e7030b5ca7f87e589e2e11450cc">00861</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__indexing_8cpp_1aa28c1e7030b5ca7f87e589e2e11450cc">clang_indexSourceFile</link>(CXIndexAction&#32;idxAction,
+00862 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;client_data,
+00863 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IndexerCallbacks&#32;*index_callbacks,
+00864 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_callbacks_size,
+00865 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_options,
+00866 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*source_filename,
+00867 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*&#32;<emphasis role="keyword">const</emphasis>&#32;*command_line_args,
+00868 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_command_line_args,
+00869 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">struct</emphasis>&#32;CXUnsavedFile&#32;*unsaved_files,
+00870 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;num_unsaved_files,
+00871 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;*out_TU,
+00872 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;TU_options)&#32;{
+00873 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;Args;
+00874 &#32;&#32;Args.push_back(<emphasis role="stringliteral">&quot;clang&quot;</emphasis>);
+00875 &#32;&#32;Args.append(command_line_args,&#32;command_line_args&#32;+&#32;num_command_line_args);
+00876 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__indexing_8cpp_1a70149e7a30ad5bdfe5985dd05ed4336e">clang_indexSourceFileFullArgv</link>(
+00877 &#32;&#32;&#32;&#32;&#32;&#32;idxAction,&#32;client_data,&#32;index_callbacks,&#32;index_callbacks_size,
+00878 &#32;&#32;&#32;&#32;&#32;&#32;index_options,&#32;source_filename,&#32;Args.data(),&#32;Args.size(),&#32;unsaved_files,
+00879 &#32;&#32;&#32;&#32;&#32;&#32;num_unsaved_files,&#32;out_TU,&#32;TU_options);
+00880 }
+00881 
+<anchor xml:id="__indexing_8cpp_source_1l00882"/><link linkend="__indexing_8cpp_1a70149e7a30ad5bdfe5985dd05ed4336e">00882</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__indexing_8cpp_1a70149e7a30ad5bdfe5985dd05ed4336e">clang_indexSourceFileFullArgv</link>(
+00883 &#32;&#32;&#32;&#32;CXIndexAction&#32;idxAction,&#32;CXClientData&#32;client_data,
+00884 &#32;&#32;&#32;&#32;IndexerCallbacks&#32;*index_callbacks,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_callbacks_size,
+00885 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_options,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*source_filename,
+00886 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*command_line_args,&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_command_line_args,
+00887 &#32;&#32;&#32;&#32;<emphasis role="keyword">struct</emphasis>&#32;CXUnsavedFile&#32;*unsaved_files,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;num_unsaved_files,
+00888 &#32;&#32;&#32;&#32;CXTranslationUnit&#32;*out_TU,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;TU_options)&#32;{
+00889 &#32;&#32;<link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">LOG_FUNC_SECTION</link>&#32;{
+00890 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;source_filename&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>;
+00891 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;num_command_line_args;&#32;++i)
+00892 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;command_line_args[i]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>;
+00893 &#32;&#32;}
+00894 
+00895 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_unsaved_files&#32;&amp;&amp;&#32;!unsaved_files)
+00896 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00897 
+00898 &#32;&#32;CXErrorCode&#32;result&#32;=&#32;CXError_Failure;
+00899 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;IndexSourceFileImpl&#32;=&#32;[=,&#32;&amp;result]()&#32;{
+00900 &#32;&#32;&#32;&#32;result&#32;=&#32;clang_indexSourceFile_Impl(
+00901 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;idxAction,&#32;client_data,&#32;index_callbacks,&#32;index_callbacks_size,
+00902 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;index_options,&#32;source_filename,&#32;command_line_args,
+00903 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;num_command_line_args,
+00904 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::makeArrayRef(unsaved_files,&#32;num_unsaved_files),&#32;out_TU,
+00905 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU_options);
+00906 &#32;&#32;};
+00907 
+00908 &#32;&#32;llvm::CrashRecoveryContext&#32;CRC;
+00909 
+00910 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(CRC,&#32;IndexSourceFileImpl))&#32;{
+00911 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;libclang:&#32;crash&#32;detected&#32;during&#32;indexing&#32;source&#32;file:&#32;{\n&quot;</emphasis>);
+00912 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;source_filename&apos;&#32;:&#32;&apos;%s&apos;\n&quot;</emphasis>,&#32;source_filename);
+00913 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;command_line_args&apos;&#32;:&#32;[&quot;</emphasis>);
+00914 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;num_command_line_args;&#32;++i)&#32;{
+00915 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i)
+00916 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>);
+00917 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&apos;%s&apos;&quot;</emphasis>,&#32;command_line_args[i]);
+00918 &#32;&#32;&#32;&#32;}
+00919 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;],\n&quot;</emphasis>);
+00920 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;unsaved_files&apos;&#32;:&#32;[&quot;</emphasis>);
+00921 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;num_unsaved_files;&#32;++i)&#32;{
+00922 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i)
+00923 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>);
+00924 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;(&apos;%s&apos;,&#32;&apos;...&apos;,&#32;%ld)&quot;</emphasis>,&#32;unsaved_files[i].Filename,
+00925 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unsaved_files[i].Length);
+00926 &#32;&#32;&#32;&#32;}
+00927 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;],\n&quot;</emphasis>);
+00928 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;options&apos;&#32;:&#32;%d,\n&quot;</emphasis>,&#32;TU_options);
+00929 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>);
+00930 &#32;&#32;&#32;&#32;
+00931 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00932 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_RESOURCE_USAGE&quot;</emphasis>))&#32;{
+00933 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(out_TU)
+00934 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1aa969857ada50e5f302f7127c78a63018">PrintLibclangResourceUsage</link>(*out_TU);
+00935 &#32;&#32;}
+00936 
+00937 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00938 }
+00939 
+<anchor xml:id="__indexing_8cpp_source_1l00940"/><link linkend="__indexing_8cpp_1a92ce635fae76fa9778b17ac5121838cc">00940</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__indexing_8cpp_1a92ce635fae76fa9778b17ac5121838cc">clang_indexTranslationUnit</link>(CXIndexAction&#32;idxAction,
+00941 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;client_data,
+00942 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IndexerCallbacks&#32;*index_callbacks,
+00943 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_callbacks_size,
+00944 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index_options,
+00945 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00946 &#32;&#32;<link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">LOG_FUNC_SECTION</link>&#32;{
+00947 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;TU;
+00948 &#32;&#32;}
+00949 
+00950 &#32;&#32;CXErrorCode&#32;result;
+00951 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;IndexTranslationUnitImpl&#32;=&#32;[=,&#32;&amp;result]()&#32;{
+00952 &#32;&#32;&#32;&#32;result&#32;=&#32;clang_indexTranslationUnit_Impl(
+00953 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;idxAction,&#32;client_data,&#32;index_callbacks,&#32;index_callbacks_size,
+00954 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;index_options,&#32;TU);
+00955 &#32;&#32;};
+00956 
+00957 &#32;&#32;llvm::CrashRecoveryContext&#32;CRC;
+00958 
+00959 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(CRC,&#32;IndexTranslationUnitImpl))&#32;{
+00960 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;libclang:&#32;crash&#32;detected&#32;during&#32;indexing&#32;TU\n&quot;</emphasis>);
+00961 &#32;&#32;&#32;&#32;
+00962 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00963 &#32;&#32;}
+00964 
+00965 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00966 }
+00967 
+<anchor xml:id="__indexing_8cpp_source_1l00968"/><link linkend="__indexing_8cpp_1a3b0c6665884edefc87f18c9b27930cad">00968</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__indexing_8cpp_1a3b0c6665884edefc87f18c9b27930cad">clang_indexLoc_getFileLocation</link>(CXIdxLoc&#32;location,
+00969 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxClientFile&#32;*indexFile,
+00970 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXFile&#32;*file,
+00971 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*line,
+00972 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*column,
+00973 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*offset)&#32;{
+00974 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(indexFile)&#32;*indexFile&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00975 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(file)&#32;&#32;&#32;*file&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00976 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(line)&#32;&#32;&#32;*line&#32;=&#32;0;
+00977 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(column)&#32;*column&#32;=&#32;0;
+00978 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(offset)&#32;*offset&#32;=&#32;0;
+00979 
+00980 &#32;&#32;SourceLocation&#32;Loc&#32;=&#32;SourceLocation::getFromRawEncoding(location.int_data);
+00981 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!location.ptr_data[0]&#32;||&#32;Loc.isInvalid())
+00982 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00983 
+00984 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer&#32;=
+00985 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>*<emphasis role="keyword">&gt;</emphasis>(location.ptr_data[0]);
+00986 &#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5332371a52c1329c815af24c5dab3ed1">translateLoc</link>(Loc,&#32;indexFile,&#32;file,&#32;line,&#32;column,&#32;offset);
+00987 }
+00988 
+<anchor xml:id="__indexing_8cpp_source_1l00989"/><link linkend="__indexing_8cpp_1a79942df8d85af804be57a78d5cc44cd0">00989</link> CXSourceLocation&#32;<link linkend="__indexing_8cpp_1a79942df8d85af804be57a78d5cc44cd0">clang_indexLoc_getCXSourceLocation</link>(CXIdxLoc&#32;location)&#32;{
+00990 &#32;&#32;SourceLocation&#32;Loc&#32;=&#32;SourceLocation::getFromRawEncoding(location.int_data);
+00991 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!location.ptr_data[0]&#32;||&#32;Loc.isInvalid())
+00992 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_source_location_8cpp_1a20bb1e9a72e2c16fbcb21958f0648947">clang_getNullLocation</link>();
+00993 
+00994 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer&#32;=
+00995 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>*<emphasis role="keyword">&gt;</emphasis>(location.ptr_data[0]);
+00996 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cxloc::translateSourceLocation(DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7e411bdd51411afd713185c3e5d19f90">getASTContext</link>(),&#32;Loc);
+00997 }
+</programlisting></section>

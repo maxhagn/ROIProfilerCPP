@@ -1,0 +1,204 @@
+\hypertarget{classclang_1_1cxindex_1_1_attr_list_info}{}\doxysection{clang\+::cxindex\+::Attr\+List\+Info Class Reference}
+\label{classclang_1_1cxindex_1_1_attr_list_info}\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+
+
+{\ttfamily \#include $<$CXIndex\+Data\+Consumer.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info_ab4c0f6e62031bbf3926f5b95e316c081}{Attr\+List\+Info}} (const Decl $\ast$D, \mbox{\hyperlink{classclang_1_1cxindex_1_1_c_x_index_data_consumer}{CXIndex\+Data\+Consumer}} \&Idx\+Ctx)
+\item 
+const CXIdx\+Attr\+Info $\ast$const  $\ast$ \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info_a83642ebee33dc97bfa99c42fecb3e4d9}{get\+Attrs}} () const
+\item 
+unsigned \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info_a97758fd2b4c338d7e304cfe7ff125e11}{get\+Num\+Attrs}} () const
+\item 
+void \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info_a55bb98add85e69a71489afe3f5bd012e}{Retain}} ()
+\item 
+void \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info_acaf8c614a6d443ed9fae597cc19f7089}{Release}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static Intrusive\+Ref\+Cnt\+Ptr$<$ \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info}{Attr\+List\+Info}} $>$ \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info_a3376ff1780ab325a8d140c6f063a1f5b}{create}} (const Decl $\ast$D, \mbox{\hyperlink{classclang_1_1cxindex_1_1_c_x_index_data_consumer}{CXIndex\+Data\+Consumer}} \&Idx\+Ctx)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 239 of file CXIndex\+Data\+Consumer.\+h.
+
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classclang_1_1cxindex_1_1_attr_list_info_ab4c0f6e62031bbf3926f5b95e316c081}\label{classclang_1_1cxindex_1_1_attr_list_info_ab4c0f6e62031bbf3926f5b95e316c081}} 
+\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}!AttrListInfo@{AttrListInfo}}
+\index{AttrListInfo@{AttrListInfo}!clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+\doxysubsubsection{\texorpdfstring{AttrListInfo()}{AttrListInfo()}}
+{\footnotesize\ttfamily Attr\+List\+Info\+::\+Attr\+List\+Info (\begin{DoxyParamCaption}\item[{const Decl $\ast$}]{D,  }\item[{\mbox{\hyperlink{classclang_1_1cxindex_1_1_c_x_index_data_consumer}{CXIndex\+Data\+Consumer}} \&}]{Idx\+Ctx }\end{DoxyParamCaption})}
+
+
+
+Definition at line 279 of file CXIndex\+Data\+Consumer.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{280   : SA(IdxCtx), ref\_cnt(0) \{}
+\DoxyCodeLine{281 }
+\DoxyCodeLine{282   \textcolor{keywordflow}{if} (!D-\/>hasAttrs())}
+\DoxyCodeLine{283     \textcolor{keywordflow}{return};}
+\DoxyCodeLine{284 }
+\DoxyCodeLine{285   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} *A : D-\/>attrs()) \{}
+\DoxyCodeLine{286     CXCursor C = \mbox{\hyperlink{namespaceclang_1_1cxcursor_ab61ec2059175833672e8e78a376bb218}{MakeCXCursor}}(A, D, IdxCtx.CXTU);}
+\DoxyCodeLine{287     CXIdxLoc Loc =  IdxCtx.getIndexLoc(A-\/>getLocation());}
+\DoxyCodeLine{288     \textcolor{keywordflow}{switch} (C.kind) \{}
+\DoxyCodeLine{289     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{290       Attrs.push\_back(\mbox{\hyperlink{structclang_1_1cxindex_1_1_attr_info}{AttrInfo}}(CXIdxAttr\_Unexposed, C, Loc, A));}
+\DoxyCodeLine{291       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{292     \textcolor{keywordflow}{case} CXCursor\_IBActionAttr:}
+\DoxyCodeLine{293       Attrs.push\_back(\mbox{\hyperlink{structclang_1_1cxindex_1_1_attr_info}{AttrInfo}}(CXIdxAttr\_IBAction, C, Loc, A));}
+\DoxyCodeLine{294       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{295     \textcolor{keywordflow}{case} CXCursor\_IBOutletAttr:}
+\DoxyCodeLine{296       Attrs.push\_back(\mbox{\hyperlink{structclang_1_1cxindex_1_1_attr_info}{AttrInfo}}(CXIdxAttr\_IBOutlet, C, Loc, A));}
+\DoxyCodeLine{297       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{298     \textcolor{keywordflow}{case} CXCursor\_IBOutletCollectionAttr:}
+\DoxyCodeLine{299       IBCollAttrs.push\_back(\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info}{IBOutletCollectionInfo}}(C, Loc, A));}
+\DoxyCodeLine{300       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{301     \}}
+\DoxyCodeLine{302   \}}
+\DoxyCodeLine{303 }
+\DoxyCodeLine{304   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} i = 0, e = IBCollAttrs.size(); i != e; ++i) \{}
+\DoxyCodeLine{305     \mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info}{IBOutletCollectionInfo}} \&IBInfo = IBCollAttrs[i];}
+\DoxyCodeLine{306     CXAttrs.push\_back(\&IBInfo);}
+\DoxyCodeLine{307 }
+\DoxyCodeLine{308     \textcolor{keyword}{const} IBOutletCollectionAttr *}
+\DoxyCodeLine{309       IBAttr = cast<IBOutletCollectionAttr>(IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_attr_info_a083736b6f1e2d4a9f31fd9cb3c8d1efe}{A}});}
+\DoxyCodeLine{310     SourceLocation InterfaceLocStart =}
+\DoxyCodeLine{311         IBAttr-\/>getInterfaceLoc()-\/>getTypeLoc().getBeginLoc();}
+\DoxyCodeLine{312     IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a70d1f687d8212ff1c0af51125c22a5b6}{IBCollInfo}}.attrInfo = \&IBInfo;}
+\DoxyCodeLine{313     IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a70d1f687d8212ff1c0af51125c22a5b6}{IBCollInfo}}.classLoc = IdxCtx.getIndexLoc(InterfaceLocStart);}
+\DoxyCodeLine{314     IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a70d1f687d8212ff1c0af51125c22a5b6}{IBCollInfo}}.objcClass = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{315     IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a70d1f687d8212ff1c0af51125c22a5b6}{IBCollInfo}}.classCursor = \mbox{\hyperlink{_c_index_8cpp_aa22233466eaf91f6f3cf6b84255c3b68}{clang\_getNullCursor}}();}
+\DoxyCodeLine{316     QualType Ty = IBAttr-\/>getInterface();}
+\DoxyCodeLine{317     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCObjectType *ObjectTy = Ty-\/>getAs<ObjCObjectType>()) \{}
+\DoxyCodeLine{318       \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCInterfaceDecl *InterD = ObjectTy-\/>getInterface()) \{}
+\DoxyCodeLine{319         IdxCtx.getEntityInfo(InterD, IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a4dacc334bcc735f19aac3080586d01db}{ClassInfo}}, SA);}
+\DoxyCodeLine{320         IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a70d1f687d8212ff1c0af51125c22a5b6}{IBCollInfo}}.objcClass = \&IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a4dacc334bcc735f19aac3080586d01db}{ClassInfo}};}
+\DoxyCodeLine{321         IBInfo.\mbox{\hyperlink{structclang_1_1cxindex_1_1_i_b_outlet_collection_info_a70d1f687d8212ff1c0af51125c22a5b6}{IBCollInfo}}.classCursor =}
+\DoxyCodeLine{322             \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa0bea074dd325615cb85819eac47264e}{MakeCursorObjCClassRef}}(InterD, InterfaceLocStart, IdxCtx.CXTU);}
+\DoxyCodeLine{323       \}}
+\DoxyCodeLine{324     \}}
+\DoxyCodeLine{325   \}}
+\DoxyCodeLine{326 }
+\DoxyCodeLine{327   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} i = 0, e = Attrs.size(); i != e; ++i)}
+\DoxyCodeLine{328     CXAttrs.push\_back(\&Attrs[i]);}
+\DoxyCodeLine{329 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxindex\+::\+Attr\+Info\+::A, clang\+\_\+get\+Null\+Cursor(), clang\+::cxindex\+::\+IBOutlet\+Collection\+Info\+::\+Class\+Info, clang\+::cxindex\+::\+IBOutlet\+Collection\+Info\+::\+IBColl\+Info, clang\+::cxcursor\+::\+Make\+Cursor\+Obj\+CClass\+Ref(), and clang\+::cxcursor\+::\+Make\+CXCursor().
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classclang_1_1cxindex_1_1_attr_list_info_a3376ff1780ab325a8d140c6f063a1f5b}\label{classclang_1_1cxindex_1_1_attr_list_info_a3376ff1780ab325a8d140c6f063a1f5b}} 
+\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}!create@{create}}
+\index{create@{create}!clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+\doxysubsubsection{\texorpdfstring{create()}{create()}}
+{\footnotesize\ttfamily Intrusive\+Ref\+Cnt\+Ptr$<$ \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info}{Attr\+List\+Info}} $>$ Attr\+List\+Info\+::create (\begin{DoxyParamCaption}\item[{const Decl $\ast$}]{D,  }\item[{\mbox{\hyperlink{classclang_1_1cxindex_1_1_c_x_index_data_consumer}{CXIndex\+Data\+Consumer}} \&}]{Idx\+Ctx }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Definition at line 332 of file CXIndex\+Data\+Consumer.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{332                                                                \{}
+\DoxyCodeLine{333   \mbox{\hyperlink{classclang_1_1cxindex_1_1_scratch_alloc}{ScratchAlloc}} SA(IdxCtx);}
+\DoxyCodeLine{334   \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info}{AttrListInfo}} *attrs = SA.\mbox{\hyperlink{classclang_1_1cxindex_1_1_scratch_alloc_a71642187ca6f26d231a5426b5a4aa254}{allocate}}<\mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info}{AttrListInfo}}>();}
+\DoxyCodeLine{335   \textcolor{keywordflow}{return} \textcolor{keyword}{new} (attrs) \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info}{AttrListInfo}}(D, IdxCtx);}
+\DoxyCodeLine{336 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxindex\+::\+Scratch\+Alloc\+::allocate().
+
+\mbox{\Hypertarget{classclang_1_1cxindex_1_1_attr_list_info_a83642ebee33dc97bfa99c42fecb3e4d9}\label{classclang_1_1cxindex_1_1_attr_list_info_a83642ebee33dc97bfa99c42fecb3e4d9}} 
+\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}!getAttrs@{getAttrs}}
+\index{getAttrs@{getAttrs}!clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+\doxysubsubsection{\texorpdfstring{getAttrs()}{getAttrs()}}
+{\footnotesize\ttfamily const CXIdx\+Attr\+Info$\ast$ const$\ast$ clang\+::cxindex\+::\+Attr\+List\+Info\+::get\+Attrs (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 255 of file CXIndex\+Data\+Consumer.\+h.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{255                                                \{}
+\DoxyCodeLine{256     \textcolor{keywordflow}{if} (CXAttrs.empty())}
+\DoxyCodeLine{257       \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{258     \textcolor{keywordflow}{return} CXAttrs.data();}
+\DoxyCodeLine{259   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classclang_1_1cxindex_1_1_attr_list_info_a97758fd2b4c338d7e304cfe7ff125e11}\label{classclang_1_1cxindex_1_1_attr_list_info_a97758fd2b4c338d7e304cfe7ff125e11}} 
+\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}!getNumAttrs@{getNumAttrs}}
+\index{getNumAttrs@{getNumAttrs}!clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+\doxysubsubsection{\texorpdfstring{getNumAttrs()}{getNumAttrs()}}
+{\footnotesize\ttfamily unsigned clang\+::cxindex\+::\+Attr\+List\+Info\+::get\+Num\+Attrs (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 260 of file CXIndex\+Data\+Consumer.\+h.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{260 \{ \textcolor{keywordflow}{return} (\textcolor{keywordtype}{unsigned})CXAttrs.size(); \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classclang_1_1cxindex_1_1_attr_list_info_acaf8c614a6d443ed9fae597cc19f7089}\label{classclang_1_1cxindex_1_1_attr_list_info_acaf8c614a6d443ed9fae597cc19f7089}} 
+\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}!Release@{Release}}
+\index{Release@{Release}!clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+\doxysubsubsection{\texorpdfstring{Release()}{Release()}}
+{\footnotesize\ttfamily void clang\+::cxindex\+::\+Attr\+List\+Info\+::\+Release (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 266 of file CXIndex\+Data\+Consumer.\+h.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{266                  \{}
+\DoxyCodeLine{267     assert (ref\_cnt > 0 \&\& \textcolor{stringliteral}{"{}Reference count is already zero."{}});}
+\DoxyCodeLine{268     \textcolor{keywordflow}{if} (-\/-\/ref\_cnt == 0) \{}
+\DoxyCodeLine{269       \textcolor{comment}{// Memory is allocated from a BumpPtrAllocator, no need to delete it.}}
+\DoxyCodeLine{270       this-\/>\string~AttrListInfo();}
+\DoxyCodeLine{271     \}}
+\DoxyCodeLine{272   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classclang_1_1cxindex_1_1_attr_list_info_a55bb98add85e69a71489afe3f5bd012e}\label{classclang_1_1cxindex_1_1_attr_list_info_a55bb98add85e69a71489afe3f5bd012e}} 
+\index{clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}!Retain@{Retain}}
+\index{Retain@{Retain}!clang::cxindex::AttrListInfo@{clang::cxindex::AttrListInfo}}
+\doxysubsubsection{\texorpdfstring{Retain()}{Retain()}}
+{\footnotesize\ttfamily void clang\+::cxindex\+::\+Attr\+List\+Info\+::\+Retain (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Retain/\+Release only useful when we allocate a \mbox{\hyperlink{classclang_1_1cxindex_1_1_attr_list_info}{Attr\+List\+Info}} from the Bump\+Ptr\+Allocator, and not from the stack; so that we keep a pointer 
+
+Definition at line 265 of file CXIndex\+Data\+Consumer.\+h.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{265 \{ ++ref\_cnt; \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_c_x_index_data_consumer_8h}{CXIndex\+Data\+Consumer.\+h}}\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_c_x_index_data_consumer_8cpp}{CXIndex\+Data\+Consumer.\+cpp}}\end{DoxyCompactItemize}

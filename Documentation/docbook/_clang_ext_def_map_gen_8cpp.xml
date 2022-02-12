@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_ext_def_map_gen_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-extdef-mapping/ClangExtDefMapGen.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-extdef-mapping/ClangExtDefMapGen.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/AST/ASTConsumer.h&quot;
+#include &quot;clang/AST/ASTContext.h&quot;
+#include &quot;clang/Basic/SourceManager.h&quot;
+#include &quot;clang/CrossTU/CrossTranslationUnit.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Frontend/FrontendActions.h&quot;
+#include &quot;clang/Tooling/CommonOptionsParser.h&quot;
+#include &quot;clang/Tooling/Tooling.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &lt;sstream&gt;
+#include &lt;string&gt;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>class <link linkend="_class_map_ext_def_names_consumer">MapExtDefNamesConsumer</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_class_map_ext_def_names_action">MapExtDefNamesAction</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_ext_def_map_gen_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangExtDefMapGen.cpp</secondary></indexterm>
+<indexterm><primary>ClangExtDefMapGen.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_ext_def_map_gen_8cpp_source_1l00114">114</link> of file <link linkend="__clang_ext_def_map_gen_8cpp_source">ClangExtDefMapGen.cpp</link>.</para>
+<programlisting>00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00115 &#32;&#32;<emphasis role="comment">//&#32;Print&#32;a&#32;stack&#32;trace&#32;if&#32;we&#32;signal&#32;out.</emphasis>
+00116 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0],&#32;<emphasis role="keyword">false</emphasis>);
+00117 &#32;&#32;PrettyStackTraceProgram&#32;X(argc,&#32;argv);
+00118 
+00119 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Overview&#32;=&#32;<emphasis role="stringliteral">&quot;\nThis&#32;tool&#32;collects&#32;the&#32;USR&#32;name&#32;and&#32;location&#32;&quot;</emphasis>
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;of&#32;external&#32;definitions&#32;in&#32;the&#32;source&#32;files&#32;&quot;</emphasis>
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;(excluding&#32;headers).\n&quot;</emphasis>;
+00122 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=&#32;CommonOptionsParser::create(
+00123 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,&#32;ClangExtDefMapGenCategory,&#32;cl::ZeroOrMore,&#32;Overview);
+00124 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00125 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00127 &#32;&#32;}
+00128 &#32;&#32;CommonOptionsParser&#32;&amp;OptionsParser&#32;=&#32;ExpectedParser.get();
+00129 
+00130 &#32;&#32;ClangTool&#32;Tool(OptionsParser.getCompilations(),
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OptionsParser.getSourcePathList());
+00132 
+00133 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Tool.run(newFrontendActionFactory&lt;MapExtDefNamesAction&gt;().<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>());
+00134 }
+</programlisting></section>
+</section>
+</section>

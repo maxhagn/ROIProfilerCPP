@@ -1,0 +1,746 @@
+.TH "libscanbuild.arguments" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libscanbuild.arguments
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBAppendCommaSeparated\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBparse_args_for_intercept_build\fP ()"
+.br
+.ti -1c
+.RI "def \fBparse_args_for_analyze_build\fP ()"
+.br
+.ti -1c
+.RI "def \fBparse_args_for_scan_build\fP ()"
+.br
+.ti -1c
+.RI "def \fBnormalize_args_for_analyze\fP (args, from_build_command)"
+.br
+.ti -1c
+.RI "def \fBvalidate_args_for_analyze\fP (parser, args, from_build_command)"
+.br
+.ti -1c
+.RI "def \fBcreate_intercept_parser\fP ()"
+.br
+.ti -1c
+.RI "def \fBcreate_analyze_parser\fP (from_build_command)"
+.br
+.ti -1c
+.RI "def \fBcreate_default_parser\fP ()"
+.br
+.ti -1c
+.RI "def \fBparser_add_cdb\fP (parser)"
+.br
+.ti -1c
+.RI "def \fBparser_add_prefer_wrapper\fP (parser)"
+.br
+.ti -1c
+.RI "def \fBparser_add_compilers\fP (parser)"
+.br
+.ti -1c
+.RI "def \fBprint_active_checkers\fP (checkers)"
+.br
+.ti -1c
+.RI "def \fBprint_checkers\fP (checkers)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def libscanbuild\&.arguments\&.create_analyze_parser ( from_build_command)"
+
+.PP
+.nf
+ Creates a parser for command-line arguments to 'analyze'. 
+.fi
+.PP
+ 
+.PP
+Definition at line 167 of file arguments\&.py\&.
+.PP
+.nf
+167 def create_analyze_parser(from_build_command):
+168     """ Creates a parser for command-line arguments to 'analyze'\&. """
+169 
+170     parser = create_default_parser()
+171 
+172     if from_build_command:
+173         parser_add_prefer_wrapper(parser)
+174         parser_add_compilers(parser)
+175 
+176         parser\&.add_argument(
+177             '--intercept-first',
+178             action='store_true',
+179             help="""Run the build commands first, intercept compiler
+180             calls and then run the static analyzer afterwards\&.
+181             Generally speaking it has better coverage on build commands\&.
+182             With '--override-compiler' it use compiler wrapper, but does
+183             not run the analyzer till the build is finished\&.""")
+184     else:
+185         parser_add_cdb(parser)
+186 
+187     parser\&.add_argument(
+188         '--status-bugs',
+189         action='store_true',
+190         help="""The exit status of '%(prog)s' is the same as the executed
+191         build command\&. This option ignores the build exit status and sets to
+192         be non zero if it found potential bugs or zero otherwise\&.""")
+193     parser\&.add_argument(
+194         '--exclude',
+195         metavar='<directory>',
+196         dest='excludes',
+197         action='append',
+198         default=[],
+199         help="""Do not run static analyzer against files found in this
+200         directory\&. (You can specify this option multiple times\&.)
+201         Could be useful when project contains 3rd party libraries\&.""")
+202 
+203     output = parser\&.add_argument_group('output control options')
+204     output\&.add_argument(
+205         '--output',
+206         '-o',
+207         metavar='<path>',
+208         default=tempfile\&.gettempdir(),
+209         help="""Specifies the output directory for analyzer reports\&.
+210         Subdirectory will be created if default directory is targeted\&.""")
+211     output\&.add_argument(
+212         '--keep-empty',
+213         action='store_true',
+214         help="""Don't remove the build results directory even if no issues
+215         were reported\&.""")
+216     output\&.add_argument(
+217         '--html-title',
+218         metavar='<title>',
+219         help="""Specify the title used on generated HTML pages\&.
+220         If not specified, a default title will be used\&.""")
+221     format_group = output\&.add_mutually_exclusive_group()
+222     format_group\&.add_argument(
+223         '--plist',
+224         '-plist',
+225         dest='output_format',
+226         const='plist',
+227         default='html',
+228         action='store_const',
+229         help="""Cause the results as a set of \&.plist files\&.""")
+230     format_group\&.add_argument(
+231         '--plist-html',
+232         '-plist-html',
+233         dest='output_format',
+234         const='plist-html',
+235         default='html',
+236         action='store_const',
+237         help="""Cause the results as a set of \&.html and \&.plist files\&.""")
+238     format_group\&.add_argument(
+239         '--plist-multi-file',
+240         '-plist-multi-file',
+241         dest='output_format',
+242         const='plist-multi-file',
+243         default='html',
+244         action='store_const',
+245         help="""Cause the results as a set of \&.plist files with extra
+246         information on related files\&.""")
+247     format_group\&.add_argument(
+248         '--sarif',
+249         '-sarif',
+250         dest='output_format',
+251         const='sarif',
+252         default='html',
+253         action='store_const',
+254         help="""Cause the results as a result\&.sarif file\&.""")
+255     format_group\&.add_argument(
+256         '--sarif-html',
+257         '-sarif-html',
+258         dest='output_format',
+259         const='sarif-html',
+260         default='html',
+261         action='store_const',
+262         help="""Cause the results as a result\&.sarif file and \&.html files\&.""")
+263 
+264     advanced = parser\&.add_argument_group('advanced options')
+265     advanced\&.add_argument(
+266         '--use-analyzer',
+267         metavar='<path>',
+268         dest='clang',
+269         default='clang',
+270         help="""'%(prog)s' uses the 'clang' executable relative to itself for
+271         static analysis\&. One can override this behavior with this option by
+272         using the 'clang' packaged with Xcode (on OS X) or from the PATH\&.""")
+273     advanced\&.add_argument(
+274         '--no-failure-reports',
+275         '-no-failure-reports',
+276         dest='output_failures',
+277         action='store_false',
+278         help="""Do not create a 'failures' subdirectory that includes analyzer
+279         crash reports and preprocessed source files\&.""")
+280     parser\&.add_argument(
+281         '--analyze-headers',
+282         action='store_true',
+283         help="""Also analyze functions in #included files\&. By default, such
+284         functions are skipped unless they are called by functions within the
+285         main source file\&.""")
+286     advanced\&.add_argument(
+287         '--stats',
+288         '-stats',
+289         action='store_true',
+290         help="""Generates visitation statistics for the project\&.""")
+291     advanced\&.add_argument(
+292         '--internal-stats',
+293         action='store_true',
+294         help="""Generate internal analyzer statistics\&.""")
+295     advanced\&.add_argument(
+296         '--maxloop',
+297         '-maxloop',
+298         metavar='<loop count>',
+299         type=int,
+300         help="""Specify the number of times a block can be visited before
+301         giving up\&. Increase for more comprehensive coverage at a cost of
+302         speed\&.""")
+303     advanced\&.add_argument(
+304         '--store',
+305         '-store',
+306         metavar='<model>',
+307         dest='store_model',
+308         choices=['region', 'basic'],
+309         help="""Specify the store model used by the analyzer\&. 'region'
+310         specifies a field- sensitive store model\&. 'basic' which is far less
+311         precise but can more quickly analyze code\&. 'basic' was the default
+312         store model for checker-0\&.221 and earlier\&.""")
+313     advanced\&.add_argument(
+314         '--constraints',
+315         '-constraints',
+316         metavar='<model>',
+317         dest='constraints_model',
+318         choices=['range', 'basic'],
+319         help="""Specify the constraint engine used by the analyzer\&. Specifying
+320         'basic' uses a simpler, less powerful constraint model used by
+321         checker-0\&.160 and earlier\&.""")
+322     advanced\&.add_argument(
+323         '--analyzer-config',
+324         '-analyzer-config',
+325         metavar='<options>',
+326         help="""Provide options to pass through to the analyzer's
+327         -analyzer-config flag\&. Several options are separated with comma:
+328         'key1=val1,key2=val2'
+329 
+330         Available options:
+331             stable-report-filename=true or false (default)
+332 
+333         Switch the page naming to:
+334         report-<filename>-<function/method name>-<id>\&.html
+335         instead of report-XXXXXX\&.html""")
+336     advanced\&.add_argument(
+337         '--force-analyze-debug-code',
+338         dest='force_debug',
+339         action='store_true',
+340         help="""Tells analyzer to enable assertions in code even if they were
+341         disabled during compilation, enabling more precise results\&.""")
+342 
+343     plugins = parser\&.add_argument_group('checker options')
+344     plugins\&.add_argument(
+345         '--load-plugin',
+346         '-load-plugin',
+347         metavar='<plugin library>',
+348         dest='plugins',
+349         action='append',
+350         help="""Loading external checkers using the clang plugin interface\&.""")
+351     plugins\&.add_argument(
+352         '--enable-checker',
+353         '-enable-checker',
+354         metavar='<checker name>',
+355         action=AppendCommaSeparated,
+356         help="""Enable specific checker\&.""")
+357     plugins\&.add_argument(
+358         '--disable-checker',
+359         '-disable-checker',
+360         metavar='<checker name>',
+361         action=AppendCommaSeparated,
+362         help="""Disable specific checker\&.""")
+363     plugins\&.add_argument(
+364         '--help-checkers',
+365         action='store_true',
+366         help="""A default group of checkers is run unless explicitly disabled\&.
+367         Exactly which checkers constitute the default group is a function of
+368         the operating system in use\&. These can be printed with this flag\&.""")
+369     plugins\&.add_argument(
+370         '--help-checkers-verbose',
+371         action='store_true',
+372         help="""Print all available checkers and mark the enabled ones\&.""")
+373 
+374     if from_build_command:
+375         parser\&.add_argument(
+376             dest='build', nargs=argparse\&.REMAINDER, help="""Command to run\&.""")
+377     else:
+378         ctu = parser\&.add_argument_group('cross translation unit analysis')
+379         ctu_mutex_group = ctu\&.add_mutually_exclusive_group()
+380         ctu_mutex_group\&.add_argument(
+381             '--ctu',
+382             action='store_const',
+383             const=CtuConfig(collect=True, analyze=True,
+384                             dir='', extdef_map_cmd=''),
+385             dest='ctu_phases',
+386             help="""Perform cross translation unit (ctu) analysis (both collect
+387             and analyze phases) using default <ctu-dir> for temporary output\&.
+388             At the end of the analysis, the temporary directory is removed\&.""")
+389         ctu\&.add_argument(
+390             '--ctu-dir',
+391             metavar='<ctu-dir>',
+392             dest='ctu_dir',
+393             default='ctu-dir',
+394             help="""Defines the temporary directory used between ctu
+395             phases\&.""")
+396         ctu_mutex_group\&.add_argument(
+397             '--ctu-collect-only',
+398             action='store_const',
+399             const=CtuConfig(collect=True, analyze=False,
+400                             dir='', extdef_map_cmd=''),
+401             dest='ctu_phases',
+402             help="""Perform only the collect phase of ctu\&.
+403             Keep <ctu-dir> for further use\&.""")
+404         ctu_mutex_group\&.add_argument(
+405             '--ctu-analyze-only',
+406             action='store_const',
+407             const=CtuConfig(collect=False, analyze=True,
+408                             dir='', extdef_map_cmd=''),
+409             dest='ctu_phases',
+410             help="""Perform only the analyze phase of ctu\&. <ctu-dir> should be
+411             present and will not be removed after analysis\&.""")
+412         ctu\&.add_argument(
+413             '--use-extdef-map-cmd',
+414             metavar='<path>',
+415             dest='extdef_map_cmd',
+416             default='clang-extdef-mapping',
+417             help="""'%(prog)s' uses the 'clang-extdef-mapping' executable
+418             relative to itself for generating external definition maps for
+419             static analysis\&. One can override this behavior with this option
+420             by using the 'clang-extdef-mapping' packaged with Xcode (on OS X)
+421             or from the PATH\&.""")
+422     return parser
+423 
+424 
+.fi
+.PP
+References libscanbuild\&.arguments\&.create_default_parser(), libscanbuild\&.CtuConfig, libscanbuild\&.arguments\&.parser_add_cdb(), libscanbuild\&.arguments\&.parser_add_compilers(), and libscanbuild\&.arguments\&.parser_add_prefer_wrapper()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.parse_args_for_analyze_build(), and libscanbuild\&.arguments\&.parse_args_for_scan_build()\&.
+.SS "def libscanbuild\&.arguments\&.create_default_parser ()"
+
+.PP
+.nf
+ Creates command line parser for all build wrapper commands. 
+.fi
+.PP
+ 
+.PP
+Definition at line 425 of file arguments\&.py\&.
+.PP
+.nf
+425 def create_default_parser():
+426     """ Creates command line parser for all build wrapper commands\&. """
+427 
+428     parser = argparse\&.ArgumentParser(
+429         formatter_class=argparse\&.ArgumentDefaultsHelpFormatter)
+430 
+431     parser\&.add_argument(
+432         '--verbose',
+433         '-v',
+434         action='count',
+435         default=0,
+436         help="""Enable verbose output from '%(prog)s'\&. A second, third and
+437         fourth flags increases verbosity\&.""")
+438     return parser
+439 
+440 
+.fi
+.PP
+Referenced by libscanbuild\&.arguments\&.create_analyze_parser(), and libscanbuild\&.arguments\&.create_intercept_parser()\&.
+.SS "def libscanbuild\&.arguments\&.create_intercept_parser ()"
+
+.PP
+.nf
+ Creates a parser for command-line arguments to 'intercept'. 
+.fi
+.PP
+ 
+.PP
+Definition at line 143 of file arguments\&.py\&.
+.PP
+.nf
+143 def create_intercept_parser():
+144     """ Creates a parser for command-line arguments to 'intercept'\&. """
+145 
+146     parser = create_default_parser()
+147     parser_add_cdb(parser)
+148 
+149     parser_add_prefer_wrapper(parser)
+150     parser_add_compilers(parser)
+151 
+152     advanced = parser\&.add_argument_group('advanced options')
+153     group = advanced\&.add_mutually_exclusive_group()
+154     group\&.add_argument(
+155         '--append',
+156         action='store_true',
+157         help="""Extend existing compilation database with new entries\&.
+158         Duplicate entries are detected and not present in the final output\&.
+159         The output is not continuously updated, it's done when the build
+160         command finished\&. """)
+161 
+162     parser\&.add_argument(
+163         dest='build', nargs=argparse\&.REMAINDER, help="""Command to run\&.""")
+164     return parser
+165 
+166 
+.fi
+.PP
+References libscanbuild\&.arguments\&.create_default_parser(), libscanbuild\&.arguments\&.parser_add_cdb(), libscanbuild\&.arguments\&.parser_add_compilers(), and libscanbuild\&.arguments\&.parser_add_prefer_wrapper()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.parse_args_for_intercept_build()\&.
+.SS "def libscanbuild\&.arguments\&.normalize_args_for_analyze ( args,  from_build_command)"
+
+.PP
+.nf
+ Normalize parsed arguments for analyze-build and scan-build.
+
+:param args: Parsed argument object. (Will be mutated.)
+:param from_build_command: Boolean value tells is the command suppose
+to run the analyzer against a build command or a compilation db. 
+.fi
+.PP
+ 
+.PP
+Definition at line 77 of file arguments\&.py\&.
+.PP
+.nf
+77 def normalize_args_for_analyze(args, from_build_command):
+78     """ Normalize parsed arguments for analyze-build and scan-build\&.
+79 
+80     :param args: Parsed argument object\&. (Will be mutated\&.)
+81     :param from_build_command: Boolean value tells is the command suppose
+82     to run the analyzer against a build command or a compilation db\&. """
+83 
+84     # make plugins always a list\&. (it might be None when not specified\&.)
+85     if args\&.plugins is None:
+86         args\&.plugins = []
+87 
+88     # make exclude directory list unique and absolute\&.
+89     uniq_excludes = set(os\&.path\&.abspath(entry) for entry in args\&.excludes)
+90     args\&.excludes = list(uniq_excludes)
+91 
+92     # because shared codes for all tools, some common used methods are
+93     # expecting some argument to be present\&. so, instead of query the args
+94     # object about the presence of the flag, we fake it here\&. to make those
+95     # methods more readable\&. (it's an arguable choice, took it only for those
+96     # which have good default value\&.)
+97     if from_build_command:
+98         # add cdb parameter invisibly to make report module working\&.
+99         args\&.cdb = 'compile_commands\&.json'
+100 
+101     # Make ctu_dir an abspath as it is needed inside clang
+102     if not from_build_command and hasattr(args, 'ctu_phases') \
+103             and hasattr(args\&.ctu_phases, 'dir'):
+104         args\&.ctu_dir = os\&.path\&.abspath(args\&.ctu_dir)
+105 
+106 
+.fi
+.PP
+Referenced by libscanbuild\&.arguments\&.parse_args_for_analyze_build(), and libscanbuild\&.arguments\&.parse_args_for_scan_build()\&.
+.SS "def libscanbuild\&.arguments\&.parse_args_for_analyze_build ()"
+
+.PP
+.nf
+ Parse and validate command-line arguments for analyze-build. 
+.fi
+.PP
+ 
+.PP
+Definition at line 45 of file arguments\&.py\&.
+.PP
+.nf
+45 def parse_args_for_analyze_build():
+46     """ Parse and validate command-line arguments for analyze-build\&. """
+47 
+48     from_build_command = False
+49     parser = create_analyze_parser(from_build_command)
+50     args = parser\&.parse_args()
+51 
+52     reconfigure_logging(args\&.verbose)
+53     logging\&.debug('Raw arguments %s', sys\&.argv)
+54 
+55     normalize_args_for_analyze(args, from_build_command)
+56     validate_args_for_analyze(parser, args, from_build_command)
+57     logging\&.debug('Parsed arguments: %s', args)
+58     return args
+59 
+60 
+.fi
+.PP
+References libscanbuild\&.arguments\&.create_analyze_parser(), libscanbuild\&.arguments\&.normalize_args_for_analyze(), libscanbuild\&.reconfigure_logging(), and libscanbuild\&.arguments\&.validate_args_for_analyze()\&.
+.PP
+Referenced by libscanbuild\&.analyze\&.analyze_build()\&.
+.SS "def libscanbuild\&.arguments\&.parse_args_for_intercept_build ()"
+
+.PP
+.nf
+ Parse and validate command-line arguments for intercept-build. 
+.fi
+.PP
+ 
+.PP
+Definition at line 28 of file arguments\&.py\&.
+.PP
+.nf
+28 def parse_args_for_intercept_build():
+29     """ Parse and validate command-line arguments for intercept-build\&. """
+30 
+31     parser = create_intercept_parser()
+32     args = parser\&.parse_args()
+33 
+34     reconfigure_logging(args\&.verbose)
+35     logging\&.debug('Raw arguments %s', sys\&.argv)
+36 
+37     # short validation logic
+38     if not args\&.build:
+39         parser\&.error(message='missing build command')
+40 
+41     logging\&.debug('Parsed arguments: %s', args)
+42     return args
+43 
+44 
+.fi
+.PP
+References libscanbuild\&.arguments\&.create_intercept_parser(), and libscanbuild\&.reconfigure_logging()\&.
+.PP
+Referenced by libscanbuild\&.intercept\&.intercept_build()\&.
+.SS "def libscanbuild\&.arguments\&.parse_args_for_scan_build ()"
+
+.PP
+.nf
+ Parse and validate command-line arguments for scan-build. 
+.fi
+.PP
+ 
+.PP
+Definition at line 61 of file arguments\&.py\&.
+.PP
+.nf
+61 def parse_args_for_scan_build():
+62     """ Parse and validate command-line arguments for scan-build\&. """
+63 
+64     from_build_command = True
+65     parser = create_analyze_parser(from_build_command)
+66     args = parser\&.parse_args()
+67 
+68     reconfigure_logging(args\&.verbose)
+69     logging\&.debug('Raw arguments %s', sys\&.argv)
+70 
+71     normalize_args_for_analyze(args, from_build_command)
+72     validate_args_for_analyze(parser, args, from_build_command)
+73     logging\&.debug('Parsed arguments: %s', args)
+74     return args
+75 
+76 
+.fi
+.PP
+References libscanbuild\&.arguments\&.create_analyze_parser(), libscanbuild\&.arguments\&.normalize_args_for_analyze(), libscanbuild\&.reconfigure_logging(), and libscanbuild\&.arguments\&.validate_args_for_analyze()\&.
+.PP
+Referenced by libscanbuild\&.analyze\&.scan_build()\&.
+.SS "def libscanbuild\&.arguments\&.parser_add_cdb ( parser)"
+
+.PP
+Definition at line 441 of file arguments\&.py\&.
+.PP
+.nf
+441 def parser_add_cdb(parser):
+442     parser\&.add_argument(
+443         '--cdb',
+444         metavar='<file>',
+445         default="compile_commands\&.json",
+446         help="""The JSON compilation database\&.""")
+447 
+448 
+.fi
+.PP
+Referenced by libscanbuild\&.arguments\&.create_analyze_parser(), and libscanbuild\&.arguments\&.create_intercept_parser()\&.
+.SS "def libscanbuild\&.arguments\&.parser_add_compilers ( parser)"
+
+.PP
+Definition at line 457 of file arguments\&.py\&.
+.PP
+.nf
+457 def parser_add_compilers(parser):
+458     parser\&.add_argument(
+459         '--use-cc',
+460         metavar='<path>',
+461         dest='cc',
+462         default=os\&.getenv('CC', 'cc'),
+463         help="""When '%(prog)s' analyzes a project by interposing a compiler
+464         wrapper, which executes a real compiler for compilation and do other
+465         tasks (record the compiler invocation)\&. Because of this interposing,
+466         '%(prog)s' does not know what compiler your project normally uses\&.
+467         Instead, it simply overrides the CC environment variable, and guesses
+468         your default compiler\&.
+469 
+470         If you need '%(prog)s' to use a specific compiler for *compilation*
+471         then you can use this option to specify a path to that compiler\&.""")
+472     parser\&.add_argument(
+473         '--use-c++',
+474         metavar='<path>',
+475         dest='cxx',
+476         default=os\&.getenv('CXX', 'c++'),
+477         help="""This is the same as "--use-cc" but for C++ code\&.""")
+478 
+479 
+.fi
+.PP
+Referenced by libscanbuild\&.arguments\&.create_analyze_parser(), and libscanbuild\&.arguments\&.create_intercept_parser()\&.
+.SS "def libscanbuild\&.arguments\&.parser_add_prefer_wrapper ( parser)"
+
+.PP
+Definition at line 449 of file arguments\&.py\&.
+.PP
+.nf
+449 def parser_add_prefer_wrapper(parser):
+450     parser\&.add_argument(
+451         '--override-compiler',
+452         action='store_true',
+453         help="""Always resort to the compiler wrapper even when better
+454         intercept methods are available\&.""")
+455 
+456 
+.fi
+.PP
+Referenced by libscanbuild\&.arguments\&.create_analyze_parser(), and libscanbuild\&.arguments\&.create_intercept_parser()\&.
+.SS "def libscanbuild\&.arguments\&.print_active_checkers ( checkers)"
+
+.PP
+.nf
+ Print active checkers to stdout. 
+.fi
+.PP
+ 
+.PP
+Definition at line 493 of file arguments\&.py\&.
+.PP
+.nf
+493 def print_active_checkers(checkers):
+494     """ Print active checkers to stdout\&. """
+495 
+496     for name in sorted(name for name, (_, active) in checkers\&.items()
+497                        if active):
+498         print(name)
+499 
+500 
+.fi
+.PP
+References print()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.validate_args_for_analyze()\&.
+.SS "def libscanbuild\&.arguments\&.print_checkers ( checkers)"
+
+.PP
+.nf
+ Print verbose checker help to stdout. 
+.fi
+.PP
+ 
+.PP
+Definition at line 501 of file arguments\&.py\&.
+.PP
+.nf
+501 def print_checkers(checkers):
+502     """ Print verbose checker help to stdout\&. """
+503 
+504     print('')
+505     print('available checkers:')
+506     print('')
+507     for name in sorted(checkers\&.keys()):
+508         description, active = checkers[name]
+509         prefix = '+' if active else ' '
+510         if len(name) > 30:
+511             print(' {0} {1}'\&.format(prefix, name))
+512             print(' ' * 35 + description)
+513         else:
+514             print(' {0} {1: <30}  {2}'\&.format(prefix, name, description))
+515     print('')
+516     print('NOTE: "+" indicates that an analysis is enabled by default\&.')
+517     print('')
+.fi
+.PP
+References print()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.validate_args_for_analyze()\&.
+.SS "def libscanbuild\&.arguments\&.validate_args_for_analyze ( parser,  args,  from_build_command)"
+
+.PP
+.nf
+ Command line parsing is done by the argparse module, but semantic
+validation still needs to be done. This method is doing it for
+analyze-build and scan-build commands.
+
+:param parser: The command line parser object.
+:param args: Parsed argument object.
+:param from_build_command: Boolean value tells is the command suppose
+to run the analyzer against a build command or a compilation db.
+:return: No return value, but this call might throw when validation
+fails. 
+.fi
+.PP
+ 
+.PP
+Definition at line 107 of file arguments\&.py\&.
+.PP
+.nf
+107 def validate_args_for_analyze(parser, args, from_build_command):
+108     """ Command line parsing is done by the argparse module, but semantic
+109     validation still needs to be done\&. This method is doing it for
+110     analyze-build and scan-build commands\&.
+111 
+112     :param parser: The command line parser object\&.
+113     :param args: Parsed argument object\&.
+114     :param from_build_command: Boolean value tells is the command suppose
+115     to run the analyzer against a build command or a compilation db\&.
+116     :return: No return value, but this call might throw when validation
+117     fails\&. """
+118 
+119     if args\&.help_checkers_verbose:
+120         print_checkers(get_checkers(args\&.clang, args\&.plugins))
+121         parser\&.exit(status=0)
+122     elif args\&.help_checkers:
+123         print_active_checkers(get_checkers(args\&.clang, args\&.plugins))
+124         parser\&.exit(status=0)
+125     elif from_build_command and not args\&.build:
+126         parser\&.error(message='missing build command')
+127     elif not from_build_command and not os\&.path\&.exists(args\&.cdb):
+128         parser\&.error(message='compilation database is missing')
+129 
+130     # If the user wants CTU mode
+131     if not from_build_command and hasattr(args, 'ctu_phases') \
+132             and hasattr(args\&.ctu_phases, 'dir'):
+133         # If CTU analyze_only, the input directory should exist
+134         if args\&.ctu_phases\&.analyze and not args\&.ctu_phases\&.collect \
+135                 and not os\&.path\&.exists(args\&.ctu_dir):
+136             parser\&.error(message='missing CTU directory')
+137         # Check CTU capability via checking clang-extdef-mapping
+138         if not is_ctu_capable(args\&.extdef_map_cmd):
+139             parser\&.error(message="""This version of clang does not support CTU
+140             functionality or clang-extdef-mapping command not found\&.""")
+141 
+142 
+.fi
+.PP
+References libscanbuild\&.clang\&.get_checkers(), libscanbuild\&.clang\&.is_ctu_capable(), libscanbuild\&.arguments\&.print_active_checkers(), and libscanbuild\&.arguments\&.print_checkers()\&.
+.PP
+Referenced by libscanbuild\&.arguments\&.parse_args_for_analyze_build(), and libscanbuild\&.arguments\&.parse_args_for_scan_build()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

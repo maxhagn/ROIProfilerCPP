@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__fatal_error_handler_8cpp_source" xml:lang="en-US">
+<title>FatalErrorHandler.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/FatalErrorHandler.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">/*===--&#32;clang-c/FatalErrorHandler.cpp&#32;-&#32;Fatal&#32;Error&#32;Handling&#32;------*-&#32;C&#32;-*-===*\</emphasis>
+00002 <emphasis role="comment">|*&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*|</emphasis>
+00003 <emphasis role="comment">|*&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*|</emphasis>
+00004 <emphasis role="comment">|*&#32;Exceptions.&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*|</emphasis>
+00005 <emphasis role="comment">|*&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*|</emphasis>
+00006 <emphasis role="comment">|*&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*|</emphasis>
+00007 <emphasis role="comment">|*&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*|</emphasis>
+00008 <emphasis role="comment">\*===----------------------------------------------------------------------===*/</emphasis>
+00009 
+00010 <emphasis role="preprocessor">#include&#32;&quot;clang-c/FatalErrorHandler.h&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&lt;stdlib.h&gt;</emphasis>
+00013 
+00014 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;aborting_fatal_error_handler(<emphasis role="keywordtype">void</emphasis>&#32;*,&#32;<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;reason,
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>)&#32;{
+00016 &#32;&#32;<emphasis role="comment">//&#32;Write&#32;the&#32;result&#32;out&#32;to&#32;stderr&#32;avoiding&#32;errs()&#32;because&#32;raw_ostreams&#32;can</emphasis>
+00017 &#32;&#32;<emphasis role="comment">//&#32;call&#32;report_fatal_error.</emphasis>
+00018 &#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;LIBCLANG&#32;FATAL&#32;ERROR:&#32;%s\n&quot;</emphasis>,&#32;reason.c_str());
+00019 &#32;&#32;::abort();
+00020 }
+00021 
+00022 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="stringliteral">&quot;C&quot;</emphasis>&#32;{
+<anchor xml:id="__fatal_error_handler_8cpp_source_1l00023"/><link linkend="__fatal_error_handler_8cpp_1a406242fcb6c1acfa01cfeb6048bc1c2a">00023</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__fatal_error_handler_8cpp_1a406242fcb6c1acfa01cfeb6048bc1c2a">clang_install_aborting_llvm_fatal_error_handler</link>(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00024 &#32;&#32;llvm::remove_fatal_error_handler();
+00025 &#32;&#32;llvm::install_fatal_error_handler(aborting_fatal_error_handler,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00026 }
+00027 
+<anchor xml:id="__fatal_error_handler_8cpp_source_1l00028"/><link linkend="__fatal_error_handler_8cpp_1acd7d8316a93e7c86da482270a589ecb5">00028</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__fatal_error_handler_8cpp_1acd7d8316a93e7c86da482270a589ecb5">clang_uninstall_llvm_fatal_error_handler</link>(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00029 &#32;&#32;llvm::remove_fatal_error_handler();
+00030 }
+00031 }
+</programlisting></section>

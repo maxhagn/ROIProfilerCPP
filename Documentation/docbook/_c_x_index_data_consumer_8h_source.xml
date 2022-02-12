@@ -1,0 +1,504 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_index_data_consumer_8h_source" xml:lang="en-US">
+<title>CXIndexDataConsumer.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXIndexDataConsumer.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXIndexDataConsumer.h&#32;-&#32;Index&#32;data&#32;consumer&#32;for&#32;libclang--*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXINDEXDATACONSUMER_H</emphasis>
+00010 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXINDEXDATACONSUMER_H</emphasis>
+00011 
+00012 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__index___internal_8h">Index_Internal.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Index/IndexDataConsumer.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclGroup.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclObjC.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/DenseSet.h&quot;</emphasis>
+00018 
+00019 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00020 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>FileEntry;
+00021 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>MSPropertyDecl;
+00022 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>ObjCPropertyDecl;
+00023 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>ClassTemplateDecl;
+00024 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>FunctionTemplateDecl;
+00025 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>TypeAliasTemplateDecl;
+00026 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>ClassTemplateSpecializationDecl;
+00027 
+00028 <emphasis role="keyword">namespace&#32;</emphasis>cxindex&#32;{
+00029 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>CXIndexDataConsumer;
+00030 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>AttrListInfo;
+00031 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00032"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">00032</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;{
+00033 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx;
+00034 
+00035 <emphasis role="keyword">public</emphasis>:
+00036 &#32;&#32;<emphasis role="keyword">explicit</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a0dab0d715a86655624ef685144ec7fd1">ScratchAlloc</link>(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;indexCtx);
+00037 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a0dab0d715a86655624ef685144ec7fd1">ScratchAlloc</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;&amp;SA);
+00038 
+00039 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ab690f7f15d9c9593a00f35ad4fa11744">~ScratchAlloc</link>();
+00040 
+00041 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a7b5b9de515cd117bc6a0d5a6a667b568">toCStr</link>(StringRef&#32;Str);
+00042 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ada48af8bcc8f64c0645b5e86fed0af62">copyCStr</link>(StringRef&#32;Str);
+00043 
+00044 &#32;&#32;<emphasis role="keyword">template</emphasis>&#32;&lt;<emphasis role="keyword">typename</emphasis>&#32;T&gt;
+00045 &#32;&#32;T&#32;*<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a71642187ca6f26d231a5426b5a4aa254">allocate</link>();
+00046 };
+00047 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00048"/><link linkend="_structclang_1_1cxindex_1_1_entity_info">00048</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;CXIdxEntityInfo&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00049"/><link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">00049</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*<link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">Dcl</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00050"/><link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">00050</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;*<link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">IndexCtx</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00051"/><link linkend="_structclang_1_1cxindex_1_1_entity_info_1adedb0df679b564bb410ed977e7d9d553">00051</link> &#32;&#32;IntrusiveRefCntPtr&lt;AttrListInfo&gt;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1adedb0df679b564bb410ed977e7d9d553">AttrList</link>;
+00052 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00053"/><link linkend="_structclang_1_1cxindex_1_1_entity_info_1adee1bf18fe97c36ad45751b1e4219b70">00053</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1adee1bf18fe97c36ad45751b1e4219b70">EntityInfo</link>()&#32;{
+00054 &#32;&#32;&#32;&#32;name&#32;=&#32;USR&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00055 &#32;&#32;&#32;&#32;attributes&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00056 &#32;&#32;&#32;&#32;numAttributes&#32;=&#32;0;
+00057 &#32;&#32;}
+00058 };
+00059 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00060"/><link linkend="_structclang_1_1cxindex_1_1_container_info">00060</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;CXIdxContainerInfo&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00061"/><link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">00061</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*<link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">DC</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00062"/><link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">00062</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;*<link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">IndexCtx</link>;
+00063 };
+00064 &#32;&#32;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00065"/><link linkend="_structclang_1_1cxindex_1_1_decl_info">00065</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;CXIdxDeclInfo&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00066"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656">00066</link> &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656">DInfoKind</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00067"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656aa884dd737aa018038fa739e1b557c292">00067</link> &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656aa884dd737aa018038fa739e1b557c292">Info_Decl</link>,
+00068 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00069"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656ad900c90ae294cb3c2ae7beef54c16acc">00069</link> &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656ad900c90ae294cb3c2ae7beef54c16acc">Info_ObjCContainer</link>,
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00070"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4cb6a131cea160e9f06a670f8429f2e2">00070</link> &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4cb6a131cea160e9f06a670f8429f2e2">Info_ObjCInterface</link>,
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00071"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a9b13936ec397fd055b86ca615e07b6c3">00071</link> &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a9b13936ec397fd055b86ca615e07b6c3">Info_ObjCProtocol</link>,
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00072"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4d2a1b51d2b3a0d6bdec7c193adc1252">00072</link> &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4d2a1b51d2b3a0d6bdec7c193adc1252">Info_ObjCCategory</link>,
+00073 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00074"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a1e0e27712c55faefde70a33bdf14a1e2">00074</link> &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a1e0e27712c55faefde70a33bdf14a1e2">Info_ObjCProperty</link>,
+00075 
+00076 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a536214c5f68509d37f2ec0f351c6dbf3">Info_CXXClass</link>
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00077"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a536214c5f68509d37f2ec0f351c6dbf3">00077</link> &#32;&#32;};
+00078 &#32;&#32;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00079"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">00079</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656">DInfoKind</link>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>;
+00080 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00081"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">00081</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">EntInfo</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00082"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a55ad0aa9c8dfd982fcf8b00b58f0619a">00082</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a55ad0aa9c8dfd982fcf8b00b58f0619a">SemanticContainer</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00083"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1ada54413c20545853e8f9828e2c81aa38">00083</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ada54413c20545853e8f9828e2c81aa38">LexicalContainer</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00084"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a468df952adc0f31a315c03106a1162a7">00084</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a468df952adc0f31a315c03106a1162a7">DeclAsContainer</link>;
+00085 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00086"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a1caffd15d30cffeab9b2148d282a3f53">00086</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a1caffd15d30cffeab9b2148d282a3f53">DeclInfo</link>(<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isDefinition,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isContainer)
+00087 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656aa884dd737aa018038fa739e1b557c292">Info_Decl</link>)&#32;{
+00088 &#32;&#32;&#32;&#32;this-&gt;isRedeclaration&#32;=&#32;isRedeclaration;
+00089 &#32;&#32;&#32;&#32;this-&gt;isDefinition&#32;=&#32;isDefinition;
+00090 &#32;&#32;&#32;&#32;this-&gt;isContainer&#32;=&#32;isContainer;
+00091 &#32;&#32;&#32;&#32;attributes&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00092 &#32;&#32;&#32;&#32;numAttributes&#32;=&#32;0;
+00093 &#32;&#32;&#32;&#32;declAsContainer&#32;=&#32;semanticContainer&#32;=&#32;lexicalContainer&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00094 &#32;&#32;&#32;&#32;flags&#32;=&#32;0;
+00095 &#32;&#32;}
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00096"/><link linkend="_structclang_1_1cxindex_1_1_decl_info_1a597d0d063b2aea9f2dd7a8f154735608">00096</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a597d0d063b2aea9f2dd7a8f154735608">DeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656">DInfoKind</link>&#32;K,
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isDefinition,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isContainer)
+00098 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>(K)&#32;{
+00099 &#32;&#32;&#32;&#32;this-&gt;isRedeclaration&#32;=&#32;isRedeclaration;
+00100 &#32;&#32;&#32;&#32;this-&gt;isDefinition&#32;=&#32;isDefinition;
+00101 &#32;&#32;&#32;&#32;this-&gt;isContainer&#32;=&#32;isContainer;
+00102 &#32;&#32;&#32;&#32;attributes&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00103 &#32;&#32;&#32;&#32;numAttributes&#32;=&#32;0;
+00104 &#32;&#32;&#32;&#32;declAsContainer&#32;=&#32;semanticContainer&#32;=&#32;lexicalContainer&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00105 &#32;&#32;&#32;&#32;flags&#32;=&#32;0;
+00106 &#32;&#32;}
+00107 };
+00108 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00109"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">00109</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00110"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">00110</link> &#32;&#32;CXIdxObjCContainerDeclInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>;
+00111 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00112"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1aeb98e1dfd001c3a8d25ab8ec188d876e">00112</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1aeb98e1dfd001c3a8d25ab8ec188d876e">ObjCContainerDeclInfo</link>(<emphasis role="keywordtype">bool</emphasis>&#32;isForwardRef,
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration,
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isImplementation)
+00115 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656ad900c90ae294cb3c2ae7beef54c16acc">Info_ObjCContainer</link>,&#32;isRedeclaration,
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isDefinition=*/</emphasis>!isForwardRef,&#32;<emphasis role="comment">/*isContainer=*/</emphasis>!isForwardRef)&#32;{
+00117 &#32;&#32;&#32;&#32;init(isForwardRef,&#32;isImplementation);
+00118 &#32;&#32;}
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00119"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1a84ccf7005b5fd1584a67252583a12d44">00119</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1a84ccf7005b5fd1584a67252583a12d44">ObjCContainerDeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656">DInfoKind</link>&#32;K,
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isForwardRef,
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration,
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isImplementation)
+00123 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>(K,&#32;isRedeclaration,&#32;<emphasis role="comment">/*isDefinition=*/</emphasis>!isForwardRef,
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis>!isForwardRef)&#32;{
+00125 &#32;&#32;&#32;&#32;init(isForwardRef,&#32;isImplementation);
+00126 &#32;&#32;}
+00127 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00128"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1a80b31476fc0c38bc2e89eef29dceca91">00128</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1a80b31476fc0c38bc2e89eef29dceca91">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*D)&#32;{
+00129 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656ad900c90ae294cb3c2ae7beef54c16acc">Info_ObjCContainer</link>&#32;&lt;=&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;&amp;&amp;&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;&lt;=&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4d2a1b51d2b3a0d6bdec7c193adc1252">Info_ObjCCategory</link>;
+00130 &#32;&#32;}
+00131 
+00132 <emphasis role="keyword">private</emphasis>:
+00133 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;init(<emphasis role="keywordtype">bool</emphasis>&#32;isForwardRef,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isImplementation)&#32;{
+00134 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isForwardRef)
+00135 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>.kind&#32;=&#32;CXIdxObjCContainer_ForwardRef;
+00136 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isImplementation)
+00137 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>.kind&#32;=&#32;CXIdxObjCContainer_Implementation;
+00138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00139 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>.kind&#32;=&#32;CXIdxObjCContainer_Interface;
+00140 &#32;&#32;}
+00141 };
+00142 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00143"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">00143</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">ObjCInterfaceDeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00144"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1aa5262af2cc1b91e25daa968df1846d43">00144</link> &#32;&#32;CXIdxObjCInterfaceDeclInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1aa5262af2cc1b91e25daa968df1846d43">ObjCInterDeclInfo</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00145"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1af576b839a6a1d3ac815c20fc74ce4a25">00145</link> &#32;&#32;CXIdxObjCProtocolRefListInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1af576b839a6a1d3ac815c20fc74ce4a25">ObjCProtoListInfo</link>;
+00146 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00147"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1a1405620deabb8abc6cbf87b51b828688">00147</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1a1405620deabb8abc6cbf87b51b828688">ObjCInterfaceDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*D)
+00148 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4cb6a131cea160e9f06a670f8429f2e2">Info_ObjCInterface</link>,
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isForwardRef=*/</emphasis>false,
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isRedeclaration=*/</emphasis>D-&gt;getPreviousDecl()&#32;!=&#32;nullptr,
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplementation=*/</emphasis>false)&#32;{&#32;}
+00152 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00153"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1af00853bbc7ef08b3f6cd092ee83aaa12">00153</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1af00853bbc7ef08b3f6cd092ee83aaa12">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*D)&#32;{
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;==&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4cb6a131cea160e9f06a670f8429f2e2">Info_ObjCInterface</link>;
+00155 &#32;&#32;}
+00156 };
+00157 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00158"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info">00158</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info">ObjCProtocolDeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00159"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1ac265cd967ddaad68ab0abaffb2d6eeba">00159</link> &#32;&#32;CXIdxObjCProtocolRefListInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1ac265cd967ddaad68ab0abaffb2d6eeba">ObjCProtoRefListInfo</link>;
+00160 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00161"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1ad857f19e4c59c9e7de04a3fbb65c85ba">00161</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1ad857f19e4c59c9e7de04a3fbb65c85ba">ObjCProtocolDeclInfo</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*D)
+00162 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a9b13936ec397fd055b86ca615e07b6c3">Info_ObjCProtocol</link>,
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isForwardRef=*/</emphasis>false,
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isRedeclaration=*/</emphasis>D-&gt;getPreviousDecl(),
+00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplementation=*/</emphasis>false)&#32;{&#32;}
+00166 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00167"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1a18b6bbec41917e17349162a7bcbcf68d">00167</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1a18b6bbec41917e17349162a7bcbcf68d">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*D)&#32;{
+00168 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;==&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a9b13936ec397fd055b86ca615e07b6c3">Info_ObjCProtocol</link>;
+00169 &#32;&#32;}
+00170 };
+00171 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00172"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">00172</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00173"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">00173</link> &#32;&#32;CXIdxObjCCategoryDeclInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00174"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a98fbc89f0e51d50660836b95d5150b3f">00174</link> &#32;&#32;CXIdxObjCProtocolRefListInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a98fbc89f0e51d50660836b95d5150b3f">ObjCProtoListInfo</link>;
+00175 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00176"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a9500ff1241677318b561e95b730007fd">00176</link> &#32;&#32;<emphasis role="keyword">explicit</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a9500ff1241677318b561e95b730007fd">ObjCCategoryDeclInfo</link>(<emphasis role="keywordtype">bool</emphasis>&#32;isImplementation)
+00177 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4d2a1b51d2b3a0d6bdec7c193adc1252">Info_ObjCCategory</link>,
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isForwardRef=*/</emphasis>false,
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isRedeclaration=*/</emphasis>isImplementation,
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplementation=*/</emphasis>isImplementation)&#32;{&#32;}
+00181 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00182"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a9ca7ea5f42b1b2cd2d7e5fdadb48ea1c">00182</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a9ca7ea5f42b1b2cd2d7e5fdadb48ea1c">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*D)&#32;{
+00183 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;==&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a4d2a1b51d2b3a0d6bdec7c193adc1252">Info_ObjCCategory</link>;
+00184 &#32;&#32;}
+00185 };
+00186 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00187"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info">00187</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info">ObjCPropertyDeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00188"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">00188</link> &#32;&#32;CXIdxObjCPropertyDeclInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">ObjCPropDeclInfo</link>;
+00189 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00190"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1aef7547317125ca75f2a3c49a25bbac15">00190</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1aef7547317125ca75f2a3c49a25bbac15">ObjCPropertyDeclInfo</link>()
+00191 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a1e0e27712c55faefde70a33bdf14a1e2">Info_ObjCProperty</link>,
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isRedeclaration=*/</emphasis>false,&#32;<emphasis role="comment">/*isDefinition=*/</emphasis>false,
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis>false)&#32;{&#32;}
+00194 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00195"/><link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a4bb11459a6e0cac788b217499ed5c52e">00195</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a4bb11459a6e0cac788b217499ed5c52e">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*D)&#32;{
+00196 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;==&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a1e0e27712c55faefde70a33bdf14a1e2">Info_ObjCProperty</link>;
+00197 &#32;&#32;}
+00198 };
+00199 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00200"/><link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info">00200</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info">CXXClassDeclInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00201"/><link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info_1adb9db0e8f5a5c207cb1016599a93aaeb">00201</link> &#32;&#32;CXIdxCXXClassDeclInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info_1adb9db0e8f5a5c207cb1016599a93aaeb">CXXClassInfo</link>;
+00202 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00203"/><link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info_1a0c4db2afdc11928d9d01f1d4c556c7cc">00203</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info_1a0c4db2afdc11928d9d01f1d4c556c7cc">CXXClassDeclInfo</link>(<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isDefinition)
+00204 &#32;&#32;&#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>(<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a536214c5f68509d37f2ec0f351c6dbf3">Info_CXXClass</link>,&#32;isRedeclaration,&#32;isDefinition,&#32;isDefinition)&#32;{&#32;}
+00205 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00206"/><link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info_1af7095529548f4910cdf1d03751718083">00206</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info_1af7095529548f4910cdf1d03751718083">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*D)&#32;{
+00207 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ad9999d9d43f0c519da7cbc2add62af3d">Kind</link>&#32;==&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a8d6b3c8a54d7d26ed9c913cb193ad656a536214c5f68509d37f2ec0f351c6dbf3">Info_CXXClass</link>;
+00208 &#32;&#32;}
+00209 };
+00210 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00211"/><link linkend="_structclang_1_1cxindex_1_1_attr_info">00211</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;CXIdxAttrInfo&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00212"/><link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">00212</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Attr&#32;*<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>;
+00213 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00214"/><link linkend="_structclang_1_1cxindex_1_1_attr_info_1a6e5b91121e71629f04d77c182871532c">00214</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a6e5b91121e71629f04d77c182871532c">AttrInfo</link>(CXIdxAttrKind&#32;Kind,&#32;CXCursor&#32;C,&#32;CXIdxLoc&#32;Loc,&#32;<emphasis role="keyword">const</emphasis>&#32;Attr&#32;*<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>)&#32;{
+00215 &#32;&#32;&#32;&#32;kind&#32;=&#32;Kind;
+00216 &#32;&#32;&#32;&#32;cursor&#32;=&#32;C;
+00217 &#32;&#32;&#32;&#32;loc&#32;=&#32;Loc;
+00218 &#32;&#32;&#32;&#32;this-&gt;A&#32;=&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>;
+00219 &#32;&#32;}
+00220 };
+00221 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00222"/><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">00222</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;{
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00223"/><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">00223</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00224"/><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">00224</link> &#32;&#32;CXIdxIBOutletCollectionAttrInfo&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>;
+00225 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00226"/><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a7bbaa9b7c5b07a25b4b25a2840def770">00226</link> &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a7bbaa9b7c5b07a25b4b25a2840def770">IBOutletCollectionInfo</link>(CXCursor&#32;C,&#32;CXIdxLoc&#32;Loc,&#32;<emphasis role="keyword">const</emphasis>&#32;Attr&#32;*<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>)&#32;:
+00227 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_IBOutletCollection,&#32;C,&#32;Loc,&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>)&#32;{
+00228 &#32;&#32;&#32;&#32;assert(C.kind&#32;==&#32;CXCursor_IBOutletCollectionAttr);
+00229 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00230 &#32;&#32;}
+00231 
+00232 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a7bbaa9b7c5b07a25b4b25a2840def770">IBOutletCollectionInfo</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;&amp;other);
+00233 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00234"/><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1abc8f799220c67e3f0b236f6573db0c3e">00234</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1abc8f799220c67e3f0b236f6573db0c3e">classof</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;*<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>)&#32;{
+00235 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>-&gt;kind&#32;==&#32;CXIdxAttr_IBOutletCollection;
+00236 &#32;&#32;}
+00237 };
+00238 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00239"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info">00239</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&#32;{
+00240 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA;
+00241 
+00242 &#32;&#32;SmallVector&lt;AttrInfo,&#32;2&gt;&#32;Attrs;
+00243 &#32;&#32;SmallVector&lt;IBOutletCollectionInfo,&#32;2&gt;&#32;IBCollAttrs;
+00244 &#32;&#32;SmallVector&lt;CXIdxAttrInfo&#32;*,&#32;2&gt;&#32;CXAttrs;
+00245 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ref_cnt;
+00246 
+00247 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&#32;&amp;)&#32;=&#32;<emphasis role="keyword">delete</emphasis>;
+00248 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;operator=(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&#32;&amp;)&#32;=&#32;<emphasis role="keyword">delete</emphasis>;
+00249 <emphasis role="keyword">public</emphasis>:
+00250 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx);
+00251 
+00252 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;IntrusiveRefCntPtr&lt;AttrListInfo&gt;&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a3376ff1780ab325a8d140c6f063a1f5b">create</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,
+00253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx);
+00254 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00255"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a83642ebee33dc97bfa99c42fecb3e4d9">00255</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXIdxAttrInfo&#32;*<emphasis role="keyword">const</emphasis>&#32;*<link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a83642ebee33dc97bfa99c42fecb3e4d9">getAttrs</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00256 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CXAttrs.empty())
+00257 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXAttrs.data();
+00259 &#32;&#32;}
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00260"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a97758fd2b4c338d7e304cfe7ff125e11">00260</link> &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a97758fd2b4c338d7e304cfe7ff125e11">getNumAttrs</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>)CXAttrs.size();&#32;}
+00261 
+00264 &#32;&#32;<emphasis role="comment">//&#32;in&#32;the&#32;EntityInfo</emphasis>
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00265"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a55bb98add85e69a71489afe3f5bd012e">00265</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a55bb98add85e69a71489afe3f5bd012e">Retain</link>()&#32;{&#32;++ref_cnt;&#32;}
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00266"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1acaf8c614a6d443ed9fae597cc19f7089">00266</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1acaf8c614a6d443ed9fae597cc19f7089">Release</link>()&#32;{
+00267 &#32;&#32;&#32;&#32;assert&#32;(ref_cnt&#32;&gt;&#32;0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Reference&#32;count&#32;is&#32;already&#32;zero.&quot;</emphasis>);
+00268 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(--ref_cnt&#32;==&#32;0)&#32;{
+00269 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Memory&#32;is&#32;allocated&#32;from&#32;a&#32;BumpPtrAllocator,&#32;no&#32;need&#32;to&#32;delete&#32;it.</emphasis>
+00270 &#32;&#32;&#32;&#32;&#32;&#32;this-&gt;~<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>();
+00271 &#32;&#32;&#32;&#32;}
+00272 &#32;&#32;}
+00273 };
+00274 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00275"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">00275</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;index::IndexDataConsumer&#32;{
+00276 &#32;&#32;ASTContext&#32;*Ctx;
+00277 &#32;&#32;CXClientData&#32;ClientData;
+00278 &#32;&#32;IndexerCallbacks&#32;&amp;CB;
+00279 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;IndexOptions;
+00280 &#32;&#32;CXTranslationUnit&#32;CXTU;
+00281 &#32;&#32;
+00282 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;llvm::DenseMap&lt;const&#32;FileEntry&#32;*,&#32;CXIdxClientFile&gt;&#32;FileMapTy;
+00283 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;llvm::DenseMap&lt;const&#32;DeclContext&#32;*,&#32;CXIdxClientContainer&gt;
+00284 &#32;&#32;&#32;&#32;ContainerMapTy;
+00285 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;llvm::DenseMap&lt;const&#32;Decl&#32;*,&#32;CXIdxClientEntity&gt;&#32;EntityMapTy;
+00286 
+00287 &#32;&#32;FileMapTy&#32;FileMap;
+00288 &#32;&#32;ContainerMapTy&#32;ContainerMap;
+00289 &#32;&#32;EntityMapTy&#32;EntityMap;
+00290 
+00291 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;std::pair&lt;const&#32;FileEntry&#32;*,&#32;const&#32;Decl&#32;*&gt;&#32;RefFileOccurrence;
+00292 &#32;&#32;llvm::DenseSet&lt;RefFileOccurrence&gt;&#32;RefFileOccurrences;
+00293 
+00294 &#32;&#32;llvm::BumpPtrAllocator&#32;StrScratch;
+00295 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;StrAdapterCount;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00296"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a9256c2f0308f57ea9ed42e761acab1d4">00296</link> &#32;&#32;<emphasis role="keyword">friend</emphasis>&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>;
+00297 
+00298 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>ObjCProtocolListInfo&#32;{
+00299 &#32;&#32;&#32;&#32;SmallVector&lt;CXIdxObjCProtocolRefInfo,&#32;4&gt;&#32;ProtInfos;
+00300 &#32;&#32;&#32;&#32;SmallVector&lt;EntityInfo,&#32;4&gt;&#32;ProtEntities;
+00301 &#32;&#32;&#32;&#32;SmallVector&lt;CXIdxObjCProtocolRefInfo&#32;*,&#32;4&gt;&#32;Prots;
+00302 
+00303 &#32;&#32;&#32;&#32;CXIdxObjCProtocolRefListInfo&#32;getListInfo()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00304 &#32;&#32;&#32;&#32;&#32;&#32;CXIdxObjCProtocolRefListInfo&#32;Info&#32;=&#32;{&#32;Prots.data(),
+00305 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(unsigned)Prots.size()&#32;};
+00306 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Info;
+00307 &#32;&#32;&#32;&#32;}
+00308 
+00309 &#32;&#32;&#32;&#32;ObjCProtocolListInfo(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolList&#32;&amp;ProtList,
+00310 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab89887a4b3518ba4e801bc0bdca8f280">CXIndexDataConsumer</link>&#32;&amp;IdxCtx,
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a9256c2f0308f57ea9ed42e761acab1d4">ScratchAlloc</link>&#32;&amp;SA);
+00312 &#32;&#32;};
+00313 
+00314 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>CXXBasesListInfo&#32;{
+00315 &#32;&#32;&#32;&#32;SmallVector&lt;CXIdxBaseClassInfo,&#32;4&gt;&#32;BaseInfos;
+00316 &#32;&#32;&#32;&#32;SmallVector&lt;EntityInfo,&#32;4&gt;&#32;BaseEntities;
+00317 &#32;&#32;&#32;&#32;SmallVector&lt;CXIdxBaseClassInfo&#32;*,&#32;4&gt;&#32;CXBases;
+00318 
+00319 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXIdxBaseClassInfo&#32;*<emphasis role="keyword">const</emphasis>&#32;*getBases()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00320 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXBases.data();
+00321 &#32;&#32;&#32;&#32;}
+00322 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;getNumBases()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>)CXBases.size();&#32;}
+00323 
+00324 &#32;&#32;&#32;&#32;CXXBasesListInfo(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*D,
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab89887a4b3518ba4e801bc0bdca8f280">CXIndexDataConsumer</link>&#32;&amp;IdxCtx,&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a9256c2f0308f57ea9ed42e761acab1d4">ScratchAlloc</link>&#32;&amp;SA);
+00326 
+00327 &#32;&#32;<emphasis role="keyword">private</emphasis>:
+00328 &#32;&#32;&#32;&#32;SourceLocation&#32;getBaseLoc(<emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;&amp;Base)&#32;<emphasis role="keyword">const</emphasis>;
+00329 &#32;&#32;};
+00330 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00331"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8da7f07242735deb22345063fd847778">00331</link> &#32;&#32;<emphasis role="keyword">friend</emphasis>&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>;
+00332 
+00333 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00334"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab89887a4b3518ba4e801bc0bdca8f280">00334</link> &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab89887a4b3518ba4e801bc0bdca8f280">CXIndexDataConsumer</link>(CXClientData&#32;clientData,&#32;IndexerCallbacks&#32;&amp;indexCallbacks,
+00335 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;indexOptions,&#32;CXTranslationUnit&#32;cxTU)
+00336 &#32;&#32;&#32;&#32;:&#32;Ctx(nullptr),&#32;ClientData(clientData),&#32;CB(indexCallbacks),
+00337 &#32;&#32;&#32;&#32;&#32;&#32;IndexOptions(indexOptions),&#32;CXTU(cxTU),
+00338 &#32;&#32;&#32;&#32;&#32;&#32;StrScratch(),&#32;StrAdapterCount(0)&#32;{&#32;}
+00339 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00340"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7e411bdd51411afd713185c3e5d19f90">00340</link> &#32;&#32;ASTContext&#32;&amp;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7e411bdd51411afd713185c3e5d19f90">getASTContext</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;*Ctx;&#32;}
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00341"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a1e920a3dc7386fbef4b9e600cccd67bc">00341</link> &#32;&#32;CXTranslationUnit&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a1e920a3dc7386fbef4b9e600cccd67bc">getCXTU</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTU;&#32;}
+00342 
+00343 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a4f34d3862aaca2e111d2d6fc283c16dd">setASTContext</link>(ASTContext&#32;&amp;ctx);
+00344 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a26c09f765fc8cb328b567d0df24e3de0">setPreprocessor</link>(std::shared_ptr&lt;Preprocessor&gt;&#32;PP)&#32;<emphasis role="keyword">override</emphasis>;
+00345 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00346"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">00346</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00347 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;IndexOptions&#32;&amp;&#32;CXIndexOpt_SuppressRedundantRefs;
+00348 &#32;&#32;}
+00349 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00350"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab96bf30db26572795d6e705d74711d8e">00350</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab96bf30db26572795d6e705d74711d8e">shouldIndexFunctionLocalSymbols</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00351 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;IndexOptions&#32;&amp;&#32;CXIndexOpt_IndexFunctionLocalSymbols;
+00352 &#32;&#32;}
+00353 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00354"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa1504de2c9de43d30f40776398b13904">00354</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa1504de2c9de43d30f40776398b13904">shouldIndexImplicitTemplateInsts</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00355 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;IndexOptions&#32;&amp;&#32;CXIndexOpt_IndexImplicitTemplateInstantiations;
+00356 &#32;&#32;}
+00357 
+00358 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abbffca61e5023fb01eb8ab8dcace8d48">isFunctionLocalDecl</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D);
+00359 
+00360 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7448058a9a24e004514ecaacc168ea1a">shouldAbort</link>();
+00361 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00362"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a1c5524b549de49a156156a134ac86970">00362</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a1c5524b549de49a156156a134ac86970">hasDiagnosticCallback</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;CB.diagnostic;&#32;}
+00363 
+00364 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5c669f287c160f0a54004247471fa65e">enteredMainFile</link>(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File);
+00365 
+00366 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b4e93bdd5828aee90dfbb5d09596c55">ppIncludedFile</link>(SourceLocation&#32;hashLoc,
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;filename,&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isImport,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isAngled,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isModuleImport);
+00369 
+00370 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b3231674a4065575b31c62792f59f17">importedModule</link>(<emphasis role="keyword">const</emphasis>&#32;ImportDecl&#32;*ImportD);
+00371 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab8f6df5dd61289c7cc6189a5e6cff6b7">importedPCH</link>(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File);
+00372 
+00373 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b2dd8a844240181f6b09b91bfb25e7a">startedTranslationUnit</link>();
+00374 
+00375 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aeaf562b1dfa9686d4076b4de7e06cbbb">indexDiagnostics</link>();
+00376 
+00377 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6d45d26c0132be1ec21d6abcf3dc96cf">handleDiagnosticSet</link>(CXDiagnosticSet&#32;CXDiagSet);
+00378 
+00379 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aea220dde32945d87ccb22ec24e237765">handleFunction</link>(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD);
+00380 
+00381 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ad0117660a1e29cae3cfd1c2d6050b189">handleVar</link>(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*D);
+00382 
+00383 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1adb81ff6898a8c7d84f1e00e28bc51d0f">handleField</link>(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*D);
+00384 
+00385 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa1a4eeb2b5c25fb04e2e13cb52916f35">handleEnumerator</link>(<emphasis role="keyword">const</emphasis>&#32;EnumConstantDecl&#32;*D);
+00386 
+00387 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8c8934e7ebac3bffc5fe3c8d90bb4853">handleTagDecl</link>(<emphasis role="keyword">const</emphasis>&#32;TagDecl&#32;*D);
+00388 &#32;&#32;
+00389 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a0e826e01744c0b02fa8be496457105be">handleTypedefName</link>(<emphasis role="keyword">const</emphasis>&#32;TypedefNameDecl&#32;*D);
+00390 
+00391 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5fe0ba54fa05604e9a5148384940779c">handleObjCInterface</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*D);
+00392 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2e1baec864df9b4f431c88d005b1964">handleObjCImplementation</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCImplementationDecl&#32;*D);
+00393 
+00394 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abda4f96d641a3bffe1dfd23402154681">handleObjCProtocol</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*D);
+00395 
+00396 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1af6f8ba6a1c6db0fbf5b3b7c36ce42935">handleObjCCategory</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryDecl&#32;*D);
+00397 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a384418d47049c76926499092ea8c6184">handleObjCCategoryImpl</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryImplDecl&#32;*D);
+00398 
+00399 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ae332e3b4ea50f3d47053f858f37e4217">handleObjCMethod</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*D,&#32;SourceLocation&#32;Loc);
+00400 
+00401 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab19b2040c03666b12d9d756b822e5237">handleSynthesizedObjCProperty</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyImplDecl&#32;*D);
+00402 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac7f28ce4d8aa569c11fcb9aba670ba2f">handleSynthesizedObjCMethod</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*D,&#32;SourceLocation&#32;Loc,
+00403 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*LexicalDC);
+00404 
+00405 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2c613e39c59a85bf307057d61b5877b">handleObjCProperty</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyDecl&#32;*D);
+00406 
+00407 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7d653def424f7886d3d9240e6c8b02af">handleNamespace</link>(<emphasis role="keyword">const</emphasis>&#32;NamespaceDecl&#32;*D);
+00408 
+00409 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5a41d4d26d98678a051873f0bd45607e">handleClassTemplate</link>(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateDecl&#32;*D);
+00410 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3532519c64698588555b48efd372812f">handleFunctionTemplate</link>(<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateDecl&#32;*D);
+00411 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a51308071d5e3e1eb995b0e3447024810">handleTypeAliasTemplate</link>(<emphasis role="keyword">const</emphasis>&#32;TypeAliasTemplateDecl&#32;*D);
+00412 
+00413 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6067a968d3482447348823dd7f913ced">handleReference</link>(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,&#32;SourceLocation&#32;Loc,&#32;CXCursor&#32;Cursor,
+00414 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*Parent,
+00415 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC,
+00416 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>,
+00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxEntityRefKind&#32;Kind&#32;=&#32;CXIdxEntityRef_Direct,
+00418 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSymbolRole&#32;Role&#32;=&#32;CXSymbolRole_None);
+00419 
+00420 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a05b282788c19ebbbe352b78f1d1229f6">isNotFromSourceFile</link>(SourceLocation&#32;Loc)&#32;<emphasis role="keyword">const</emphasis>;
+00421 
+00422 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5332371a52c1329c815af24c5dab3ed1">translateLoc</link>(SourceLocation&#32;Loc,&#32;CXIdxClientFile&#32;*indexFile,&#32;CXFile&#32;*file,
+00423 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*line,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*column,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*offset);
+00424 
+00425 &#32;&#32;CXIdxClientContainer&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aab567cd0d93550e824a2e8f8e037d1f0">getClientContainerForDC</link>(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC)&#32;<emphasis role="keyword">const</emphasis>;
+00426 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa606355afc24ae5ef78a5e1ae8e612c0">addContainerInMap</link>(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC,&#32;CXIdxClientContainer&#32;container);
+00427 
+00428 &#32;&#32;CXIdxClientEntity&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a758cad6aecad503d6dbda574e8f11f1b">getClientEntity</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;<emphasis role="keyword">const</emphasis>;
+00429 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8410b188890a57a9e2034f3c5275be7e">setClientEntity</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;CXIdxClientEntity&#32;client);
+00430 
+00431 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b05f1224c212db76edacb87a7982e66">isTemplateImplicitInstantiation</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D);
+00432 
+00433 <emphasis role="keyword">private</emphasis>:
+00434 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleDeclOccurrence(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;index::SymbolRoleSet&#32;Roles,
+00435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;index::SymbolRelation&gt;&#32;Relations,
+00436 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;ASTNodeInfo&#32;ASTNode)&#32;<emphasis role="keyword">override</emphasis>;
+00437 
+00438 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleModuleOccurrence(<emphasis role="keyword">const</emphasis>&#32;ImportDecl&#32;*ImportD,&#32;<emphasis role="keyword">const</emphasis>&#32;Module&#32;*Mod,
+00439 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;index::SymbolRoleSet&#32;Roles,
+00440 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)&#32;<emphasis role="keyword">override</emphasis>;
+00441 
+00442 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;finish()&#32;<emphasis role="keyword">override</emphasis>;
+00443 
+00444 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleDecl(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,
+00445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXCursor&#32;Cursor,
+00446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;&amp;DInfo,
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*LexicalDC&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>,
+00448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*SemaDC&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>);
+00449 
+00450 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleObjCContainer(<emphasis role="keyword">const</emphasis>&#32;ObjCContainerDecl&#32;*D,
+00451 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXCursor&#32;Cursor,
+00452 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;&amp;ContDInfo);
+00453 
+00454 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleCXXRecordDecl(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*RD,&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*OrigD);
+00455 
+00456 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;markEntityOccurrenceInFile(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,&#32;SourceLocation&#32;Loc);
+00457 
+00458 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*getEntityDecl(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D)&#32;<emphasis role="keyword">const</emphasis>;
+00459 
+00460 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*getEntityContainer(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;<emphasis role="keyword">const</emphasis>;
+00461 
+00462 &#32;&#32;CXIdxClientFile&#32;getIndexFile(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File);
+00463 &#32;&#32;
+00464 &#32;&#32;CXIdxLoc&#32;getIndexLoc(SourceLocation&#32;Loc)&#32;<emphasis role="keyword">const</emphasis>;
+00465 
+00466 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;getEntityInfo(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,
+00467 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;&amp;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>,
+00468 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;&amp;SA);
+00469 
+00470 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;getContainerInfo(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC,&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;&amp;ContInfo);
+00471 
+00472 &#32;&#32;CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a17dbc7b3a465bf9e70491f77a9a4f63b">getCursor</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{
+00473 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(D,&#32;CXTU);
+00474 &#32;&#32;}
+00475 
+00476 &#32;&#32;CXCursor&#32;getRefCursor(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,&#32;SourceLocation&#32;Loc);
+00477 
+00478 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;shouldIgnoreIfImplicit(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D);
+00479 };
+00480 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00481"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a0dab0d715a86655624ef685144ec7fd1">00481</link> <emphasis role="keyword">inline</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a0dab0d715a86655624ef685144ec7fd1">ScratchAlloc::ScratchAlloc</link>(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;idxCtx)&#32;:&#32;IdxCtx(idxCtx)&#32;{
+00482 &#32;&#32;++IdxCtx.StrAdapterCount;
+00483 }
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00484"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a27b07066fd4f2584aee1ef54897805fd">00484</link> <emphasis role="keyword">inline</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a0dab0d715a86655624ef685144ec7fd1">ScratchAlloc::ScratchAlloc</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;&amp;SA)&#32;:&#32;IdxCtx(SA.IdxCtx)&#32;{
+00485 &#32;&#32;++IdxCtx.StrAdapterCount;
+00486 }
+00487 
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00488"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ab690f7f15d9c9593a00f35ad4fa11744">00488</link> <emphasis role="keyword">inline</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ab690f7f15d9c9593a00f35ad4fa11744">ScratchAlloc::~ScratchAlloc</link>()&#32;{
+00489 &#32;&#32;--IdxCtx.StrAdapterCount;
+00490 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IdxCtx.StrAdapterCount&#32;==&#32;0)
+00491 &#32;&#32;&#32;&#32;IdxCtx.StrScratch.Reset();
+00492 }
+00493 
+00494 <emphasis role="keyword">template</emphasis>&#32;&lt;<emphasis role="keyword">typename</emphasis>&#32;T&gt;
+<anchor xml:id="__c_x_index_data_consumer_8h_source_1l00495"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a71642187ca6f26d231a5426b5a4aa254">00495</link> <emphasis role="keyword">inline</emphasis>&#32;T&#32;*<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a71642187ca6f26d231a5426b5a4aa254">ScratchAlloc::allocate</link>()&#32;{
+00496 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;IdxCtx.StrScratch.Allocate&lt;T&gt;();
+00497 }
+00498 
+00499 }}&#32;<emphasis role="comment">//&#32;end&#32;clang::cxindex</emphasis>
+00500 
+00501 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

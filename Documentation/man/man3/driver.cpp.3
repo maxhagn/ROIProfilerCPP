@@ -1,0 +1,598 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/driver/driver.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/driver/driver.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Driver/Driver\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticOptions\&.h'\fP
+.br
+\fC#include 'clang/Basic/Stack\&.h'\fP
+.br
+\fC#include 'clang/Config/config\&.h'\fP
+.br
+\fC#include 'clang/Driver/Compilation\&.h'\fP
+.br
+\fC#include 'clang/Driver/DriverDiagnostic\&.h'\fP
+.br
+\fC#include 'clang/Driver/Options\&.h'\fP
+.br
+\fC#include 'clang/Driver/ToolChain\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ChainedDiagnosticConsumer\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInvocation\&.h'\fP
+.br
+\fC#include 'clang/Frontend/SerializedDiagnosticPrinter\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticPrinter\&.h'\fP
+.br
+\fC#include 'clang/Frontend/Utils\&.h'\fP
+.br
+\fC#include 'llvm/ADT/ArrayRef\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallString\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallVector\&.h'\fP
+.br
+\fC#include 'llvm/Option/ArgList\&.h'\fP
+.br
+\fC#include 'llvm/Option/OptTable\&.h'\fP
+.br
+\fC#include 'llvm/Option/Option\&.h'\fP
+.br
+\fC#include 'llvm/Support/BuryPointer\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/CrashRecoveryContext\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorHandling\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/Host\&.h'\fP
+.br
+\fC#include 'llvm/Support/InitLLVM\&.h'\fP
+.br
+\fC#include 'llvm/Support/Path\&.h'\fP
+.br
+\fC#include 'llvm/Support/PrettyStackTrace\&.h'\fP
+.br
+\fC#include 'llvm/Support/Process\&.h'\fP
+.br
+\fC#include 'llvm/Support/Program\&.h'\fP
+.br
+\fC#include 'llvm/Support/Regex\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/StringSaver\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+\fC#include 'llvm/Support/Timer\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <memory>\fP
+.br
+\fC#include <set>\fP
+.br
+\fC#include <system_error>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "std::string \fBGetExecutablePath\fP (const char *Argv0, bool CanonicalPrefixes)"
+.br
+.ti -1c
+.RI "int \fBcc1_main\fP (ArrayRef< const char * > Argv, const char *Argv0, void *MainAddr)"
+.br
+.ti -1c
+.RI "int \fBcc1as_main\fP (ArrayRef< const char * > Argv, const char *Argv0, void *MainAddr)"
+.br
+.ti -1c
+.RI "int \fBcc1gen_reproducer_main\fP (ArrayRef< const char * > Argv, const char *Argv0, void *MainAddr)"
+.br
+.ti -1c
+.RI "int \fBmain\fP (int Argc, const char **Argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int cc1_main (ArrayRef< const char * > Argv, const char * Argv0, void * MainAddr)"
+
+.PP
+Definition at line 184 of file cc1_main\&.cpp\&.
+.PP
+.nf
+184                                                                              {
+185   ensureSufficientStack();
+186 
+187   std::unique_ptr<CompilerInstance> Clang(new CompilerInstance());
+188   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+189 
+190   // Register the support for object-file-wrapped Clang modules\&.
+191   auto PCHOps = Clang->getPCHContainerOperations();
+192   PCHOps->registerWriter(std::make_unique<ObjectFilePCHContainerWriter>());
+193   PCHOps->registerReader(std::make_unique<ObjectFilePCHContainerReader>());
+194 
+195   // Initialize targets first, so that --version shows registered targets\&.
+196   llvm::InitializeAllTargets();
+197   llvm::InitializeAllTargetMCs();
+198   llvm::InitializeAllAsmPrinters();
+199   llvm::InitializeAllAsmParsers();
+200 
+201   // Buffer diagnostics from argument parsing so that we can output them using a
+202   // well formed diagnostic object\&.
+203   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+204   TextDiagnosticBuffer *DiagsBuffer = new TextDiagnosticBuffer;
+205   DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagsBuffer);
+206 
+207   // Setup round-trip remarks for the DiagnosticsEngine used in CreateFromArgs\&.
+208   if (find(Argv, StringRef("-Rround-trip-cc1-args")) != Argv\&.end())
+209     Diags\&.setSeverity(diag::remark_cc1_round_trip_generated,
+210                       diag::Severity::Remark, {});
+211 
+212   bool Success = CompilerInvocation::CreateFromArgs(Clang->getInvocation(),
+213                                                     Argv, Diags, Argv0);
+214 
+215   if (Clang->getFrontendOpts()\&.TimeTrace) {
+216     llvm::timeTraceProfilerInitialize(
+217         Clang->getFrontendOpts()\&.TimeTraceGranularity, Argv0);
+218   }
+219   // --print-supported-cpus takes priority over the actual compilation\&.
+220   if (Clang->getFrontendOpts()\&.PrintSupportedCPUs)
+221     return PrintSupportedCPUs(Clang->getTargetOpts()\&.Triple);
+222 
+223   // Infer the builtin include path if unspecified\&.
+224   if (Clang->getHeaderSearchOpts()\&.UseBuiltinIncludes &&
+225       Clang->getHeaderSearchOpts()\&.ResourceDir\&.empty())
+226     Clang->getHeaderSearchOpts()\&.ResourceDir =
+227       CompilerInvocation::GetResourcesPath(Argv0, MainAddr);
+228 
+229   // Create the actual diagnostics engine\&.
+230   Clang->createDiagnostics();
+231   if (!Clang->hasDiagnostics())
+232     return 1;
+233 
+234   // Set an error handler, so that any LLVM backend diagnostics go through our
+235   // error handler\&.
+236   llvm::install_fatal_error_handler(LLVMErrorHandler,
+237                                   static_cast<void*>(&Clang->getDiagnostics()));
+238 
+239   DiagsBuffer->FlushDiagnostics(Clang->getDiagnostics());
+240   if (!Success)
+241     return 1;
+242 
+243   // Execute the frontend actions\&.
+244   {
+245     llvm::TimeTraceScope TimeScope("ExecuteCompiler");
+246     Success = ExecuteCompilerInvocation(Clang\&.get());
+247   }
+248 
+249   // If any timers were active but haven't been destroyed yet, print their
+250   // results now\&.  This happens in -disable-free mode\&.
+251   llvm::TimerGroup::printAll(llvm::errs());
+252   llvm::TimerGroup::clearAll();
+253 
+254   if (llvm::timeTraceProfilerEnabled()) {
+255     SmallString<128> Path(Clang->getFrontendOpts()\&.OutputFile);
+256     llvm::sys::path::replace_extension(Path, "json");
+257     if (auto profilerOutput = Clang->createOutputFile(
+258             Path\&.str(), /*Binary=*/false, /*RemoveFileOnSignal=*/false,
+259             /*useTemporary=*/false)) {
+260       llvm::timeTraceProfilerWrite(*profilerOutput);
+261       // FIXME(ibiryukov): make profilerOutput flush in destructor instead\&.
+262       profilerOutput->flush();
+263       llvm::timeTraceProfilerCleanup();
+264       Clang->clearOutputFiles(false);
+265     }
+266   }
+267 
+268   // Our error handler depends on the Diagnostics object, which we're
+269   // potentially about to delete\&. Uninstall the handler now so that any
+270   // later errors use the default handling behavior instead\&.
+271   llvm::remove_fatal_error_handler();
+272 
+273   // When running with -disable-free, don't do any destruction or shutdown\&.
+274   if (Clang->getFrontendOpts()\&.DisableFree) {
+275     llvm::BuryPointer(std::move(Clang));
+276     return !Success;
+277   }
+278 
+279   return !Success;
+280 }
+.fi
+.SS "int cc1as_main (ArrayRef< const char * > Argv, const char * Argv0, void * MainAddr)"
+
+.PP
+Definition at line 563 of file cc1as_main\&.cpp\&.
+.PP
+.nf
+563                                                                                {
+564   // Initialize targets and assembly printers/parsers\&.
+565   InitializeAllTargetInfos();
+566   InitializeAllTargetMCs();
+567   InitializeAllAsmParsers();
+568 
+569   // Construct our diagnostic client\&.
+570   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+571   TextDiagnosticPrinter *DiagClient
+572     = new TextDiagnosticPrinter(errs(), &*DiagOpts);
+573   DiagClient->setPrefix("clang -cc1as");
+574   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+575   DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
+576 
+577   // Set an error handler, so that any LLVM backend diagnostics go through our
+578   // error handler\&.
+579   ScopedFatalErrorHandler FatalErrorHandler
+580     (LLVMErrorHandler, static_cast<void*>(&Diags));
+581 
+582   // Parse the arguments\&.
+583   AssemblerInvocation Asm;
+584   if (!AssemblerInvocation::CreateFromArgs(Asm, Argv, Diags))
+585     return 1;
+586 
+587   if (Asm\&.ShowHelp) {
+588     getDriverOptTable()\&.printHelp(
+589         llvm::outs(), "clang -cc1as [options] file\&.\&.\&.",
+590         "Clang Integrated Assembler",
+591         /*Include=*/driver::options::CC1AsOption, /*Exclude=*/0,
+592         /*ShowAllAliases=*/false);
+593     return 0;
+594   }
+595 
+596   // Honor -version\&.
+597   //
+598   // FIXME: Use a better -version message?
+599   if (Asm\&.ShowVersion) {
+600     llvm::cl::PrintVersionMessage();
+601     return 0;
+602   }
+603 
+604   // Honor -mllvm\&.
+605   //
+606   // FIXME: Remove this, one day\&.
+607   if (!Asm\&.LLVMArgs\&.empty()) {
+608     unsigned NumArgs = Asm\&.LLVMArgs\&.size();
+609     auto Args = std::make_unique<const char*[]>(NumArgs + 2);
+610     Args[0] = "clang (LLVM option parsing)";
+611     for (unsigned i = 0; i != NumArgs; ++i)
+612       Args[i + 1] = Asm\&.LLVMArgs[i]\&.c_str();
+613     Args[NumArgs + 1] = nullptr;
+614     llvm::cl::ParseCommandLineOptions(NumArgs + 1, Args\&.get());
+615   }
+616 
+617   // Execute the invocation, unless there were parsing errors\&.
+618   bool Failed = Diags\&.hasErrorOccurred() || ExecuteAssembler(Asm, Diags);
+619 
+620   // If any timers were active but haven't been destroyed yet, print their
+621   // results now\&.
+622   TimerGroup::printAll(errs());
+623   TimerGroup::clearAll();
+624 
+625   return !!Failed;
+626 }
+.fi
+.SS "int cc1gen_reproducer_main (ArrayRef< const char * > Argv, const char * Argv0, void * MainAddr)"
+
+.PP
+Definition at line 156 of file cc1gen_reproducer_main\&.cpp\&.
+.PP
+.nf
+157                                            {
+158   if (Argv\&.size() < 1) {
+159     llvm::errs() << "error: missing invocation file\n";
+160     return 1;
+161   }
+162   // Parse the invocation descriptor\&.
+163   StringRef Input = Argv[0];
+164   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
+165       llvm::MemoryBuffer::getFile(Input, /*IsText=*/true);
+166   if (!Buffer) {
+167     llvm::errs() << "error: failed to read " << Input << ": "
+168                  << Buffer\&.getError()\&.message() << "\n";
+169     return 1;
+170   }
+171   llvm::yaml::Input YAML(Buffer\&.get()->getBuffer());
+172   ClangInvocationInfo InvocationInfo;
+173   YAML >> InvocationInfo;
+174   if (Argv\&.size() > 1 && Argv[1] == StringRef("-v"))
+175     InvocationInfo\&.Dump = true;
+176 
+177   // Create an invocation that will produce the reproducer\&.
+178   std::vector<const char *> DriverArgs;
+179   for (const auto &Arg : InvocationInfo\&.Arguments)
+180     DriverArgs\&.push_back(Arg\&.c_str());
+181   std::string Path = GetExecutablePath(Argv0, /*CanonicalPrefixes=*/true);
+182   DriverArgs[0] = Path\&.c_str();
+183   llvm::Optional<driver::Driver::CompilationDiagnosticReport> Report =
+184       generateReproducerForInvocationArguments(DriverArgs, InvocationInfo);
+185 
+186   // Emit the information about the reproduce files to stdout\&.
+187   int Result = 1;
+188   if (Report) {
+189     printReproducerInformation(llvm::outs(), InvocationInfo, *Report);
+190     Result = 0;
+191   }
+192 
+193   // Remove the input file\&.
+194   llvm::sys::fs::remove(Input);
+195   return Result;
+196 }
+.fi
+.SS "std::string GetExecutablePath (const char * Argv0, bool CanonicalPrefixes)"
+
+.PP
+Definition at line 57 of file driver\&.cpp\&.
+.PP
+.nf
+57                                                                        {
+58   if (!CanonicalPrefixes) {
+59     SmallString<128> ExecutablePath(Argv0);
+60     // Do a PATH lookup if Argv0 isn't a valid path\&.
+61     if (!llvm::sys::fs::exists(ExecutablePath))
+62       if (llvm::ErrorOr<std::string> P =
+63               llvm::sys::findProgramByName(ExecutablePath))
+64         ExecutablePath = *P;
+65     return std::string(ExecutablePath\&.str());
+66   }
+67 
+68   // This just needs to be some symbol in the binary; C++ doesn't
+69   // allow taking the address of ::main however\&.
+70   void *P = (void*) (intptr_t) GetExecutablePath;
+71   return llvm::sys::fs::getMainExecutable(Argv0, P);
+72 }
+.fi
+.PP
+References GetExecutablePath()\&.
+.PP
+Referenced by GetExecutablePath()\&.
+.SS "int main (int Argc, const char ** Argv)"
+
+.PP
+Definition at line 351 of file driver\&.cpp\&.
+.PP
+.nf
+351                                       {
+352   noteBottomOfStack();
+353   llvm::InitLLVM X(Argc, Argv);
+354   llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
+355                         " and include the crash backtrace, preprocessed "
+356                         "source, and associated run script\&.\n");
+357   SmallVector<const char *, 256> Args(Argv, Argv + Argc);
+358 
+359   if (llvm::sys::Process::FixupStandardFileDescriptors())
+360     return 1;
+361 
+362   llvm::InitializeAllTargets();
+363   auto TargetAndMode = ToolChain::getTargetAndModeFromProgramName(Args[0]);
+364 
+365   llvm::BumpPtrAllocator A;
+366   llvm::StringSaver Saver(A);
+367 
+368   // Parse response files using the GNU syntax, unless we're in CL mode\&. There
+369   // are two ways to put clang in CL compatibility mode: Args[0] is either
+370   // clang-cl or cl, or --driver-mode=cl is on the command line\&. The normal
+371   // command line parsing can't happen until after response file parsing, so we
+372   // have to manually search for a --driver-mode=cl argument the hard way\&.
+373   // Finally, our -cc1 tools don't care which tokenization mode we use because
+374   // response files written by clang will tokenize the same way in either mode\&.
+375   bool ClangCLMode = false;
+376   if (StringRef(TargetAndMode\&.DriverMode)\&.equals("--driver-mode=cl") ||
+377       llvm::find_if(Args, [](const char *F) {
+378         return F && strcmp(F, "--driver-mode=cl") == 0;
+379       }) != Args\&.end()) {
+380     ClangCLMode = true;
+381   }
+382   enum { Default, POSIX, Windows } RSPQuoting = Default;
+383   for (const char *F : Args) {
+384     if (strcmp(F, "--rsp-quoting=posix") == 0)
+385       RSPQuoting = POSIX;
+386     else if (strcmp(F, "--rsp-quoting=windows") == 0)
+387       RSPQuoting = Windows;
+388   }
+389 
+390   // Determines whether we want nullptr markers in Args to indicate response
+391   // files end-of-lines\&. We only use this for the /LINK driver argument with
+392   // clang-cl\&.exe on Windows\&.
+393   bool MarkEOLs = ClangCLMode;
+394 
+395   llvm::cl::TokenizerCallback Tokenizer;
+396   if (RSPQuoting == Windows || (RSPQuoting == Default && ClangCLMode))
+397     Tokenizer = &llvm::cl::TokenizeWindowsCommandLine;
+398   else
+399     Tokenizer = &llvm::cl::TokenizeGNUCommandLine;
+400 
+401   if (MarkEOLs && Args\&.size() > 1 && StringRef(Args[1])\&.startswith("-cc1"))
+402     MarkEOLs = false;
+403   llvm::cl::ExpandResponseFiles(Saver, Tokenizer, Args, MarkEOLs);
+404 
+405   // Handle -cc1 integrated tools, even if -cc1 was expanded from a response
+406   // file\&.
+407   auto FirstArg = std::find_if(Args\&.begin() + 1, Args\&.end(),
+408                                [](const char *A) { return A != nullptr; });
+409   if (FirstArg != Args\&.end() && StringRef(*FirstArg)\&.startswith("-cc1")) {
+410     // If -cc1 came from a response file, remove the EOL sentinels\&.
+411     if (MarkEOLs) {
+412       auto newEnd = std::remove(Args\&.begin(), Args\&.end(), nullptr);
+413       Args\&.resize(newEnd - Args\&.begin());
+414     }
+415     return ExecuteCC1Tool(Args);
+416   }
+417 
+418   // Handle options that need handling before the real command line parsing in
+419   // Driver::BuildCompilation()
+420   bool CanonicalPrefixes = true;
+421   for (int i = 1, size = Args\&.size(); i < size; ++i) {
+422     // Skip end-of-line response file markers
+423     if (Args[i] == nullptr)
+424       continue;
+425     if (StringRef(Args[i]) == "-no-canonical-prefixes") {
+426       CanonicalPrefixes = false;
+427       break;
+428     }
+429   }
+430 
+431   // Handle CL and _CL_ which permits additional command line options to be
+432   // prepended or appended\&.
+433   if (ClangCLMode) {
+434     // Arguments in "CL" are prepended\&.
+435     llvm::Optional<std::string> OptCL = llvm::sys::Process::GetEnv("CL");
+436     if (OptCL\&.hasValue()) {
+437       SmallVector<const char *, 8> PrependedOpts;
+438       getCLEnvVarOptions(OptCL\&.getValue(), Saver, PrependedOpts);
+439 
+440       // Insert right after the program name to prepend to the argument list\&.
+441       Args\&.insert(Args\&.begin() + 1, PrependedOpts\&.begin(), PrependedOpts\&.end());
+442     }
+443     // Arguments in "_CL_" are appended\&.
+444     llvm::Optional<std::string> Opt_CL_ = llvm::sys::Process::GetEnv("_CL_");
+445     if (Opt_CL_\&.hasValue()) {
+446       SmallVector<const char *, 8> AppendedOpts;
+447       getCLEnvVarOptions(Opt_CL_\&.getValue(), Saver, AppendedOpts);
+448 
+449       // Insert at the end of the argument list to append\&.
+450       Args\&.append(AppendedOpts\&.begin(), AppendedOpts\&.end());
+451     }
+452   }
+453 
+454   std::set<std::string> SavedStrings;
+455   // Handle CCC_OVERRIDE_OPTIONS, used for editing a command line behind the
+456   // scenes\&.
+457   if (const char *OverrideStr = ::getenv("CCC_OVERRIDE_OPTIONS")) {
+458     // FIXME: Driver shouldn't take extra initial argument\&.
+459     ApplyQAOverride(Args, OverrideStr, SavedStrings);
+460   }
+461 
+462   std::string Path = GetExecutablePath(Args[0], CanonicalPrefixes);
+463 
+464   // Whether the cc1 tool should be called inside the current process, or if we
+465   // should spawn a new clang subprocess (old behavior)\&.
+466   // Not having an additional process saves some execution time of Windows,
+467   // and makes debugging and profiling easier\&.
+468   bool UseNewCC1Process;
+469 
+470   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts =
+471       CreateAndPopulateDiagOpts(Args, UseNewCC1Process);
+472 
+473   TextDiagnosticPrinter *DiagClient
+474     = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
+475   FixupDiagPrefixExeName(DiagClient, Path);
+476 
+477   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+478 
+479   DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
+480 
+481   if (!DiagOpts->DiagnosticSerializationFile\&.empty()) {
+482     auto SerializedConsumer =
+483         clang::serialized_diags::create(DiagOpts->DiagnosticSerializationFile,
+484                                         &*DiagOpts, /*MergeChildRecords=*/true);
+485     Diags\&.setClient(new ChainedDiagnosticConsumer(
+486         Diags\&.takeClient(), std::move(SerializedConsumer)));
+487   }
+488 
+489   ProcessWarningOptions(Diags, *DiagOpts, /*ReportDiags=*/false);
+490 
+491   Driver TheDriver(Path, llvm::sys::getDefaultTargetTriple(), Diags);
+492   SetInstallDir(Args, TheDriver, CanonicalPrefixes);
+493   TheDriver\&.setTargetAndMode(TargetAndMode);
+494 
+495   insertTargetAndModeArgs(TargetAndMode, Args, SavedStrings);
+496 
+497   SetBackdoorDriverOutputsFromEnvVars(TheDriver);
+498 
+499   if (!UseNewCC1Process) {
+500     TheDriver\&.CC1Main = &ExecuteCC1Tool;
+501     // Ensure the CC1Command actually catches cc1 crashes
+502     llvm::CrashRecoveryContext::Enable();
+503   }
+504 
+505   std::unique_ptr<Compilation> C(TheDriver\&.BuildCompilation(Args));
+506   int Res = 1;
+507   bool IsCrash = false;
+508   if (C && !C->containsError()) {
+509     SmallVector<std::pair<int, const Command *>, 4> FailingCommands;
+510     Res = TheDriver\&.ExecuteCompilation(*C, FailingCommands);
+511 
+512     // Force a crash to test the diagnostics\&.
+513     if (TheDriver\&.GenReproducer) {
+514       Diags\&.Report(diag::err_drv_force_crash)
+515         << !::getenv("FORCE_CLANG_DIAGNOSTICS_CRASH");
+516 
+517       // Pretend that every command failed\&.
+518       FailingCommands\&.clear();
+519       for (const auto &J : C->getJobs())
+520         if (const Command *C = dyn_cast<Command>(&J))
+521           FailingCommands\&.push_back(std::make_pair(-1, C));
+522 
+523       // Print the bug report message that would be printed if we did actually
+524       // crash, but only if we're crashing due to FORCE_CLANG_DIAGNOSTICS_CRASH\&.
+525       if (::getenv("FORCE_CLANG_DIAGNOSTICS_CRASH"))
+526         llvm::dbgs() << llvm::getBugReportMsg();
+527     }
+528 
+529     for (const auto &P : FailingCommands) {
+530       int CommandRes = P\&.first;
+531       const Command *FailingCommand = P\&.second;
+532       if (!Res)
+533         Res = CommandRes;
+534 
+535       // If result status is < 0, then the driver command signalled an error\&.
+536       // If result status is 70, then the driver command reported a fatal error\&.
+537       // On Windows, abort will return an exit code of 3\&.  In these cases,
+538       // generate additional diagnostic information if possible\&.
+539       IsCrash = CommandRes < 0 || CommandRes == 70;
+540 #ifdef _WIN32
+541       IsCrash |= CommandRes == 3;
+542 #endif
+543 #if LLVM_ON_UNIX
+544       // When running in integrated-cc1 mode, the CrashRecoveryContext returns
+545       // the same codes as if the program crashed\&. See section "Exit Status for
+546       // Commands":
+547       // https://pubs\&.opengroup\&.org/onlinepubs/9699919799/xrat/V4_xcu_chap02\&.html
+548       IsCrash |= CommandRes > 128;
+549 #endif
+550       if (IsCrash) {
+551         TheDriver\&.generateCompilationDiagnostics(*C, *FailingCommand);
+552         break;
+553       }
+554     }
+555   }
+556 
+557   Diags\&.getClient()->finish();
+558 
+559   if (!UseNewCC1Process && IsCrash) {
+560     // When crashing in -fintegrated-cc1 mode, bury the timer pointers, because
+561     // the internal linked list might point to already released stack frames\&.
+562     llvm::BuryPointer(llvm::TimerGroup::aquireDefaultGroup());
+563   } else {
+564     // If any timers were active but haven't been destroyed yet, print their
+565     // results now\&.  This happens in -disable-free mode\&.
+566     llvm::TimerGroup::printAll(llvm::errs());
+567     llvm::TimerGroup::clearAll();
+568   }
+569 
+570 #ifdef _WIN32
+571   // Exit status should not be negative on Win32, unless abnormal termination\&.
+572   // Once abnormal termination was caught, negative status should not be
+573   // propagated\&.
+574   if (Res < 0)
+575     Res = 1;
+576 #endif
+577 
+578   // If we have multiple failing commands, we return the result of the first
+579   // failing command\&.
+580   return Res;
+581 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,109 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-format/ClangFormat.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-format/ClangFormat.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Diagnostic\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticOptions\&.h'\fP
+.br
+\fC#include 'clang/Basic/FileManager\&.h'\fP
+.br
+\fC#include 'clang/Basic/SourceManager\&.h'\fP
+.br
+\fC#include 'clang/Basic/Version\&.h'\fP
+.br
+\fC#include 'clang/Format/Format\&.h'\fP
+.br
+\fC#include 'clang/Rewrite/Core/Rewriter\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/InitLLVM\&.h'\fP
+.br
+\fC#include 'llvm/Support/Process\&.h'\fP
+.br
+
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBclang\fP"
+.br
+.RI "-rename "
+.ti -1c
+.RI " \fBclang::format\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This file implements a clang-format tool that automatically formats (fragments of) C++ code\&. 
+.PP
+Definition in file \fBClangFormat\&.cpp\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 512 of file ClangFormat\&.cpp\&.
+.PP
+.nf
+512                                       {
+513   llvm::InitLLVM X(argc, argv);
+514 
+515   cl::HideUnrelatedOptions(ClangFormatCategory);
+516 
+517   cl::SetVersionPrinter(PrintVersion);
+518   cl::ParseCommandLineOptions(
+519       argc, argv,
+520       "A tool to format C/C++/Java/JavaScript/JSON/Objective-C/Protobuf/C# "
+521       "code\&.\n\n"
+522       "If no arguments are specified, it formats the code from standard input\n"
+523       "and writes the result to the standard output\&.\n"
+524       "If <file>s are given, it reformats the files\&. If -i is specified\n"
+525       "together with <file>s, the files are edited in-place\&. Otherwise, the\n"
+526       "result is written to the standard output\&.\n");
+527 
+528   if (Help) {
+529     cl::PrintHelpMessage();
+530     return 0;
+531   }
+532 
+533   if (DumpConfig) {
+534     return dumpConfig();
+535   }
+536 
+537   bool Error = false;
+538   if (FileNames\&.empty()) {
+539     Error = clang::format::format("-");
+540     return Error ? 1 : 0;
+541   }
+542   if (FileNames\&.size() != 1 &&
+543       (!Offsets\&.empty() || !Lengths\&.empty() || !LineRanges\&.empty())) {
+544     errs() << "error: -offset, -length and -lines can only be used for "
+545               "single file\&.\n";
+546     return 1;
+547   }
+548   for (const auto &FileName : FileNames) {
+549     if (Verbose)
+550       errs() << "Formatting " << FileName << "\n";
+551     Error |= clang::format::format(FileName);
+552   }
+553   return Error ? 1 : 0;
+554 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

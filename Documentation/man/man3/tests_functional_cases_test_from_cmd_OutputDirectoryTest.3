@@ -1,0 +1,101 @@
+.TH "tests.functional.cases.test_from_cmd.OutputDirectoryTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_from_cmd.OutputDirectoryTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_regular_keeps_report_dir\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_clear_deletes_report_dir\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_clear_keeps_report_dir_when_asked\fP (self)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun_analyzer\fP (outdir, args, cmd)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 15 of file test_from_cmd\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.run_analyzer ( outdir,  args,  cmd)\fC [static]\fP"
+
+.PP
+Definition at line 18 of file test_from_cmd\&.py\&.
+.PP
+.nf
+18     def run_analyzer(outdir, args, cmd):
+19         return check_call_and_report(
+20             ['scan-build-py', '--intercept-first', '-o', outdir] + args,
+21             cmd)
+22 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), and tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_regular_keeps_report_dir()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_deletes_report_dir ( self)"
+
+.PP
+Definition at line 29 of file test_from_cmd\&.py\&.
+.PP
+.nf
+29     def test_clear_deletes_report_dir(self):
+30         with libear\&.TemporaryDirectory() as tmpdir:
+31             make = make_args(tmpdir) + ['build_clean']
+32             outdir = self\&.run_analyzer(tmpdir, [], make)
+33             self\&.assertFalse(os\&.path\&.isdir(outdir))
+34 
+.fi
+.PP
+References tests\&.functional\&.cases\&.make_args(), tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.run_analyzer(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.run_analyzer(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked ( self)"
+
+.PP
+Definition at line 35 of file test_from_cmd\&.py\&.
+.PP
+.nf
+35     def test_clear_keeps_report_dir_when_asked(self):
+36         with libear\&.TemporaryDirectory() as tmpdir:
+37             make = make_args(tmpdir) + ['build_clean']
+38             outdir = self\&.run_analyzer(tmpdir, ['--keep-empty'], make)
+39             self\&.assertTrue(os\&.path\&.isdir(outdir))
+40 
+41 
+.fi
+.PP
+References tests\&.functional\&.cases\&.make_args(), tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.run_analyzer(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.run_analyzer(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_regular_keeps_report_dir ( self)"
+
+.PP
+Definition at line 23 of file test_from_cmd\&.py\&.
+.PP
+.nf
+23     def test_regular_keeps_report_dir(self):
+24         with libear\&.TemporaryDirectory() as tmpdir:
+25             make = make_args(tmpdir) + ['build_regular']
+26             outdir = self\&.run_analyzer(tmpdir, [], make)
+27             self\&.assertTrue(os\&.path\&.isdir(outdir))
+28 
+.fi
+.PP
+References tests\&.functional\&.cases\&.make_args(), tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.run_analyzer(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.run_analyzer(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

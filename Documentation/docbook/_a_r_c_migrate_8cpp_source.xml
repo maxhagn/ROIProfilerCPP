@@ -1,0 +1,143 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__a_r_c_migrate_8cpp_source" xml:lang="en-US">
+<title>ARCMigrate.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/ARCMigrate.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;ARCMigrate.cpp&#32;-&#32;Clang-C&#32;ARC&#32;Migration&#32;Library&#32;---------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;the&#32;main&#32;API&#32;hooks&#32;in&#32;the&#32;Clang-C&#32;ARC&#32;Migration&#32;library.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/ARCMigrate/ARCMT.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Config/config.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticBuffer.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00019 
+00020 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00021 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>arcmt;
+00022 
+00023 <emphasis role="keyword">namespace&#32;</emphasis>{
+00024 
+00025 <emphasis role="keyword">struct&#32;</emphasis>Remap&#32;{
+00026 &#32;&#32;std::vector&lt;std::pair&lt;std::string,&#32;std::string&gt;&#32;&gt;&#32;Vec;
+00027 };
+00028 
+00029 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace.</emphasis>
+00030 
+00031 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00032 <emphasis role="comment">//&#32;libClang&#32;public&#32;APIs.</emphasis>
+00033 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00034 
+<anchor xml:id="__a_r_c_migrate_8cpp_source_1l00035"/><link linkend="__a_r_c_migrate_8cpp_1a4285c97c7ad73a51c7d255fdb4bb7c18">00035</link> CXRemapping&#32;<link linkend="__a_r_c_migrate_8cpp_1a4285c97c7ad73a51c7d255fdb4bb7c18">clang_getRemappings</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*migrate_dir_path)&#32;{
+00036 <emphasis role="preprocessor">#if&#32;!CLANG_ENABLE_ARCMT</emphasis>
+00037 &#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;feature&#32;not&#32;enabled&#32;in&#32;this&#32;build\n&quot;</emphasis>;
+00038 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00039 <emphasis role="preprocessor">#else</emphasis>
+00040 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Logging&#32;=&#32;::getenv(<emphasis role="stringliteral">&quot;LIBCLANG_LOGGING&quot;</emphasis>);
+00041 
+00042 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!migrate_dir_path)&#32;{
+00043 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logging)
+00044 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang_getRemappings&#32;was&#32;called&#32;with&#32;NULL&#32;parameter\n&quot;</emphasis>;
+00045 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00046 &#32;&#32;}
+00047 
+00048 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!llvm::sys::fs::exists(migrate_dir_path))&#32;{
+00049 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logging)&#32;{
+00050 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error&#32;by&#32;clang_getRemappings(\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;migrate_dir_path
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;)\n&quot;</emphasis>;
+00052 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;migrate_dir_path&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;&#32;does&#32;not&#32;exist\n&quot;</emphasis>;
+00053 &#32;&#32;&#32;&#32;}
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00055 &#32;&#32;}
+00056 
+00057 &#32;&#32;TextDiagnosticBuffer&#32;diagBuffer;
+00058 &#32;&#32;std::unique_ptr&lt;Remap&gt;&#32;remap(<emphasis role="keyword">new</emphasis>&#32;Remap());
+00059 
+00060 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;err&#32;=&#32;arcmt::getFileRemappings(remap-&gt;Vec,&#32;migrate_dir_path,&amp;diagBuffer);
+00061 
+00062 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(err)&#32;{
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logging)&#32;{
+00064 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error&#32;by&#32;clang_getRemappings(\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;migrate_dir_path
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;)\n&quot;</emphasis>;
+00066 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(TextDiagnosticBuffer::const_iterator
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;diagBuffer.err_begin(),&#32;E&#32;=&#32;diagBuffer.err_end();&#32;I&#32;!=&#32;E;&#32;++I)
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;I-&gt;second&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00069 &#32;&#32;&#32;&#32;}
+00070 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00071 &#32;&#32;}
+00072 
+00073 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;remap.release();
+00074 <emphasis role="preprocessor">#endif</emphasis>
+00075 }
+00076 
+<anchor xml:id="__a_r_c_migrate_8cpp_source_1l00077"/><link linkend="__a_r_c_migrate_8cpp_1adb472f66643a6ff2d1ae417d7e3d4272">00077</link> CXRemapping&#32;<link linkend="__a_r_c_migrate_8cpp_1adb472f66643a6ff2d1ae417d7e3d4272">clang_getRemappingsFromFileList</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**filePaths,
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;numFiles)&#32;{
+00079 <emphasis role="preprocessor">#if&#32;!CLANG_ENABLE_ARCMT</emphasis>
+00080 &#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;feature&#32;not&#32;enabled&#32;in&#32;this&#32;build\n&quot;</emphasis>;
+00081 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00082 <emphasis role="preprocessor">#else</emphasis>
+00083 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Logging&#32;=&#32;::getenv(<emphasis role="stringliteral">&quot;LIBCLANG_LOGGING&quot;</emphasis>);
+00084 
+00085 &#32;&#32;std::unique_ptr&lt;Remap&gt;&#32;remap(<emphasis role="keyword">new</emphasis>&#32;Remap());
+00086 
+00087 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(numFiles&#32;==&#32;0)&#32;{
+00088 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logging)
+00089 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang_getRemappingsFromFileList&#32;was&#32;called&#32;with&#32;&quot;</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;numFiles=0\n&quot;</emphasis>;
+00091 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;remap.release();
+00092 &#32;&#32;}
+00093 
+00094 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!filePaths)&#32;{
+00095 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logging)
+00096 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang_getRemappingsFromFileList&#32;was&#32;called&#32;with&#32;&quot;</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;NULL&#32;filePaths\n&quot;</emphasis>;
+00098 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00099 &#32;&#32;}
+00100 
+00101 &#32;&#32;TextDiagnosticBuffer&#32;diagBuffer;
+00102 &#32;&#32;SmallVector&lt;StringRef,&#32;32&gt;&#32;Files(filePaths,&#32;filePaths&#32;+&#32;numFiles);
+00103 
+00104 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;err&#32;=&#32;arcmt::getFileRemappingsFromFileList(remap-&gt;Vec,&#32;Files,
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;diagBuffer);
+00106 
+00107 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(err)&#32;{
+00108 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Logging)&#32;{
+00109 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error&#32;by&#32;clang_getRemappingsFromFileList\n&quot;</emphasis>;
+00110 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(TextDiagnosticBuffer::const_iterator
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;diagBuffer.err_begin(),&#32;E&#32;=&#32;diagBuffer.err_end();&#32;I&#32;!=&#32;E;&#32;++I)
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;I-&gt;second&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00113 &#32;&#32;&#32;&#32;}
+00114 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;remap.release();
+00115 &#32;&#32;}
+00116 
+00117 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;remap.release();
+00118 <emphasis role="preprocessor">#endif</emphasis>
+00119 }
+00120 
+<anchor xml:id="__a_r_c_migrate_8cpp_source_1l00121"/><link linkend="__a_r_c_migrate_8cpp_1ad07f3fae8b7bbaf4c308d437e2b02fea">00121</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__a_r_c_migrate_8cpp_1ad07f3fae8b7bbaf4c308d437e2b02fea">clang_remap_getNumFiles</link>(CXRemapping&#32;map)&#32;{
+00122 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>Remap&#32;*<emphasis role="keyword">&gt;</emphasis>(map)-&gt;Vec.size();
+00123 &#32;&#32;
+00124 }
+00125 
+<anchor xml:id="__a_r_c_migrate_8cpp_source_1l00126"/><link linkend="__a_r_c_migrate_8cpp_1ac6fdf3d7778a375c6f1701c9a773c38c">00126</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__a_r_c_migrate_8cpp_1ac6fdf3d7778a375c6f1701c9a773c38c">clang_remap_getFilenames</link>(CXRemapping&#32;map,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;index,
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;*original,&#32;CXString&#32;*transformed)&#32;{
+00128 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(original)
+00129 &#32;&#32;&#32;&#32;*original&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>Remap&#32;*<emphasis role="keyword">&gt;</emphasis>(map)-&gt;Vec[index].first);
+00131 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(transformed)
+00132 &#32;&#32;&#32;&#32;*transformed&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>Remap&#32;*<emphasis role="keyword">&gt;</emphasis>(map)-&gt;Vec[index].second);
+00134 }
+00135 
+<anchor xml:id="__a_r_c_migrate_8cpp_source_1l00136"/><link linkend="__a_r_c_migrate_8cpp_1a818cc8a2f62f779b54febe2e4185ac3d">00136</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__a_r_c_migrate_8cpp_1a818cc8a2f62f779b54febe2e4185ac3d">clang_remap_dispose</link>(CXRemapping&#32;map)&#32;{
+00137 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>Remap&#32;*<emphasis role="keyword">&gt;</emphasis>(map);
+00138 }
+</programlisting></section>

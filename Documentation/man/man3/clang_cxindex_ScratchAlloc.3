@@ -1,0 +1,120 @@
+.TH "clang::cxindex::ScratchAlloc" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxindex::ScratchAlloc
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXIndexDataConsumer\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBScratchAlloc\fP (\fBCXIndexDataConsumer\fP &indexCtx)"
+.br
+.ti -1c
+.RI "\fBScratchAlloc\fP (const \fBScratchAlloc\fP &SA)"
+.br
+.ti -1c
+.RI "\fB~ScratchAlloc\fP ()"
+.br
+.ti -1c
+.RI "const char * \fBtoCStr\fP (StringRef Str)"
+.br
+.ti -1c
+.RI "const char * \fBcopyCStr\fP (StringRef Str)"
+.br
+.ti -1c
+.RI "template<typename T > T * \fBallocate\fP ()"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 32 of file CXIndexDataConsumer\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxindex::ScratchAlloc::ScratchAlloc (\fBCXIndexDataConsumer\fP & indexCtx)\fC [inline]\fP, \fC [explicit]\fP"
+
+.PP
+Definition at line 481 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+481                                                              : IdxCtx(idxCtx) {
+482   ++IdxCtx\&.StrAdapterCount;
+483 }
+.fi
+.SS "clang::cxindex::ScratchAlloc::ScratchAlloc (const \fBScratchAlloc\fP & SA)\fC [inline]\fP"
+
+.PP
+Definition at line 484 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+484                                                         : IdxCtx(SA\&.IdxCtx) {
+485   ++IdxCtx\&.StrAdapterCount;
+486 }
+.fi
+.SS "clang::cxindex::ScratchAlloc::~ScratchAlloc ()\fC [inline]\fP"
+
+.PP
+Definition at line 488 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+488                                    {
+489   --IdxCtx\&.StrAdapterCount;
+490   if (IdxCtx\&.StrAdapterCount == 0)
+491     IdxCtx\&.StrScratch\&.Reset();
+492 }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "template<typename T > T * clang::cxindex::ScratchAlloc::allocate\fC [inline]\fP"
+
+.PP
+Definition at line 495 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+495                                  {
+496   return IdxCtx\&.StrScratch\&.Allocate<T>();
+497 }
+.fi
+.PP
+Referenced by clang::cxindex::AttrListInfo::create()\&.
+.SS "const char * ScratchAlloc::copyCStr (StringRef Str)"
+
+.PP
+Definition at line 404 of file CXIndexDataConsumer\&.cpp\&.
+.PP
+.nf
+404                                                 {
+405   char *buf = IdxCtx\&.StrScratch\&.Allocate<char>(Str\&.size() + 1);
+406   std::uninitialized_copy(Str\&.begin(), Str\&.end(), buf);
+407   buf[Str\&.size()] = '\0';
+408   return buf;
+409 }
+.fi
+.PP
+Referenced by toCStr()\&.
+.SS "const char * ScratchAlloc::toCStr (StringRef Str)"
+
+.PP
+Definition at line 396 of file CXIndexDataConsumer\&.cpp\&.
+.PP
+.nf
+396                                               {
+397   if (Str\&.empty())
+398     return "";
+399   if (Str\&.data()[Str\&.size()] == '\0')
+400     return Str\&.data();
+401   return copyCStr(Str);
+402 }
+.fi
+.PP
+References copyCStr()\&.
+.PP
+Referenced by clang::cxindex::CXIndexDataConsumer::ppIncludedFile()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

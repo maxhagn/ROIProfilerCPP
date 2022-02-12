@@ -1,0 +1,106 @@
+.TH "diagtool" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+diagtool
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBDiagnosticRecord\fP"
+.br
+.ti -1c
+.RI "struct \fBGroupRecord\fP"
+.br
+.ti -1c
+.RI "class \fBDiagTool\fP"
+.br
+.ti -1c
+.RI "class \fBDiagTools\fP"
+.br
+.ti -1c
+.RI "class \fBRegisterDiagTool\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "llvm::ArrayRef< \fBDiagnosticRecord\fP > \fBgetBuiltinDiagnosticsByName\fP ()"
+.br
+.RI "Get every diagnostic in the system, sorted by name\&. "
+.ti -1c
+.RI "const \fBDiagnosticRecord\fP & \fBgetDiagnosticForID\fP (short DiagID)"
+.br
+.RI "Get a diagnostic by its ID\&. "
+.ti -1c
+.RI "llvm::ArrayRef< \fBGroupRecord\fP > \fBgetDiagnosticGroups\fP ()"
+.br
+.RI "Get every diagnostic group in the system, sorted by name\&. "
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "llvm::ManagedStatic< \fBDiagTools\fP > \fBdiagTools\fP"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "llvm::ArrayRef< \fBDiagnosticRecord\fP > diagtool::getBuiltinDiagnosticsByName ()"
+
+.PP
+Get every diagnostic in the system, sorted by name\&. 
+.PP
+Definition at line 22 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+22                                                                      {
+23   return llvm::makeArrayRef(BuiltinDiagnosticsByName);
+24 }
+.fi
+.SS "const \fBDiagnosticRecord\fP & diagtool::getDiagnosticForID (short DiagID)"
+
+.PP
+Get a diagnostic by its ID\&. 
+.PP
+Definition at line 53 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+53                                                                  {
+54   DiagnosticRecord Key = {nullptr, DiagID, 0};
+55 
+56   const DiagnosticRecord *Result =
+57       llvm::lower_bound(BuiltinDiagnosticsByID, Key, orderByID);
+58   assert(Result && "diagnostic not found; table may be out of date");
+59   return *Result;
+60 }
+.fi
+.SS "llvm::ArrayRef< \fBGroupRecord\fP > diagtool::getDiagnosticGroups ()"
+
+.PP
+Get every diagnostic group in the system, sorted by name\&. 
+.PP
+Definition at line 104 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+104                                                         {
+105   return llvm::makeArrayRef(OptionTable);
+106 }
+.fi
+.PP
+Referenced by diagtool::GroupRecord::group_iterator< RecordType >::operator*(), TreePrinter::showAll(), and TreePrinter::showGroup()\&.
+.SH "Variable Documentation"
+.PP 
+.SS "llvm::ManagedStatic< \fBDiagTools\fP > diagtool::diagTools"
+
+.PP
+Definition at line 64 of file DiagTool\&.cpp\&.
+.PP
+Referenced by main(), and diagtool::RegisterDiagTool< DIAGTOOL >::RegisterDiagTool()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

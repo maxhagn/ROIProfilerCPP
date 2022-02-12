@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_check_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-check/ClangCheck.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-check/ClangCheck.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/AST/ASTConsumer.h&quot;
+#include &quot;clang/CodeGen/ObjectFilePCHContainerOperations.h&quot;
+#include &quot;clang/Driver/Options.h&quot;
+#include &quot;clang/Frontend/ASTConsumers.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Rewrite/Frontend/FixItRewriter.h&quot;
+#include &quot;clang/Rewrite/Frontend/FrontendActions.h&quot;
+#include &quot;clang/StaticAnalyzer/Frontend/FrontendActions.h&quot;
+#include &quot;clang/Tooling/CommonOptionsParser.h&quot;
+#include &quot;clang/Tooling/Syntax/BuildTree.h&quot;
+#include &quot;clang/Tooling/Syntax/Tokens.h&quot;
+#include &quot;clang/Tooling/Syntax/Tree.h&quot;
+#include &quot;clang/Tooling/Tooling.h&quot;
+#include &quot;llvm/ADT/STLExtras.h&quot;
+#include &quot;llvm/Option/OptTable.h&quot;
+#include &quot;llvm/Support/Path.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/TargetSelect.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_check_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_check_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangCheck.cpp</secondary></indexterm>
+<indexterm><primary>ClangCheck.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_check_8cpp_source_1l00188">188</link> of file <link linkend="__clang_check_8cpp_source">ClangCheck.cpp</link>.</para>
+<programlisting>00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00189 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+00190 
+00191 &#32;&#32;<emphasis role="comment">//&#32;Initialize&#32;targets&#32;for&#32;clang&#32;module&#32;support.</emphasis>
+00192 &#32;&#32;llvm::InitializeAllTargets();
+00193 &#32;&#32;llvm::InitializeAllTargetMCs();
+00194 &#32;&#32;llvm::InitializeAllAsmPrinters();
+00195 &#32;&#32;llvm::InitializeAllAsmParsers();
+00196 
+00197 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=
+00198 &#32;&#32;&#32;&#32;&#32;&#32;CommonOptionsParser::create(argc,&#32;argv,&#32;ClangCheckCategory);
+00199 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00200 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00201 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00202 &#32;&#32;}
+00203 &#32;&#32;CommonOptionsParser&#32;&amp;OptionsParser&#32;=&#32;ExpectedParser.get();
+00204 &#32;&#32;ClangTool&#32;Tool(OptionsParser.getCompilations(),
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OptionsParser.getSourcePathList());
+00206 
+00207 &#32;&#32;<emphasis role="comment">//&#32;Clear&#32;adjusters&#32;because&#32;-fsyntax-only&#32;is&#32;inserted&#32;by&#32;the&#32;default&#32;chain.</emphasis>
+00208 &#32;&#32;Tool.clearArgumentsAdjusters();
+00209 &#32;&#32;Tool.appendArgumentsAdjuster(getClangStripOutputAdjuster());
+00210 &#32;&#32;Tool.appendArgumentsAdjuster(getClangStripDependencyFileAdjuster());
+00211 
+00212 &#32;&#32;<emphasis role="comment">//&#32;Running&#32;the&#32;analyzer&#32;requires&#32;--analyze.&#32;Other&#32;modes&#32;can&#32;work&#32;with&#32;the</emphasis>
+00213 &#32;&#32;<emphasis role="comment">//&#32;-fsyntax-only&#32;option.</emphasis>
+00214 &#32;&#32;Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+00215 &#32;&#32;&#32;&#32;&#32;&#32;Analyze&#32;?&#32;<emphasis role="stringliteral">&quot;--analyze&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;-fsyntax-only&quot;</emphasis>,&#32;ArgumentInsertPosition::BEGIN));
+00216 
+00217 &#32;&#32;ClangCheckActionFactory&#32;CheckFactory;
+00218 &#32;&#32;std::unique_ptr&lt;FrontendActionFactory&gt;&#32;FrontendFactory;
+00219 
+00220 &#32;&#32;<emphasis role="comment">//&#32;Choose&#32;the&#32;correct&#32;factory&#32;based&#32;on&#32;the&#32;selected&#32;mode.</emphasis>
+00221 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Analyze)
+00222 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory&lt;clang::ento::AnalysisAction&gt;();
+00223 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Fixit)
+00224 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory&lt;ClangCheckFixItAction&gt;();
+00225 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SyntaxTreeDump&#32;||&#32;TokensDump)
+00226 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory&lt;DumpSyntaxTree&gt;();
+00227 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00228 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory(&amp;CheckFactory);
+00229 
+00230 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Tool.run(FrontendFactory.get());
+00231 }
+</programlisting></section>
+</section>
+</section>

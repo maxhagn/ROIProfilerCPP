@@ -1,0 +1,77 @@
+\hypertarget{classclang-format-sublime_1_1_clang_format_command}{}\doxysection{clang-\/format-\/sublime.Clang\+Format\+Command Class Reference}
+\label{classclang-format-sublime_1_1_clang_format_command}\index{clang-\/format-\/sublime.ClangFormatCommand@{clang-\/format-\/sublime.ClangFormatCommand}}
+Inheritance diagram for clang-\/format-\/sublime.Clang\+Format\+Command\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classclang-format-sublime_1_1_clang_format_command}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{classclang-format-sublime_1_1_clang_format_command_a3748e4bfa2b7dfb6d0216f85c2be64a5}{run}} (self, edit)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 29 of file clang-\/format-\/sublime.\+py.
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classclang-format-sublime_1_1_clang_format_command_a3748e4bfa2b7dfb6d0216f85c2be64a5}\label{classclang-format-sublime_1_1_clang_format_command_a3748e4bfa2b7dfb6d0216f85c2be64a5}} 
+\index{clang-\/format-\/sublime.ClangFormatCommand@{clang-\/format-\/sublime.ClangFormatCommand}!run@{run}}
+\index{run@{run}!clang-\/format-\/sublime.ClangFormatCommand@{clang-\/format-\/sublime.ClangFormatCommand}}
+\doxysubsubsection{\texorpdfstring{run()}{run()}}
+{\footnotesize\ttfamily def clang-\/format-\/sublime.\+Clang\+Format\+Command.\+run (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{edit }\end{DoxyParamCaption})}
+
+
+
+Definition at line 30 of file clang-\/format-\/sublime.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{30   \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1analyze_a505fccfeb836b113101687366a231f5f}{run}}(self, edit):}
+\DoxyCodeLine{31     encoding = self.view.encoding()}
+\DoxyCodeLine{32     \textcolor{keywordflow}{if} encoding == \textcolor{stringliteral}{'Undefined'}:}
+\DoxyCodeLine{33       encoding = \textcolor{stringliteral}{'utf-\/8'}}
+\DoxyCodeLine{34     regions = []}
+\DoxyCodeLine{35     command = [binary]}
+\DoxyCodeLine{36     \textcolor{keywordflow}{if} style:}
+\DoxyCodeLine{37       command.extend([\textcolor{stringliteral}{'-\/style'}, style])}
+\DoxyCodeLine{38     \textcolor{keywordflow}{for} region \textcolor{keywordflow}{in} self.view.sel():}
+\DoxyCodeLine{39       regions.append(region)}
+\DoxyCodeLine{40       region\_offset = min(region.a, region.b)}
+\DoxyCodeLine{41       region\_length = abs(region.b -\/ region.a)}
+\DoxyCodeLine{42       command.extend([\textcolor{stringliteral}{'-\/offset'}, str(region\_offset),}
+\DoxyCodeLine{43                       \textcolor{stringliteral}{'-\/length'}, str(region\_length),}
+\DoxyCodeLine{44                       \textcolor{stringliteral}{'-\/assume-\/filename'}, str(self.view.file\_name())])}
+\DoxyCodeLine{45     old\_viewport\_position = self.view.viewport\_position()}
+\DoxyCodeLine{46     buf = self.view.substr(sublime.Region(0, self.view.size()))}
+\DoxyCodeLine{47     p = subprocess.Popen(command, stdout=subprocess.PIPE,}
+\DoxyCodeLine{48                          stderr=subprocess.PIPE, stdin=subprocess.PIPE)}
+\DoxyCodeLine{49     output, error = p.communicate(buf.encode(encoding))}
+\DoxyCodeLine{50     \textcolor{keywordflow}{if} error:}
+\DoxyCodeLine{51       \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(error)}
+\DoxyCodeLine{52     self.view.replace(}
+\DoxyCodeLine{53         edit, sublime.Region(0, self.view.size()),}
+\DoxyCodeLine{54         output.decode(encoding))}
+\DoxyCodeLine{55     self.view.sel().clear()}
+\DoxyCodeLine{56     \textcolor{keywordflow}{for} region \textcolor{keywordflow}{in} regions:}
+\DoxyCodeLine{57       self.view.sel().add(region)}
+\DoxyCodeLine{58     \textcolor{comment}{\# FIXME: Without the 10ms delay, the viewport sometimes jumps.}}
+\DoxyCodeLine{59     sublime.set\_timeout(\textcolor{keyword}{lambda}: self.view.set\_viewport\_position(}
+\DoxyCodeLine{60       old\_viewport\_position, \textcolor{keyword}{False}), 10)}
+
+\end{DoxyCode}
+
+
+References print().
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/\mbox{\hyperlink{clang-format-sublime_8py}{clang-\/format-\/sublime.\+py}}\end{DoxyCompactItemize}

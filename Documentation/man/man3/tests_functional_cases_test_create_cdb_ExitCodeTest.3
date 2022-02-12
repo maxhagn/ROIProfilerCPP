@@ -1,0 +1,82 @@
+.TH "tests.functional.cases.test_create_cdb.ExitCodeTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_create_cdb.ExitCodeTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_successful_build\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_not_successful_build\fP (self)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun_intercept\fP (tmpdir, target)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 77 of file test_create_cdb\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept ( tmpdir,  target)\fC [static]\fP"
+
+.PP
+Definition at line 79 of file test_create_cdb\&.py\&.
+.PP
+.nf
+79     def run_intercept(tmpdir, target):
+80         result = os\&.path\&.join(tmpdir, 'cdb\&.json')
+81         make = make_args(tmpdir) + [target]
+82         return silent_call(
+83             ['intercept-build', '--cdb', result] + make)
+84 
+.fi
+.PP
+References tests\&.functional\&.cases\&.make_args(), and tests\&.functional\&.cases\&.silent_call()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_append_to_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_not_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_overwrite_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_all_in_one(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_parallel()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_not_successful_build ( self)"
+
+.PP
+Definition at line 90 of file test_create_cdb\&.py\&.
+.PP
+.nf
+90     def test_not_successful_build(self):
+91         with libear\&.TemporaryDirectory() as tmpdir:
+92             exitcode = self\&.run_intercept(tmpdir, 'build_broken')
+93             self\&.assertTrue(exitcode)
+94 
+95 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_successful_build ( self)"
+
+.PP
+Definition at line 85 of file test_create_cdb\&.py\&.
+.PP
+.nf
+85     def test_successful_build(self):
+86         with libear\&.TemporaryDirectory() as tmpdir:
+87             exitcode = self\&.run_intercept(tmpdir, 'build_clean')
+88             self\&.assertFalse(exitcode)
+89 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

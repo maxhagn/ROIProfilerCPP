@@ -1,0 +1,235 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_rename_8cpp_source" xml:lang="en-US">
+<title>ClangRename.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-rename/ClangRename.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===---&#32;tools/extra/clang-rename/ClangRename.cpp&#32;-&#32;Clang&#32;rename&#32;tool&#32;-----===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Diagnostic.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/DiagnosticOptions.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/FileManager.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/IdentifierTable.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LangOptions.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceManager.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/TokenKinds.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticPrinter.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/Rewrite/Core/Rewriter.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/CommonOptionsParser.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring/Rename/RenamingAction.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring/Rename/USRFindingAction.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/ReplacementsYaml.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Tooling.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/IntrusiveRefCntPtr.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/YAMLTraits.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00036 <emphasis role="preprocessor">#include&#32;&lt;system_error&gt;</emphasis>
+00037 
+00038 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00039 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00040 
+<anchor xml:id="__clang_rename_8cpp_source_1l00042"/><link linkend="_struct_rename_all_info">00042</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_struct_rename_all_info">RenameAllInfo</link>&#32;{
+<anchor xml:id="__clang_rename_8cpp_source_1l00043"/><link linkend="_struct_rename_all_info_1afef156279711c69c770a9a9dd4daa84a">00043</link> &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset&#32;=&#32;0;
+<anchor xml:id="__clang_rename_8cpp_source_1l00044"/><link linkend="_struct_rename_all_info_1ac80bbb666a758dc67ddc1d94dd399570">00044</link> &#32;&#32;std::string&#32;<link linkend="_struct_rename_all_info_1ac80bbb666a758dc67ddc1d94dd399570">QualifiedName</link>;
+<anchor xml:id="__clang_rename_8cpp_source_1l00045"/><link linkend="_struct_rename_all_info_1ab7ad673f91401e326ba87fd7aca1eda0">00045</link> &#32;&#32;std::string&#32;<link linkend="_struct_rename_all_info_1ab7ad673f91401e326ba87fd7aca1eda0">NewName</link>;
+00046 };
+00047 
+00048 LLVM_YAML_IS_SEQUENCE_VECTOR(<link linkend="_struct_rename_all_info">RenameAllInfo</link>)
+00049 
+<anchor xml:id="__clang_rename_8cpp_source_1l00050"/><link linkend="_namespacellvm">00050</link> namespace&#32;<link linkend="_namespacellvm">llvm</link>&#32;{
+<anchor xml:id="__clang_rename_8cpp_source_1l00051"/><link linkend="_namespacellvm_1_1yaml">00051</link> <emphasis role="keyword">namespace&#32;</emphasis>yaml&#32;{
+00052 
+<anchor xml:id="__clang_rename_8cpp_source_1l00055"/><link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_rename_all_info_01_4">00055</link> <emphasis role="keyword">template</emphasis>&#32;&lt;&gt;&#32;<emphasis role="keyword">struct&#32;</emphasis>MappingTraits&lt;<link linkend="_struct_rename_all_info">RenameAllInfo</link>&gt;&#32;{
+<anchor xml:id="__clang_rename_8cpp_source_1l00056"/><link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_rename_all_info_01_4_1a6ceb8ce11faee7c5a8346c8062deb6bb">00056</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_rename_all_info_01_4_1a6ceb8ce11faee7c5a8346c8062deb6bb">mapping</link>(IO&#32;&amp;IO,&#32;<link linkend="_struct_rename_all_info">RenameAllInfo</link>&#32;&amp;Info)&#32;{
+00057 &#32;&#32;&#32;&#32;IO.mapOptional(<emphasis role="stringliteral">&quot;Offset&quot;</emphasis>,&#32;Info.<link linkend="_struct_rename_all_info_1afef156279711c69c770a9a9dd4daa84a">Offset</link>);
+00058 &#32;&#32;&#32;&#32;IO.mapOptional(<emphasis role="stringliteral">&quot;QualifiedName&quot;</emphasis>,&#32;Info.<link linkend="_struct_rename_all_info_1ac80bbb666a758dc67ddc1d94dd399570">QualifiedName</link>);
+00059 &#32;&#32;&#32;&#32;IO.mapRequired(<emphasis role="stringliteral">&quot;NewName&quot;</emphasis>,&#32;Info.<link linkend="_struct_rename_all_info_1ab7ad673f91401e326ba87fd7aca1eda0">NewName</link>);
+00060 &#32;&#32;}
+00061 };
+00062 
+00063 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;yaml</emphasis>
+00064 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;llvm</emphasis>
+00065 
+00066 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;ClangRenameOptions(<emphasis role="stringliteral">&quot;clang-rename&#32;common&#32;options&quot;</emphasis>);
+00067 
+00068 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;unsigned&gt;&#32;SymbolOffsets(
+00069 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;offset&quot;</emphasis>,
+00070 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Locates&#32;the&#32;symbol&#32;by&#32;offset&#32;as&#32;opposed&#32;to&#32;&lt;line&gt;:&lt;column&gt;.&quot;</emphasis>),
+00071 &#32;&#32;&#32;&#32;cl::ZeroOrMore,&#32;cl::cat(ClangRenameOptions));
+00072 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Inplace(<emphasis role="stringliteral">&quot;i&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Overwrite&#32;edited&#32;&lt;file&gt;s.&quot;</emphasis>),
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangRenameOptions));
+00074 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;
+00075 &#32;&#32;&#32;&#32;QualifiedNames(<emphasis role="stringliteral">&quot;qualified-name&quot;</emphasis>,
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;The&#32;fully&#32;qualified&#32;name&#32;of&#32;the&#32;symbol.&quot;</emphasis>),
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::ZeroOrMore,&#32;cl::cat(ClangRenameOptions));
+00078 
+00079 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;
+00080 &#32;&#32;&#32;&#32;NewNames(<emphasis role="stringliteral">&quot;new-name&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;The&#32;new&#32;name&#32;to&#32;change&#32;the&#32;symbol&#32;to.&quot;</emphasis>),
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::ZeroOrMore,&#32;cl::cat(ClangRenameOptions));
+00082 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;PrintName(
+00083 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;pn&quot;</emphasis>,
+00084 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;the&#32;found&#32;symbol&apos;s&#32;name&#32;prior&#32;to&#32;renaming&#32;to&#32;stderr.&quot;</emphasis>),
+00085 &#32;&#32;&#32;&#32;cl::cat(ClangRenameOptions));
+00086 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;PrintLocations(
+00087 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;pl&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;the&#32;locations&#32;affected&#32;by&#32;renaming&#32;to&#32;stderr.&quot;</emphasis>),
+00088 &#32;&#32;&#32;&#32;cl::cat(ClangRenameOptions));
+00089 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00090 &#32;&#32;&#32;&#32;ExportFixes(<emphasis role="stringliteral">&quot;export-fixes&quot;</emphasis>,
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;YAML&#32;file&#32;to&#32;store&#32;suggested&#32;fixes&#32;in.&quot;</emphasis>),
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::value_desc(<emphasis role="stringliteral">&quot;filename&quot;</emphasis>),&#32;cl::cat(ClangRenameOptions));
+00093 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00094 &#32;&#32;&#32;&#32;Input(<emphasis role="stringliteral">&quot;input&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;YAML&#32;file&#32;to&#32;load&#32;oldname-newname&#32;pairs&#32;from.&quot;</emphasis>),
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::Optional,&#32;cl::cat(ClangRenameOptions));
+00096 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Force(<emphasis role="stringliteral">&quot;force&quot;</emphasis>,
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Ignore&#32;nonexistent&#32;qualified&#32;names.&quot;</emphasis>),
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangRenameOptions));
+00099 
+<anchor xml:id="__clang_rename_8cpp_source_1l00100"/><link linkend="__clang_rename_8cpp_1a217dbf8b442f20279ea00b898af96f52">00100</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_rename_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00101 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=
+00102 &#32;&#32;&#32;&#32;&#32;&#32;tooling::CommonOptionsParser::create(argc,&#32;argv,&#32;ClangRenameOptions);
+00103 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00104 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00105 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00106 &#32;&#32;}
+00107 &#32;&#32;tooling::CommonOptionsParser&#32;&amp;OP&#32;=&#32;ExpectedParser.get();
+00108 
+00109 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Input.empty())&#32;{
+00110 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Populate&#32;QualifiedNames&#32;and&#32;NewNames&#32;from&#32;a&#32;YAML&#32;file.</emphasis>
+00111 &#32;&#32;&#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;Buffer&#32;=
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFile(Input);
+00113 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Buffer)&#32;{
+00114 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang-rename:&#32;failed&#32;to&#32;read&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Input&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;Buffer.getError().message()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00116 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00117 &#32;&#32;&#32;&#32;}
+00118 
+00119 &#32;&#32;&#32;&#32;std::vector&lt;RenameAllInfo&gt;&#32;Infos;
+00120 &#32;&#32;&#32;&#32;llvm::yaml::Input&#32;YAML(Buffer.get()-&gt;getBuffer());
+00121 &#32;&#32;&#32;&#32;YAML&#32;&gt;&gt;&#32;Infos;
+00122 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Info&#32;:&#32;Infos)&#32;{
+00123 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Info.QualifiedName.empty())
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;QualifiedNames.push_back(Info.QualifiedName);
+00125 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SymbolOffsets.push_back(Info.Offset);
+00127 &#32;&#32;&#32;&#32;&#32;&#32;NewNames.push_back(Info.NewName);
+00128 &#32;&#32;&#32;&#32;}
+00129 &#32;&#32;}
+00130 
+00131 &#32;&#32;<emphasis role="comment">//&#32;Check&#32;the&#32;arguments&#32;for&#32;correctness.</emphasis>
+00132 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NewNames.empty())&#32;{
+00133 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang-rename:&#32;-new-name&#32;must&#32;be&#32;specified.\n\n&quot;</emphasis>;
+00134 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00135 &#32;&#32;}
+00136 
+00137 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SymbolOffsets.empty()&#32;==&#32;QualifiedNames.empty())&#32;{
+00138 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang-rename:&#32;-offset&#32;and&#32;-qualified-name&#32;can&apos;t&#32;be&#32;present&#32;at&#32;&quot;</emphasis>
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;the&#32;same&#32;time.\n&quot;</emphasis>;
+00140 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00141 &#32;&#32;}
+00142 
+00143 &#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;NewNames&#32;is&#32;a&#32;valid&#32;identifier&#32;in&#32;C++17.</emphasis>
+00144 &#32;&#32;LangOptions&#32;Options;
+00145 &#32;&#32;Options.CPlusPlus&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00146 &#32;&#32;Options.CPlusPlus17&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00147 &#32;&#32;IdentifierTable&#32;Table(Options);
+00148 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;NewName&#32;:&#32;NewNames)&#32;{
+00149 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;NewNameTokKind&#32;=&#32;Table.get(NewName).getTokenID();
+00150 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!tok::isAnyIdentifier(NewNameTokKind))&#32;{
+00151 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;ERROR:&#32;new&#32;name&#32;is&#32;not&#32;a&#32;valid&#32;identifier&#32;in&#32;C++17.\n\n&quot;</emphasis>;
+00152 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00153 &#32;&#32;&#32;&#32;}
+00154 &#32;&#32;}
+00155 
+00156 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SymbolOffsets.size()&#32;+&#32;QualifiedNames.size()&#32;!=&#32;NewNames.size())&#32;{
+00157 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang-rename:&#32;number&#32;of&#32;symbol&#32;offsets(&quot;</emphasis>&#32;&lt;&lt;&#32;SymbolOffsets.size()
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;)&#32;+&#32;number&#32;of&#32;qualified&#32;names&#32;(&quot;</emphasis>&#32;&lt;&lt;&#32;QualifiedNames.size()
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;)&#32;must&#32;be&#32;equal&#32;to&#32;number&#32;of&#32;new&#32;names(&quot;</emphasis>&#32;&lt;&lt;&#32;NewNames.size()
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;).\n\n&quot;</emphasis>;
+00161 &#32;&#32;&#32;&#32;cl::PrintHelpMessage();
+00162 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00163 &#32;&#32;}
+00164 
+00165 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Files&#32;=&#32;OP.getSourcePathList();
+00166 &#32;&#32;tooling::RefactoringTool&#32;Tool(OP.getCompilations(),&#32;Files);
+00167 &#32;&#32;tooling::USRFindingAction&#32;FindingAction(SymbolOffsets,&#32;QualifiedNames,&#32;Force);
+00168 &#32;&#32;Tool.run(tooling::newFrontendActionFactory(&amp;FindingAction).<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>());
+00169 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::vector&lt;std::vector&lt;std::string&gt;&gt;&#32;&amp;USRList&#32;=
+00170 &#32;&#32;&#32;&#32;&#32;&#32;FindingAction.getUSRList();
+00171 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::vector&lt;std::string&gt;&#32;&amp;PrevNames&#32;=&#32;FindingAction.getUSRSpellings();
+00172 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(PrintName)&#32;{
+00173 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;PrevName&#32;:&#32;PrevNames)&#32;{
+00174 &#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;clang-rename&#32;found&#32;name:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;PrevName&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00175 &#32;&#32;&#32;&#32;}
+00176 &#32;&#32;}
+00177 
+00178 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FindingAction.errorOccurred())&#32;{
+00179 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Diagnostics&#32;are&#32;already&#32;issued&#32;at&#32;this&#32;point.</emphasis>
+00180 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00181 &#32;&#32;}
+00182 
+00183 &#32;&#32;<emphasis role="comment">//&#32;Perform&#32;the&#32;renaming.</emphasis>
+00184 &#32;&#32;tooling::RenamingAction&#32;RenameAction(NewNames,&#32;PrevNames,&#32;USRList,
+00185 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Tool.getReplacements(),&#32;PrintLocations);
+00186 &#32;&#32;std::unique_ptr&lt;tooling::FrontendActionFactory&gt;&#32;Factory&#32;=
+00187 &#32;&#32;&#32;&#32;&#32;&#32;tooling::newFrontendActionFactory(&amp;RenameAction);
+00188 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;ExitCode;
+00189 
+00190 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Inplace)&#32;{
+00191 &#32;&#32;&#32;&#32;ExitCode&#32;=&#32;Tool.runAndSave(Factory.get());
+00192 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00193 &#32;&#32;&#32;&#32;ExitCode&#32;=&#32;Tool.run(Factory.get());
+00194 
+00195 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExportFixes.empty())&#32;{
+00196 &#32;&#32;&#32;&#32;&#32;&#32;std::error_code&#32;EC;
+00197 &#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_fd_ostream&#32;OS(ExportFixes,&#32;EC,&#32;llvm::sys::fs::OF_None);
+00198 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error&#32;opening&#32;output&#32;file:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;EC.message()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00201 &#32;&#32;&#32;&#32;&#32;&#32;}
+00202 
+00203 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Export&#32;replacements.</emphasis>
+00204 &#32;&#32;&#32;&#32;&#32;&#32;tooling::TranslationUnitReplacements&#32;TUR;
+00205 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;FileToReplacements&#32;=&#32;Tool.getReplacements();
+00206 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Entry&#32;:&#32;FileToReplacements)
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TUR.Replacements.insert(TUR.Replacements.end(),&#32;Entry.second.begin(),
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Entry.second.end());
+00209 
+00210 &#32;&#32;&#32;&#32;&#32;&#32;yaml::Output&#32;YAML(OS);
+00211 &#32;&#32;&#32;&#32;&#32;&#32;YAML&#32;&lt;&lt;&#32;TUR;
+00212 &#32;&#32;&#32;&#32;&#32;&#32;OS.close();
+00213 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00214 &#32;&#32;&#32;&#32;}
+00215 
+00216 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Write&#32;every&#32;file&#32;to&#32;stdout.&#32;Right&#32;now&#32;we&#32;just&#32;barf&#32;the&#32;files&#32;without&#32;any</emphasis>
+00217 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;indication&#32;of&#32;which&#32;files&#32;start&#32;where,&#32;other&#32;than&#32;that&#32;we&#32;print&#32;the&#32;files</emphasis>
+00218 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;in&#32;the&#32;same&#32;order&#32;we&#32;see&#32;them.</emphasis>
+00219 &#32;&#32;&#32;&#32;LangOptions&#32;DefaultLangOptions;
+00220 &#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions();
+00221 &#32;&#32;&#32;&#32;TextDiagnosticPrinter&#32;DiagnosticPrinter(errs(),&#32;&amp;*DiagOpts);
+00222 &#32;&#32;&#32;&#32;DiagnosticsEngine&#32;Diagnostics(
+00223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs()),&#32;&amp;*DiagOpts,
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;DiagnosticPrinter,&#32;<emphasis role="keyword">false</emphasis>);
+00225 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;FileMgr&#32;=&#32;Tool.getFiles();
+00226 &#32;&#32;&#32;&#32;SourceManager&#32;Sources(Diagnostics,&#32;FileMgr);
+00227 &#32;&#32;&#32;&#32;Rewriter&#32;Rewrite(Sources,&#32;DefaultLangOptions);
+00228 
+00229 &#32;&#32;&#32;&#32;Tool.applyAllReplacements(Rewrite);
+00230 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;File&#32;:&#32;Files)&#32;{
+00231 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Entry&#32;=&#32;FileMgr.getFile(File);
+00232 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;ID&#32;=&#32;Sources.getOrCreateFileID(*Entry,&#32;SrcMgr::C_User);
+00233 &#32;&#32;&#32;&#32;&#32;&#32;Rewrite.getEditBuffer(ID).write(outs());
+00234 &#32;&#32;&#32;&#32;}
+00235 &#32;&#32;}
+00236 
+00237 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ExitCode;
+00238 }
+</programlisting></section>

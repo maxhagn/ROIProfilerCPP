@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespaceclang_1_1cxloc" xml:lang="en-US">
+<title>clang::cxloc Namespace Reference</title>
+<indexterm><primary>clang::cxloc</primary></indexterm>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>CXSourceRange <link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">translateSourceRange</link> (const SourceManager &amp;SM, const LangOptions &amp;LangOpts, const CharSourceRange &amp;R)</para>
+</listitem>
+            <listitem><para>CharSourceRange <link linkend="_namespaceclang_1_1cxloc_1aa8c3cee435c88a9e8a61f79cc8a0c0da">translateCXRangeToCharRange</link> (CXSourceRange R)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespaceclang_1_1cxloc_1aa8c3cee435c88a9e8a61f79cc8a0c0da"/>    <section>
+    <title>translateCXRangeToCharRange()</title>
+<indexterm><primary>translateCXRangeToCharRange</primary><secondary>clang::cxloc</secondary></indexterm>
+<indexterm><primary>clang::cxloc</primary><secondary>translateCXRangeToCharRange</secondary></indexterm>
+<para><computeroutput>CharSourceRange clang::cxloc::translateCXRangeToCharRange (CXSourceRange R)</computeroutput></para>
+<para>Translates CXSourceRange to CharSourceRange. The semantics of <computeroutput>R</computeroutput> are: R.begin_int_data is first character of the range. R.end_int_data is one character past the end of the range. </para>
+<para>
+Definition at line <link linkend="__c_index_8cpp_source_1l00167">167</link> of file <link linkend="__c_index_8cpp_source">CIndex.cpp</link>.</para>
+<programlisting>00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00168 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CharSourceRange::getCharRange(
+00169 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromRawEncoding(R.begin_int_data),
+00170 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromRawEncoding(R.end_int_data));
+00171 }
+</programlisting><para>
+Referenced by <link linkend="__rewrite_8cpp_source_1l00042">clang_CXRewriter_removeText()</link>, and <link linkend="__rewrite_8cpp_source_1l00034">clang_CXRewriter_replaceText()</link>.</para>
+    </section><anchor xml:id="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035"/>    <section>
+    <title>translateSourceRange()</title>
+<indexterm><primary>translateSourceRange</primary><secondary>clang::cxloc</secondary></indexterm>
+<indexterm><primary>clang::cxloc</primary><secondary>translateSourceRange</secondary></indexterm>
+<para><computeroutput>CXSourceRange clang::cxloc::translateSourceRange (const SourceManager &amp; SM, const LangOptions &amp; LangOpts, const CharSourceRange &amp; R)</computeroutput></para>
+<para>Translate a Clang source range into a CIndex source range.</para>
+
+<para>Clang internally represents ranges where the end location points to the start of the token at the end. However, for external clients it is more useful to have a CXSourceRange be a proper half-open interval. This routine does the appropriate translation. </para>
+<para>
+Definition at line <link linkend="__c_index_8cpp_source_1l00143">143</link> of file <link linkend="__c_index_8cpp_source">CIndex.cpp</link>.</para>
+<programlisting>00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00146 &#32;&#32;<emphasis role="comment">//&#32;We&#32;want&#32;the&#32;last&#32;character&#32;in&#32;this&#32;location,&#32;so&#32;we&#32;will&#32;adjust&#32;the</emphasis>
+00147 &#32;&#32;<emphasis role="comment">//&#32;location&#32;accordingly.</emphasis>
+00148 &#32;&#32;SourceLocation&#32;EndLoc&#32;=&#32;R.getEnd();
+00149 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IsTokenRange&#32;=&#32;R.isTokenRange();
+00150 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EndLoc.isValid()&#32;&amp;&amp;&#32;EndLoc.isMacroID()&#32;&amp;&amp;
+00151 &#32;&#32;&#32;&#32;&#32;&#32;!SM.isMacroArgExpansion(EndLoc))&#32;{
+00152 &#32;&#32;&#32;&#32;CharSourceRange&#32;Expansion&#32;=&#32;SM.getExpansionRange(EndLoc);
+00153 &#32;&#32;&#32;&#32;EndLoc&#32;=&#32;Expansion.getEnd();
+00154 &#32;&#32;&#32;&#32;IsTokenRange&#32;=&#32;Expansion.isTokenRange();
+00155 &#32;&#32;}
+00156 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IsTokenRange&#32;&amp;&amp;&#32;EndLoc.isValid())&#32;{
+00157 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Length&#32;=
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Lexer::MeasureTokenLength(SM.getSpellingLoc(EndLoc),&#32;SM,&#32;LangOpts);
+00159 &#32;&#32;&#32;&#32;EndLoc&#32;=&#32;EndLoc.getLocWithOffset(Length);
+00160 &#32;&#32;}
+00161 
+00162 &#32;&#32;CXSourceRange&#32;Result&#32;=&#32;{
+00163 &#32;&#32;&#32;&#32;&#32;&#32;{&amp;SM,&#32;&amp;LangOpts},&#32;R.getBegin().getRawEncoding(),&#32;EndLoc.getRawEncoding()};
+00164 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00165 }
+</programlisting><para>
+Referenced by <link linkend="__c_index_8cpp_source_1l08393">clang_Cursor_getCommentRange()</link>, <link linkend="__c_index_8cpp_source_1l04795">clang_Cursor_getSpellingNameRange()</link>, <link linkend="__c_index_code_completion_8cpp_source_1l00322">clang_getCompletionFixIt()</link>, <link linkend="__c_index_8cpp_source_1l06732">clang_getCursorReferenceNameRange()</link>, <link linkend="__c_x_stored_diagnostic_8cpp_source_1l00099">clang::CXStoredDiagnostic::getFixIt()</link>, and <link linkend="__c_x_stored_diagnostic_8cpp_source_1l00086">clang::CXStoredDiagnostic::getRange()</link>.</para>
+</section>
+</section>
+</section>

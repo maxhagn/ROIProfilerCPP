@@ -1,0 +1,557 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_driver_8cpp_source" xml:lang="en-US">
+<title>driver.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/driver/driver.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;driver.cpp&#32;-&#32;Clang&#32;GCC-Compatible&#32;Driver&#32;--------------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;is&#32;the&#32;entry&#32;point&#32;to&#32;the&#32;clang&#32;driver;&#32;it&#32;is&#32;a&#32;thin&#32;wrapper</emphasis>
+00010 <emphasis role="comment">//&#32;for&#32;functionality&#32;in&#32;the&#32;Driver&#32;clang&#32;library.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Driver.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/DiagnosticOptions.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Stack.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Config/config.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Compilation.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/DriverDiagnostic.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Options.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/ToolChain.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ChainedDiagnosticConsumer.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInvocation.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/SerializedDiagnosticPrinter.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticPrinter.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/Utils.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/ArrayRef.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallVector.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/Option/ArgList.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/Option/OptTable.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Option/Option.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/BuryPointer.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CrashRecoveryContext.h&quot;</emphasis>
+00036 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00037 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00038 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Host.h&quot;</emphasis>
+00039 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/InitLLVM.h&quot;</emphasis>
+00040 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Path.h&quot;</emphasis>
+00041 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/PrettyStackTrace.h&quot;</emphasis>
+00042 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Process.h&quot;</emphasis>
+00043 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Program.h&quot;</emphasis>
+00044 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Regex.h&quot;</emphasis>
+00045 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00046 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/StringSaver.h&quot;</emphasis>
+00047 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/TargetSelect.h&quot;</emphasis>
+00048 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Timer.h&quot;</emphasis>
+00049 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00050 <emphasis role="preprocessor">#include&#32;&lt;memory&gt;</emphasis>
+00051 <emphasis role="preprocessor">#include&#32;&lt;set&gt;</emphasis>
+00052 <emphasis role="preprocessor">#include&#32;&lt;system_error&gt;</emphasis>
+00053 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00054 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::driver;
+00055 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>llvm::opt;
+00056 
+<anchor xml:id="_driver_8cpp_source_1l00057"/><link linkend="_cc1gen__reproducer__main_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">00057</link> std::string&#32;<link linkend="_driver_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CanonicalPrefixes)&#32;{
+00058 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CanonicalPrefixes)&#32;{
+00059 &#32;&#32;&#32;&#32;SmallString&lt;128&gt;&#32;ExecutablePath(Argv0);
+00060 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Do&#32;a&#32;PATH&#32;lookup&#32;if&#32;Argv0&#32;isn&apos;t&#32;a&#32;valid&#32;path.</emphasis>
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!llvm::sys::fs::exists(ExecutablePath))
+00062 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::ErrorOr&lt;std::string&gt;&#32;P&#32;=
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::findProgramByName(ExecutablePath))
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ExecutablePath&#32;=&#32;*P;
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::string(ExecutablePath.str());
+00066 &#32;&#32;}
+00067 
+00068 &#32;&#32;<emphasis role="comment">//&#32;This&#32;just&#32;needs&#32;to&#32;be&#32;some&#32;symbol&#32;in&#32;the&#32;binary;&#32;C++&#32;doesn&apos;t</emphasis>
+00069 &#32;&#32;<emphasis role="comment">//&#32;allow&#32;taking&#32;the&#32;address&#32;of&#32;::main&#32;however.</emphasis>
+00070 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*P&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_driver_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>;
+00071 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::fs::getMainExecutable(Argv0,&#32;P);
+00072 }
+00073 
+00074 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*GetStableCStr(std::set&lt;std::string&gt;&#32;&amp;SavedStrings,
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;S)&#32;{
+00076 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SavedStrings.insert(std::string(S)).first-&gt;c_str();
+00077 }
+00078 
+00106 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;ApplyOneQAOverride(raw_ostream&#32;&amp;OS,
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;const&#32;char*&gt;&#32;&amp;Args,
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;Edit,
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::set&lt;std::string&gt;&#32;&amp;SavedStrings)&#32;{
+00110 &#32;&#32;<emphasis role="comment">//&#32;This&#32;does&#32;not&#32;need&#32;to&#32;be&#32;efficient.</emphasis>
+00111 
+00112 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;^&apos;</emphasis>)&#32;{
+00113 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Str&#32;=
+00114 &#32;&#32;&#32;&#32;&#32;&#32;GetStableCStr(SavedStrings,&#32;Edit.substr(1));
+00115 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Adding&#32;argument&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Str&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;at&#32;beginning\n&quot;</emphasis>;
+00116 &#32;&#32;&#32;&#32;Args.insert(Args.begin()&#32;+&#32;1,&#32;Str);
+00117 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;+&apos;</emphasis>)&#32;{
+00118 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Str&#32;=
+00119 &#32;&#32;&#32;&#32;&#32;&#32;GetStableCStr(SavedStrings,&#32;Edit.substr(1));
+00120 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Adding&#32;argument&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Str&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;at&#32;end\n&quot;</emphasis>;
+00121 &#32;&#32;&#32;&#32;Args.push_back(Str);
+00122 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;s&apos;</emphasis>&#32;&amp;&amp;&#32;Edit[1]&#32;==&#32;<emphasis role="charliteral">&apos;/&apos;</emphasis>&#32;&amp;&amp;&#32;Edit.endswith(<emphasis role="stringliteral">&quot;/&quot;</emphasis>)&#32;&amp;&amp;
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Edit.slice(2,&#32;Edit.size()-1).find(<emphasis role="charliteral">&apos;/&apos;</emphasis>)&#32;!=&#32;StringRef::npos)&#32;{
+00124 &#32;&#32;&#32;&#32;StringRef&#32;MatchPattern&#32;=&#32;Edit.substr(2).split(<emphasis role="charliteral">&apos;/&apos;</emphasis>).first;
+00125 &#32;&#32;&#32;&#32;StringRef&#32;ReplPattern&#32;=&#32;Edit.substr(2).split(<emphasis role="charliteral">&apos;/&apos;</emphasis>).second;
+00126 &#32;&#32;&#32;&#32;ReplPattern&#32;=&#32;ReplPattern.slice(0,&#32;ReplPattern.size()-1);
+00127 
+00128 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;1,&#32;e&#32;=&#32;Args.size();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00129 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Ignore&#32;end-of-line&#32;response&#32;file&#32;markers</emphasis>
+00130 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Args[i]&#32;==&#32;<emphasis role="keyword">nullptr</emphasis>)
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00132 &#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;Repl&#32;=&#32;llvm::Regex(MatchPattern).sub(ReplPattern,&#32;Args[i]);
+00133 
+00134 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Repl&#32;!=&#32;Args[i])&#32;{
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Replacing&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[i]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;with&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Repl&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;\n&quot;</emphasis>;
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Args[i]&#32;=&#32;GetStableCStr(SavedStrings,&#32;Repl);
+00137 &#32;&#32;&#32;&#32;&#32;&#32;}
+00138 &#32;&#32;&#32;&#32;}
+00139 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;x&apos;</emphasis>&#32;||&#32;Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;X&apos;</emphasis>)&#32;{
+00140 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Option&#32;=&#32;Edit.substr(1);
+00141 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;1;&#32;i&#32;&lt;&#32;Args.size();)&#32;{
+00142 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Option&#32;==&#32;Args[i])&#32;{
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Deleting&#32;argument&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[i]&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Args.erase(Args.begin()&#32;+&#32;i);
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;X&apos;</emphasis>)&#32;{
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;Args.size())&#32;{
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Deleting&#32;argument&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[i]&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Args.erase(Args.begin()&#32;+&#32;i);
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Invalid&#32;X&#32;edit,&#32;end&#32;of&#32;command&#32;line!\n&quot;</emphasis>;
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00152 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;++i;
+00154 &#32;&#32;&#32;&#32;}
+00155 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Edit[0]&#32;==&#32;<emphasis role="charliteral">&apos;O&apos;</emphasis>)&#32;{
+00156 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;1;&#32;i&#32;&lt;&#32;Args.size();)&#32;{
+00157 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*A&#32;=&#32;Args[i];
+00158 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Ignore&#32;end-of-line&#32;response&#32;file&#32;markers</emphasis>
+00159 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(A&#32;==&#32;<emphasis role="keyword">nullptr</emphasis>)
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00161 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(A[0]&#32;==&#32;<emphasis role="charliteral">&apos;-&apos;</emphasis>&#32;&amp;&amp;&#32;A[1]&#32;==&#32;<emphasis role="charliteral">&apos;O&apos;</emphasis>&#32;&amp;&amp;
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(A[2]&#32;==&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>&#32;||
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(A[3]&#32;==&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>&#32;&amp;&amp;&#32;(A[2]&#32;==&#32;<emphasis role="charliteral">&apos;s&apos;</emphasis>&#32;||&#32;A[2]&#32;==&#32;<emphasis role="charliteral">&apos;z&apos;</emphasis>&#32;||
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(<emphasis role="charliteral">&apos;0&apos;</emphasis>&#32;&lt;=&#32;A[2]&#32;&amp;&amp;&#32;A[2]&#32;&lt;=&#32;<emphasis role="charliteral">&apos;9&apos;</emphasis>)))))&#32;{
+00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Deleting&#32;argument&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[i]&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Args.erase(Args.begin()&#32;+&#32;i);
+00167 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;++i;
+00169 &#32;&#32;&#32;&#32;}
+00170 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Adding&#32;argument&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Edit&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;at&#32;end\n&quot;</emphasis>;
+00171 &#32;&#32;&#32;&#32;Args.push_back(GetStableCStr(SavedStrings,&#32;<emphasis role="charliteral">&apos;-&apos;</emphasis>&#32;+&#32;Edit.str()));
+00172 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00173 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;Unrecognized&#32;edit:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Edit&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00174 &#32;&#32;}
+00175 }
+00176 
+00179 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;ApplyQAOverride(SmallVectorImpl&lt;const&#32;char*&gt;&#32;&amp;Args,
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*OverrideStr,
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::set&lt;std::string&gt;&#32;&amp;SavedStrings)&#32;{
+00182 &#32;&#32;raw_ostream&#32;*OS&#32;=&#32;&amp;llvm::errs();
+00183 
+00184 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OverrideStr[0]&#32;==&#32;<emphasis role="charliteral">&apos;#&apos;</emphasis>)&#32;{
+00185 &#32;&#32;&#32;&#32;++OverrideStr;
+00186 &#32;&#32;&#32;&#32;OS&#32;=&#32;&amp;llvm::nulls();
+00187 &#32;&#32;}
+00188 
+00189 &#32;&#32;*OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;###&#32;CCC_OVERRIDE_OPTIONS:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;OverrideStr&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00190 
+00191 &#32;&#32;<emphasis role="comment">//&#32;This&#32;does&#32;not&#32;need&#32;to&#32;be&#32;efficient.</emphasis>
+00192 
+00193 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*S&#32;=&#32;OverrideStr;
+00194 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(*S)&#32;{
+00195 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*End&#32;=&#32;::strchr(S,&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>);
+00196 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!End)
+00197 &#32;&#32;&#32;&#32;&#32;&#32;End&#32;=&#32;S&#32;+&#32;strlen(S);
+00198 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(End&#32;!=&#32;S)
+00199 &#32;&#32;&#32;&#32;&#32;&#32;ApplyOneQAOverride(*OS,&#32;Args,&#32;std::string(S,&#32;End),&#32;SavedStrings);
+00200 &#32;&#32;&#32;&#32;S&#32;=&#32;End;
+00201 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(*S&#32;!=&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>)
+00202 &#32;&#32;&#32;&#32;&#32;&#32;++S;
+00203 &#32;&#32;}
+00204 }
+00205 
+00206 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_driver_8cpp_1a86ac52e41ae670905ca66a8bf1eb04b9">cc1_main</link>(ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Argv,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0,
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr);
+00208 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_driver_8cpp_1ac7d9c4a59e9773f938ddff75f14b90a6">cc1as_main</link>(ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Argv,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0,
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr);
+00210 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_driver_8cpp_1a27f0fa14a18bd4a9c735d321f74779d9">cc1gen_reproducer_main</link>(ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Argv,
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0,&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr);
+00212 
+00213 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;insertTargetAndModeArgs(<emphasis role="keyword">const</emphasis>&#32;ParsedClangName&#32;&amp;NameParts,
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;const&#32;char&#32;*&gt;&#32;&amp;ArgVector,
+00215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::set&lt;std::string&gt;&#32;&amp;SavedStrings)&#32;{
+00216 &#32;&#32;<emphasis role="comment">//&#32;Put&#32;target&#32;and&#32;mode&#32;arguments&#32;at&#32;the&#32;start&#32;of&#32;argument&#32;list&#32;so&#32;that</emphasis>
+00217 &#32;&#32;<emphasis role="comment">//&#32;arguments&#32;specified&#32;in&#32;command&#32;line&#32;could&#32;override&#32;them.&#32;Avoid&#32;putting</emphasis>
+00218 &#32;&#32;<emphasis role="comment">//&#32;them&#32;at&#32;index&#32;0,&#32;as&#32;an&#32;option&#32;like&#32;&apos;-cc1&apos;&#32;must&#32;remain&#32;the&#32;first.</emphasis>
+00219 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;InsertionPoint&#32;=&#32;0;
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ArgVector.size()&#32;&gt;&#32;0)
+00221 &#32;&#32;&#32;&#32;++InsertionPoint;
+00222 
+00223 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NameParts.DriverMode)&#32;{
+00224 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Add&#32;the&#32;mode&#32;flag&#32;to&#32;the&#32;arguments.</emphasis>
+00225 &#32;&#32;&#32;&#32;ArgVector.insert(ArgVector.begin()&#32;+&#32;InsertionPoint,
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GetStableCStr(SavedStrings,&#32;NameParts.DriverMode));
+00227 &#32;&#32;}
+00228 
+00229 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NameParts.TargetIsValid)&#32;{
+00230 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*arr[]&#32;=&#32;{<emphasis role="stringliteral">&quot;-target&quot;</emphasis>,&#32;GetStableCStr(SavedStrings,
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NameParts.TargetPrefix)};
+00232 &#32;&#32;&#32;&#32;ArgVector.insert(ArgVector.begin()&#32;+&#32;InsertionPoint,
+00233 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::begin(arr),&#32;std::end(arr));
+00234 &#32;&#32;}
+00235 }
+00236 
+00237 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;getCLEnvVarOptions(std::string&#32;&amp;EnvValue,&#32;llvm::StringSaver&#32;&amp;Saver,
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;const&#32;char&#32;*&gt;&#32;&amp;Opts)&#32;{
+00239 &#32;&#32;llvm::cl::TokenizeWindowsCommandLine(EnvValue,&#32;Saver,&#32;Opts);
+00240 &#32;&#32;<emphasis role="comment">//&#32;The&#32;first&#32;instance&#32;of&#32;&apos;#&apos;&#32;should&#32;be&#32;replaced&#32;with&#32;&apos;=&apos;&#32;in&#32;each&#32;option.</emphasis>
+00241 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Opt&#32;:&#32;Opts)
+00242 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*NumberSignPtr&#32;=&#32;<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(::strchr(Opt,&#32;<emphasis role="charliteral">&apos;#&apos;</emphasis>)))
+00243 &#32;&#32;&#32;&#32;&#32;&#32;*NumberSignPtr&#32;=&#32;<emphasis role="charliteral">&apos;=&apos;</emphasis>;
+00244 }
+00245 
+00246 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;SetBackdoorDriverOutputsFromEnvVars(Driver&#32;&amp;TheDriver)&#32;{
+00247 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CheckEnvVar&#32;=&#32;[](<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*EnvOptSet,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*EnvOptFile,
+00248 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;&amp;OptFile)&#32;{
+00249 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;OptSet&#32;=&#32;!!::getenv(EnvOptSet);
+00250 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OptSet)&#32;{
+00251 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Var&#32;=&#32;::getenv(EnvOptFile))
+00252 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OptFile&#32;=&#32;Var;
+00253 &#32;&#32;&#32;&#32;}
+00254 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;OptSet;
+00255 &#32;&#32;};
+00256 
+00257 &#32;&#32;TheDriver.CCPrintOptions&#32;=
+00258 &#32;&#32;&#32;&#32;&#32;&#32;CheckEnvVar(<emphasis role="stringliteral">&quot;CC_PRINT_OPTIONS&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;CC_PRINT_OPTIONS_FILE&quot;</emphasis>,
+00259 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TheDriver.CCPrintOptionsFilename);
+00260 &#32;&#32;TheDriver.CCPrintHeaders&#32;=
+00261 &#32;&#32;&#32;&#32;&#32;&#32;CheckEnvVar(<emphasis role="stringliteral">&quot;CC_PRINT_HEADERS&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;CC_PRINT_HEADERS_FILE&quot;</emphasis>,
+00262 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TheDriver.CCPrintHeadersFilename);
+00263 &#32;&#32;TheDriver.CCLogDiagnostics&#32;=
+00264 &#32;&#32;&#32;&#32;&#32;&#32;CheckEnvVar(<emphasis role="stringliteral">&quot;CC_LOG_DIAGNOSTICS&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;CC_LOG_DIAGNOSTICS_FILE&quot;</emphasis>,
+00265 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TheDriver.CCLogDiagnosticsFilename);
+00266 &#32;&#32;TheDriver.CCPrintProcessStats&#32;=
+00267 &#32;&#32;&#32;&#32;&#32;&#32;CheckEnvVar(<emphasis role="stringliteral">&quot;CC_PRINT_PROC_STAT&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;CC_PRINT_PROC_STAT_FILE&quot;</emphasis>,
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TheDriver.CCPrintStatReportFilename);
+00269 }
+00270 
+00271 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;FixupDiagPrefixExeName(TextDiagnosticPrinter&#32;*DiagClient,
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;Path)&#32;{
+00273 &#32;&#32;<emphasis role="comment">//&#32;If&#32;the&#32;clang&#32;binary&#32;happens&#32;to&#32;be&#32;named&#32;cl.exe&#32;for&#32;compatibility&#32;reasons,</emphasis>
+00274 &#32;&#32;<emphasis role="comment">//&#32;use&#32;clang-cl.exe&#32;as&#32;the&#32;prefix&#32;to&#32;avoid&#32;confusion&#32;between&#32;clang&#32;and&#32;MSVC.</emphasis>
+00275 &#32;&#32;StringRef&#32;ExeBasename(llvm::sys::path::stem(Path));
+00276 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ExeBasename.equals_insensitive(<emphasis role="stringliteral">&quot;cl&quot;</emphasis>))
+00277 &#32;&#32;&#32;&#32;ExeBasename&#32;=&#32;<emphasis role="stringliteral">&quot;clang-cl&quot;</emphasis>;
+00278 &#32;&#32;DiagClient-&gt;setPrefix(std::string(ExeBasename));
+00279 }
+00280 
+00281 <emphasis role="comment">//&#32;This&#32;lets&#32;us&#32;create&#32;the&#32;DiagnosticsEngine&#32;with&#32;a&#32;properly-filled-out</emphasis>
+00282 <emphasis role="comment">//&#32;DiagnosticOptions&#32;instance.</emphasis>
+00283 <emphasis role="keyword">static</emphasis>&#32;DiagnosticOptions&#32;*
+00284 CreateAndPopulateDiagOpts(ArrayRef&lt;const&#32;char&#32;*&gt;&#32;argv,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;&amp;UseNewCC1Process)&#32;{
+00285 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions;
+00286 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;MissingArgIndex,&#32;MissingArgCount;
+00287 &#32;&#32;InputArgList&#32;Args&#32;=&#32;getDriverOptTable().ParseArgs(
+00288 &#32;&#32;&#32;&#32;&#32;&#32;argv.slice(1),&#32;MissingArgIndex,&#32;MissingArgCount);
+00289 &#32;&#32;<emphasis role="comment">//&#32;We&#32;ignore&#32;MissingArgCount&#32;and&#32;the&#32;return&#32;value&#32;of&#32;ParseDiagnosticArgs.</emphasis>
+00290 &#32;&#32;<emphasis role="comment">//&#32;Any&#32;errors&#32;that&#32;would&#32;be&#32;diagnosed&#32;here&#32;will&#32;also&#32;be&#32;diagnosed&#32;later,</emphasis>
+00291 &#32;&#32;<emphasis role="comment">//&#32;when&#32;the&#32;DiagnosticsEngine&#32;actually&#32;exists.</emphasis>
+00292 &#32;&#32;(void)ParseDiagnosticArgs(*DiagOpts,&#32;Args);
+00293 
+00294 &#32;&#32;UseNewCC1Process&#32;=
+00295 &#32;&#32;&#32;&#32;&#32;&#32;Args.hasFlag(clang::driver::options::OPT_fno_integrated_cc1,
+00296 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::driver::options::OPT_fintegrated_cc1,
+00297 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*Default=*/</emphasis>CLANG_SPAWN_CC1);
+00298 
+00299 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DiagOpts;
+00300 }
+00301 
+00302 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;SetInstallDir(SmallVectorImpl&lt;const&#32;char&#32;*&gt;&#32;&amp;argv,
+00303 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Driver&#32;&amp;TheDriver,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CanonicalPrefixes)&#32;{
+00304 &#32;&#32;<emphasis role="comment">//&#32;Attempt&#32;to&#32;find&#32;the&#32;original&#32;path&#32;used&#32;to&#32;invoke&#32;the&#32;driver,&#32;to&#32;determine</emphasis>
+00305 &#32;&#32;<emphasis role="comment">//&#32;the&#32;installed&#32;path.&#32;We&#32;do&#32;this&#32;manually,&#32;because&#32;we&#32;want&#32;to&#32;support&#32;that</emphasis>
+00306 &#32;&#32;<emphasis role="comment">//&#32;path&#32;being&#32;a&#32;symlink.</emphasis>
+00307 &#32;&#32;SmallString&lt;128&gt;&#32;InstalledPath(argv[0]);
+00308 
+00309 &#32;&#32;<emphasis role="comment">//&#32;Do&#32;a&#32;PATH&#32;lookup,&#32;if&#32;there&#32;are&#32;no&#32;directory&#32;components.</emphasis>
+00310 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::sys::path::filename(InstalledPath)&#32;==&#32;InstalledPath)
+00311 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::ErrorOr&lt;std::string&gt;&#32;Tmp&#32;=&#32;llvm::sys::findProgramByName(
+00312 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::path::filename(InstalledPath.str())))
+00313 &#32;&#32;&#32;&#32;&#32;&#32;InstalledPath&#32;=&#32;*Tmp;
+00314 
+00315 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;We&#32;don&apos;t&#32;actually&#32;canonicalize&#32;this,&#32;we&#32;just&#32;make&#32;it&#32;absolute.</emphasis>
+00316 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CanonicalPrefixes)
+00317 &#32;&#32;&#32;&#32;llvm::sys::fs::make_absolute(InstalledPath);
+00318 
+00319 &#32;&#32;StringRef&#32;InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
+00320 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::sys::fs::exists(InstalledPathParent))
+00321 &#32;&#32;&#32;&#32;TheDriver.setInstalledDir(InstalledPathParent);
+00322 }
+00323 
+00324 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;ExecuteCC1Tool(SmallVectorImpl&lt;const&#32;char&#32;*&gt;&#32;&amp;ArgV)&#32;{
+00325 &#32;&#32;<emphasis role="comment">//&#32;If&#32;we&#32;call&#32;the&#32;cc1&#32;tool&#32;from&#32;the&#32;clangDriver&#32;library&#32;(through</emphasis>
+00326 &#32;&#32;<emphasis role="comment">//&#32;Driver::CC1Main),&#32;we&#32;need&#32;to&#32;clean&#32;up&#32;the&#32;options&#32;usage&#32;count.&#32;The&#32;options</emphasis>
+00327 &#32;&#32;<emphasis role="comment">//&#32;are&#32;currently&#32;global,&#32;and&#32;they&#32;might&#32;have&#32;been&#32;used&#32;previously&#32;by&#32;the</emphasis>
+00328 &#32;&#32;<emphasis role="comment">//&#32;driver.</emphasis>
+00329 &#32;&#32;llvm::cl::ResetAllOptionOccurrences();
+00330 
+00331 &#32;&#32;llvm::BumpPtrAllocator&#32;A;
+00332 &#32;&#32;llvm::StringSaver&#32;Saver(A);
+00333 &#32;&#32;llvm::cl::ExpandResponseFiles(Saver,&#32;&amp;llvm::cl::TokenizeGNUCommandLine,&#32;ArgV,
+00334 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*MarkEOLs=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00335 &#32;&#32;StringRef&#32;Tool&#32;=&#32;ArgV[1];
+00336 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*GetExecutablePathVP&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>&#32;*)(intptr_t)<link linkend="_driver_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>;
+00337 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Tool&#32;==&#32;<emphasis role="stringliteral">&quot;-cc1&quot;</emphasis>)
+00338 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_driver_8cpp_1a86ac52e41ae670905ca66a8bf1eb04b9">cc1_main</link>(makeArrayRef(ArgV).slice(1),&#32;ArgV[0],&#32;GetExecutablePathVP);
+00339 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Tool&#32;==&#32;<emphasis role="stringliteral">&quot;-cc1as&quot;</emphasis>)
+00340 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_driver_8cpp_1ac7d9c4a59e9773f938ddff75f14b90a6">cc1as_main</link>(makeArrayRef(ArgV).slice(2),&#32;ArgV[0],
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GetExecutablePathVP);
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Tool&#32;==&#32;<emphasis role="stringliteral">&quot;-cc1gen-reproducer&quot;</emphasis>)
+00343 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_driver_8cpp_1a27f0fa14a18bd4a9c735d321f74779d9">cc1gen_reproducer_main</link>(makeArrayRef(ArgV).slice(2),&#32;ArgV[0],
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GetExecutablePathVP);
+00345 &#32;&#32;<emphasis role="comment">//&#32;Reject&#32;unknown&#32;tools.</emphasis>
+00346 &#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;unknown&#32;integrated&#32;tool&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Tool&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;.&#32;&quot;</emphasis>
+00347 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Valid&#32;tools&#32;include&#32;&apos;-cc1&apos;&#32;and&#32;&apos;-cc1as&apos;.\n&quot;</emphasis>;
+00348 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00349 }
+00350 
+<anchor xml:id="_driver_8cpp_source_1l00351"/><link linkend="_driver_8cpp_1ae98fb7c14fb481a1151b423f9d4adb82">00351</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_driver_8cpp_1ae98fb7c14fb481a1151b423f9d4adb82">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;Argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**Argv)&#32;{
+00352 &#32;&#32;noteBottomOfStack();
+00353 &#32;&#32;llvm::InitLLVM&#32;X(Argc,&#32;Argv);
+00354 &#32;&#32;llvm::setBugReportMsg(<emphasis role="stringliteral">&quot;PLEASE&#32;submit&#32;a&#32;bug&#32;report&#32;to&#32;&quot;</emphasis>&#32;BUG_REPORT_URL
+00355 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;and&#32;include&#32;the&#32;crash&#32;backtrace,&#32;preprocessed&#32;&quot;</emphasis>
+00356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;source,&#32;and&#32;associated&#32;run&#32;script.\n&quot;</emphasis>);
+00357 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;256&gt;&#32;Args(Argv,&#32;Argv&#32;+&#32;Argc);
+00358 
+00359 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::sys::Process::FixupStandardFileDescriptors())
+00360 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00361 
+00362 &#32;&#32;llvm::InitializeAllTargets();
+00363 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;TargetAndMode&#32;=&#32;ToolChain::getTargetAndModeFromProgramName(Args[0]);
+00364 
+00365 &#32;&#32;llvm::BumpPtrAllocator&#32;A;
+00366 &#32;&#32;llvm::StringSaver&#32;Saver(A);
+00367 
+00368 &#32;&#32;<emphasis role="comment">//&#32;Parse&#32;response&#32;files&#32;using&#32;the&#32;GNU&#32;syntax,&#32;unless&#32;we&apos;re&#32;in&#32;CL&#32;mode.&#32;There</emphasis>
+00369 &#32;&#32;<emphasis role="comment">//&#32;are&#32;two&#32;ways&#32;to&#32;put&#32;clang&#32;in&#32;CL&#32;compatibility&#32;mode:&#32;Args[0]&#32;is&#32;either</emphasis>
+00370 &#32;&#32;<emphasis role="comment">//&#32;clang-cl&#32;or&#32;cl,&#32;or&#32;--driver-mode=cl&#32;is&#32;on&#32;the&#32;command&#32;line.&#32;The&#32;normal</emphasis>
+00371 &#32;&#32;<emphasis role="comment">//&#32;command&#32;line&#32;parsing&#32;can&apos;t&#32;happen&#32;until&#32;after&#32;response&#32;file&#32;parsing,&#32;so&#32;we</emphasis>
+00372 &#32;&#32;<emphasis role="comment">//&#32;have&#32;to&#32;manually&#32;search&#32;for&#32;a&#32;--driver-mode=cl&#32;argument&#32;the&#32;hard&#32;way.</emphasis>
+00373 &#32;&#32;<emphasis role="comment">//&#32;Finally,&#32;our&#32;-cc1&#32;tools&#32;don&apos;t&#32;care&#32;which&#32;tokenization&#32;mode&#32;we&#32;use&#32;because</emphasis>
+00374 &#32;&#32;<emphasis role="comment">//&#32;response&#32;files&#32;written&#32;by&#32;clang&#32;will&#32;tokenize&#32;the&#32;same&#32;way&#32;in&#32;either&#32;mode.</emphasis>
+00375 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ClangCLMode&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00376 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StringRef(TargetAndMode.DriverMode).equals(<emphasis role="stringliteral">&quot;--driver-mode=cl&quot;</emphasis>)&#32;||
+00377 &#32;&#32;&#32;&#32;&#32;&#32;llvm::find_if(Args,&#32;[](<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*F)&#32;{
+00378 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;return&#32;F&#32;&amp;&amp;&#32;strcmp(F,&#32;<emphasis role="stringliteral">&quot;--driver-mode=cl&quot;</emphasis>)&#32;==&#32;0;
+00379 &#32;&#32;&#32;&#32;&#32;&#32;})&#32;!=&#32;Args.end())&#32;{
+00380 &#32;&#32;&#32;&#32;ClangCLMode&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00381 &#32;&#32;}
+00382 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;{&#32;Default,&#32;POSIX,&#32;Windows&#32;}&#32;RSPQuoting&#32;=&#32;Default;
+00383 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*F&#32;:&#32;Args)&#32;{
+00384 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp(F,&#32;<emphasis role="stringliteral">&quot;--rsp-quoting=posix&quot;</emphasis>)&#32;==&#32;0)
+00385 &#32;&#32;&#32;&#32;&#32;&#32;RSPQuoting&#32;=&#32;POSIX;
+00386 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp(F,&#32;<emphasis role="stringliteral">&quot;--rsp-quoting=windows&quot;</emphasis>)&#32;==&#32;0)
+00387 &#32;&#32;&#32;&#32;&#32;&#32;RSPQuoting&#32;=&#32;Windows;
+00388 &#32;&#32;}
+00389 
+00390 &#32;&#32;<emphasis role="comment">//&#32;Determines&#32;whether&#32;we&#32;want&#32;nullptr&#32;markers&#32;in&#32;Args&#32;to&#32;indicate&#32;response</emphasis>
+00391 &#32;&#32;<emphasis role="comment">//&#32;files&#32;end-of-lines.&#32;We&#32;only&#32;use&#32;this&#32;for&#32;the&#32;/LINK&#32;driver&#32;argument&#32;with</emphasis>
+00392 &#32;&#32;<emphasis role="comment">//&#32;clang-cl.exe&#32;on&#32;Windows.</emphasis>
+00393 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;MarkEOLs&#32;=&#32;ClangCLMode;
+00394 
+00395 &#32;&#32;llvm::cl::TokenizerCallback&#32;Tokenizer;
+00396 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RSPQuoting&#32;==&#32;Windows&#32;||&#32;(RSPQuoting&#32;==&#32;Default&#32;&amp;&amp;&#32;ClangCLMode))
+00397 &#32;&#32;&#32;&#32;Tokenizer&#32;=&#32;&amp;llvm::cl::TokenizeWindowsCommandLine;
+00398 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00399 &#32;&#32;&#32;&#32;Tokenizer&#32;=&#32;&amp;llvm::cl::TokenizeGNUCommandLine;
+00400 
+00401 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MarkEOLs&#32;&amp;&amp;&#32;Args.size()&#32;&gt;&#32;1&#32;&amp;&amp;&#32;StringRef(Args[1]).startswith(<emphasis role="stringliteral">&quot;-cc1&quot;</emphasis>))
+00402 &#32;&#32;&#32;&#32;MarkEOLs&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00403 &#32;&#32;llvm::cl::ExpandResponseFiles(Saver,&#32;Tokenizer,&#32;Args,&#32;MarkEOLs);
+00404 
+00405 &#32;&#32;<emphasis role="comment">//&#32;Handle&#32;-cc1&#32;integrated&#32;tools,&#32;even&#32;if&#32;-cc1&#32;was&#32;expanded&#32;from&#32;a&#32;response</emphasis>
+00406 &#32;&#32;<emphasis role="comment">//&#32;file.</emphasis>
+00407 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;FirstArg&#32;=&#32;std::find_if(Args.begin()&#32;+&#32;1,&#32;Args.end(),
+00408 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[](<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*A)&#32;{&#32;return&#32;A&#32;!=&#32;nullptr;&#32;});
+00409 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FirstArg&#32;!=&#32;Args.end()&#32;&amp;&amp;&#32;StringRef(*FirstArg).startswith(<emphasis role="stringliteral">&quot;-cc1&quot;</emphasis>))&#32;{
+00410 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;-cc1&#32;came&#32;from&#32;a&#32;response&#32;file,&#32;remove&#32;the&#32;EOL&#32;sentinels.</emphasis>
+00411 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MarkEOLs)&#32;{
+00412 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;newEnd&#32;=&#32;std::remove(Args.begin(),&#32;Args.end(),&#32;<emphasis role="keyword">nullptr</emphasis>);
+00413 &#32;&#32;&#32;&#32;&#32;&#32;Args.resize(newEnd&#32;-&#32;Args.begin());
+00414 &#32;&#32;&#32;&#32;}
+00415 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ExecuteCC1Tool(Args);
+00416 &#32;&#32;}
+00417 
+00418 &#32;&#32;<emphasis role="comment">//&#32;Handle&#32;options&#32;that&#32;need&#32;handling&#32;before&#32;the&#32;real&#32;command&#32;line&#32;parsing&#32;in</emphasis>
+00419 &#32;&#32;<emphasis role="comment">//&#32;Driver::BuildCompilation()</emphasis>
+00420 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CanonicalPrefixes&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00421 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;1,&#32;size&#32;=&#32;Args.size();&#32;i&#32;&lt;&#32;size;&#32;++i)&#32;{
+00422 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Skip&#32;end-of-line&#32;response&#32;file&#32;markers</emphasis>
+00423 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Args[i]&#32;==&#32;<emphasis role="keyword">nullptr</emphasis>)
+00424 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00425 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StringRef(Args[i])&#32;==&#32;<emphasis role="stringliteral">&quot;-no-canonical-prefixes&quot;</emphasis>)&#32;{
+00426 &#32;&#32;&#32;&#32;&#32;&#32;CanonicalPrefixes&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00427 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00428 &#32;&#32;&#32;&#32;}
+00429 &#32;&#32;}
+00430 
+00431 &#32;&#32;<emphasis role="comment">//&#32;Handle&#32;CL&#32;and&#32;_CL_&#32;which&#32;permits&#32;additional&#32;command&#32;line&#32;options&#32;to&#32;be</emphasis>
+00432 &#32;&#32;<emphasis role="comment">//&#32;prepended&#32;or&#32;appended.</emphasis>
+00433 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ClangCLMode)&#32;{
+00434 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Arguments&#32;in&#32;&quot;CL&quot;&#32;are&#32;prepended.</emphasis>
+00435 &#32;&#32;&#32;&#32;llvm::Optional&lt;std::string&gt;&#32;OptCL&#32;=&#32;llvm::sys::Process::GetEnv(<emphasis role="stringliteral">&quot;CL&quot;</emphasis>);
+00436 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OptCL.hasValue())&#32;{
+00437 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;8&gt;&#32;PrependedOpts;
+00438 &#32;&#32;&#32;&#32;&#32;&#32;getCLEnvVarOptions(OptCL.getValue(),&#32;Saver,&#32;PrependedOpts);
+00439 
+00440 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Insert&#32;right&#32;after&#32;the&#32;program&#32;name&#32;to&#32;prepend&#32;to&#32;the&#32;argument&#32;list.</emphasis>
+00441 &#32;&#32;&#32;&#32;&#32;&#32;Args.insert(Args.begin()&#32;+&#32;1,&#32;PrependedOpts.begin(),&#32;PrependedOpts.end());
+00442 &#32;&#32;&#32;&#32;}
+00443 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Arguments&#32;in&#32;&quot;_CL_&quot;&#32;are&#32;appended.</emphasis>
+00444 &#32;&#32;&#32;&#32;llvm::Optional&lt;std::string&gt;&#32;Opt_CL_&#32;=&#32;llvm::sys::Process::GetEnv(<emphasis role="stringliteral">&quot;_CL_&quot;</emphasis>);
+00445 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Opt_CL_.hasValue())&#32;{
+00446 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;8&gt;&#32;AppendedOpts;
+00447 &#32;&#32;&#32;&#32;&#32;&#32;getCLEnvVarOptions(Opt_CL_.getValue(),&#32;Saver,&#32;AppendedOpts);
+00448 
+00449 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Insert&#32;at&#32;the&#32;end&#32;of&#32;the&#32;argument&#32;list&#32;to&#32;append.</emphasis>
+00450 &#32;&#32;&#32;&#32;&#32;&#32;Args.append(AppendedOpts.begin(),&#32;AppendedOpts.end());
+00451 &#32;&#32;&#32;&#32;}
+00452 &#32;&#32;}
+00453 
+00454 &#32;&#32;std::set&lt;std::string&gt;&#32;SavedStrings;
+00455 &#32;&#32;<emphasis role="comment">//&#32;Handle&#32;CCC_OVERRIDE_OPTIONS,&#32;used&#32;for&#32;editing&#32;a&#32;command&#32;line&#32;behind&#32;the</emphasis>
+00456 &#32;&#32;<emphasis role="comment">//&#32;scenes.</emphasis>
+00457 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*OverrideStr&#32;=&#32;::getenv(<emphasis role="stringliteral">&quot;CCC_OVERRIDE_OPTIONS&quot;</emphasis>))&#32;{
+00458 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Driver&#32;shouldn&apos;t&#32;take&#32;extra&#32;initial&#32;argument.</emphasis>
+00459 &#32;&#32;&#32;&#32;ApplyQAOverride(Args,&#32;OverrideStr,&#32;SavedStrings);
+00460 &#32;&#32;}
+00461 
+00462 &#32;&#32;std::string&#32;Path&#32;=&#32;<link linkend="_driver_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>(Args[0],&#32;CanonicalPrefixes);
+00463 
+00464 &#32;&#32;<emphasis role="comment">//&#32;Whether&#32;the&#32;cc1&#32;tool&#32;should&#32;be&#32;called&#32;inside&#32;the&#32;current&#32;process,&#32;or&#32;if&#32;we</emphasis>
+00465 &#32;&#32;<emphasis role="comment">//&#32;should&#32;spawn&#32;a&#32;new&#32;clang&#32;subprocess&#32;(old&#32;behavior).</emphasis>
+00466 &#32;&#32;<emphasis role="comment">//&#32;Not&#32;having&#32;an&#32;additional&#32;process&#32;saves&#32;some&#32;execution&#32;time&#32;of&#32;Windows,</emphasis>
+00467 &#32;&#32;<emphasis role="comment">//&#32;and&#32;makes&#32;debugging&#32;and&#32;profiling&#32;easier.</emphasis>
+00468 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;UseNewCC1Process;
+00469 
+00470 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=
+00471 &#32;&#32;&#32;&#32;&#32;&#32;CreateAndPopulateDiagOpts(Args,&#32;UseNewCC1Process);
+00472 
+00473 &#32;&#32;TextDiagnosticPrinter&#32;*DiagClient
+00474 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;TextDiagnosticPrinter(llvm::errs(),&#32;&amp;*DiagOpts);
+00475 &#32;&#32;FixupDiagPrefixExeName(DiagClient,&#32;Path);
+00476 
+00477 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagID(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00478 
+00479 &#32;&#32;DiagnosticsEngine&#32;Diags(DiagID,&#32;&amp;*DiagOpts,&#32;DiagClient);
+00480 
+00481 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DiagOpts-&gt;DiagnosticSerializationFile.empty())&#32;{
+00482 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;SerializedConsumer&#32;=
+00483 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::serialized_diags::create(DiagOpts-&gt;DiagnosticSerializationFile,
+00484 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;*DiagOpts,&#32;<emphasis role="comment">/*MergeChildRecords=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00485 &#32;&#32;&#32;&#32;Diags.setClient(<emphasis role="keyword">new</emphasis>&#32;ChainedDiagnosticConsumer(
+00486 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Diags.takeClient(),&#32;std::move(SerializedConsumer)));
+00487 &#32;&#32;}
+00488 
+00489 &#32;&#32;ProcessWarningOptions(Diags,&#32;*DiagOpts,&#32;<emphasis role="comment">/*ReportDiags=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00490 
+00491 &#32;&#32;Driver&#32;TheDriver(Path,&#32;llvm::sys::getDefaultTargetTriple(),&#32;Diags);
+00492 &#32;&#32;SetInstallDir(Args,&#32;TheDriver,&#32;CanonicalPrefixes);
+00493 &#32;&#32;TheDriver.setTargetAndMode(TargetAndMode);
+00494 
+00495 &#32;&#32;insertTargetAndModeArgs(TargetAndMode,&#32;Args,&#32;SavedStrings);
+00496 
+00497 &#32;&#32;SetBackdoorDriverOutputsFromEnvVars(TheDriver);
+00498 
+00499 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!UseNewCC1Process)&#32;{
+00500 &#32;&#32;&#32;&#32;TheDriver.CC1Main&#32;=&#32;&amp;ExecuteCC1Tool;
+00501 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Ensure&#32;the&#32;CC1Command&#32;actually&#32;catches&#32;cc1&#32;crashes</emphasis>
+00502 &#32;&#32;&#32;&#32;llvm::CrashRecoveryContext::Enable();
+00503 &#32;&#32;}
+00504 
+00505 &#32;&#32;std::unique_ptr&lt;Compilation&gt;&#32;C(TheDriver.BuildCompilation(Args));
+00506 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;Res&#32;=&#32;1;
+00507 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IsCrash&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00508 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(C&#32;&amp;&amp;&#32;!C-&gt;containsError())&#32;{
+00509 &#32;&#32;&#32;&#32;SmallVector&lt;std::pair&lt;int,&#32;const&#32;Command&#32;*&gt;,&#32;4&gt;&#32;FailingCommands;
+00510 &#32;&#32;&#32;&#32;Res&#32;=&#32;TheDriver.ExecuteCompilation(*C,&#32;FailingCommands);
+00511 
+00512 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Force&#32;a&#32;crash&#32;to&#32;test&#32;the&#32;diagnostics.</emphasis>
+00513 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TheDriver.GenReproducer)&#32;{
+00514 &#32;&#32;&#32;&#32;&#32;&#32;Diags.Report(diag::err_drv_force_crash)
+00515 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;!::getenv(<emphasis role="stringliteral">&quot;FORCE_CLANG_DIAGNOSTICS_CRASH&quot;</emphasis>);
+00516 
+00517 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Pretend&#32;that&#32;every&#32;command&#32;failed.</emphasis>
+00518 &#32;&#32;&#32;&#32;&#32;&#32;FailingCommands.clear();
+00519 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;J&#32;:&#32;C-&gt;getJobs())
+00520 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;Command&#32;*C&#32;=&#32;dyn_cast&lt;Command&gt;(&amp;J))
+00521 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FailingCommands.push_back(std::make_pair(-1,&#32;C));
+00522 
+00523 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Print&#32;the&#32;bug&#32;report&#32;message&#32;that&#32;would&#32;be&#32;printed&#32;if&#32;we&#32;did&#32;actually</emphasis>
+00524 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;crash,&#32;but&#32;only&#32;if&#32;we&apos;re&#32;crashing&#32;due&#32;to&#32;FORCE_CLANG_DIAGNOSTICS_CRASH.</emphasis>
+00525 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(::getenv(<emphasis role="stringliteral">&quot;FORCE_CLANG_DIAGNOSTICS_CRASH&quot;</emphasis>))
+00526 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::dbgs()&#32;&lt;&lt;&#32;llvm::getBugReportMsg();
+00527 &#32;&#32;&#32;&#32;}
+00528 
+00529 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;P&#32;:&#32;FailingCommands)&#32;{
+00530 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;CommandRes&#32;=&#32;P.first;
+00531 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Command&#32;*FailingCommand&#32;=&#32;P.second;
+00532 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Res)
+00533 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Res&#32;=&#32;CommandRes;
+00534 
+00535 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;result&#32;status&#32;is&#32;&lt;&#32;0,&#32;then&#32;the&#32;driver&#32;command&#32;signalled&#32;an&#32;error.</emphasis>
+00536 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;result&#32;status&#32;is&#32;70,&#32;then&#32;the&#32;driver&#32;command&#32;reported&#32;a&#32;fatal&#32;error.</emphasis>
+00537 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;On&#32;Windows,&#32;abort&#32;will&#32;return&#32;an&#32;exit&#32;code&#32;of&#32;3.&#32;&#32;In&#32;these&#32;cases,</emphasis>
+00538 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;generate&#32;additional&#32;diagnostic&#32;information&#32;if&#32;possible.</emphasis>
+00539 &#32;&#32;&#32;&#32;&#32;&#32;IsCrash&#32;=&#32;CommandRes&#32;&lt;&#32;0&#32;||&#32;CommandRes&#32;==&#32;70;
+00540 <emphasis role="preprocessor">#ifdef&#32;_WIN32</emphasis>
+00541 &#32;&#32;&#32;&#32;&#32;&#32;IsCrash&#32;|=&#32;CommandRes&#32;==&#32;3;
+00542 <emphasis role="preprocessor">#endif</emphasis>
+00543 <emphasis role="preprocessor">#if&#32;LLVM_ON_UNIX</emphasis>
+00544 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;When&#32;running&#32;in&#32;integrated-cc1&#32;mode,&#32;the&#32;CrashRecoveryContext&#32;returns</emphasis>
+00545 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;the&#32;same&#32;codes&#32;as&#32;if&#32;the&#32;program&#32;crashed.&#32;See&#32;section&#32;&quot;Exit&#32;Status&#32;for</emphasis>
+00546 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Commands&quot;:</emphasis>
+00547 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xcu_chap02.html</emphasis>
+00548 &#32;&#32;&#32;&#32;&#32;&#32;IsCrash&#32;|=&#32;CommandRes&#32;&gt;&#32;128;
+00549 <emphasis role="preprocessor">#endif</emphasis>
+00550 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IsCrash)&#32;{
+00551 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TheDriver.generateCompilationDiagnostics(*C,&#32;*FailingCommand);
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00553 &#32;&#32;&#32;&#32;&#32;&#32;}
+00554 &#32;&#32;&#32;&#32;}
+00555 &#32;&#32;}
+00556 
+00557 &#32;&#32;Diags.getClient()-&gt;finish();
+00558 
+00559 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!UseNewCC1Process&#32;&amp;&amp;&#32;IsCrash)&#32;{
+00560 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;When&#32;crashing&#32;in&#32;-fintegrated-cc1&#32;mode,&#32;bury&#32;the&#32;timer&#32;pointers,&#32;because</emphasis>
+00561 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;the&#32;internal&#32;linked&#32;list&#32;might&#32;point&#32;to&#32;already&#32;released&#32;stack&#32;frames.</emphasis>
+00562 &#32;&#32;&#32;&#32;llvm::BuryPointer(llvm::TimerGroup::aquireDefaultGroup());
+00563 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00564 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;any&#32;timers&#32;were&#32;active&#32;but&#32;haven&apos;t&#32;been&#32;destroyed&#32;yet,&#32;print&#32;their</emphasis>
+00565 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;results&#32;now.&#32;&#32;This&#32;happens&#32;in&#32;-disable-free&#32;mode.</emphasis>
+00566 &#32;&#32;&#32;&#32;llvm::TimerGroup::printAll(llvm::errs());
+00567 &#32;&#32;&#32;&#32;llvm::TimerGroup::clearAll();
+00568 &#32;&#32;}
+00569 
+00570 <emphasis role="preprocessor">#ifdef&#32;_WIN32</emphasis>
+00571 &#32;&#32;<emphasis role="comment">//&#32;Exit&#32;status&#32;should&#32;not&#32;be&#32;negative&#32;on&#32;Win32,&#32;unless&#32;abnormal&#32;termination.</emphasis>
+00572 &#32;&#32;<emphasis role="comment">//&#32;Once&#32;abnormal&#32;termination&#32;was&#32;caught,&#32;negative&#32;status&#32;should&#32;not&#32;be</emphasis>
+00573 &#32;&#32;<emphasis role="comment">//&#32;propagated.</emphasis>
+00574 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Res&#32;&lt;&#32;0)
+00575 &#32;&#32;&#32;&#32;Res&#32;=&#32;1;
+00576 <emphasis role="preprocessor">#endif</emphasis>
+00577 
+00578 &#32;&#32;<emphasis role="comment">//&#32;If&#32;we&#32;have&#32;multiple&#32;failing&#32;commands,&#32;we&#32;return&#32;the&#32;result&#32;of&#32;the&#32;first</emphasis>
+00579 &#32;&#32;<emphasis role="comment">//&#32;failing&#32;command.</emphasis>
+00580 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Res;
+00581 }
+</programlisting></section>

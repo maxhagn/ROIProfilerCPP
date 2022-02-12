@@ -1,0 +1,185 @@
+.TH "tests.functional.cases.test_create_cdb.CompilationDatabaseTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_create_cdb.CompilationDatabaseTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_successful_build\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_successful_build_with_wrapper\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_successful_build_parallel\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_successful_build_on_empty_env\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_successful_build_all_in_one\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_not_successful_build\fP (self)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun_intercept\fP (tmpdir, args)"
+.br
+.ti -1c
+.RI "def \fBcount_entries\fP (filename)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 14 of file test_create_cdb\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries ( filename)\fC [static]\fP"
+
+.PP
+Definition at line 24 of file test_create_cdb\&.py\&.
+.PP
+.nf
+24     def count_entries(filename):
+25         with open(filename, 'r') as handler:
+26             content = json\&.load(handler)
+27             return len(content)
+28 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_append_to_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_not_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_overwrite_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_all_in_one(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_on_empty_env(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_parallel(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_with_wrapper()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept ( tmpdir,  args)\fC [static]\fP"
+
+.PP
+Definition at line 16 of file test_create_cdb\&.py\&.
+.PP
+.nf
+16     def run_intercept(tmpdir, args):
+17         result = os\&.path\&.join(tmpdir, 'cdb\&.json')
+18         make = make_args(tmpdir) + args
+19         silent_check_call(
+20             ['intercept-build', '--cdb', result] + make)
+21         return result
+22 
+.fi
+.PP
+References tests\&.functional\&.cases\&.make_args(), and tests\&.functional\&.cases\&.silent_check_call()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_append_to_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_not_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_overwrite_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_all_in_one(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_parallel()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_not_successful_build ( self)"
+
+.PP
+Definition at line 67 of file test_create_cdb\&.py\&.
+.PP
+.nf
+67     def test_not_successful_build(self):
+68         with libear\&.TemporaryDirectory() as tmpdir:
+69             result = os\&.path\&.join(tmpdir, 'cdb\&.json')
+70             make = make_args(tmpdir) + ['build_broken']
+71             silent_call(
+72                 ['intercept-build', '--cdb', result] + make)
+73             self\&.assertTrue(os\&.path\&.isfile(result))
+74             self\&.assertEqual(2, self\&.count_entries(result))
+75 
+76 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), tests\&.functional\&.cases\&.make_args(), tests\&.functional\&.cases\&.silent_call(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build ( self)"
+
+.PP
+Definition at line 29 of file test_create_cdb\&.py\&.
+.PP
+.nf
+29     def test_successful_build(self):
+30         with libear\&.TemporaryDirectory() as tmpdir:
+31             result = self\&.run_intercept(tmpdir, ['build_regular'])
+32             self\&.assertTrue(os\&.path\&.isfile(result))
+33             self\&.assertEqual(5, self\&.count_entries(result))
+34 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_all_in_one ( self)"
+
+.PP
+Definition at line 61 of file test_create_cdb\&.py\&.
+.PP
+.nf
+61     def test_successful_build_all_in_one(self):
+62         with libear\&.TemporaryDirectory() as tmpdir:
+63             result = self\&.run_intercept(tmpdir, ['build_all_in_one'])
+64             self\&.assertTrue(os\&.path\&.isfile(result))
+65             self\&.assertEqual(5, self\&.count_entries(result))
+66 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_on_empty_env ( self)"
+
+.PP
+Definition at line 52 of file test_create_cdb\&.py\&.
+.PP
+.nf
+52     def test_successful_build_on_empty_env(self):
+53         with libear\&.TemporaryDirectory() as tmpdir:
+54             result = os\&.path\&.join(tmpdir, 'cdb\&.json')
+55             make = make_args(tmpdir) + ['CC=clang', 'build_regular']
+56             silent_check_call(['intercept-build', '--cdb', result,
+57                                'env', '-'] + make)
+58             self\&.assertTrue(os\&.path\&.isfile(result))
+59             self\&.assertEqual(5, self\&.count_entries(result))
+60 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), tests\&.functional\&.cases\&.make_args(), tests\&.functional\&.cases\&.silent_check_call(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_parallel ( self)"
+
+.PP
+Definition at line 45 of file test_create_cdb\&.py\&.
+.PP
+.nf
+45     def test_successful_build_parallel(self):
+46         with libear\&.TemporaryDirectory() as tmpdir:
+47             result = self\&.run_intercept(tmpdir, ['-j', '4', 'build_regular'])
+48             self\&.assertTrue(os\&.path\&.isfile(result))
+49             self\&.assertEqual(5, self\&.count_entries(result))
+50 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_with_wrapper ( self)"
+
+.PP
+Definition at line 35 of file test_create_cdb\&.py\&.
+.PP
+.nf
+35     def test_successful_build_with_wrapper(self):
+36         with libear\&.TemporaryDirectory() as tmpdir:
+37             result = os\&.path\&.join(tmpdir, 'cdb\&.json')
+38             make = make_args(tmpdir) + ['build_regular']
+39             silent_check_call(['intercept-build', '--cdb', result,
+40                                '--override-compiler'] + make)
+41             self\&.assertTrue(os\&.path\&.isfile(result))
+42             self\&.assertEqual(5, self\&.count_entries(result))
+43 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), tests\&.functional\&.cases\&.make_args(), tests\&.functional\&.cases\&.silent_check_call(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

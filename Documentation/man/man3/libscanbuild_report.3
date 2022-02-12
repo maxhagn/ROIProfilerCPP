@@ -1,0 +1,1048 @@
+.TH "libscanbuild.report" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libscanbuild.report
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBdocument\fP (args)"
+.br
+.ti -1c
+.RI "def \fBassemble_cover\fP (args, prefix, fragments)"
+.br
+.ti -1c
+.RI "def \fBbug_summary\fP (output_dir, bug_counter)"
+.br
+.ti -1c
+.RI "def \fBbug_report\fP (output_dir, prefix)"
+.br
+.ti -1c
+.RI "def \fBcrash_report\fP (output_dir, prefix)"
+.br
+.ti -1c
+.RI "def \fBread_crashes\fP (output_dir)"
+.br
+.ti -1c
+.RI "def \fBread_bugs\fP (output_dir, html)"
+.br
+.ti -1c
+.RI "def \fBmerge_sarif_files\fP (output_dir, sort_files=False)"
+.br
+.ti -1c
+.RI "def \fBparse_bug_plist\fP (filename)"
+.br
+.ti -1c
+.RI "def \fBparse_bug_html\fP (filename)"
+.br
+.ti -1c
+.RI "def \fBparse_crash\fP (filename)"
+.br
+.ti -1c
+.RI "def \fBcategory_type_name\fP (bug)"
+.br
+.ti -1c
+.RI "def \fBcreate_counters\fP ()"
+.br
+.ti -1c
+.RI "def \fBprettify_bug\fP (prefix, output_dir)"
+.br
+.ti -1c
+.RI "def \fBprettify_crash\fP (prefix, output_dir)"
+.br
+.ti -1c
+.RI "def \fBcopy_resource_files\fP (output_dir)"
+.br
+.ti -1c
+.RI "def \fBencode_value\fP (container, key, encode)"
+.br
+.ti -1c
+.RI "def \fBchop\fP (prefix, filename)"
+.br
+.ti -1c
+.RI "def \fBescape\fP (text)"
+.br
+.ti -1c
+.RI "def \fBreindent\fP (text, indent)"
+.br
+.ti -1c
+.RI "def \fBcomment\fP (name, opts=dict())"
+.br
+.ti -1c
+.RI "def \fBcommonprefix_from\fP (filename)"
+.br
+.ti -1c
+.RI "def \fBcommonprefix\fP (files)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def libscanbuild\&.report\&.assemble_cover ( args,  prefix,  fragments)"
+
+.PP
+.nf
+ Put together the fragments into a final report. 
+.fi
+.PP
+ 
+.PP
+Definition at line 69 of file report\&.py\&.
+.PP
+.nf
+69 def assemble_cover(args, prefix, fragments):
+70     """ Put together the fragments into a final report\&. """
+71 
+72     import getpass
+73     import socket
+74 
+75     if args\&.html_title is None:
+76         args\&.html_title = os\&.path\&.basename(prefix) + ' - analyzer results'
+77 
+78     with open(os\&.path\&.join(args\&.output, 'index\&.html'), 'w') as handle:
+79         indent = 0
+80         handle\&.write(reindent("""
+81         |<!DOCTYPE html>
+82         |<html>
+83         |  <head>
+84         |    <title>{html_title}</title>
+85         |    <link type="text/css" rel="stylesheet" href="scanview\&.css"/>
+86         |    <script type='text/javascript' src="sorttable\&.js"></script>
+87         |    <script type='text/javascript' src='selectable\&.js'></script>
+88         |  </head>""", indent)\&.format(html_title=args\&.html_title))
+89         handle\&.write(comment('SUMMARYENDHEAD'))
+90         handle\&.write(reindent("""
+91         |  <body>
+92         |    <h1>{html_title}</h1>
+93         |    <table>
+94         |      <tr><th>User:</th><td>{user_name}@{host_name}</td></tr>
+95         |      <tr><th>Working Directory:</th><td>{current_dir}</td></tr>
+96         |      <tr><th>Command Line:</th><td>{cmd_args}</td></tr>
+97         |      <tr><th>Clang Version:</th><td>{clang_version}</td></tr>
+98         |      <tr><th>Date:</th><td>{date}</td></tr>
+99         |    </table>""", indent)\&.format(html_title=args\&.html_title,
+100                                          user_name=getpass\&.getuser(),
+101                                          host_name=socket\&.gethostname(),
+102                                          current_dir=prefix,
+103                                          cmd_args=' '\&.join(sys\&.argv),
+104                                          clang_version=get_version(args\&.clang),
+105                                          date=datetime\&.datetime\&.today(
+106                                          )\&.strftime('%c')))
+107         for fragment in fragments:
+108             # copy the content of fragments
+109             with open(fragment, 'r') as input_handle:
+110                 shutil\&.copyfileobj(input_handle, handle)
+111         handle\&.write(reindent("""
+112         |  </body>
+113         |</html>""", indent))
+114 
+115 
+.fi
+.PP
+References libscanbuild\&.report\&.comment(), libscanbuild\&.clang\&.get_version(), startfile\&.open(), and libscanbuild\&.report\&.reindent()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.bug_report ( output_dir,  prefix)"
+
+.PP
+.nf
+ Creates a fragment from the analyzer reports. 
+.fi
+.PP
+ 
+.PP
+Definition at line 168 of file report\&.py\&.
+.PP
+.nf
+168 def bug_report(output_dir, prefix):
+169     """ Creates a fragment from the analyzer reports\&. """
+170 
+171     pretty = prettify_bug(prefix, output_dir)
+172     bugs = (pretty(bug) for bug in read_bugs(output_dir, True))
+173 
+174     name = os\&.path\&.join(output_dir, 'bugs\&.html\&.fragment')
+175     with open(name, 'w') as handle:
+176         indent = 4
+177         handle\&.write(reindent("""
+178         |<h2>Reports</h2>
+179         |<table class="sortable" style="table-layout:automatic">
+180         |  <thead>
+181         |    <tr>
+182         |      <td>Bug Group</td>
+183         |      <td class="sorttable_sorted">
+184         |        Bug Type
+185         |        <span id="sorttable_sortfwdind">&nbsp;&#x25BE;</span>
+186         |      </td>
+187         |      <td>File</td>
+188         |      <td>Function/Method</td>
+189         |      <td class="Q">Line</td>
+190         |      <td class="Q">Path Length</td>
+191         |      <td class="sorttable_nosort"></td>
+192         |    </tr>
+193         |  </thead>
+194         |  <tbody>""", indent))
+195         handle\&.write(comment('REPORTBUGCOL'))
+196         for current in bugs:
+197             handle\&.write(reindent("""
+198         |    <tr class="{bug_type_class}">
+199         |      <td class="DESC">{bug_category}</td>
+200         |      <td class="DESC">{bug_type}</td>
+201         |      <td>{bug_file}</td>
+202         |      <td class="DESC">{bug_function}</td>
+203         |      <td class="Q">{bug_line}</td>
+204         |      <td class="Q">{bug_path_length}</td>
+205         |      <td><a href="{report_file}#EndPath">View Report</a></td>
+206         |    </tr>""", indent)\&.format(**current))
+207             handle\&.write(comment('REPORTBUG', {'id': current['report_file']}))
+208         handle\&.write(reindent("""
+209         |  </tbody>
+210         |</table>""", indent))
+211         handle\&.write(comment('REPORTBUGEND'))
+212     return name
+213 
+214 
+.fi
+.PP
+References libscanbuild\&.report\&.comment(), startfile\&.open(), libscanbuild\&.report\&.prettify_bug(), libscanbuild\&.report\&.read_bugs(), and libscanbuild\&.report\&.reindent()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.bug_summary ( output_dir,  bug_counter)"
+
+.PP
+.nf
+ Bug summary is a HTML table to give a better overview of the bugs. 
+.fi
+.PP
+ 
+.PP
+Definition at line 116 of file report\&.py\&.
+.PP
+.nf
+116 def bug_summary(output_dir, bug_counter):
+117     """ Bug summary is a HTML table to give a better overview of the bugs\&. """
+118 
+119     name = os\&.path\&.join(output_dir, 'summary\&.html\&.fragment')
+120     with open(name, 'w') as handle:
+121         indent = 4
+122         handle\&.write(reindent("""
+123         |<h2>Bug Summary</h2>
+124         |<table>
+125         |  <thead>
+126         |    <tr>
+127         |      <td>Bug Type</td>
+128         |      <td>Quantity</td>
+129         |      <td class="sorttable_nosort">Display?</td>
+130         |    </tr>
+131         |  </thead>
+132         |  <tbody>""", indent))
+133         handle\&.write(reindent("""
+134         |    <tr style="font-weight:bold">
+135         |      <td class="SUMM_DESC">All Bugs</td>
+136         |      <td class="Q">{0}</td>
+137         |      <td>
+138         |        <center>
+139         |          <input checked type="checkbox" id="AllBugsCheck"
+140         |                 onClick="CopyCheckedStateToCheckButtons(this);"/>
+141         |        </center>
+142         |      </td>
+143         |    </tr>""", indent)\&.format(bug_counter\&.total))
+144         for category, types in bug_counter\&.categories\&.items():
+145             handle\&.write(reindent("""
+146         |    <tr>
+147         |      <th>{0}</th><th colspan=2></th>
+148         |    </tr>""", indent)\&.format(category))
+149             for bug_type in types\&.values():
+150                 handle\&.write(reindent("""
+151         |    <tr>
+152         |      <td class="SUMM_DESC">{bug_type}</td>
+153         |      <td class="Q">{bug_count}</td>
+154         |      <td>
+155         |        <center>
+156         |          <input checked type="checkbox"
+157         |                 onClick="ToggleDisplay(this,'{bug_type_class}');"/>
+158         |        </center>
+159         |      </td>
+160         |    </tr>""", indent)\&.format(**bug_type))
+161         handle\&.write(reindent("""
+162         |  </tbody>
+163         |</table>""", indent))
+164         handle\&.write(comment('SUMMARYBUGEND'))
+165     return name
+166 
+167 
+.fi
+.PP
+References libscanbuild\&.report\&.comment(), startfile\&.open(), and libscanbuild\&.report\&.reindent()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.category_type_name ( bug)"
+
+.PP
+.nf
+ Create a new bug attribute from bug by category and type.
+
+The result will be used as CSS class selector in the final report. 
+.fi
+.PP
+ 
+.PP
+Definition at line 455 of file report\&.py\&.
+.PP
+.nf
+455 def category_type_name(bug):
+456     """ Create a new bug attribute from bug by category and type\&.
+457 
+458     The result will be used as CSS class selector in the final report\&. """
+459 
+460     def smash(key):
+461         """ Make value ready to be HTML attribute value\&. """
+462 
+463         return bug\&.get(key, '')\&.lower()\&.replace(' ', '_')\&.replace("'", '')
+464 
+465     return escape('bt_' + smash('bug_category') + '_' + smash('bug_type'))
+466 
+467 
+.fi
+.PP
+References libscanbuild\&.report\&.escape()\&.
+.PP
+Referenced by libscanbuild\&.report\&.create_counters(), and libscanbuild\&.report\&.prettify_bug()\&.
+.SS "def libscanbuild\&.report\&.chop ( prefix,  filename)"
+
+.PP
+.nf
+ Create 'filename' from '/prefix/filename' 
+.fi
+.PP
+ 
+.PP
+Definition at line 541 of file report\&.py\&.
+.PP
+.nf
+541 def chop(prefix, filename):
+542     """ Create 'filename' from '/prefix/filename' """
+543 
+544     return filename if not len(prefix) else os\&.path\&.relpath(filename, prefix)
+545 
+546 
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.prettify_bug(), and libscanbuild\&.report\&.prettify_crash()\&.
+.SS "def libscanbuild\&.report\&.comment ( name,  opts = \fCdict()\fP)"
+
+.PP
+.nf
+ Utility function to format meta information as comment. 
+.fi
+.PP
+ 
+.PP
+Definition at line 570 of file report\&.py\&.
+.PP
+.nf
+570 def comment(name, opts=dict()):
+571     """ Utility function to format meta information as comment\&. """
+572 
+573     attributes = ''
+574     for key, value in opts\&.items():
+575         attributes += ' {0}="{1}"'\&.format(key, value)
+576 
+577     return '<!-- {0}{1} -->{2}'\&.format(name, attributes, os\&.linesep)
+578 
+579 
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.assemble_cover(), libscanbuild\&.report\&.bug_report(), libscanbuild\&.report\&.bug_summary(), libscanbuild\&.report\&.crash_report(), and clang::refactor\&.findTestSelectionRanges()\&.
+.SS "def libscanbuild\&.report\&.commonprefix ( files)"
+
+.PP
+.nf
+ Fixed version of os.path.commonprefix.
+
+:param files: list of file names.
+:return: the longest path prefix that is a prefix of all files. 
+.fi
+.PP
+ 
+.PP
+Definition at line 587 of file report\&.py\&.
+.PP
+.nf
+587 def commonprefix(files):
+588     """ Fixed version of os\&.path\&.commonprefix\&.
+589 
+590     :param files: list of file names\&.
+591     :return: the longest path prefix that is a prefix of all files\&. """
+592     result = None
+593     for current in files:
+594         if result is not None:
+595             result = os\&.path\&.commonprefix([result, current])
+596         else:
+597             result = current
+598 
+599     if result is None:
+600         return ''
+601     elif not os\&.path\&.isdir(result):
+602         return os\&.path\&.dirname(result)
+603     else:
+604         return os\&.path\&.abspath(result)
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.commonprefix_from()\&.
+.SS "def libscanbuild\&.report\&.commonprefix_from ( filename)"
+
+.PP
+.nf
+ Create file prefix from a compilation database entries. 
+.fi
+.PP
+ 
+.PP
+Definition at line 580 of file report\&.py\&.
+.PP
+.nf
+580 def commonprefix_from(filename):
+581     """ Create file prefix from a compilation database entries\&. """
+582 
+583     with open(filename, 'r') as handle:
+584         return commonprefix(item['file'] for item in json\&.load(handle))
+585 
+586 
+.fi
+.PP
+References libscanbuild\&.report\&.commonprefix(), and startfile\&.open()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.copy_resource_files ( output_dir)"
+
+.PP
+.nf
+ Copy the javascript and css files to the report directory. 
+.fi
+.PP
+ 
+.PP
+Definition at line 525 of file report\&.py\&.
+.PP
+.nf
+525 def copy_resource_files(output_dir):
+526     """ Copy the javascript and css files to the report directory\&. """
+527 
+528     this_dir = os\&.path\&.dirname(os\&.path\&.realpath(__file__))
+529     for resource in os\&.listdir(os\&.path\&.join(this_dir, 'resources')):
+530         shutil\&.copy(os\&.path\&.join(this_dir, 'resources', resource), output_dir)
+531 
+532 
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.crash_report ( output_dir,  prefix)"
+
+.PP
+.nf
+ Creates a fragment from the compiler crashes. 
+.fi
+.PP
+ 
+.PP
+Definition at line 215 of file report\&.py\&.
+.PP
+.nf
+215 def crash_report(output_dir, prefix):
+216     """ Creates a fragment from the compiler crashes\&. """
+217 
+218     pretty = prettify_crash(prefix, output_dir)
+219     crashes = (pretty(crash) for crash in read_crashes(output_dir))
+220 
+221     name = os\&.path\&.join(output_dir, 'crashes\&.html\&.fragment')
+222     with open(name, 'w') as handle:
+223         indent = 4
+224         handle\&.write(reindent("""
+225         |<h2>Analyzer Failures</h2>
+226         |<p>The analyzer had problems processing the following files:</p>
+227         |<table>
+228         |  <thead>
+229         |    <tr>
+230         |      <td>Problem</td>
+231         |      <td>Source File</td>
+232         |      <td>Preprocessed File</td>
+233         |      <td>STDERR Output</td>
+234         |    </tr>
+235         |  </thead>
+236         |  <tbody>""", indent))
+237         for current in crashes:
+238             handle\&.write(reindent("""
+239         |    <tr>
+240         |      <td>{problem}</td>
+241         |      <td>{source}</td>
+242         |      <td><a href="{file}">preprocessor output</a></td>
+243         |      <td><a href="{stderr}">analyzer std err</a></td>
+244         |    </tr>""", indent)\&.format(**current))
+245             handle\&.write(comment('REPORTPROBLEM', current))
+246         handle\&.write(reindent("""
+247         |  </tbody>
+248         |</table>""", indent))
+249         handle\&.write(comment('REPORTCRASHES'))
+250     return name
+251 
+252 
+.fi
+.PP
+References libscanbuild\&.report\&.comment(), startfile\&.open(), libscanbuild\&.report\&.prettify_crash(), libscanbuild\&.report\&.read_crashes(), and libscanbuild\&.report\&.reindent()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.create_counters ()"
+
+.PP
+.nf
+ Create counters for bug statistics.
+
+Two entries are maintained: 'total' is an integer, represents the
+number of bugs. The 'categories' is a two level categorisation of bug
+counters. The first level is 'bug category' the second is 'bug type'.
+Each entry in this classification is a dictionary of 'count', 'type'
+and 'label'. 
+.fi
+.PP
+ 
+.PP
+Definition at line 468 of file report\&.py\&.
+.PP
+.nf
+468 def create_counters():
+469     """ Create counters for bug statistics\&.
+470 
+471     Two entries are maintained: 'total' is an integer, represents the
+472     number of bugs\&. The 'categories' is a two level categorisation of bug
+473     counters\&. The first level is 'bug category' the second is 'bug type'\&.
+474     Each entry in this classification is a dictionary of 'count', 'type'
+475     and 'label'\&. """
+476 
+477     def predicate(bug):
+478         bug_category = bug['bug_category']
+479         bug_type = bug['bug_type']
+480         current_category = predicate\&.categories\&.get(bug_category, dict())
+481         current_type = current_category\&.get(bug_type, {
+482             'bug_type': bug_type,
+483             'bug_type_class': category_type_name(bug),
+484             'bug_count': 0
+485         })
+486         current_type\&.update({'bug_count': current_type['bug_count'] + 1})
+487         current_category\&.update({bug_type: current_type})
+488         predicate\&.categories\&.update({bug_category: current_category})
+489         predicate\&.total += 1
+490 
+491     predicate\&.total = 0
+492     predicate\&.categories = dict()
+493     return predicate
+494 
+495 
+.fi
+.PP
+References libscanbuild\&.report\&.category_type_name()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.document ( args)"
+
+.PP
+.nf
+ Generates cover report and returns the number of bugs/crashes. 
+.fi
+.PP
+ 
+.PP
+Definition at line 26 of file report\&.py\&.
+.PP
+.nf
+26 def document(args):
+27     """ Generates cover report and returns the number of bugs/crashes\&. """
+28 
+29     html_reports_available = args\&.output_format in {'html', 'plist-html', 'sarif-html'}
+30     sarif_reports_available = args\&.output_format in {'sarif', 'sarif-html'}
+31 
+32     logging\&.debug('count crashes and bugs')
+33     crash_count = sum(1 for _ in read_crashes(args\&.output))
+34     bug_counter = create_counters()
+35     for bug in read_bugs(args\&.output, html_reports_available):
+36         bug_counter(bug)
+37     result = crash_count + bug_counter\&.total
+38 
+39     if html_reports_available and result:
+40         use_cdb = os\&.path\&.exists(args\&.cdb)
+41 
+42         logging\&.debug('generate index\&.html file')
+43         # common prefix for source files to have sorter path
+44         prefix = commonprefix_from(args\&.cdb) if use_cdb else os\&.getcwd()
+45         # assemble the cover from multiple fragments
+46         fragments = []
+47         try:
+48             if bug_counter\&.total:
+49                 fragments\&.append(bug_summary(args\&.output, bug_counter))
+50                 fragments\&.append(bug_report(args\&.output, prefix))
+51             if crash_count:
+52                 fragments\&.append(crash_report(args\&.output, prefix))
+53             assemble_cover(args, prefix, fragments)
+54             # copy additional files to the report
+55             copy_resource_files(args\&.output)
+56             if use_cdb:
+57                 shutil\&.copy(args\&.cdb, args\&.output)
+58         finally:
+59             for fragment in fragments:
+60                 os\&.remove(fragment)
+61 
+62     if sarif_reports_available:
+63         logging\&.debug('merging sarif files')
+64         merge_sarif_files(args\&.output)
+65 
+66     return result
+67 
+68 
+.fi
+.PP
+References libscanbuild\&.report\&.assemble_cover(), libscanbuild\&.report\&.bug_report(), libscanbuild\&.report\&.bug_summary(), libscanbuild\&.report\&.commonprefix_from(), libscanbuild\&.report\&.copy_resource_files(), libscanbuild\&.report\&.crash_report(), libscanbuild\&.report\&.create_counters(), libscanbuild\&.report\&.merge_sarif_files(), libscanbuild\&.report\&.read_bugs(), and libscanbuild\&.report\&.read_crashes()\&.
+.PP
+Referenced by libscanbuild\&.analyze\&.analyze_build(), and libscanbuild\&.analyze\&.scan_build()\&.
+.SS "def libscanbuild\&.report\&.encode_value ( container,  key,  encode)"
+
+.PP
+.nf
+ Run 'encode' on 'container[key]' value and update it. 
+.fi
+.PP
+ 
+.PP
+Definition at line 533 of file report\&.py\&.
+.PP
+.nf
+533 def encode_value(container, key, encode):
+534     """ Run 'encode' on 'container[key]' value and update it\&. """
+535 
+536     if key in container:
+537         value = encode(container[key])
+538         container\&.update({key: value})
+539 
+540 
+.fi
+.PP
+References libscanbuild\&.shell\&.encode()\&.
+.PP
+Referenced by libscanbuild\&.report\&.parse_bug_html(), libscanbuild\&.report\&.prettify_bug(), and libscanbuild\&.report\&.prettify_crash()\&.
+.SS "def libscanbuild\&.report\&.escape ( text)"
+
+.PP
+.nf
+ Paranoid HTML escape method. (Python version independent) 
+.fi
+.PP
+ 
+.PP
+Definition at line 547 of file report\&.py\&.
+.PP
+.nf
+547 def escape(text):
+548     """ Paranoid HTML escape method\&. (Python version independent) """
+549 
+550     escape_table = {
+551         '&': '&amp;',
+552         '"': '&quot;',
+553         "'": '&apos;',
+554         '>': '&gt;',
+555         '<': '&lt;'
+556     }
+557     return ''\&.join(escape_table\&.get(c, c) for c in text)
+558 
+559 
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.category_type_name(), libscanbuild\&.shell\&.encode(), clang::LibclangInvocationReporter\&.LibclangInvocationReporter(), libscanbuild\&.report\&.prettify_bug(), libscanbuild\&.report\&.prettify_crash(), and hlibhelp\&.printTableSeparator()\&.
+.SS "def libscanbuild\&.report\&.merge_sarif_files ( output_dir,  sort_files = \fCFalse\fP)"
+
+.PP
+.nf
+ Reads and merges all .sarif files in the given output directory.
+
+Each sarif file in the output directory is understood as a single run
+and thus appear separate in the top level runs array. This requires
+modifying the run index of any embedded links in messages.
+
+.fi
+.PP
+ 
+.PP
+Definition at line 286 of file report\&.py\&.
+.PP
+.nf
+286 def merge_sarif_files(output_dir, sort_files=False):
+287     """ Reads and merges all \&.sarif files in the given output directory\&.
+288 
+289     Each sarif file in the output directory is understood as a single run
+290     and thus appear separate in the top level runs array\&. This requires
+291     modifying the run index of any embedded links in messages\&.
+292     """
+293 
+294     def empty(file_name):
+295         return os\&.stat(file_name)\&.st_size == 0
+296 
+297     def update_sarif_object(sarif_object, runs_count_offset):
+298         """
+299             Given a SARIF object, checks its dictionary entries for a 'message' property\&.
+300             If it exists, updates the message index of embedded links in the run index\&.
+301 
+302             Recursively looks through entries in the dictionary\&.
+303         """
+304         if not isinstance(sarif_object, dict):
+305             return sarif_object
+306 
+307         if 'message' in sarif_object:
+308             sarif_object['message'] = match_and_update_run(sarif_object['message'], runs_count_offset)
+309 
+310         for key in sarif_object:
+311             if isinstance(sarif_object[key], list):
+312                 # iterate through subobjects and update it\&.
+313                 arr = [update_sarif_object(entry, runs_count_offset) for entry in sarif_object[key]]
+314                 sarif_object[key] = arr
+315             elif isinstance(sarif_object[key], dict):
+316                 sarif_object[key] = update_sarif_object(sarif_object[key], runs_count_offset)
+317             else:
+318                 # do nothing
+319                 pass
+320 
+321         return sarif_object
+322 
+323 
+324     def match_and_update_run(message, runs_count_offset):
+325         """
+326             Given a SARIF message object, checks if the text property contains an embedded link and
+327             updates the run index if necessary\&.
+328         """
+329         if 'text' not in message:
+330             return message
+331 
+332         # we only merge runs, so we only need to update the run index
+333         pattern = re\&.compile(r'sarif:/runs/(\d+)')
+334 
+335         text = message['text']
+336         matches = re\&.finditer(pattern, text)
+337         matches_list = list(matches)
+338 
+339         # update matches from right to left to make increasing character length (9->10) smoother
+340         for idx in range(len(matches_list) - 1, -1, -1):
+341             match = matches_list[idx]
+342             new_run_count = str(runs_count_offset + int(match\&.group(1)))
+343             text = text[0:match\&.start(1)] + new_run_count + text[match\&.end(1):]
+344 
+345         message['text'] = text
+346         return message
+347 
+348 
+349 
+350     sarif_files = (file for file in glob\&.iglob(os\&.path\&.join(output_dir, '*\&.sarif')) if not empty(file))
+351     # exposed for testing since the order of files returned by glob is not guaranteed to be sorted
+352     if sort_files:
+353         sarif_files = list(sarif_files)
+354         sarif_files\&.sort()
+355 
+356     runs_count = 0
+357     merged = {}
+358     for sarif_file in sarif_files:
+359         with open(sarif_file) as fp:
+360             sarif = json\&.load(fp)
+361             if 'runs' not in sarif:
+362                 continue
+363 
+364             # start with the first file
+365             if not merged:
+366                 merged = sarif
+367             else:
+368                 # extract the run and append it to the merged output
+369                 for run in sarif['runs']:
+370                     new_run = update_sarif_object(run, runs_count)
+371                     merged['runs']\&.append(new_run)
+372 
+373             runs_count += len(sarif['runs'])
+374 
+375     with open(os\&.path\&.join(output_dir, 'results-merged\&.sarif'), 'w') as out:
+376         json\&.dump(merged, out, indent=4, sort_keys=True)
+377 
+378 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.parse_bug_html ( filename)"
+
+.PP
+.nf
+ Parse out the bug information from HTML output. 
+.fi
+.PP
+ 
+.PP
+Definition at line 400 of file report\&.py\&.
+.PP
+.nf
+400 def parse_bug_html(filename):
+401     """ Parse out the bug information from HTML output\&. """
+402 
+403     patterns = [re\&.compile(r'<!-- BUGTYPE (?P<bug_type>\&.*) -->$'),
+404                 re\&.compile(r'<!-- BUGFILE (?P<bug_file>\&.*) -->$'),
+405                 re\&.compile(r'<!-- BUGPATHLENGTH (?P<bug_path_length>\&.*) -->$'),
+406                 re\&.compile(r'<!-- BUGLINE (?P<bug_line>\&.*) -->$'),
+407                 re\&.compile(r'<!-- BUGCATEGORY (?P<bug_category>\&.*) -->$'),
+408                 re\&.compile(r'<!-- BUGDESC (?P<bug_description>\&.*) -->$'),
+409                 re\&.compile(r'<!-- FUNCTIONNAME (?P<bug_function>\&.*) -->$')]
+410     endsign = re\&.compile(r'<!-- BUGMETAEND -->')
+411 
+412     bug = {
+413         'report_file': filename,
+414         'bug_function': 'n/a',  # compatibility with < clang-3\&.5
+415         'bug_category': 'Other',
+416         'bug_line': 0,
+417         'bug_path_length': 1
+418     }
+419 
+420     with open(filename) as handler:
+421         for line in handler\&.readlines():
+422             # do not read the file further
+423             if endsign\&.match(line):
+424                 break
+425             # search for the right lines
+426             for regex in patterns:
+427                 match = regex\&.match(line\&.strip())
+428                 if match:
+429                     bug\&.update(match\&.groupdict())
+430                     break
+431 
+432     encode_value(bug, 'bug_line', int)
+433     encode_value(bug, 'bug_path_length', int)
+434 
+435     yield bug
+436 
+437 
+.fi
+.PP
+References libscanbuild\&.report\&.encode_value(), and startfile\&.open()\&.
+.SS "def libscanbuild\&.report\&.parse_bug_plist ( filename)"
+
+.PP
+.nf
+ Returns the generator of bugs from a single .plist file. 
+.fi
+.PP
+ 
+.PP
+Definition at line 379 of file report\&.py\&.
+.PP
+.nf
+379 def parse_bug_plist(filename):
+380     """ Returns the generator of bugs from a single \&.plist file\&. """
+381 
+382     with open(filename, 'rb') as fp:
+383       content = plistlib\&.load(fp)
+384       files = content\&.get('files')
+385       for bug in content\&.get('diagnostics', []):
+386           if len(files) <= int(bug['location']['file']):
+387               logging\&.warning('Parsing bug from "%s" failed', filename)
+388               continue
+389 
+390           yield {
+391               'result': filename,
+392               'bug_type': bug['type'],
+393               'bug_category': bug['category'],
+394               'bug_line': int(bug['location']['line']),
+395               'bug_path_length': int(bug['location']['col']),
+396               'bug_file': files[int(bug['location']['file'])]
+397           }
+398 
+399 
+.fi
+.PP
+References startfile\&.open()\&.
+.SS "def libscanbuild\&.report\&.parse_crash ( filename)"
+
+.PP
+.nf
+ Parse out the crash information from the report file. 
+.fi
+.PP
+ 
+.PP
+Definition at line 438 of file report\&.py\&.
+.PP
+.nf
+438 def parse_crash(filename):
+439     """ Parse out the crash information from the report file\&. """
+440 
+441     match = re\&.match(r'(\&.*)\\&.info\\&.txt', filename)
+442     name = match\&.group(1) if match else None
+443     with open(filename, mode='rb') as handler:
+444         # this is a workaround to fix windows read '\r\n' as new lines\&.
+445         lines = [line\&.decode()\&.rstrip() for line in handler\&.readlines()]
+446         return {
+447             'source': lines[0],
+448             'problem': lines[1],
+449             'file': name,
+450             'info': name + '\&.info\&.txt',
+451             'stderr': name + '\&.stderr\&.txt'
+452         }
+453 
+454 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by libscanbuild\&.report\&.read_crashes()\&.
+.SS "def libscanbuild\&.report\&.prettify_bug ( prefix,  output_dir)"
+
+.PP
+Definition at line 496 of file report\&.py\&.
+.PP
+.nf
+496 def prettify_bug(prefix, output_dir):
+497     def predicate(bug):
+498         """ Make safe this values to embed into HTML\&. """
+499 
+500         bug['bug_type_class'] = category_type_name(bug)
+501 
+502         encode_value(bug, 'bug_file', lambda x: escape(chop(prefix, x)))
+503         encode_value(bug, 'bug_category', escape)
+504         encode_value(bug, 'bug_type', escape)
+505         encode_value(bug, 'report_file', lambda x: escape(chop(output_dir, x)))
+506         return bug
+507 
+508     return predicate
+509 
+510 
+.fi
+.PP
+References libscanbuild\&.report\&.category_type_name(), libscanbuild\&.report\&.chop(), libscanbuild\&.report\&.encode_value(), and libscanbuild\&.report\&.escape()\&.
+.PP
+Referenced by libscanbuild\&.report\&.bug_report()\&.
+.SS "def libscanbuild\&.report\&.prettify_crash ( prefix,  output_dir)"
+
+.PP
+Definition at line 511 of file report\&.py\&.
+.PP
+.nf
+511 def prettify_crash(prefix, output_dir):
+512     def predicate(crash):
+513         """ Make safe this values to embed into HTML\&. """
+514 
+515         encode_value(crash, 'source', lambda x: escape(chop(prefix, x)))
+516         encode_value(crash, 'problem', escape)
+517         encode_value(crash, 'file', lambda x: escape(chop(output_dir, x)))
+518         encode_value(crash, 'info', lambda x: escape(chop(output_dir, x)))
+519         encode_value(crash, 'stderr', lambda x: escape(chop(output_dir, x)))
+520         return crash
+521 
+522     return predicate
+523 
+524 
+.fi
+.PP
+References libscanbuild\&.report\&.chop(), libscanbuild\&.report\&.encode_value(), and libscanbuild\&.report\&.escape()\&.
+.PP
+Referenced by libscanbuild\&.report\&.crash_report()\&.
+.SS "def libscanbuild\&.report\&.read_bugs ( output_dir,  html)"
+
+.PP
+.nf
+ Generate a unique sequence of bugs from given output directory.
+
+Duplicates can be in a project if the same module was compiled multiple
+times with different compiler options. These would be better to show in
+the final report (cover) only once. 
+.fi
+.PP
+ 
+.PP
+Definition at line 261 of file report\&.py\&.
+.PP
+.nf
+261 def read_bugs(output_dir, html):
+262     # type: (str, bool) -> Generator[Dict[str, Any], None, None]
+263     """ Generate a unique sequence of bugs from given output directory\&.
+264 
+265     Duplicates can be in a project if the same module was compiled multiple
+266     times with different compiler options\&. These would be better to show in
+267     the final report (cover) only once\&. """
+268 
+269     def empty(file_name):
+270         return os\&.stat(file_name)\&.st_size == 0
+271 
+272     duplicate = duplicate_check(
+273         lambda bug: '{bug_line}\&.{bug_path_length}:{bug_file}'\&.format(**bug))
+274 
+275     # get the right parser for the job\&.
+276     parser = parse_bug_html if html else parse_bug_plist
+277     # get the input files, which are not empty\&.
+278     pattern = os\&.path\&.join(output_dir, '*\&.html' if html else '*\&.plist')
+279     bug_files = (file for file in glob\&.iglob(pattern) if not empty(file))
+280 
+281     for bug_file in bug_files:
+282         for bug in parser(bug_file):
+283             if not duplicate(bug):
+284                 yield bug
+285 
+.fi
+.PP
+References libscanbuild\&.duplicate_check()\&.
+.PP
+Referenced by libscanbuild\&.report\&.bug_report(), and libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.read_crashes ( output_dir)"
+
+.PP
+.nf
+ Generate a unique sequence of crashes from given output directory. 
+.fi
+.PP
+ 
+.PP
+Definition at line 253 of file report\&.py\&.
+.PP
+.nf
+253 def read_crashes(output_dir):
+254     """ Generate a unique sequence of crashes from given output directory\&. """
+255 
+256     return (parse_crash(filename)
+257             for filename in glob\&.iglob(os\&.path\&.join(output_dir, 'failures',
+258                                                     '*\&.info\&.txt')))
+259 
+260 
+.fi
+.PP
+References libscanbuild\&.report\&.parse_crash()\&.
+.PP
+Referenced by libscanbuild\&.report\&.crash_report(), and libscanbuild\&.report\&.document()\&.
+.SS "def libscanbuild\&.report\&.reindent ( text,  indent)"
+
+.PP
+.nf
+ Utility function to format html output and keep indentation. 
+.fi
+.PP
+ 
+.PP
+Definition at line 560 of file report\&.py\&.
+.PP
+.nf
+560 def reindent(text, indent):
+561     """ Utility function to format html output and keep indentation\&. """
+562 
+563     result = ''
+564     for line in text\&.splitlines():
+565         if len(line\&.strip()):
+566             result += ' ' * indent + line\&.split('|')[1] + os\&.linesep
+567     return result
+568 
+569 
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.assemble_cover(), libscanbuild\&.report\&.bug_report(), libscanbuild\&.report\&.bug_summary(), and libscanbuild\&.report\&.crash_report()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

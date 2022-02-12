@@ -1,0 +1,142 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/driver/cc1gen_reproducer_main.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/driver/cc1gen_reproducer_main.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Diagnostic\&.h'\fP
+.br
+\fC#include 'clang/Basic/LLVM\&.h'\fP
+.br
+\fC#include 'clang/Driver/Compilation\&.h'\fP
+.br
+\fC#include 'clang/Driver/Driver\&.h'\fP
+.br
+\fC#include 'llvm/ADT/ArrayRef\&.h'\fP
+.br
+\fC#include 'llvm/ADT/STLExtras\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/Host\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+\fC#include 'llvm/Support/VirtualFileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/YAMLTraits\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBllvm::yaml::MappingTraits< UnsavedFileHash >\fP"
+.br
+.ti -1c
+.RI "struct \fBllvm::yaml::MappingTraits< ClangInvocationInfo >\fP"
+.br
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBllvm\fP"
+.br
+.ti -1c
+.RI " \fBllvm::yaml\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "std::string \fBGetExecutablePath\fP (const char *Argv0, bool CanonicalPrefixes)"
+.br
+.ti -1c
+.RI "int \fBcc1gen_reproducer_main\fP (ArrayRef< const char * > Argv, const char *Argv0, void *MainAddr)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int cc1gen_reproducer_main (ArrayRef< const char * > Argv, const char * Argv0, void * MainAddr)"
+
+.PP
+Definition at line 156 of file cc1gen_reproducer_main\&.cpp\&.
+.PP
+.nf
+157                                            {
+158   if (Argv\&.size() < 1) {
+159     llvm::errs() << "error: missing invocation file\n";
+160     return 1;
+161   }
+162   // Parse the invocation descriptor\&.
+163   StringRef Input = Argv[0];
+164   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
+165       llvm::MemoryBuffer::getFile(Input, /*IsText=*/true);
+166   if (!Buffer) {
+167     llvm::errs() << "error: failed to read " << Input << ": "
+168                  << Buffer\&.getError()\&.message() << "\n";
+169     return 1;
+170   }
+171   llvm::yaml::Input YAML(Buffer\&.get()->getBuffer());
+172   ClangInvocationInfo InvocationInfo;
+173   YAML >> InvocationInfo;
+174   if (Argv\&.size() > 1 && Argv[1] == StringRef("-v"))
+175     InvocationInfo\&.Dump = true;
+176 
+177   // Create an invocation that will produce the reproducer\&.
+178   std::vector<const char *> DriverArgs;
+179   for (const auto &Arg : InvocationInfo\&.Arguments)
+180     DriverArgs\&.push_back(Arg\&.c_str());
+181   std::string Path = GetExecutablePath(Argv0, /*CanonicalPrefixes=*/true);
+182   DriverArgs[0] = Path\&.c_str();
+183   llvm::Optional<driver::Driver::CompilationDiagnosticReport> Report =
+184       generateReproducerForInvocationArguments(DriverArgs, InvocationInfo);
+185 
+186   // Emit the information about the reproduce files to stdout\&.
+187   int Result = 1;
+188   if (Report) {
+189     printReproducerInformation(llvm::outs(), InvocationInfo, *Report);
+190     Result = 0;
+191   }
+192 
+193   // Remove the input file\&.
+194   llvm::sys::fs::remove(Input);
+195   return Result;
+196 }
+.fi
+.SS "std::string GetExecutablePath (const char * Argv0, bool CanonicalPrefixes)"
+
+.PP
+Definition at line 57 of file driver\&.cpp\&.
+.PP
+.nf
+57                                                                        {
+58   if (!CanonicalPrefixes) {
+59     SmallString<128> ExecutablePath(Argv0);
+60     // Do a PATH lookup if Argv0 isn't a valid path\&.
+61     if (!llvm::sys::fs::exists(ExecutablePath))
+62       if (llvm::ErrorOr<std::string> P =
+63               llvm::sys::findProgramByName(ExecutablePath))
+64         ExecutablePath = *P;
+65     return std::string(ExecutablePath\&.str());
+66   }
+67 
+68   // This just needs to be some symbol in the binary; C++ doesn't
+69   // allow taking the address of ::main however\&.
+70   void *P = (void*) (intptr_t) GetExecutablePath;
+71   return llvm::sys::fs::getMainExecutable(Argv0, P);
+72 }
+.fi
+.PP
+References GetExecutablePath()\&.
+.PP
+Referenced by GetExecutablePath()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

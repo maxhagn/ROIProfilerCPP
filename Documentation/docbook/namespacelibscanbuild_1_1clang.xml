@@ -1,0 +1,343 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespacelibscanbuild_1_1clang" xml:lang="en-US">
+<title>libscanbuild.clang Namespace Reference</title>
+<indexterm><primary>libscanbuild.clang</primary></indexterm>
+<simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>class <link linkend="_classlibscanbuild_1_1clang_1_1_clang_error_exception">ClangErrorException</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1ac38809d624aaefe00fff85b0bfa1005f">get_version</link> (clang)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1aceaa1fcd710247641672c50964398c2a">get_arguments</link> (command, cwd)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1a22384ca519d665152d7131a80ea349bb">get_active_checkers</link> (clang, plugins)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1a34893da383d84e138695f07a596d1b2b">is_active</link> (checkers)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1af887fda2dc553cce619a1a5dc9a39267">parse_checkers</link> (stream)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1a70514d7e50269346912151e9c2b0e0d7">get_checkers</link> (clang, plugins)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1aea5b01c822382e97fd622bbfadd82c62">is_ctu_capable</link> (extdef_map_cmd)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1clang_1af91327b127fdb63a9c81a3d8d03d5149">get_triple_arch</link> (command, cwd)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Variables    </title>
+        <itemizedlist>
+            <listitem><para><link linkend="_namespacelibscanbuild_1_1clang_1a432255a4149d3c1c5deb929fdad2b46e">ACTIVE_CHECKER_PATTERN</link> = re.compile(r&apos;^-analyzer-checker=(.*)$&apos;)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespacelibscanbuild_1_1clang_1a22384ca519d665152d7131a80ea349bb"/>    <section>
+    <title>get_active_checkers()</title>
+<indexterm><primary>get_active_checkers</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>get_active_checkers</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.get_active_checkers ( clang,  plugins)</computeroutput></para>
+<para><literallayout><computeroutput> Get the active checker list.
+
+:param clang:   the compiler we are using
+:param plugins: list of plugins which was requested by the user
+:return:        list of checker names which are active
+
+To get the default checkers we execute Clang to print how this
+compilation would be called. And take out the enabled checker from the
+arguments. For input file we specify stdin and pass only language
+information. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00058">58</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00058 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1a22384ca519d665152d7131a80ea349bb">get_active_checkers</link>(clang,&#32;plugins):
+00059 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Get&#32;the&#32;active&#32;checker&#32;list.</emphasis>
+00060 <emphasis role="stringliteral"></emphasis>
+00061 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;clang:&#32;&#32;&#32;the&#32;compiler&#32;we&#32;are&#32;using</emphasis>
+00062 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;plugins:&#32;list&#32;of&#32;plugins&#32;which&#32;was&#32;requested&#32;by&#32;the&#32;user</emphasis>
+00063 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;list&#32;of&#32;checker&#32;names&#32;which&#32;are&#32;active</emphasis>
+00064 <emphasis role="stringliteral"></emphasis>
+00065 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;To&#32;get&#32;the&#32;default&#32;checkers&#32;we&#32;execute&#32;Clang&#32;to&#32;print&#32;how&#32;this</emphasis>
+00066 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;compilation&#32;would&#32;be&#32;called.&#32;And&#32;take&#32;out&#32;the&#32;enabled&#32;checker&#32;from&#32;the</emphasis>
+00067 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;arguments.&#32;For&#32;input&#32;file&#32;we&#32;specify&#32;stdin&#32;and&#32;pass&#32;only&#32;language</emphasis>
+00068 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;information.&#32;&quot;&quot;&quot;</emphasis>
+00069 
+00070 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>get_active_checkers_for(language):
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;a&#32;list&#32;of&#32;active&#32;checkers&#32;for&#32;the&#32;given&#32;language.&#32;&quot;&quot;&quot;</emphasis>
+00072 
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;load_args&#32;=&#32;[arg
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;plugin&#32;<emphasis role="keywordflow">in</emphasis>&#32;plugins
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;-Xclang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-load&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Xclang&apos;</emphasis>,&#32;plugin]]
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmd&#32;=&#32;[clang,&#32;<emphasis role="stringliteral">&apos;--analyze&apos;</emphasis>]&#32;+&#32;load_args&#32;+&#32;[<emphasis role="stringliteral">&apos;-x&apos;</emphasis>,&#32;language,&#32;<emphasis role="stringliteral">&apos;-&apos;</emphasis>]
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[ACTIVE_CHECKER_PATTERN.match(arg).group(1)
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1clang_1aceaa1fcd710247641672c50964398c2a">get_arguments</link>(cmd,&#32;<emphasis role="stringliteral">&apos;.&apos;</emphasis>)
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;ACTIVE_CHECKER_PATTERN.match(arg)]
+00080 
+00081 &#32;&#32;&#32;&#32;result&#32;=&#32;set()
+00082 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;language&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;objective-c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;objective-c++&apos;</emphasis>]:
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result.update(get_active_checkers_for(language))
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;frozenset(result)
+00085 
+00086 
+</programlisting><para>
+References <link linkend="_clang_8py_source_1l00038">libscanbuild.clang.get_arguments()</link>.</para>
+<para>
+Referenced by <link linkend="_clang_8py_source_1l00138">libscanbuild.clang.get_checkers()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1aceaa1fcd710247641672c50964398c2a"/>    <section>
+    <title>get_arguments()</title>
+<indexterm><primary>get_arguments</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>get_arguments</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.get_arguments ( command,  cwd)</computeroutput></para>
+<para><literallayout><computeroutput> Capture Clang invocation.
+
+:param command: the compilation command
+:param cwd:     the current working directory
+:return:        the detailed front-end invocation command </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00038">38</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00038 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1aceaa1fcd710247641672c50964398c2a">get_arguments</link>(command,&#32;cwd):
+00039 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Capture&#32;Clang&#32;invocation.</emphasis>
+00040 <emphasis role="stringliteral"></emphasis>
+00041 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;command:&#32;the&#32;compilation&#32;command</emphasis>
+00042 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;cwd:&#32;&#32;&#32;&#32;&#32;the&#32;current&#32;working&#32;directory</emphasis>
+00043 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;the&#32;detailed&#32;front-end&#32;invocation&#32;command&#32;&quot;&quot;&quot;</emphasis>
+00044 
+00045 &#32;&#32;&#32;&#32;cmd&#32;=&#32;command[:]
+00046 &#32;&#32;&#32;&#32;cmd.insert(1,&#32;<emphasis role="stringliteral">&apos;-###&apos;</emphasis>)
+00047 &#32;&#32;&#32;&#32;cmd.append(<emphasis role="stringliteral">&apos;-fno-color-diagnostics&apos;</emphasis>)
+00048 
+00049 &#32;&#32;&#32;&#32;output&#32;=&#32;<link linkend="_namespacelibscanbuild_1a243b8757d8cfbc0be023301a8b951d6c">run_command</link>(cmd,&#32;cwd=cwd)
+00050 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;The&#32;relevant&#32;information&#32;is&#32;in&#32;the&#32;last&#32;line&#32;of&#32;the&#32;output.</emphasis>
+00051 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Don&apos;t&#32;check&#32;if&#32;finding&#32;last&#32;line&#32;fails,&#32;would&#32;throw&#32;exception&#32;anyway.</emphasis>
+00052 &#32;&#32;&#32;&#32;last_line&#32;=&#32;output[-1]
+00053 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;re.search(<emphasis role="stringliteral">r&apos;clang(.*):&#32;error:&apos;</emphasis>,&#32;last_line):
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;ClangErrorException(last_line)
+00055 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1shell_1ae2a3d56a48c3f8031021d617491be88c">decode</link>(last_line)
+00056 
+00057 
+</programlisting><para>
+References <link linkend="_shell_8py_source_1l00054">libscanbuild.shell.decode()</link>, and <link linkend="_lib_2libscanbuild_2____init_____8py_source_1l00059">libscanbuild.run_command()</link>.</para>
+<para>
+Referenced by <link linkend="_clang_8py_source_1l00058">libscanbuild.clang.get_active_checkers()</link>, <link linkend="_clang_8py_source_1l00175">libscanbuild.clang.get_triple_arch()</link>, <link linkend="_analyze_8py_source_1l00474">libscanbuild.analyze.report_failure()</link>, and <link linkend="_analyze_8py_source_1l00532">libscanbuild.analyze.run_analyzer()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1a70514d7e50269346912151e9c2b0e0d7"/>    <section>
+    <title>get_checkers()</title>
+<indexterm><primary>get_checkers</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>get_checkers</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.get_checkers ( clang,  plugins)</computeroutput></para>
+<para><literallayout><computeroutput> Get all the available checkers from default and from the plugins.
+
+:param clang:   the compiler we are using
+:param plugins: list of plugins which was requested by the user
+:return:        a dictionary of all available checkers and its status
+
+{&lt;checker name&gt;: (&lt;checker description&gt;, &lt;is active by default&gt;)} </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00138">138</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00138 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1a70514d7e50269346912151e9c2b0e0d7">get_checkers</link>(clang,&#32;plugins):
+00139 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Get&#32;all&#32;the&#32;available&#32;checkers&#32;from&#32;default&#32;and&#32;from&#32;the&#32;plugins.</emphasis>
+00140 <emphasis role="stringliteral"></emphasis>
+00141 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;clang:&#32;&#32;&#32;the&#32;compiler&#32;we&#32;are&#32;using</emphasis>
+00142 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;plugins:&#32;list&#32;of&#32;plugins&#32;which&#32;was&#32;requested&#32;by&#32;the&#32;user</emphasis>
+00143 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;a&#32;dictionary&#32;of&#32;all&#32;available&#32;checkers&#32;and&#32;its&#32;status</emphasis>
+00144 <emphasis role="stringliteral"></emphasis>
+00145 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;{&lt;checker&#32;name&gt;:&#32;(&lt;checker&#32;description&gt;,&#32;&lt;is&#32;active&#32;by&#32;default&gt;)}&#32;&quot;&quot;&quot;</emphasis>
+00146 
+00147 &#32;&#32;&#32;&#32;load&#32;=&#32;[elem&#32;<emphasis role="keywordflow">for</emphasis>&#32;plugin&#32;<emphasis role="keywordflow">in</emphasis>&#32;plugins&#32;<emphasis role="keywordflow">for</emphasis>&#32;elem&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;-load&apos;</emphasis>,&#32;plugin]]
+00148 &#32;&#32;&#32;&#32;cmd&#32;=&#32;[clang,&#32;<emphasis role="stringliteral">&apos;-cc1&apos;</emphasis>]&#32;+&#32;load&#32;+&#32;[<emphasis role="stringliteral">&apos;-analyzer-checker-help&apos;</emphasis>]
+00149 
+00150 &#32;&#32;&#32;&#32;lines&#32;=&#32;<link linkend="_namespacelibscanbuild_1a243b8757d8cfbc0be023301a8b951d6c">run_command</link>(cmd)
+00151 
+00152 &#32;&#32;&#32;&#32;is_active_checker&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1clang_1a34893da383d84e138695f07a596d1b2b">is_active</link>(<link linkend="_namespacelibscanbuild_1_1clang_1a22384ca519d665152d7131a80ea349bb">get_active_checkers</link>(clang,&#32;plugins))
+00153 
+00154 &#32;&#32;&#32;&#32;checkers&#32;=&#32;{
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name:&#32;(description,&#32;is_active_checker(name))
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;name,&#32;description&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1clang_1af887fda2dc553cce619a1a5dc9a39267">parse_checkers</link>(lines)
+00157 &#32;&#32;&#32;&#32;}
+00158 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;checkers:
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;Exception(<emphasis role="stringliteral">&apos;Could&#32;not&#32;query&#32;Clang&#32;for&#32;available&#32;checkers.&apos;</emphasis>)
+00160 
+00161 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;checkers
+00162 
+00163 
+</programlisting><para>
+References <link linkend="_clang_8py_source_1l00058">libscanbuild.clang.get_active_checkers()</link>, <link linkend="_clang_8py_source_1l00087">libscanbuild.clang.is_active()</link>, <link linkend="_clang_8py_source_1l00100">libscanbuild.clang.parse_checkers()</link>, and <link linkend="_lib_2libscanbuild_2____init_____8py_source_1l00059">libscanbuild.run_command()</link>.</para>
+<para>
+Referenced by <link linkend="_arguments_8py_source_1l00107">libscanbuild.arguments.validate_args_for_analyze()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1af91327b127fdb63a9c81a3d8d03d5149"/>    <section>
+    <title>get_triple_arch()</title>
+<indexterm><primary>get_triple_arch</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>get_triple_arch</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.get_triple_arch ( command,  cwd)</computeroutput></para>
+<para><literallayout><computeroutput>Returns the architecture part of the target triple for the given
+compilation command. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00175">175</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00175 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1af91327b127fdb63a9c81a3d8d03d5149">get_triple_arch</link>(command,&#32;cwd):
+00176 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;Returns&#32;the&#32;architecture&#32;part&#32;of&#32;the&#32;target&#32;triple&#32;for&#32;the&#32;given</emphasis>
+00177 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;compilation&#32;command.&#32;&quot;&quot;&quot;</emphasis>
+00178 
+00179 &#32;&#32;&#32;&#32;cmd&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1clang_1aceaa1fcd710247641672c50964398c2a">get_arguments</link>(command,&#32;cwd)
+00180 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;separator&#32;=&#32;cmd.index(<emphasis role="stringliteral">&quot;-triple&quot;</emphasis>)
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cmd[separator&#32;+&#32;1]
+00183 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;(IndexError,&#32;ValueError):
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>
+</programlisting><para>
+References <link linkend="_clang_8py_source_1l00038">libscanbuild.clang.get_arguments()</link>.</para>
+<para>
+Referenced by <link linkend="_analyze_8py_source_1l00597">libscanbuild.analyze.ctu_collect_phase()</link>, and <link linkend="_analyze_8py_source_1l00659">libscanbuild.analyze.dispatch_ctu()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1ac38809d624aaefe00fff85b0bfa1005f"/>    <section>
+    <title>get_version()</title>
+<indexterm><primary>get_version</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>get_version</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.get_version ( clang)</computeroutput></para>
+<para><literallayout><computeroutput> Returns the compiler version as string.
+
+:param clang:   the compiler we are using
+:return:        the version string printed to stderr </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00027">27</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00027 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1ac38809d624aaefe00fff85b0bfa1005f">get_version</link>(clang):
+00028 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;the&#32;compiler&#32;version&#32;as&#32;string.</emphasis>
+00029 <emphasis role="stringliteral"></emphasis>
+00030 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;clang:&#32;&#32;&#32;the&#32;compiler&#32;we&#32;are&#32;using</emphasis>
+00031 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;the&#32;version&#32;string&#32;printed&#32;to&#32;stderr&#32;&quot;&quot;&quot;</emphasis>
+00032 
+00033 &#32;&#32;&#32;&#32;output&#32;=&#32;<link linkend="_namespacelibscanbuild_1a243b8757d8cfbc0be023301a8b951d6c">run_command</link>([clang,&#32;<emphasis role="stringliteral">&apos;-v&apos;</emphasis>])
+00034 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;the&#32;relevant&#32;version&#32;info&#32;is&#32;in&#32;the&#32;first&#32;line</emphasis>
+00035 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;output[0]
+00036 
+00037 
+</programlisting><para>
+References <link linkend="_lib_2libscanbuild_2____init_____8py_source_1l00059">libscanbuild.run_command()</link>.</para>
+<para>
+Referenced by <link linkend="_report_8py_source_1l00069">libscanbuild.report.assemble_cover()</link>, and <link linkend="_analyze_8py_source_1l00474">libscanbuild.analyze.report_failure()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1a34893da383d84e138695f07a596d1b2b"/>    <section>
+    <title>is_active()</title>
+<indexterm><primary>is_active</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>is_active</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.is_active ( checkers)</computeroutput></para>
+<para><literallayout><computeroutput> Returns a method, which classifies the checker active or not,
+based on the received checker name list. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00087">87</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00087 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1a34893da383d84e138695f07a596d1b2b">is_active</link>(checkers):
+00088 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;a&#32;method,&#32;which&#32;classifies&#32;the&#32;checker&#32;active&#32;or&#32;not,</emphasis>
+00089 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;based&#32;on&#32;the&#32;received&#32;checker&#32;name&#32;list.&#32;&quot;&quot;&quot;</emphasis>
+00090 
+00091 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>predicate(checker):
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;True&#32;if&#32;the&#32;given&#32;checker&#32;is&#32;active.&#32;&quot;&quot;&quot;</emphasis>
+00093 
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;any(pattern.match(checker)&#32;<emphasis role="keywordflow">for</emphasis>&#32;pattern&#32;<emphasis role="keywordflow">in</emphasis>&#32;predicate.patterns)
+00095 
+00096 &#32;&#32;&#32;&#32;predicate.patterns&#32;=&#32;[re.compile(<emphasis role="stringliteral">r&apos;^&apos;</emphasis>&#32;+&#32;a&#32;+&#32;<emphasis role="stringliteral">r&apos;(\.|$)&apos;</emphasis>)&#32;<emphasis role="keywordflow">for</emphasis>&#32;a&#32;<emphasis role="keywordflow">in</emphasis>&#32;checkers]
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;predicate
+00098 
+00099 
+</programlisting><para>
+Referenced by <link linkend="_clang_8py_source_1l00138">libscanbuild.clang.get_checkers()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1aea5b01c822382e97fd622bbfadd82c62"/>    <section>
+    <title>is_ctu_capable()</title>
+<indexterm><primary>is_ctu_capable</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>is_ctu_capable</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.is_ctu_capable ( extdef_map_cmd)</computeroutput></para>
+<para><literallayout><computeroutput> Detects if the current (or given) clang and external definition mapping
+executables are CTU compatible. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00164">164</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00164 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1aea5b01c822382e97fd622bbfadd82c62">is_ctu_capable</link>(extdef_map_cmd):
+00165 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Detects&#32;if&#32;the&#32;current&#32;(or&#32;given)&#32;clang&#32;and&#32;external&#32;definition&#32;mapping</emphasis>
+00166 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;executables&#32;are&#32;CTU&#32;compatible.&#32;&quot;&quot;&quot;</emphasis>
+00167 
+00168 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1a243b8757d8cfbc0be023301a8b951d6c">run_command</link>([extdef_map_cmd,&#32;<emphasis role="stringliteral">&apos;-version&apos;</emphasis>])
+00170 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;(OSError,&#32;subprocess.CalledProcessError):
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00172 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">True</emphasis>
+00173 
+00174 
+</programlisting><para>
+References <link linkend="_lib_2libscanbuild_2____init_____8py_source_1l00059">libscanbuild.run_command()</link>.</para>
+<para>
+Referenced by <link linkend="_arguments_8py_source_1l00107">libscanbuild.arguments.validate_args_for_analyze()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1clang_1af887fda2dc553cce619a1a5dc9a39267"/>    <section>
+    <title>parse_checkers()</title>
+<indexterm><primary>parse_checkers</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>parse_checkers</secondary></indexterm>
+<para><computeroutput>def libscanbuild.clang.parse_checkers ( stream)</computeroutput></para>
+<para><literallayout><computeroutput> Parse clang -analyzer-checker-help output.
+
+Below the line &apos;CHECKERS:&apos; are there the name description pairs.
+Many of them are in one line, but some long named checker has the
+name and the description in separate lines.
+
+The checker name is always prefixed with two space character. The
+name contains no whitespaces. Then followed by newline (if it&apos;s
+too long) or other space characters comes the description of the
+checker. The description ends with a newline character.
+
+:param stream:  list of lines to parse
+:return:        generator of tuples
+
+(&lt;checker name&gt;, &lt;checker description&gt;) </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_clang_8py_source_1l00100">100</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+<programlisting>00100 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1clang_1af887fda2dc553cce619a1a5dc9a39267">parse_checkers</link>(stream):
+00101 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Parse&#32;clang&#32;-analyzer-checker-help&#32;output.</emphasis>
+00102 <emphasis role="stringliteral"></emphasis>
+00103 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Below&#32;the&#32;line&#32;&apos;CHECKERS:&apos;&#32;are&#32;there&#32;the&#32;name&#32;description&#32;pairs.</emphasis>
+00104 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Many&#32;of&#32;them&#32;are&#32;in&#32;one&#32;line,&#32;but&#32;some&#32;long&#32;named&#32;checker&#32;has&#32;the</emphasis>
+00105 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;name&#32;and&#32;the&#32;description&#32;in&#32;separate&#32;lines.</emphasis>
+00106 <emphasis role="stringliteral"></emphasis>
+00107 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;The&#32;checker&#32;name&#32;is&#32;always&#32;prefixed&#32;with&#32;two&#32;space&#32;character.&#32;The</emphasis>
+00108 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;name&#32;contains&#32;no&#32;whitespaces.&#32;Then&#32;followed&#32;by&#32;newline&#32;(if&#32;it&apos;s</emphasis>
+00109 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;too&#32;long)&#32;or&#32;other&#32;space&#32;characters&#32;comes&#32;the&#32;description&#32;of&#32;the</emphasis>
+00110 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;checker.&#32;The&#32;description&#32;ends&#32;with&#32;a&#32;newline&#32;character.</emphasis>
+00111 <emphasis role="stringliteral"></emphasis>
+00112 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;stream:&#32;&#32;list&#32;of&#32;lines&#32;to&#32;parse</emphasis>
+00113 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;generator&#32;of&#32;tuples</emphasis>
+00114 <emphasis role="stringliteral"></emphasis>
+00115 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;(&lt;checker&#32;name&gt;,&#32;&lt;checker&#32;description&gt;)&#32;&quot;&quot;&quot;</emphasis>
+00116 
+00117 &#32;&#32;&#32;&#32;lines&#32;=&#32;iter(stream)
+00118 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;find&#32;checkers&#32;header</emphasis>
+00119 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;lines:
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;re.match(<emphasis role="stringliteral">r&apos;^CHECKERS:&apos;</emphasis>,&#32;line):
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00122 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;find&#32;entries</emphasis>
+00123 &#32;&#32;&#32;&#32;state&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00124 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;lines:
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;state&#32;<emphasis role="keywordflow">and</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;re.match(<emphasis role="stringliteral">r&apos;^\s\s\S&apos;</emphasis>,&#32;line):
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;(state,&#32;line.strip())
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;re.match(<emphasis role="stringliteral">r&apos;^\s\s\S+$&apos;</emphasis>,&#32;line.rstrip()):
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;line.strip()
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pattern&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;^\s\s(?P&lt;key&gt;\S*)\s*(?P&lt;value&gt;.*)&apos;</emphasis>)
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;match&#32;=&#32;pattern.match(line.rstrip())
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;match:
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current&#32;=&#32;match.groupdict()
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;(current[<emphasis role="stringliteral">&apos;key&apos;</emphasis>],&#32;current[<emphasis role="stringliteral">&apos;value&apos;</emphasis>])
+00136 
+00137 
+</programlisting><para>
+Referenced by <link linkend="_clang_8py_source_1l00138">libscanbuild.clang.get_checkers()</link>.</para>
+</section>
+</section>
+<section>
+<title>Variable Documentation</title>
+<anchor xml:id="_namespacelibscanbuild_1_1clang_1a432255a4149d3c1c5deb929fdad2b46e"/>    <section>
+    <title>ACTIVE_CHECKER_PATTERN</title>
+<indexterm><primary>ACTIVE_CHECKER_PATTERN</primary><secondary>libscanbuild.clang</secondary></indexterm>
+<indexterm><primary>libscanbuild.clang</primary><secondary>ACTIVE_CHECKER_PATTERN</secondary></indexterm>
+<para><computeroutput>libscanbuild.clang.ACTIVE_CHECKER_PATTERN = re.compile(r&apos;^-analyzer-checker=(.*)$&apos;)</computeroutput></para><para>
+Definition at line <link linkend="_clang_8py_source_1l00019">19</link> of file <link linkend="_clang_8py_source">clang.py</link>.</para>
+</section>
+</section>
+</section>

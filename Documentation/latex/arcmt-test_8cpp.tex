@@ -1,0 +1,101 @@
+\hypertarget{arcmt-test_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/arcmt-\/test/arcmt-\/test.cpp File Reference}
+\label{arcmt-test_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/arcmt-\/test/arcmt-\/test.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/arcmt-\/test/arcmt-\/test.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+ARCMigrate/\+ARCMT.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+ASTContext.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+PCHContainer\+Operations.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Text\+Diagnostic\+Printer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Utils.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Verify\+Diagnostic\+Consumer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Lex/\+Preprocessor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Lex/\+Preprocessor\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Memory\+Buffer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Path.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$system\+\_\+error$>$}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \mbox{\hyperlink{arcmt-test_8cpp_ad6d8d337ab25547248d119bea48daefd}{Get\+Executable\+Path}} (const char $\ast$Argv0)
+\item 
+int \mbox{\hyperlink{arcmt-test_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{arcmt-test_8cpp_ad6d8d337ab25547248d119bea48daefd}\label{arcmt-test_8cpp_ad6d8d337ab25547248d119bea48daefd}} 
+\index{arcmt-\/test.cpp@{arcmt-\/test.cpp}!GetExecutablePath@{GetExecutablePath}}
+\index{GetExecutablePath@{GetExecutablePath}!arcmt-\/test.cpp@{arcmt-\/test.cpp}}
+\doxysubsubsection{\texorpdfstring{GetExecutablePath()}{GetExecutablePath()}}
+{\footnotesize\ttfamily std\+::string Get\+Executable\+Path (\begin{DoxyParamCaption}\item[{const char $\ast$}]{Argv0 }\end{DoxyParamCaption})}
+
+
+
+Definition at line 66 of file arcmt-\/test.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{66                                                \{}
+\DoxyCodeLine{67   \textcolor{comment}{// This just needs to be some symbol in the binary; C++ doesn't}}
+\DoxyCodeLine{68   \textcolor{comment}{// allow taking the address of ::main however.}}
+\DoxyCodeLine{69   \textcolor{keywordtype}{void} *MainAddr = (\textcolor{keywordtype}{void}*) (intptr\_t) \mbox{\hyperlink{arcmt-test_8cpp_ad6d8d337ab25547248d119bea48daefd}{GetExecutablePath}};}
+\DoxyCodeLine{70   \textcolor{keywordflow}{return} llvm::sys::fs::getMainExecutable(Argv0, MainAddr);}
+\DoxyCodeLine{71 \}}
+
+\end{DoxyCode}
+
+
+Referenced by main().
+
+\mbox{\Hypertarget{arcmt-test_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{arcmt-test_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{arcmt-\/test.cpp@{arcmt-\/test.cpp}!main@{main}}
+\index{main@{main}!arcmt-\/test.cpp@{arcmt-\/test.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 343 of file arcmt-\/test.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{343                                       \{}
+\DoxyCodeLine{344   \textcolor{keywordtype}{void} *MainAddr = (\textcolor{keywordtype}{void}*) (intptr\_t) \mbox{\hyperlink{arcmt-test_8cpp_ad6d8d337ab25547248d119bea48daefd}{GetExecutablePath}};}
+\DoxyCodeLine{345   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{346 }
+\DoxyCodeLine{347   std::string}
+\DoxyCodeLine{348     resourcesPath = CompilerInvocation::GetResourcesPath(argv[0], MainAddr);}
+\DoxyCodeLine{349 }
+\DoxyCodeLine{350   \textcolor{keywordtype}{int} optargc = 0;}
+\DoxyCodeLine{351   \textcolor{keywordflow}{for} (; optargc != argc; ++optargc) \{}
+\DoxyCodeLine{352     \textcolor{keywordflow}{if} (StringRef(argv[optargc]) == \textcolor{stringliteral}{"{}-\/-\/args"{}})}
+\DoxyCodeLine{353       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{354   \}}
+\DoxyCodeLine{355   llvm::cl::ParseCommandLineOptions(optargc, argv, \textcolor{stringliteral}{"{}arcmt-\/test"{}});}
+\DoxyCodeLine{356 }
+\DoxyCodeLine{357   \textcolor{keywordflow}{if} (VerifyTransformedFiles) \{}
+\DoxyCodeLine{358     \textcolor{keywordflow}{if} (ResultFiles.empty()) \{}
+\DoxyCodeLine{359       llvm::cl::PrintHelpMessage();}
+\DoxyCodeLine{360       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{361     \}}
+\DoxyCodeLine{362     \textcolor{keywordflow}{return} verifyTransformedFiles(ResultFiles);}
+\DoxyCodeLine{363   \}}
+\DoxyCodeLine{364 }
+\DoxyCodeLine{365   \textcolor{keywordflow}{if} (optargc == argc) \{}
+\DoxyCodeLine{366     llvm::cl::PrintHelpMessage();}
+\DoxyCodeLine{367     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{368   \}}
+\DoxyCodeLine{369 }
+\DoxyCodeLine{370   ArrayRef<const char*> Args(argv+optargc+1, argc-\/optargc-\/1);}
+\DoxyCodeLine{371 }
+\DoxyCodeLine{372   \textcolor{keywordflow}{if} (CheckOnly)}
+\DoxyCodeLine{373     \textcolor{keywordflow}{return} checkForMigration(resourcesPath, Args);}
+\DoxyCodeLine{374 }
+\DoxyCodeLine{375   \textcolor{keywordflow}{return} performTransformations(resourcesPath, Args);}
+\DoxyCodeLine{376 \}}
+
+\end{DoxyCode}
+
+
+References Get\+Executable\+Path().
+

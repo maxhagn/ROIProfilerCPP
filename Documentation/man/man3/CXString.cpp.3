@@ -1,0 +1,176 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CXString.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CXString.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang\-c/Index\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorHandling\&.h'\fP
+.br
+
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBclang\fP"
+.br
+.RI "-rename "
+.ti -1c
+.RI " \fBclang::cxstring\fP"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBCXStringFlag\fP { \fBCXS_Unmanaged\fP, \fBCXS_Malloc\fP, \fBCXS_StringBuf\fP }"
+.br
+.RI "Describes the kind of underlying data in CXString\&. "
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXString \fBclang::cxstring::createEmpty\fP ()"
+.br
+.RI "Create a CXString object for an empty '' string\&. "
+.ti -1c
+.RI "CXString \fBclang::cxstring::createNull\fP ()"
+.br
+.ti -1c
+.RI "CXString \fBclang::cxstring::createRef\fP (const char *String)"
+.br
+.ti -1c
+.RI "CXString \fBclang::cxstring::createDup\fP (const char *String)"
+.br
+.ti -1c
+.RI "CXString \fBclang::cxstring::createRef\fP (StringRef String)"
+.br
+.ti -1c
+.RI "CXString \fBclang::cxstring::createDup\fP (StringRef String)"
+.br
+.ti -1c
+.RI "CXString \fBclang::cxstring::createCXString\fP (CXStringBuf *buf)"
+.br
+.RI "Create a CXString object that is backed by a string buffer\&. "
+.ti -1c
+.RI "CXStringSet * \fBclang::cxstring::createSet\fP (const std::vector< std::string > &\fBStrings\fP)"
+.br
+.ti -1c
+.RI "CXStringBuf * \fBclang::cxstring::getCXStringBuf\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "bool \fBclang::cxstring::isManagedByPool\fP (CXString str)"
+.br
+.RI "Returns true if the CXString data is managed by a pool\&. "
+.ti -1c
+.RI "const char * \fBclang_getCString\fP (CXString string)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeString\fP (CXString string)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeStringSet\fP (CXStringSet *set)"
+.br
+.in -1c
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBCXStringFlag\fP"
+
+.PP
+Describes the kind of underlying data in CXString\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fICXS_Unmanaged \fP\fP
+CXString contains a 'const char *' that it doesn't own\&. 
+.TP
+\fB\fICXS_Malloc \fP\fP
+CXString contains a 'const char *' that it allocated with malloc()\&. 
+.TP
+\fB\fICXS_StringBuf \fP\fP
+CXString contains a CXStringBuf that needs to be returned to the CXStringPool\&. 
+.PP
+Definition at line 24 of file CXString\&.cpp\&.
+.PP
+.nf
+24                   {
+26   CXS_Unmanaged,
+27 
+29   CXS_Malloc,
+30 
+33   CXS_StringBuf
+34 };
+.fi
+.SH "Function Documentation"
+.PP 
+.SS "void clang_disposeString (CXString string)"
+
+.PP
+Definition at line 170 of file CXString\&.cpp\&.
+.PP
+.nf
+170                                           {
+171   switch ((CXStringFlag) string\&.private_flags) {
+172     case CXS_Unmanaged:
+173       break;
+174     case CXS_Malloc:
+175       if (string\&.data)
+176         free(const_cast<void *>(string\&.data));
+177       break;
+178     case CXS_StringBuf:
+179       static_cast<cxstring::CXStringBuf *>(
+180           const_cast<void *>(string\&.data))->dispose();
+181       break;
+182   }
+183 }
+.fi
+.PP
+References CXS_Malloc, CXS_StringBuf, CXS_Unmanaged, and clang::cxstring::CXStringBuf::dispose()\&.
+.PP
+Referenced by clang_disposeCXPlatformAvailability(), clang_disposeStringSet(), InclusionVisitor(), clang::cxindex::Logger::operator<<(), PrintDiagnostic(), and clang::cxindex::printDiagsToStderr()\&.
+.SS "void clang_disposeStringSet (CXStringSet * set)"
+
+.PP
+Definition at line 185 of file CXString\&.cpp\&.
+.PP
+.nf
+185                                               {
+186   for (unsigned SI = 0, SE = set->Count; SI < SE; ++SI)
+187     clang_disposeString(set->Strings[SI]);
+188   delete[] set->Strings;
+189   delete set;
+190 }
+.fi
+.PP
+References clang_disposeString()\&.
+.SS "const char* clang_getCString (CXString string)"
+
+.PP
+Definition at line 163 of file CXString\&.cpp\&.
+.PP
+.nf
+163                                               {
+164   if (string\&.private_flags == (unsigned) CXS_StringBuf) {
+165     return static_cast<const cxstring::CXStringBuf *>(string\&.data)->Data\&.data();
+166   }
+167   return static_cast<const char *>(string\&.data);
+168 }
+.fi
+.PP
+References CXS_StringBuf\&.
+.PP
+Referenced by InclusionVisitor(), clang::cxindex::Logger::operator<<(), PrintDiagnostic(), and clang::cxindex::printDiagsToStderr()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

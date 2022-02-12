@@ -1,0 +1,141 @@
+.TH "tests.unit.test_compilation.SplitTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_compilation.SplitTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_detect_cxx_from_compiler_name\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_action\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_source_file\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_filter_flags\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 34 of file test_compilation\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_compilation\&.SplitTest\&.test_action ( self)"
+
+.PP
+Definition at line 53 of file test_compilation\&.py\&.
+.PP
+.nf
+53     def test_action(self):
+54         self\&.assertIsNotNone(sut\&.split_command(['clang', 'source\&.c']))
+55         self\&.assertIsNotNone(sut\&.split_command(['clang', '-c', 'source\&.c']))
+56         self\&.assertIsNotNone(sut\&.split_command(['clang', '-c', 'source\&.c',
+57                                                 '-MF', 'a\&.d']))
+58 
+59         self\&.assertIsNone(sut\&.split_command(['clang', '-E', 'source\&.c']))
+60         self\&.assertIsNone(sut\&.split_command(['clang', '-c', '-E', 'source\&.c']))
+61         self\&.assertIsNone(sut\&.split_command(['clang', '-c', '-M', 'source\&.c']))
+62         self\&.assertIsNone(
+63             sut\&.split_command(['clang', '-c', '-MM', 'source\&.c']))
+64 
+.fi
+.SS "def tests\&.unit\&.test_compilation\&.SplitTest\&.test_detect_cxx_from_compiler_name ( self)"
+
+.PP
+Definition at line 36 of file test_compilation\&.py\&.
+.PP
+.nf
+36     def test_detect_cxx_from_compiler_name(self):
+37         def test(cmd):
+38             result = sut\&.split_command([cmd, '-c', 'src\&.c'])
+39             self\&.assertIsNotNone(result, "wrong input for test")
+40             return result\&.compiler == 'c++'
+41 
+42         self\&.assertFalse(test('cc'))
+43         self\&.assertFalse(test('gcc'))
+44         self\&.assertFalse(test('clang'))
+45 
+46         self\&.assertTrue(test('c++'))
+47         self\&.assertTrue(test('g++'))
+48         self\&.assertTrue(test('g++-5\&.3\&.1'))
+49         self\&.assertTrue(test('clang++'))
+50         self\&.assertTrue(test('clang++-3\&.7\&.1'))
+51         self\&.assertTrue(test('armv7_neno-linux-gnueabi-g++'))
+52 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_compilation\&.SplitTest\&.test_filter_flags ( self)"
+
+.PP
+Definition at line 84 of file test_compilation\&.py\&.
+.PP
+.nf
+84     def test_filter_flags(self):
+85         def test(expected, flags):
+86             command = ['clang', '-c', 'src\&.c'] + flags
+87             self\&.assertEqual(expected, sut\&.split_command(command)\&.flags)
+88 
+89         def same(expected):
+90             test(expected, expected)
+91 
+92         def filtered(flags):
+93             test([], flags)
+94 
+95         same([])
+96         same(['-I', '/opt/me/include', '-DNDEBUG', '-ULIMITS'])
+97         same(['-O', '-O2'])
+98         same(['-m32', '-mmms'])
+99         same(['-Wall', '-Wno-unused', '-g', '-funroll-loops'])
+100 
+101         filtered([])
+102         filtered(['-lclien', '-L/opt/me/lib', '-L', '/opt/you/lib'])
+103         filtered(['-static'])
+104         filtered(['-MD', '-MT', 'something'])
+105         filtered(['-MMD', '-MF', 'something'])
+106 
+107 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_compilation\&.SplitTest\&.test_source_file ( self)"
+
+.PP
+Definition at line 65 of file test_compilation\&.py\&.
+.PP
+.nf
+65     def test_source_file(self):
+66         def test(expected, cmd):
+67             self\&.assertEqual(expected, sut\&.split_command(cmd)\&.files)
+68 
+69         test(['src\&.c'], ['clang', 'src\&.c'])
+70         test(['src\&.c'], ['clang', '-c', 'src\&.c'])
+71         test(['src\&.C'], ['clang', '-x', 'c', 'src\&.C'])
+72         test(['src\&.cpp'], ['clang++', '-c', 'src\&.cpp'])
+73         test(['s1\&.c', 's2\&.c'], ['clang', '-c', 's1\&.c', 's2\&.c'])
+74         test(['s1\&.c', 's2\&.c'], ['cc', 's1\&.c', 's2\&.c', '-ldep', '-o', 'a\&.out'])
+75         test(['src\&.c'], ['clang', '-c', '-I', '\&./include', 'src\&.c'])
+76         test(['src\&.c'], ['clang', '-c', '-I', '/opt/me/include', 'src\&.c'])
+77         test(['src\&.c'], ['clang', '-c', '-D', 'config=file\&.c', 'src\&.c'])
+78 
+79         self\&.assertIsNone(
+80             sut\&.split_command(['cc', 'this\&.o', 'that\&.o', '-o', 'a\&.out']))
+81         self\&.assertIsNone(
+82             sut\&.split_command(['cc', 'this\&.o', '-lthat', '-o', 'a\&.out']))
+83 
+.fi
+.PP
+References test()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

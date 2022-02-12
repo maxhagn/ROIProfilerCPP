@@ -1,0 +1,152 @@
+.TH "OffloadTargetInfo" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+OffloadTargetInfo
+.SH SYNOPSIS
+.br
+.PP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBOffloadTargetInfo\fP (const StringRef Target)"
+.br
+.ti -1c
+.RI "bool \fBhasHostKind\fP () const"
+.br
+.ti -1c
+.RI "bool \fBisOffloadKindValid\fP () const"
+.br
+.ti -1c
+.RI "bool \fBisTripleValid\fP () const"
+.br
+.ti -1c
+.RI "bool \fBoperator==\fP (const \fBOffloadTargetInfo\fP &Target) const"
+.br
+.ti -1c
+.RI "std::string \fBstr\fP ()"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "StringRef \fBOffloadKind\fP"
+.br
+.ti -1c
+.RI "llvm::Triple \fBTriple\fP"
+.br
+.ti -1c
+.RI "StringRef \fBGPUArch\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Obtain the offload kind, real machine triple, and an optional GPUArch out of the target information specified by the user\&. Bundle Entry ID (or, Offload Target String) has following components:
+.IP "\(bu" 2
+Offload Kind - Host, OpenMP, or HIP
+.IP "\(bu" 2
+Triple - Standard \fBLLVM\fP Triple
+.IP "\(bu" 2
+GPUArch (Optional) - Processor name, like gfx906 or sm_30 In presence of Proc, the Triple should contain separator '-' for all standard four components, even if they are empty\&. 
+.PP
+
+.PP
+Definition at line 139 of file ClangOffloadBundler\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "OffloadTargetInfo::OffloadTargetInfo (const StringRef Target)\fC [inline]\fP"
+
+.PP
+Definition at line 144 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+144                                             {
+145     SmallVector<StringRef, 6> Components;
+146     Target\&.split(Components, '-', 5);
+147     Components\&.resize(6);
+148     this->OffloadKind = Components[0];
+149     this->Triple = llvm::Triple(Components[1], Components[2], Components[3],
+150                                 Components[4]);
+151     this->GPUArch = Components[5];
+152   }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "bool OffloadTargetInfo::hasHostKind () const\fC [inline]\fP"
+
+.PP
+Definition at line 154 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+154 { return this->OffloadKind == "host"; }
+.fi
+.SS "bool OffloadTargetInfo::isOffloadKindValid () const\fC [inline]\fP"
+
+.PP
+Definition at line 156 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+156                                   {
+157     return OffloadKind == "host" || OffloadKind == "openmp" ||
+158            OffloadKind == "hip" || OffloadKind == "hipv4";
+159   }
+.fi
+.SS "bool OffloadTargetInfo::isTripleValid () const\fC [inline]\fP"
+
+.PP
+Definition at line 161 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+161                              {
+162     return !Triple\&.str()\&.empty() && Triple\&.getArch() != Triple::UnknownArch;
+163   }
+.fi
+.SS "bool OffloadTargetInfo::operator== (const \fBOffloadTargetInfo\fP & Target) const\fC [inline]\fP"
+
+.PP
+Definition at line 165 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+165                                                          {
+166     return OffloadKind == Target\&.OffloadKind &&
+167            Triple\&.isCompatibleWith(Target\&.Triple) && GPUArch == Target\&.GPUArch;
+168   }
+.fi
+.SS "std::string OffloadTargetInfo::str ()\fC [inline]\fP"
+
+.PP
+Definition at line 170 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+170                   {
+171     return Twine(OffloadKind + "-" + Triple\&.str() + "-" + GPUArch)\&.str();
+172   }
+.fi
+.PP
+Referenced by isCodeObjectCompatible()\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "StringRef OffloadTargetInfo::GPUArch"
+
+.PP
+Definition at line 142 of file ClangOffloadBundler\&.cpp\&.
+.PP
+Referenced by isCodeObjectCompatible()\&.
+.SS "StringRef OffloadTargetInfo::OffloadKind"
+
+.PP
+Definition at line 140 of file ClangOffloadBundler\&.cpp\&.
+.PP
+Referenced by isCodeObjectCompatible()\&.
+.SS "llvm::Triple OffloadTargetInfo::Triple"
+
+.PP
+Definition at line 141 of file ClangOffloadBundler\&.cpp\&.
+.PP
+Referenced by isCodeObjectCompatible()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,139 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_ext_def_map_gen_8cpp_source" xml:lang="en-US">
+<title>ClangExtDefMapGen.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-extdef-mapping/ClangExtDefMapGen.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;ClangExtDefMapGen.cpp&#32;-----------------------------------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===--------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;Clang&#32;tool&#32;which&#32;creates&#32;a&#32;list&#32;of&#32;defined&#32;functions&#32;and&#32;the&#32;files&#32;in&#32;which</emphasis>
+00010 <emphasis role="comment">//&#32;they&#32;are&#32;defined.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===--------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTConsumer.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTContext.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceManager.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/CrossTU/CrossTranslationUnit.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/FrontendActions.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/CommonOptionsParser.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Tooling.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&lt;sstream&gt;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00026 
+00027 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00028 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00029 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::cross_tu;
+00030 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::tooling;
+00031 
+00032 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;ClangExtDefMapGenCategory(<emphasis role="stringliteral">&quot;clang-extdefmapgen&#32;options&quot;</emphasis>);
+00033 
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00034"/><link linkend="_class_map_ext_def_names_consumer">00034</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_map_ext_def_names_consumer">MapExtDefNamesConsumer</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ASTConsumer&#32;{
+00035 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00036"/><link linkend="_class_map_ext_def_names_consumer_1a3ae52d82e7b9979a3d79a181a55b7244">00036</link> &#32;&#32;<link linkend="_class_map_ext_def_names_consumer_1a3ae52d82e7b9979a3d79a181a55b7244">MapExtDefNamesConsumer</link>(ASTContext&#32;&amp;Context)
+00037 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;Ctx(Context),&#32;SM(Context.getSourceManager())&#32;{}
+00038 
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00039"/><link linkend="_class_map_ext_def_names_consumer_1a0729a300c0b725af0143edf7ee4681f9">00039</link> &#32;&#32;<link linkend="_class_map_ext_def_names_consumer_1a0729a300c0b725af0143edf7ee4681f9">~MapExtDefNamesConsumer</link>()&#32;{
+00040 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Flush&#32;results&#32;to&#32;standard&#32;output.</emphasis>
+00041 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;createCrossTUIndexString(Index);
+00042 &#32;&#32;}
+00043 
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00044"/><link linkend="_class_map_ext_def_names_consumer_1ab098fe2b6167fcb7a8586f6d264fdaac">00044</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_class_map_ext_def_names_consumer_1ab098fe2b6167fcb7a8586f6d264fdaac">HandleTranslationUnit</link>(ASTContext&#32;&amp;Context)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00045 &#32;&#32;&#32;&#32;handleDecl(Context.getTranslationUnitDecl());
+00046 &#32;&#32;}
+00047 
+00048 <emphasis role="keyword">private</emphasis>:
+00049 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handleDecl(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D);
+00050 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;addIfInMain(<emphasis role="keyword">const</emphasis>&#32;DeclaratorDecl&#32;*DD,&#32;SourceLocation&#32;defStart);
+00051 
+00052 &#32;&#32;ASTContext&#32;&amp;Ctx;
+00053 &#32;&#32;SourceManager&#32;&amp;SM;
+00054 &#32;&#32;llvm::StringMap&lt;std::string&gt;&#32;Index;
+00055 &#32;&#32;std::string&#32;CurrentFileName;
+00056 };
+00057 
+00058 <emphasis role="keywordtype">void</emphasis>&#32;MapExtDefNamesConsumer::handleDecl(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{
+00059 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00061 
+00062 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*FD&#32;=&#32;dyn_cast&lt;FunctionDecl&gt;(D))&#32;{
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FD-&gt;isThisDeclarationADefinition())
+00064 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;Stmt&#32;*Body&#32;=&#32;FD-&gt;getBody())
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;addIfInMain(FD,&#32;Body-&gt;getBeginLoc());
+00066 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*VD&#32;=&#32;dyn_cast&lt;VarDecl&gt;(D))&#32;{
+00067 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cross_tu::containsConst(VD,&#32;Ctx)&#32;&amp;&amp;&#32;VD-&gt;hasInit())
+00068 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*Init&#32;=&#32;VD-&gt;getInit())
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;addIfInMain(VD,&#32;Init-&gt;getBeginLoc());
+00070 &#32;&#32;}
+00071 
+00072 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*DC&#32;=&#32;dyn_cast&lt;DeclContext&gt;(D))
+00073 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;:&#32;DC-&gt;decls())
+00074 &#32;&#32;&#32;&#32;&#32;&#32;handleDecl(D);
+00075 }
+00076 
+00077 <emphasis role="keywordtype">void</emphasis>&#32;MapExtDefNamesConsumer::addIfInMain(<emphasis role="keyword">const</emphasis>&#32;DeclaratorDecl&#32;*DD,
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;defStart)&#32;{
+00079 &#32;&#32;llvm::Optional&lt;std::string&gt;&#32;LookupName&#32;=
+00080 &#32;&#32;&#32;&#32;&#32;&#32;CrossTranslationUnitContext::getLookupName(DD);
+00081 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LookupName)
+00082 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00083 &#32;&#32;assert(!LookupName-&gt;empty()&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Lookup&#32;name&#32;should&#32;be&#32;non-empty.&quot;</emphasis>);
+00084 
+00085 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CurrentFileName.empty())&#32;{
+00086 &#32;&#32;&#32;&#32;CurrentFileName&#32;=&#32;std::string(
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SM.getFileEntryForID(SM.getMainFileID())-&gt;tryGetRealPathName());
+00088 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CurrentFileName.empty())
+00089 &#32;&#32;&#32;&#32;&#32;&#32;CurrentFileName&#32;=&#32;<emphasis role="stringliteral">&quot;invalid_file&quot;</emphasis>;
+00090 &#32;&#32;}
+00091 
+00092 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(DD-&gt;getLinkageInternal())&#32;{
+00093 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ExternalLinkage:
+00094 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;VisibleNoLinkage:
+00095 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;UniqueExternalLinkage:
+00096 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SM.isInMainFile(defStart))
+00097 &#32;&#32;&#32;&#32;&#32;&#32;Index[*LookupName]&#32;=&#32;CurrentFileName;
+00098 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00099 &#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00100 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00101 &#32;&#32;}
+00102 }
+00103 
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00104"/><link linkend="_class_map_ext_def_names_action">00104</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_map_ext_def_names_action">MapExtDefNamesAction</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ASTFrontendAction&#32;{
+00105 <emphasis role="keyword">protected</emphasis>:
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00106"/><link linkend="_class_map_ext_def_names_action_1a861cf0f10567cff227272885e4ea30ad">00106</link> &#32;&#32;std::unique_ptr&lt;ASTConsumer&gt;&#32;<link linkend="_class_map_ext_def_names_action_1a861cf0f10567cff227272885e4ea30ad">CreateASTConsumer</link>(CompilerInstance&#32;&amp;CI,
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::StringRef)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00108 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;MapExtDefNamesConsumer&gt;(CI.getASTContext());
+00109 &#32;&#32;}
+00110 };
+00111 
+00112 <emphasis role="keyword">static</emphasis>&#32;cl::extrahelp&#32;CommonHelp(CommonOptionsParser::HelpMessage);
+00113 
+<anchor xml:id="__clang_ext_def_map_gen_8cpp_source_1l00114"/><link linkend="__clang_ext_def_map_gen_8cpp_1a217dbf8b442f20279ea00b898af96f52">00114</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_ext_def_map_gen_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00115 &#32;&#32;<emphasis role="comment">//&#32;Print&#32;a&#32;stack&#32;trace&#32;if&#32;we&#32;signal&#32;out.</emphasis>
+00116 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0],&#32;<emphasis role="keyword">false</emphasis>);
+00117 &#32;&#32;PrettyStackTraceProgram&#32;X(argc,&#32;argv);
+00118 
+00119 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Overview&#32;=&#32;<emphasis role="stringliteral">&quot;\nThis&#32;tool&#32;collects&#32;the&#32;USR&#32;name&#32;and&#32;location&#32;&quot;</emphasis>
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;of&#32;external&#32;definitions&#32;in&#32;the&#32;source&#32;files&#32;&quot;</emphasis>
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;(excluding&#32;headers).\n&quot;</emphasis>;
+00122 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=&#32;CommonOptionsParser::create(
+00123 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,&#32;ClangExtDefMapGenCategory,&#32;cl::ZeroOrMore,&#32;Overview);
+00124 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00125 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00127 &#32;&#32;}
+00128 &#32;&#32;CommonOptionsParser&#32;&amp;OptionsParser&#32;=&#32;ExpectedParser.get();
+00129 
+00130 &#32;&#32;ClangTool&#32;Tool(OptionsParser.getCompilations(),
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OptionsParser.getSourcePathList());
+00132 
+00133 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Tool.run(newFrontendActionFactory&lt;MapExtDefNamesAction&gt;().<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>());
+00134 }
+</programlisting></section>

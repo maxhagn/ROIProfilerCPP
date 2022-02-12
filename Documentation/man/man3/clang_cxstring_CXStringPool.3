@@ -1,0 +1,80 @@
+.TH "clang::cxstring::CXStringPool" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxstring::CXStringPool \- A string pool used for fast allocation/deallocation of strings\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXString\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fB~CXStringPool\fP ()"
+.br
+.ti -1c
+.RI "\fBCXStringBuf\fP * \fBgetCXStringBuf\fP (CXTranslationUnit TU)"
+.br
+.in -1c
+.SS "Friends"
+
+.in +1c
+.ti -1c
+.RI "struct \fBCXStringBuf\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+A string pool used for fast allocation/deallocation of strings\&. 
+.PP
+Definition at line 73 of file CXString\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxstring::CXStringPool::~CXStringPool ()"
+
+.PP
+Definition at line 127 of file CXString\&.cpp\&.
+.PP
+.nf
+127                             {
+128   for (std::vector<CXStringBuf *>::iterator I = Pool\&.begin(), E = Pool\&.end();
+129        I != E; ++I) {
+130     delete *I;
+131   }
+132 }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "\fBCXStringBuf\fP * clang::cxstring::CXStringPool::getCXStringBuf (CXTranslationUnit TU)"
+
+.PP
+Definition at line 134 of file CXString\&.cpp\&.
+.PP
+.nf
+134                                                               {
+135   if (Pool\&.empty())
+136     return new CXStringBuf(TU);
+137 
+138   CXStringBuf *Buf = Pool\&.back();
+139   Buf->Data\&.clear();
+140   Pool\&.pop_back();
+141   return Buf;
+142 }
+.fi
+.PP
+References CXStringBuf, and clang::cxstring::CXStringBuf::Data\&.
+.SH "Friends And Related Function Documentation"
+.PP 
+.SS "friend struct \fBCXStringBuf\fP\fC [friend]\fP"
+
+.PP
+Definition at line 82 of file CXString\&.h\&.
+.PP
+Referenced by getCXStringBuf()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

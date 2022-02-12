@@ -1,0 +1,209 @@
+.TH "tests.functional.cases.test_from_cmd.RunAnalyzerTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_from_cmd.RunAnalyzerTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_interposition_works\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_intercept_wrapper_works\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_intercept_library_works\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_interposition_cc_works\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_interposition_cxx_works\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_intercept_cc_works\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_intercept_cxx_works\fP (self)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBget_plist_count\fP (directory)"
+.br
+.ti -1c
+.RI "def \fBcompile_empty_source_file\fP (target_dir, is_cxx)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 42 of file test_from_cmd\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.compile_empty_source_file ( target_dir,  is_cxx)\fC [static]\fP"
+
+.PP
+Definition at line 80 of file test_from_cmd\&.py\&.
+.PP
+.nf
+80     def compile_empty_source_file(target_dir, is_cxx):
+81         compiler = '$CXX' if is_cxx else '$CC'
+82         src_file_name = 'test\&.cxx' if is_cxx else 'test\&.c'
+83         src_file = os\&.path\&.join(target_dir, src_file_name)
+84         obj_file = os\&.path\&.join(target_dir, 'test\&.o')
+85         create_empty_file(src_file)
+86         command = ' '\&.join([compiler, '-c', src_file, '-o', obj_file])
+87         return ['sh', '-c', command]
+88 
+.fi
+.PP
+References tests\&.functional\&.cases\&.create_empty_file()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cxx_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cc_works(), and tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cxx_works()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count ( directory)\fC [static]\fP"
+
+.PP
+Definition at line 45 of file test_from_cmd\&.py\&.
+.PP
+.nf
+45     def get_plist_count(directory):
+46         return len(glob\&.glob(os\&.path\&.join(directory, 'report-*\&.plist')))
+47 
+.fi
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_default_only_creates_html_report(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cxx_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_library_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_wrapper_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cxx_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_works(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_and_html_creates_html_and_plist_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_only_creates_plist_report(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_and_html_creates_sarif_and_html_reports(), and tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_only_creates_sarif_result()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cc_works ( self)"
+
+.PP
+Definition at line 103 of file test_from_cmd\&.py\&.
+.PP
+.nf
+103     def test_intercept_cc_works(self):
+104         with libear\&.TemporaryDirectory() as tmpdir:
+105             outdir = check_call_and_report(
+106                 ['scan-build-py', '--plist', '-o', tmpdir, '--override-compiler',
+107                  '--intercept-first'],
+108                 self\&.compile_empty_source_file(tmpdir, False))
+109             self\&.assertEqual(self\&.get_plist_count(outdir), 1)
+110 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.compile_empty_source_file(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cxx_works ( self)"
+
+.PP
+Definition at line 111 of file test_from_cmd\&.py\&.
+.PP
+.nf
+111     def test_intercept_cxx_works(self):
+112         with libear\&.TemporaryDirectory() as tmpdir:
+113             outdir = check_call_and_report(
+114                 ['scan-build-py', '--plist', '-o', tmpdir, '--override-compiler',
+115                  '--intercept-first'],
+116                 self\&.compile_empty_source_file(tmpdir, True))
+117             self\&.assertEqual(self\&.get_plist_count(outdir), 1)
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.compile_empty_source_file(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_library_works ( self)"
+
+.PP
+Definition at line 69 of file test_from_cmd\&.py\&.
+.PP
+.nf
+69     def test_intercept_library_works(self):
+70         with libear\&.TemporaryDirectory() as tmpdir:
+71             make = make_args(tmpdir) + ['build_regular']
+72             outdir = check_call_and_report(
+73                 ['scan-build-py', '--plist', '-o', tmpdir, '--intercept-first'],
+74                 make)
+75 
+76             self\&.assertTrue(os\&.path\&.isdir(outdir))
+77             self\&.assertEqual(self\&.get_plist_count(outdir), 5)
+78 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), tests\&.functional\&.cases\&.make_args(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_wrapper_works ( self)"
+
+.PP
+Definition at line 58 of file test_from_cmd\&.py\&.
+.PP
+.nf
+58     def test_intercept_wrapper_works(self):
+59         with libear\&.TemporaryDirectory() as tmpdir:
+60             make = make_args(tmpdir) + ['build_regular']
+61             outdir = check_call_and_report(
+62                 ['scan-build-py', '--plist', '-o', tmpdir, '--intercept-first',
+63                  '--override-compiler'],
+64                 make)
+65 
+66             self\&.assertTrue(os\&.path\&.isdir(outdir))
+67             self\&.assertEqual(self\&.get_plist_count(outdir), 5)
+68 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), tests\&.functional\&.cases\&.make_args(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cc_works ( self)"
+
+.PP
+Definition at line 89 of file test_from_cmd\&.py\&.
+.PP
+.nf
+89     def test_interposition_cc_works(self):
+90         with libear\&.TemporaryDirectory() as tmpdir:
+91             outdir = check_call_and_report(
+92                 ['scan-build-py', '--plist', '-o', tmpdir, '--override-compiler'],
+93                 self\&.compile_empty_source_file(tmpdir, False))
+94             self\&.assertEqual(self\&.get_plist_count(outdir), 1)
+95 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.compile_empty_source_file(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cxx_works ( self)"
+
+.PP
+Definition at line 96 of file test_from_cmd\&.py\&.
+.PP
+.nf
+96     def test_interposition_cxx_works(self):
+97         with libear\&.TemporaryDirectory() as tmpdir:
+98             outdir = check_call_and_report(
+99                 ['scan-build-py', '--plist', '-o', tmpdir, '--override-compiler'],
+100                 self\&.compile_empty_source_file(tmpdir, True))
+101             self\&.assertEqual(self\&.get_plist_count(outdir), 1)
+102 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.compile_empty_source_file(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_works ( self)"
+
+.PP
+Definition at line 48 of file test_from_cmd\&.py\&.
+.PP
+.nf
+48     def test_interposition_works(self):
+49         with libear\&.TemporaryDirectory() as tmpdir:
+50             make = make_args(tmpdir) + ['build_regular']
+51             outdir = check_call_and_report(
+52                 ['scan-build-py', '--plist', '-o', tmpdir, '--override-compiler'],
+53                 make)
+54 
+55             self\&.assertTrue(os\&.path\&.isdir(outdir))
+56             self\&.assertEqual(self\&.get_plist_count(outdir), 5)
+57 
+.fi
+.PP
+References tests\&.functional\&.cases\&.check_call_and_report(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.get_plist_count(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.get_plist_count(), tests\&.functional\&.cases\&.make_args(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

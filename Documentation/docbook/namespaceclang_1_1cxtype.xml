@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespaceclang_1_1cxtype" xml:lang="en-US">
+<title>clang::cxtype Namespace Reference</title>
+<indexterm><primary>clang::cxtype</primary></indexterm>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>CXType <link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link> (QualType T, CXTranslationUnit TU)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98"/>    <section>
+    <title>MakeCXType()</title>
+<indexterm><primary>MakeCXType</primary><secondary>clang::cxtype</secondary></indexterm>
+<indexterm><primary>clang::cxtype</primary><secondary>MakeCXType</secondary></indexterm>
+<para><computeroutput>CXType clang::cxtype::MakeCXType (QualType T, CXTranslationUnit TU)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00126">126</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00127 &#32;&#32;CXTypeKind&#32;TK&#32;=&#32;CXType_Invalid;
+00128 
+00129 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TU&#32;&amp;&amp;&#32;!T.isNull())&#32;{
+00130 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Handle&#32;attributed&#32;types&#32;as&#32;the&#32;original&#32;type</emphasis>
+00131 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*ATT&#32;=&#32;T-&gt;getAs&lt;AttributedType&gt;())&#32;{
+00132 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!(TU-&gt;ParsingOptions&#32;&amp;&#32;CXTranslationUnit_IncludeAttributedTypes))&#32;{
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Return&#32;the&#32;equivalent&#32;type&#32;which&#32;represents&#32;the&#32;canonically</emphasis>
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;equivalent&#32;type.</emphasis>
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(ATT-&gt;getEquivalentType(),&#32;TU);
+00136 &#32;&#32;&#32;&#32;&#32;&#32;}
+00137 &#32;&#32;&#32;&#32;}
+00138 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Handle&#32;paren&#32;types&#32;as&#32;the&#32;original&#32;type</emphasis>
+00139 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*PTT&#32;=&#32;T-&gt;getAs&lt;ParenType&gt;())&#32;{
+00140 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(PTT-&gt;getInnerType(),&#32;TU);
+00141 &#32;&#32;&#32;&#32;}
+00142 
+00143 &#32;&#32;&#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;cxtu::getASTUnit(TU)-&gt;getASTContext();
+00144 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ctx.getLangOpts().ObjC)&#32;{
+00145 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;UnqualT&#32;=&#32;T.getUnqualifiedType();
+00146 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ctx.isObjCIdType(UnqualT))
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TK&#32;=&#32;CXType_ObjCId;
+00148 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ctx.isObjCClassType(UnqualT))
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TK&#32;=&#32;CXType_ObjCClass;
+00150 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ctx.isObjCSelType(UnqualT))
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TK&#32;=&#32;CXType_ObjCSel;
+00152 &#32;&#32;&#32;&#32;}
+00153 
+00154 &#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Handle&#32;decayed&#32;types&#32;as&#32;the&#32;original&#32;type&#32;*/</emphasis>
+00155 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;DecayedType&#32;*DT&#32;=&#32;T-&gt;getAs&lt;DecayedType&gt;())&#32;{
+00156 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(DT-&gt;getOriginalType(),&#32;TU);
+00157 &#32;&#32;&#32;&#32;}
+00158 &#32;&#32;}
+00159 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TK&#32;==&#32;CXType_Invalid)
+00160 &#32;&#32;&#32;&#32;TK&#32;=&#32;GetTypeKind(T);
+00161 
+00162 &#32;&#32;CXType&#32;CT&#32;=&#32;{&#32;TK,&#32;{&#32;TK&#32;==&#32;CXType_Invalid&#32;?&#32;nullptr
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;T.getAsOpaquePtr(),&#32;TU&#32;}&#32;};
+00164 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CT;
+00165 }
+</programlisting><para>
+Referenced by <link linkend="__c_x_cursor_8cpp_source_1l01687">clang_Cursor_getReceiverType()</link>, <link linkend="__c_x_type_8cpp_source_1l00722">clang_getCursorResultType()</link>, <link linkend="__c_x_type_8cpp_source_1l00216">clang_getCursorType()</link>, <link linkend="__c_x_type_8cpp_source_1l00324">clang_getEnumDeclIntegerType()</link>, <link linkend="__c_index_8cpp_source_1l08664">clang_getIBOutletCollectionType()</link>, and <link linkend="__c_x_type_8cpp_source_1l00306">clang_getTypedefDeclUnderlyingType()</link>.</para>
+</section>
+</section>
+</section>

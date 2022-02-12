@@ -1,0 +1,245 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_exec_2main_8c" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/functional/exec/main.c File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/functional/exec/main.c</primary></indexterm>
+<programlisting>#include &quot;config.h&quot;
+#include &lt;sys/wait.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;paths.h&gt;
+</programlisting><simplesect>
+    <title>Macros    </title>
+        <itemizedlist>
+            <listitem><para>#define <link linkend="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce">FORK</link>(FUNC)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Typedefs    </title>
+        <itemizedlist>
+            <listitem><para>typedef void(* <link linkend="_exec_2main_8c_1aee7ecb4c93e15a61ec544fc01296047e">exec_fun</link>) ()</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>char ** <link linkend="_exec_2main_8c_1a05ff887a5cf1186f4994ff4978e0babd">get_environ</link> ()</para>
+</listitem>
+            <listitem><para>void <link linkend="_exec_2main_8c_1abc2ce631a5451a2b3d28a0177a10b9a3">expected_out_open</link> (const char *expected)</para>
+</listitem>
+            <listitem><para>void <link linkend="_exec_2main_8c_1ae9fedc92bf36b0cbea0df186b69b092d">expected_out_close</link> ()</para>
+</listitem>
+            <listitem><para>void <link linkend="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29">expected_out</link> (const char *file)</para>
+</listitem>
+            <listitem><para>void <link linkend="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf">create_source</link> (char *file)</para>
+</listitem>
+            <listitem><para>void <link linkend="_exec_2main_8c_1acbe7e21c386275cdd7ca214c0ca60daa">wait_for</link> (pid_t child)</para>
+</listitem>
+            <listitem><para>int <link linkend="_exec_2main_8c_1af3ed9c200de85b53c94cd18764b246a2">main</link> (int argc, char *const argv[])</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Variables    </title>
+        <itemizedlist>
+            <listitem><para>char ** <link linkend="_exec_2main_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Macro Definition Documentation</title>
+<anchor xml:id="_exec_2main_8c_1aa86e8c19df1b6c0a13cd0123d7da61ce"/>    <section>
+    <title>FORK</title>
+<indexterm><primary>FORK</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>FORK</secondary></indexterm>
+<para><computeroutput>#define FORK( FUNC)</computeroutput></para><emphasis role="strong">Value:</emphasis><programlisting>&#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pid_t&#32;child&#32;=&#32;fork();&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;if&#32;(-1&#32;==&#32;child)&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;fork&quot;</emphasis>);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;child)&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FUNC&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;children&#32;process&#32;failed&#32;to&#32;exec\n&quot;</emphasis>);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;wait_for(child);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;}
+</programlisting><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00097">97</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+</section>
+</section>
+<section>
+<title>Typedef Documentation</title>
+<anchor xml:id="_exec_2main_8c_1aee7ecb4c93e15a61ec544fc01296047e"/>    <section>
+    <title>exec_fun</title>
+<indexterm><primary>exec_fun</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>exec_fun</secondary></indexterm>
+<para><computeroutput>typedef void(* exec_fun) ()</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00083">83</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+</section>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_exec_2main_8c_1a2fb86383e6dae94c25d1816218001fdf"/>    <section>
+    <title>create_source()</title>
+<indexterm><primary>create_source</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>create_source</secondary></indexterm>
+<para><computeroutput>void create_source (char * file)</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00073">73</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00074 &#32;&#32;&#32;&#32;FILE&#32;*fd&#32;=&#32;fopen(file,&#32;<emphasis role="stringliteral">&quot;w&quot;</emphasis>);
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!fd)&#32;{
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;fopen&quot;</emphasis>);
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00078 &#32;&#32;&#32;&#32;}
+00079 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;typedef&#32;int&#32;score;\n&quot;</emphasis>);
+00080 &#32;&#32;&#32;&#32;fclose(fd);
+00081 }
+</programlisting>    </section><anchor xml:id="_exec_2main_8c_1ac1d1732f8dc7e2d87bc76f5697da0a29"/>    <section>
+    <title>expected_out()</title>
+<indexterm><primary>expected_out</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>expected_out</secondary></indexterm>
+<para><computeroutput>void expected_out (const char * file)</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00060">60</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(need_comma)
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;,\n&quot;</emphasis>);
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;need_comma&#32;=&#32;1;
+00065 
+00066 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;{\n&quot;</emphasis>);
+00067 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;\&quot;directory\&quot;:&#32;\&quot;%s\&quot;,\n&quot;</emphasis>,&#32;cwd);
+00068 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;\&quot;command\&quot;:&#32;\&quot;cc&#32;-c&#32;%s\&quot;,\n&quot;</emphasis>,&#32;file);
+00069 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;\&quot;file\&quot;:&#32;\&quot;%s/%s\&quot;\n&quot;</emphasis>,&#32;cwd,&#32;file);
+00070 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>);
+00071 }
+</programlisting>    </section><anchor xml:id="_exec_2main_8c_1ae9fedc92bf36b0cbea0df186b69b092d"/>    <section>
+    <title>expected_out_close()</title>
+<indexterm><primary>expected_out_close</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>expected_out_close</secondary></indexterm>
+<para><computeroutput>void expected_out_close ( )</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00051">51</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00052 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;]\n&quot;</emphasis>);
+00053 &#32;&#32;&#32;&#32;fclose(fd);
+00054 &#32;&#32;&#32;&#32;fd&#32;=&#32;NULL;
+00055 
+00056 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)cwd);
+00057 &#32;&#32;&#32;&#32;cwd&#32;=&#32;NULL;
+00058 }
+</programlisting><para>
+Referenced by <link linkend="_exec_2main_8c_source_1l00266">main()</link>.</para>
+    </section><anchor xml:id="_exec_2main_8c_1abc2ce631a5451a2b3d28a0177a10b9a3"/>    <section>
+    <title>expected_out_open()</title>
+<indexterm><primary>expected_out_open</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>expected_out_open</secondary></indexterm>
+<para><computeroutput>void expected_out_open (const char * expected)</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00040">40</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00041 &#32;&#32;&#32;&#32;cwd&#32;=&#32;getcwd(NULL,&#32;0);
+00042 &#32;&#32;&#32;&#32;fd&#32;=&#32;fopen(expected,&#32;<emphasis role="stringliteral">&quot;w&quot;</emphasis>);
+00043 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!fd)&#32;{
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;fopen&quot;</emphasis>);
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00046 &#32;&#32;&#32;&#32;}
+00047 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;[\n&quot;</emphasis>);
+00048 &#32;&#32;&#32;&#32;need_comma&#32;=&#32;0;
+00049 }
+</programlisting><para>
+Referenced by <link linkend="_exec_2main_8c_source_1l00266">main()</link>.</para>
+    </section><anchor xml:id="_exec_2main_8c_1a05ff887a5cf1186f4994ff4978e0babd"/>    <section>
+    <title>get_environ()</title>
+<indexterm><primary>get_environ</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>get_environ</secondary></indexterm>
+<para><computeroutput>char** get_environ ( )</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00026">26</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00027 <emphasis role="preprocessor">#ifdef&#32;HAVE_NSGETENVIRON</emphasis>
+00028 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*_NSGetEnviron();
+00029 <emphasis role="preprocessor">#else</emphasis>
+00030 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_exec_2main_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link>;
+00031 <emphasis role="preprocessor">#endif</emphasis>
+00032 }
+</programlisting><para>
+References <link linkend="_exec_2main_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link>.</para>
+    </section><anchor xml:id="_exec_2main_8c_1af3ed9c200de85b53c94cd18764b246a2"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, char *const argv[])</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00266">266</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00267 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;!=&#32;2)
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00269 
+00270 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1abc2ce631a5451a2b3d28a0177a10b9a3">expected_out_open</link>(argv[1]);
+00271 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECV</emphasis>
+00272 &#32;&#32;&#32;&#32;call_execv();
+00273 <emphasis role="preprocessor">#endif</emphasis>
+00274 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVE</emphasis>
+00275 &#32;&#32;&#32;&#32;call_execve();
+00276 <emphasis role="preprocessor">#endif</emphasis>
+00277 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP</emphasis>
+00278 &#32;&#32;&#32;&#32;call_execvp();
+00279 <emphasis role="preprocessor">#endif</emphasis>
+00280 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP2</emphasis>
+00281 &#32;&#32;&#32;&#32;call_execvP();
+00282 <emphasis role="preprocessor">#endif</emphasis>
+00283 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVPE</emphasis>
+00284 &#32;&#32;&#32;&#32;call_execvpe();
+00285 <emphasis role="preprocessor">#endif</emphasis>
+00286 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECT</emphasis>
+00287 &#32;&#32;&#32;&#32;call_exect();
+00288 <emphasis role="preprocessor">#endif</emphasis>
+00289 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECL</emphasis>
+00290 &#32;&#32;&#32;&#32;call_execl();
+00291 <emphasis role="preprocessor">#endif</emphasis>
+00292 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLP</emphasis>
+00293 &#32;&#32;&#32;&#32;call_execlp();
+00294 <emphasis role="preprocessor">#endif</emphasis>
+00295 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLE</emphasis>
+00296 &#32;&#32;&#32;&#32;call_execle();
+00297 <emphasis role="preprocessor">#endif</emphasis>
+00298 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWN</emphasis>
+00299 &#32;&#32;&#32;&#32;call_posix_spawn();
+00300 <emphasis role="preprocessor">#endif</emphasis>
+00301 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWNP</emphasis>
+00302 &#32;&#32;&#32;&#32;call_posix_spawnp();
+00303 <emphasis role="preprocessor">#endif</emphasis>
+00304 &#32;&#32;&#32;&#32;<link linkend="_exec_2main_8c_1ae9fedc92bf36b0cbea0df186b69b092d">expected_out_close</link>();
+00305 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00306 }
+</programlisting><para>
+References <link linkend="_exec_2main_8c_source_1l00051">expected_out_close()</link>, and <link linkend="_exec_2main_8c_source_1l00040">expected_out_open()</link>.</para>
+    </section><anchor xml:id="_exec_2main_8c_1acbe7e21c386275cdd7ca214c0ca60daa"/>    <section>
+    <title>wait_for()</title>
+<indexterm><primary>wait_for</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>wait_for</secondary></indexterm>
+<para><computeroutput>void wait_for (pid_t child)</computeroutput></para><para>
+Definition at line <link linkend="_exec_2main_8c_source_1l00085">85</link> of file <link linkend="_exec_2main_8c_source">main.c</link>.</para>
+<programlisting>00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;status;
+00087 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(-1&#32;==&#32;waitpid(child,&#32;&amp;status,&#32;0))&#32;{
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;wait&quot;</emphasis>);
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00090 &#32;&#32;&#32;&#32;}
+00091 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(WIFEXITED(status)&#32;?&#32;WEXITSTATUS(status)&#32;:&#32;EXIT_FAILURE)&#32;{
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;children&#32;process&#32;has&#32;non&#32;zero&#32;exit&#32;code\n&quot;</emphasis>);
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00094 &#32;&#32;&#32;&#32;}
+00095 }
+</programlisting></section>
+</section>
+<section>
+<title>Variable Documentation</title>
+<anchor xml:id="_exec_2main_8c_1aa006daaf11f1e2e45a6ababaf463212b"/>    <section>
+    <title>environ</title>
+<indexterm><primary>environ</primary><secondary>main.c</secondary></indexterm>
+<indexterm><primary>main.c</primary><secondary>environ</secondary></indexterm>
+<para><computeroutput>char** environ<computeroutput>[extern]</computeroutput></computeroutput></para><para>
+Referenced by <link linkend="_exec_2main_8c_source_1l00026">get_environ()</link>.</para>
+</section>
+</section>
+</section>

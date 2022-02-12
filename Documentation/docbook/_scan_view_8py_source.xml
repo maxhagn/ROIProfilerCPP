@@ -1,0 +1,788 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__scan_view_8py_source" xml:lang="en-US">
+<title>ScanView.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-view/share/ScanView.py</primary></indexterm>
+<programlisting><anchor xml:id="__scan_view_8py_source_1l00001"/><link linkend="_namespace_scan_view">00001</link> <emphasis role="keyword">from</emphasis>&#32;__future__&#32;<emphasis role="keyword">import</emphasis>&#32;print_function
+00002 <emphasis role="keywordflow">try</emphasis>:
+00003 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;http.server&#32;<emphasis role="keyword">import</emphasis>&#32;HTTPServer,&#32;SimpleHTTPRequestHandler
+00004 <emphasis role="keywordflow">except</emphasis>&#32;ImportError:
+00005 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;BaseHTTPServer&#32;<emphasis role="keyword">import</emphasis>&#32;HTTPServer
+00006 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;SimpleHTTPServer&#32;<emphasis role="keyword">import</emphasis>&#32;SimpleHTTPRequestHandler
+00007 <emphasis role="keyword">import</emphasis>&#32;os
+00008 <emphasis role="keyword">import</emphasis>&#32;sys
+00009 <emphasis role="keywordflow">try</emphasis>:
+00010 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;urlparse&#32;<emphasis role="keyword">import</emphasis>&#32;urlparse
+00011 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;urllib&#32;<emphasis role="keyword">import</emphasis>&#32;unquote
+00012 <emphasis role="keywordflow">except</emphasis>&#32;ImportError:
+00013 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;urllib.parse&#32;<emphasis role="keyword">import</emphasis>&#32;urlparse,&#32;unquote
+00014 
+00015 <emphasis role="keyword">import</emphasis>&#32;posixpath
+00016 
+00017 <emphasis role="keywordflow">if</emphasis>&#32;sys.version_info.major&#32;&gt;=&#32;3:
+00018 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;io&#32;<emphasis role="keyword">import</emphasis>&#32;StringIO,&#32;BytesIO
+00019 <emphasis role="keywordflow">else</emphasis>:
+00020 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;io&#32;<emphasis role="keyword">import</emphasis>&#32;BytesIO,&#32;BytesIO&#32;<emphasis role="keyword">as</emphasis>&#32;StringIO
+00021 
+00022 <emphasis role="keyword">import</emphasis>&#32;re
+00023 <emphasis role="keyword">import</emphasis>&#32;shutil
+00024 <emphasis role="keyword">import</emphasis>&#32;threading
+00025 <emphasis role="keyword">import</emphasis>&#32;time
+00026 <emphasis role="keyword">import</emphasis>&#32;socket
+00027 <emphasis role="keyword">import</emphasis>&#32;itertools
+00028 
+00029 <emphasis role="keyword">import</emphasis>&#32;Reporter
+00030 <emphasis role="keywordflow">try</emphasis>:
+00031 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;configparser
+00032 <emphasis role="keywordflow">except</emphasis>&#32;ImportError:
+00033 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;ConfigParser&#32;<emphasis role="keyword">as</emphasis>&#32;configparser
+00034 
+00035 
+00037 
+<anchor xml:id="__scan_view_8py_source_1l00038"/><link linkend="_namespace_scan_view_1a0ad6a88ca40901dcacbfd15c566bacb4">00038</link> kReportFileRE&#32;=&#32;re.compile(<emphasis role="stringliteral">&apos;(.*/)?report-(.*)\\.html&apos;</emphasis>)
+00039 
+<anchor xml:id="__scan_view_8py_source_1l00040"/><link linkend="_namespace_scan_view_1ac8d1c170d353c01a5a5b91da6ff2385b">00040</link> kBugKeyValueRE&#32;=&#32;re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;BUG([^&#32;]*)&#32;(.*)&#32;--&gt;&apos;</emphasis>)
+00041 
+00042 <emphasis role="comment">#&#32;&#32;&lt;!--&#32;REPORTPROBLEM&#32;file=&quot;crashes/clang_crash_ndSGF9.mi&quot;&#32;stderr=&quot;crashes/clang_crash_ndSGF9.mi.stderr.txt&quot;&#32;info=&quot;crashes/clang_crash_ndSGF9.mi.info&quot;&#32;--&gt;</emphasis>
+00043 
+<anchor xml:id="__scan_view_8py_source_1l00044"/><link linkend="_namespace_scan_view_1a79ce4e92963ae5e83848bdf61f3f0995">00044</link> kReportCrashEntryRE&#32;=&#32;re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;REPORTPROBLEM&#32;(.*?)--&gt;&apos;</emphasis>)
+<anchor xml:id="__scan_view_8py_source_1l00045"/><link linkend="_namespace_scan_view_1a8557c6f3c4ec0e3b88bdf0befaf0c345">00045</link> kReportCrashEntryKeyValueRE&#32;=&#32;re.compile(<emphasis role="stringliteral">&apos;&#32;?([^=]+)=&quot;(.*?)&quot;&apos;</emphasis>)
+00046 
+<anchor xml:id="__scan_view_8py_source_1l00047"/><link linkend="_namespace_scan_view_1abf95a9d0fb7728f9253caf8b806dd03f">00047</link> kReportReplacements&#32;=&#32;[]
+00048 
+00049 <emphasis role="comment">#&#32;Add&#32;custom&#32;javascript.</emphasis>
+00050 kReportReplacements.append((re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;SUMMARYENDHEAD&#32;--&gt;&apos;</emphasis>),&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00051 <emphasis role="stringliteral">&lt;script&#32;language=&quot;javascript&quot;&#32;type=&quot;text/javascript&quot;&gt;</emphasis>
+00052 <emphasis role="stringliteral">function&#32;load(url)&#32;{</emphasis>
+00053 <emphasis role="stringliteral">&#32;&#32;if&#32;(window.XMLHttpRequest)&#32;{</emphasis>
+00054 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;req&#32;=&#32;new&#32;XMLHttpRequest();</emphasis>
+00055 <emphasis role="stringliteral">&#32;&#32;}&#32;else&#32;if&#32;(window.ActiveXObject)&#32;{</emphasis>
+00056 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;req&#32;=&#32;new&#32;ActiveXObject(&quot;Microsoft.XMLHTTP&quot;);</emphasis>
+00057 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00058 <emphasis role="stringliteral">&#32;&#32;if&#32;(req&#32;!=&#32;undefined)&#32;{</emphasis>
+00059 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;req.open(&quot;GET&quot;,&#32;url,&#32;true);</emphasis>
+00060 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;req.send(&quot;&quot;);</emphasis>
+00061 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00062 <emphasis role="stringliteral">}</emphasis>
+00063 <emphasis role="stringliteral">&lt;/script&gt;&quot;&quot;&quot;</emphasis>))
+00064 
+00065 <emphasis role="comment">#&#32;Insert&#32;additional&#32;columns.</emphasis>
+00066 kReportReplacements.append((re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;REPORTBUGCOL&#32;--&gt;&apos;</emphasis>),&#32;
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&apos;</emphasis>))
+00068 
+00069 <emphasis role="comment">#&#32;Insert&#32;report&#32;bug&#32;and&#32;open&#32;file&#32;links.</emphasis>
+00070 kReportReplacements.append((re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;REPORTBUG&#32;id=&quot;report-(.*)\\.html&quot;&#32;--&gt;&apos;</emphasis>),
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(<emphasis role="stringliteral">&apos;&lt;td&#32;class=&quot;Button&quot;&gt;&lt;a&#32;href=&quot;report/\\1&quot;&gt;Report&#32;Bug&lt;/a&gt;&lt;/td&gt;&apos;</emphasis>&#32;+&#32;
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;td&#32;class=&quot;Button&quot;&gt;&lt;a&#32;href=&quot;javascript:load(\&apos;open/\\1\&apos;)&quot;&gt;Open&#32;File&lt;/a&gt;&lt;/td&gt;&apos;</emphasis>)))
+00073 
+00074 kReportReplacements.append((re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;REPORTHEADER&#32;--&gt;&apos;</emphasis>),
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;h3&gt;&lt;a&#32;href=&quot;/&quot;&gt;Summary&lt;/a&gt;&#32;&gt;&#32;Report&#32;%(report)s&lt;/h3&gt;&apos;</emphasis>))
+00076 
+00077 kReportReplacements.append((re.compile(<emphasis role="stringliteral">&apos;&lt;!--&#32;REPORTSUMMARYEXTRA&#32;--&gt;&apos;</emphasis>),
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;td&#32;class=&quot;Button&quot;&gt;&lt;a&#32;href=&quot;report/%(report)s&quot;&gt;Report&#32;Bug&lt;/a&gt;&lt;/td&gt;&apos;</emphasis>))
+00079 
+00080 <emphasis role="comment">#&#32;Insert&#32;report&#32;crashes&#32;link.</emphasis>
+00081 
+00082 <emphasis role="comment">#&#32;Disabled&#32;for&#32;the&#32;time&#32;being&#32;until&#32;we&#32;decide&#32;exactly&#32;when&#32;this&#32;should</emphasis>
+00083 <emphasis role="comment">#&#32;be&#32;enabled.&#32;Also&#32;the&#32;radar&#32;reporter&#32;needs&#32;to&#32;be&#32;fixed&#32;to&#32;report</emphasis>
+00084 <emphasis role="comment">#&#32;multiple&#32;files.</emphasis>
+00085 
+00086 <emphasis role="comment">#kReportReplacements.append((re.compile(&apos;&lt;!--&#32;REPORTCRASHES&#32;--&gt;&apos;),</emphasis>
+00087 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&apos;&lt;br&gt;These&#32;files&#32;will&#32;automatically&#32;be&#32;attached&#32;to&#32;&apos;&#32;+</emphasis>
+00088 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&apos;reports&#32;filed&#32;here:&#32;&lt;a&#32;href=&quot;report_crashes&quot;&gt;Report&#32;Crashes&lt;/a&gt;.&apos;))</emphasis>
+00089 
+00090 
+00092 
+<anchor xml:id="__scan_view_8py_source_1l00093"/><link linkend="_namespace_scan_view_1a1ae7d8b23c36222b327bbe3e52ea4d9d">00093</link> kShare&#32;=&#32;posixpath.join(posixpath.dirname(__file__),&#32;<emphasis role="stringliteral">&apos;../share/scan-view&apos;</emphasis>)
+<anchor xml:id="__scan_view_8py_source_1l00094"/><link linkend="_namespace_scan_view_1a0b80760442814d48f754d894e59db46c">00094</link> kConfigPath&#32;=&#32;os.path.expanduser(<emphasis role="stringliteral">&apos;~/.scanview.cfg&apos;</emphasis>)
+00095 
+00096 
+00097 
+00098 __version__&#32;=&#32;<emphasis role="stringliteral">&quot;0.1&quot;</emphasis>
+00099 
+00100 __all__&#32;=&#32;[<emphasis role="stringliteral">&quot;create_server&quot;</emphasis>]
+00101 
+<anchor xml:id="__scan_view_8py_source_1l00102"/><link linkend="_class_scan_view_1_1_reporter_thread">00102</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_scan_view_1_1_reporter_thread">ReporterThread</link>(threading.Thread):
+<anchor xml:id="__scan_view_8py_source_1l00103"/><link linkend="_class_scan_view_1_1_reporter_thread_1a512a24c695d24cfc3765e21179278753">00103</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_reporter_thread_1a512a24c695d24cfc3765e21179278753">__init__</link>(self,&#32;report,&#32;reporter,&#32;parameters,&#32;server):
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;threading.Thread.__init__(self)
+<anchor xml:id="__scan_view_8py_source_1l00105"/><link linkend="_class_scan_view_1_1_reporter_thread_1a0f62f0f31356df954341d605c89f2914">00105</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a0f62f0f31356df954341d605c89f2914">report</link>report&#32;=&#32;report
+<anchor xml:id="__scan_view_8py_source_1l00106"/><link linkend="_class_scan_view_1_1_reporter_thread_1afe4223faf81a79aa5366948bd4b052e8">00106</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1afe4223faf81a79aa5366948bd4b052e8">server</link>server&#32;=&#32;server
+<anchor xml:id="__scan_view_8py_source_1l00107"/><link linkend="_class_scan_view_1_1_reporter_thread_1af1a2be4439cf3d960c94af6107d3922e">00107</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1af1a2be4439cf3d960c94af6107d3922e">reporter</link>reporter&#32;=&#32;reporter
+<anchor xml:id="__scan_view_8py_source_1l00108"/><link linkend="_class_scan_view_1_1_reporter_thread_1aae44c4bbaa0341d6eb1f18879ba068b3">00108</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1aae44c4bbaa0341d6eb1f18879ba068b3">parameters</link>parameters&#32;=&#32;parameters
+<anchor xml:id="__scan_view_8py_source_1l00109"/><link linkend="_class_scan_view_1_1_reporter_thread_1a1015354926f63802d78cdddaf743a86c">00109</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a1015354926f63802d78cdddaf743a86c">success</link>success&#32;=&#32;<emphasis role="keyword">False</emphasis>
+<anchor xml:id="__scan_view_8py_source_1l00110"/><link linkend="_class_scan_view_1_1_reporter_thread_1a23e7dfe2492e19954b60de027b0e28e7">00110</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a23e7dfe2492e19954b60de027b0e28e7">status</link>status&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00111 
+<anchor xml:id="__scan_view_8py_source_1l00112"/><link linkend="_class_scan_view_1_1_reporter_thread_1a4becee8413483962d5034105a91adec3">00112</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_reporter_thread_1a4becee8413483962d5034105a91adec3">run</link>(self):
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1afe4223faf81a79aa5366948bd4b052e8">server</link>server.options.debug:
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&quot;%s:&#32;SERVER:&#32;submitting&#32;bug.&quot;</emphasis>%(sys.argv[0],),&#32;file=sys.stderr)
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a23e7dfe2492e19954b60de027b0e28e7">status</link>status&#32;=&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1af1a2be4439cf3d960c94af6107d3922e">reporter</link>reporter.fileReport(self.<link linkend="_class_scan_view_1_1_reporter_thread_1a0f62f0f31356df954341d605c89f2914">report</link>report,&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1aae44c4bbaa0341d6eb1f18879ba068b3">parameters</link>parameters)
+00118 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a1015354926f63802d78cdddaf743a86c">success</link>success&#32;=&#32;<emphasis role="keyword">True</emphasis>
+00119 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;time.sleep(3)
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1afe4223faf81a79aa5366948bd4b052e8">server</link>server.options.debug:
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&quot;%s:&#32;SERVER:&#32;submission&#32;complete.&quot;</emphasis>%(sys.argv[0],),&#32;file=sys.stderr)
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;<link linkend="_class_reporter_1_1_report_failure">Reporter.ReportFailure</link>&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a23e7dfe2492e19954b60de027b0e28e7">status</link>status&#32;=&#32;e.value
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s&#32;=&#32;StringIO()
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;traceback
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;&lt;b&gt;Unhandled&#32;Exception&lt;/b&gt;&lt;br&gt;&lt;pre&gt;&apos;</emphasis>,&#32;file=s)
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;traceback.print_exc(file=s)
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;&lt;/pre&gt;&apos;</emphasis>,&#32;file=s)
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_reporter_thread_1a23e7dfe2492e19954b60de027b0e28e7">status</link>status&#32;=&#32;s.getvalue()
+00131 
+<anchor xml:id="__scan_view_8py_source_1l00132"/><link linkend="_class_scan_view_1_1_scan_view_server">00132</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server">ScanViewServer</link>(HTTPServer):
+<anchor xml:id="__scan_view_8py_source_1l00133"/><link linkend="_class_scan_view_1_1_scan_view_server_1a540fd02e4716b388af491778de9c5269">00133</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1a540fd02e4716b388af491778de9c5269">__init__</link>(self,&#32;address,&#32;handler,&#32;root,&#32;reporters,&#32;options):
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HTTPServer.__init__(self,&#32;address,&#32;handler)
+<anchor xml:id="__scan_view_8py_source_1l00135"/><link linkend="_class_scan_view_1_1_scan_view_server_1a53facc7ef36e78ebaa1ab9ecf4c1e365">00135</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a53facc7ef36e78ebaa1ab9ecf4c1e365">root</link>root&#32;=&#32;root
+<anchor xml:id="__scan_view_8py_source_1l00136"/><link linkend="_class_scan_view_1_1_scan_view_server_1ad784e2ff99acfb9f5b97ca8bb01ca724">00136</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1ad784e2ff99acfb9f5b97ca8bb01ca724">reporters</link>reporters&#32;=&#32;reporters
+<anchor xml:id="__scan_view_8py_source_1l00137"/><link linkend="_class_scan_view_1_1_scan_view_server_1a509aeeff229f13ff796423354769e17f">00137</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a509aeeff229f13ff796423354769e17f">options</link>options&#32;=&#32;options&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__scan_view_8py_source_1l00138"/><link linkend="_class_scan_view_1_1_scan_view_server_1a4361a54a0a37fe3b87b2545b6536cad7">00138</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a4361a54a0a37fe3b87b2545b6536cad7">halted</link>halted&#32;=&#32;<emphasis role="keyword">False</emphasis>
+<anchor xml:id="__scan_view_8py_source_1l00139"/><link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">00139</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a21b97ddfbb060575f20164da397437c2">load_config</link>load_config()
+00141 
+<anchor xml:id="__scan_view_8py_source_1l00142"/><link linkend="_class_scan_view_1_1_scan_view_server_1a21b97ddfbb060575f20164da397437c2">00142</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1a21b97ddfbb060575f20164da397437c2">load_config</link>(self):
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config&#32;=&#32;configparser.RawConfigParser()
+00144 
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Add&#32;defaults</emphasis>
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config.add_section(<emphasis role="stringliteral">&apos;ScanView&apos;</emphasis>)
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;r&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1ad784e2ff99acfb9f5b97ca8bb01ca724">reporters</link>reporters:
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config.add_section(r.getName())
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;p&#32;<emphasis role="keywordflow">in</emphasis>&#32;r.getParameters():
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;p.saveConfigValue():
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config.set(r.getName(),&#32;p.getName(),&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>)
+00152 
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Ignore&#32;parse&#32;errors</emphasis>
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config.read([kConfigPath])
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00158 
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Save&#32;on&#32;exit</emphasis>
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;atexit
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;atexit.register(<emphasis role="keyword">lambda</emphasis>:&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1ae815915c612f1b4758d128391cbaa13c">save_config</link>save_config())
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__scan_view_8py_source_1l00163"/><link linkend="_class_scan_view_1_1_scan_view_server_1ae815915c612f1b4758d128391cbaa13c">00163</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1ae815915c612f1b4758d128391cbaa13c">save_config</link>(self):
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Ignore&#32;errors&#32;(only&#32;called&#32;on&#32;exit).</emphasis>
+00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(kConfigPath,<emphasis role="stringliteral">&apos;w&apos;</emphasis>)
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1aafeade80878331d673f3b84b627bb909">config</link>config.write(f)
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f.close()
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__scan_view_8py_source_1l00172"/><link linkend="_class_scan_view_1_1_scan_view_server_1ab069f6d4ea8f083f4d96003361bf9cc3">00172</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1ab069f6d4ea8f083f4d96003361bf9cc3">halt</link>(self):
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a4361a54a0a37fe3b87b2545b6536cad7">halted</link>halted&#32;=&#32;<emphasis role="keyword">True</emphasis>
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a509aeeff229f13ff796423354769e17f">options</link>options.debug:
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&quot;%s:&#32;SERVER:&#32;halting.&quot;</emphasis>&#32;%&#32;(sys.argv[0],),&#32;file=sys.stderr)
+00176 
+<anchor xml:id="__scan_view_8py_source_1l00177"/><link linkend="_class_scan_view_1_1_scan_view_server_1a741a5d0592476a1a825dec252606a5f8">00177</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1a741a5d0592476a1a825dec252606a5f8">serve_forever</link>(self):
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a4361a54a0a37fe3b87b2545b6536cad7">halted</link>halted:
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a509aeeff229f13ff796423354769e17f">options</link>options.debug&#32;&gt;&#32;1:
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&quot;%s:&#32;SERVER:&#32;waiting...&quot;</emphasis>&#32;%&#32;(sys.argv[0],),&#32;file=sys.stderr)
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.handle_request()
+00183 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;OSError&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;OSError&apos;</emphasis>,e.errno)
+00185 
+<anchor xml:id="__scan_view_8py_source_1l00186"/><link linkend="_class_scan_view_1_1_scan_view_server_1a4665034fca24c172ba762e2f0bf92e4f">00186</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1a4665034fca24c172ba762e2f0bf92e4f">finish_request</link>(self,&#32;request,&#32;client_address):
+00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a509aeeff229f13ff796423354769e17f">options</link>options.autoReload:
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;ScanView
+<anchor xml:id="__scan_view_8py_source_1l00189"/><link linkend="_class_scan_view_1_1_scan_view_server_1ada46b8c953ddb46373ade35940a2f145">00189</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1ada46b8c953ddb46373ade35940a2f145">RequestHandlerClass</link>RequestHandlerClass&#32;=&#32;reload(ScanView).ScanViewRequestHandler
+00190 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HTTPServer.finish_request(self,&#32;request,&#32;client_address)
+00191 
+<anchor xml:id="__scan_view_8py_source_1l00192"/><link linkend="_class_scan_view_1_1_scan_view_server_1a8b883db8cfa5cb677055b2b9f1497b24">00192</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_server_1a8b883db8cfa5cb677055b2b9f1497b24">handle_error</link>(self,&#32;request,&#32;client_address):
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Ignore&#32;socket&#32;errors</emphasis>
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;info&#32;=&#32;sys.exc_info()
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;info&#32;<emphasis role="keywordflow">and</emphasis>&#32;isinstance(info[1],&#32;socket.error):
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_server_1a509aeeff229f13ff796423354769e17f">options</link>options.debug&#32;&gt;&#32;1:
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&quot;%s:&#32;SERVER:&#32;ignored&#32;socket&#32;error.&quot;</emphasis>&#32;%&#32;(sys.argv[0],),&#32;file=sys.stderr)
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HTTPServer.handle_error(self,&#32;request,&#32;client_address)
+00200 
+00201 <emphasis role="comment">#&#32;Borrowed&#32;from&#32;Quixote,&#32;with&#32;simplifications.</emphasis>
+<anchor xml:id="__scan_view_8py_source_1l00202"/><link linkend="_namespace_scan_view_1a888165eb0c614e524aca2396fbd24d42">00202</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespace_scan_view_1a888165eb0c614e524aca2396fbd24d42">parse_query</link>(qs,&#32;fields=None):
+00203 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;fields&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00204 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fields&#32;=&#32;{}
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;chunk&#32;<emphasis role="keywordflow">in</emphasis>&#32;(_f&#32;<emphasis role="keywordflow">for</emphasis>&#32;_f&#32;<emphasis role="keywordflow">in</emphasis>&#32;qs.split(<emphasis role="stringliteral">&apos;&amp;&apos;</emphasis>)&#32;<emphasis role="keywordflow">if</emphasis>&#32;_f):
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;=&apos;</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;chunk:
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name&#32;=&#32;chunk
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;value&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name,&#32;value&#32;=&#32;chunk.split(<emphasis role="stringliteral">&apos;=&apos;</emphasis>,&#32;1)
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name&#32;=&#32;unquote(name.replace(<emphasis role="stringliteral">&apos;+&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>))
+00212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;value&#32;=&#32;unquote(value.replace(<emphasis role="stringliteral">&apos;+&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>))
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;item&#32;=&#32;fields.get(name)
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;item&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fields[name]&#32;=&#32;[value]
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;item.append(value)
+00218 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;fields
+00219 
+<anchor xml:id="__scan_view_8py_source_1l00220"/><link linkend="_class_scan_view_1_1_scan_view_request_handler">00220</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler">ScanViewRequestHandler</link>(SimpleHTTPRequestHandler):
+<anchor xml:id="__scan_view_8py_source_1l00221"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ae12d1b11b78dbddf4e5db38a2bdc0f21">00221</link> &#32;&#32;&#32;&#32;server_version&#32;=&#32;<emphasis role="stringliteral">&quot;ScanViewServer/&quot;</emphasis>&#32;+&#32;__version__
+<anchor xml:id="__scan_view_8py_source_1l00222"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa090f71298600fe2e88035a295465966">00222</link> &#32;&#32;&#32;&#32;dynamic_mtime&#32;=&#32;time.time()
+00223 
+<anchor xml:id="__scan_view_8py_source_1l00224"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1af9b37a3075d4a3e1cdfcd07d48cbcd42">00224</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1af9b37a3075d4a3e1cdfcd07d48cbcd42">do_HEAD</link>(self):
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SimpleHTTPRequestHandler.do_HEAD(self)
+00227 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a28210d2673ceb6009969867751b29efc">handle_exception</link>handle_exception(e)
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__scan_view_8py_source_1l00230"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1318021abb47481ffdbe6acc69177e66">00230</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1318021abb47481ffdbe6acc69177e66">do_GET</link>(self):
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00232 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SimpleHTTPRequestHandler.do_GET(self)
+00233 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00234 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a28210d2673ceb6009969867751b29efc">handle_exception</link>handle_exception(e)
+00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__scan_view_8py_source_1l00236"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a67daf26082ae9476b3f07d7096ef578d">00236</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a67daf26082ae9476b3f07d7096ef578d">do_POST</link>(self):
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;Serve&#32;a&#32;POST&#32;request.&quot;&quot;&quot;</emphasis>
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;length&#32;=&#32;self.headers.getheader(<emphasis role="stringliteral">&apos;content-length&apos;</emphasis>)&#32;<emphasis role="keywordflow">or</emphasis>&#32;<emphasis role="stringliteral">&quot;0&quot;</emphasis>
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;length&#32;=&#32;int(length)
+00242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;length&#32;=&#32;0
+00244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;self.rfile.read(length)
+00245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fields&#32;=&#32;<link linkend="_namespace_scan_view_1a888165eb0c614e524aca2396fbd24d42">parse_query</link>(content)
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a72138b63ef18bce4d55a57b0ae2c9fa4">send_head</link>send_head(fields)
+00247 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;f:
+00248 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.copyfile(f,&#32;self.wfile)
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f.close()
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a28210d2673ceb6009969867751b29efc">handle_exception</link>handle_exception(e)&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00252 
+<anchor xml:id="__scan_view_8py_source_1l00253"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a818ae0fc92881a90b7377f615f7c0305">00253</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a818ae0fc92881a90b7377f615f7c0305">log_message</link>(self,&#32;format,&#32;*args):
+00254 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.server.options.debug:
+00255 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sys.stderr.write(<emphasis role="stringliteral">&quot;%s:&#32;SERVER:&#32;%s&#32;-&#32;-&#32;[%s]&#32;%s\n&quot;</emphasis>&#32;%
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(sys.argv[0],
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.address_string(),
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.log_date_time_string(),
+00259 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;format%args))
+00260 
+<anchor xml:id="__scan_view_8py_source_1l00261"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac3e752b45eaf16835fd37c05d97cbc70">00261</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac3e752b45eaf16835fd37c05d97cbc70">load_report</link>(self,&#32;report):
+00262 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path&#32;=&#32;os.path.join(self.server.root,&#32;<emphasis role="stringliteral">&apos;report-%s.html&apos;</emphasis>%report)
+00263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;data&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path).read()
+00264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;keys&#32;=&#32;{}
+00265 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;item&#32;<emphasis role="keywordflow">in</emphasis>&#32;kBugKeyValueRE.finditer(data):
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;k,v&#32;=&#32;item.groups()
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;keys[k]&#32;=&#32;v
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;keys
+00269 
+<anchor xml:id="__scan_view_8py_source_1l00270"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa30371e0c4b78e98653513388338d367">00270</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa30371e0c4b78e98653513388338d367">load_crashes</link>(self):
+00271 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path&#32;=&#32;posixpath.join(self.server.root,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;data&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path).read()
+00273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;problems&#32;=&#32;[]
+00274 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;item&#32;<emphasis role="keywordflow">in</emphasis>&#32;kReportCrashEntryRE.finditer(data):
+00275 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fieldData&#32;=&#32;item.group(1)
+00276 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fields&#32;=&#32;dict([i.groups()&#32;<emphasis role="keywordflow">for</emphasis>&#32;i&#32;<emphasis role="keywordflow">in</emphasis>&#32;
+00277 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;kReportCrashEntryKeyValueRE.finditer(fieldData)])
+00278 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;problems.append(fields)
+00279 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;problems
+00280 
+<anchor xml:id="__scan_view_8py_source_1l00281"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a28210d2673ceb6009969867751b29efc">00281</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a28210d2673ceb6009969867751b29efc">handle_exception</link>(self,&#32;exc):
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;traceback
+00283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s&#32;=&#32;StringIO()
+00284 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&quot;INTERNAL&#32;ERROR\n&quot;</emphasis>,&#32;file=s)
+00285 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;traceback.print_exc(file=s)
+00286 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>send_string(s.getvalue(),&#32;<emphasis role="stringliteral">&apos;text/plain&apos;</emphasis>)
+00287 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;f:
+00288 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.copyfile(f,&#32;self.wfile)
+00289 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f.close()&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00290 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__scan_view_8py_source_1l00291"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">00291</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>(self,&#32;name):
+00292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;name&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">fields</link>fields:
+00293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">fields</link>fields[name][0]
+00294 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00295 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00296 
+<anchor xml:id="__scan_view_8py_source_1l00297"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a12997f4b65d994a8ce915855c2282835">00297</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a12997f4b65d994a8ce915855c2282835">submit_bug</link>(self,&#32;c):
+00298 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;title&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;title&apos;</emphasis>)
+00299 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;description&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;description&apos;</emphasis>)
+00300 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;report&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;report&apos;</emphasis>)
+00301 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterIndex&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;reporter&apos;</emphasis>)
+00302 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;files&#32;=&#32;[]
+00303 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;fileID&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">fields</link>fields.<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>(<emphasis role="stringliteral">&apos;files&apos;</emphasis>,[]):
+00304 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00305 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;i&#32;=&#32;int(fileID)
+00306 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00307 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;i&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;i&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">or</emphasis>&#32;i&lt;0&#32;<emphasis role="keywordflow">or</emphasis>&#32;i&gt;=len(c.files):
+00309 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&apos;Invalid&#32;file&#32;ID&apos;</emphasis>)
+00310 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;files.append(c.files[i])
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00312 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;title:
+00313 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&quot;Missing&#32;title.&quot;</emphasis>)
+00314 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;description:
+00315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&quot;Missing&#32;description.&quot;</emphasis>)
+00316 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterIndex&#32;=&#32;int(reporterIndex)
+00318 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keyword">False</emphasis>,&#32;<emphasis role="stringliteral">&quot;Invalid&#32;report&#32;method.&quot;</emphasis>)
+00320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Get&#32;the&#32;reporter&#32;and&#32;parameters.</emphasis>
+00322 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporter&#32;=&#32;self.server.reporters[reporterIndex]
+00323 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;parameters&#32;=&#32;{}
+00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;o&#32;<emphasis role="keywordflow">in</emphasis>&#32;reporter.getParameters():
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name&#32;=&#32;<emphasis role="stringliteral">&apos;%s_%s&apos;</emphasis>%(reporter.getName(),o.getName())
+00326 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;name&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">fields</link>fields:
+00327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keyword">False</emphasis>,&#32;
+00328 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;Missing&#32;field&#32;&quot;%s&quot;&#32;for&#32;%s&#32;report&#32;method.&apos;</emphasis>%(name,
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporter.getName()))
+00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;parameters[o.getName()]&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(name)
+00331 
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Update&#32;config&#32;defaults.</emphasis>
+00333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;report&#32;!=&#32;<emphasis role="stringliteral">&apos;None&apos;</emphasis>:
+00334 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.server.config.set(<emphasis role="stringliteral">&apos;ScanView&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;reporter&apos;</emphasis>,&#32;reporterIndex)
+00335 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;o&#32;<emphasis role="keywordflow">in</emphasis>&#32;reporter.getParameters():
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;o.saveConfigValue():
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name&#32;=&#32;o.getName()
+00338 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.server.config.set(reporter.getName(),&#32;name,&#32;parameters[name])
+00339 
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Create&#32;the&#32;report.</emphasis>
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;bug&#32;=&#32;<link linkend="_class_reporter_1_1_bug_report">Reporter.BugReport</link>(title,&#32;description,&#32;files)
+00342 
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Kick&#32;off&#32;a&#32;reporting&#32;thread.</emphasis>
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;t&#32;=&#32;<link linkend="_class_scan_view_1_1_reporter_thread">ReporterThread</link>(bug,&#32;reporter,&#32;parameters,&#32;self.server)
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;t.start()
+00346 
+00347 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Wait&#32;for&#32;thread&#32;to&#32;die...</emphasis>
+00348 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;t.isAlive():
+00349 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;time.sleep(.25)
+00350 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;submitStatus&#32;=&#32;t.status
+00351 
+00352 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(t.success,&#32;t.status)
+00353 
+<anchor xml:id="__scan_view_8py_source_1l00354"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a0913f3b844213d82ee4c849d4c4fad4b">00354</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a0913f3b844213d82ee4c849d4c4fad4b">send_report_submit</link>(self):
+00355 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;report&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;report&apos;</emphasis>)
+00356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a302667d7ca0853ad0eafb5b8e030c64d">get_report_context</link>get_report_context(report)
+00357 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;c.reportSource&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reportingFor&#32;=&#32;<emphasis role="stringliteral">&quot;Report&#32;Crashes&#32;&gt;&#32;&quot;</emphasis>
+00359 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fileBug&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00360 <emphasis role="stringliteral">&lt;a&#32;href=&quot;/report_crashes&quot;&gt;File&#32;Bug&lt;/a&gt;&#32;&gt;&#32;&quot;&quot;&quot;</emphasis>%locals()
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00362 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reportingFor&#32;=&#32;<emphasis role="stringliteral">&apos;&lt;a&#32;href=&quot;/%s&quot;&gt;Report&#32;%s&lt;/a&gt;&#32;&gt;&#32;&apos;</emphasis>&#32;%&#32;(c.reportSource,&#32;
+00363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;report)
+00364 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fileBug&#32;=&#32;<emphasis role="stringliteral">&apos;&lt;a&#32;href=&quot;/report/%s&quot;&gt;File&#32;Bug&lt;/a&gt;&#32;&gt;&#32;&apos;</emphasis>&#32;%&#32;report
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;title&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;title&apos;</emphasis>)
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;description&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ad8f22c121bbd7687e049e36b3725c677">get_scalar_field</link>get_scalar_field(<emphasis role="stringliteral">&apos;description&apos;</emphasis>)
+00367 
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;res,message&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a12997f4b65d994a8ce915855c2282835">submit_bug</link>submit_bug(c)
+00369 
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;res:
+00371 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;statusClass&#32;=&#32;<emphasis role="stringliteral">&apos;SubmitOk&apos;</emphasis>
+00372 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;statusName&#32;=&#32;<emphasis role="stringliteral">&apos;Succeeded&apos;</emphasis>
+00373 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;statusClass&#32;=&#32;<emphasis role="stringliteral">&apos;SubmitFail&apos;</emphasis>
+00375 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;statusName&#32;=&#32;<emphasis role="stringliteral">&apos;Failed&apos;</emphasis>
+00376 
+00377 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00378 <emphasis role="stringliteral">&lt;head&gt;</emphasis>
+00379 <emphasis role="stringliteral">&#32;&#32;&lt;title&gt;Bug&#32;Submission&lt;/title&gt;</emphasis>
+00380 <emphasis role="stringliteral">&#32;&#32;&lt;link&#32;rel=&quot;stylesheet&quot;&#32;type=&quot;text/css&quot;&#32;href=&quot;/scanview.css&quot;&#32;/&gt;</emphasis>
+00381 <emphasis role="stringliteral">&lt;/head&gt;</emphasis>
+00382 <emphasis role="stringliteral">&lt;body&gt;</emphasis>
+00383 <emphasis role="stringliteral">&lt;h3&gt;</emphasis>
+00384 <emphasis role="stringliteral">&lt;a&#32;href=&quot;/&quot;&gt;Summary&lt;/a&gt;&#32;&gt;&#32;</emphasis>
+00385 <emphasis role="stringliteral">%(reportingFor)s</emphasis>
+00386 <emphasis role="stringliteral">%(fileBug)s</emphasis>
+00387 <emphasis role="stringliteral">Submit&lt;/h3&gt;</emphasis>
+00388 <emphasis role="stringliteral">&lt;form&#32;name=&quot;form&quot;&#32;action=&quot;&quot;&gt;</emphasis>
+00389 <emphasis role="stringliteral">&lt;table&#32;class=&quot;form&quot;&gt;</emphasis>
+00390 <emphasis role="stringliteral">&lt;tr&gt;&lt;td&gt;</emphasis>
+00391 <emphasis role="stringliteral">&lt;table&#32;class=&quot;form_group&quot;&gt;</emphasis>
+00392 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00393 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_clabel&quot;&gt;Title:&lt;/td&gt;</emphasis>
+00394 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00395 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&lt;input&#32;type=&quot;text&quot;&#32;name=&quot;title&quot;&#32;size=&quot;50&quot;&#32;value=&quot;%(title)s&quot;&#32;disabled&gt;</emphasis>
+00396 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00397 <emphasis role="stringliteral">&lt;/tr&gt;</emphasis>
+00398 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00399 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_label&quot;&gt;Description:&lt;/td&gt;</emphasis>
+00400 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00401 <emphasis role="stringliteral">&lt;textarea&#32;rows=&quot;10&quot;&#32;cols=&quot;80&quot;&#32;name=&quot;description&quot;&#32;disabled&gt;</emphasis>
+00402 <emphasis role="stringliteral">%(description)s</emphasis>
+00403 <emphasis role="stringliteral">&lt;/textarea&gt;</emphasis>
+00404 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00405 <emphasis role="stringliteral">&lt;/table&gt;</emphasis>
+00406 <emphasis role="stringliteral">&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00407 <emphasis role="stringliteral">&lt;/table&gt;</emphasis>
+00408 <emphasis role="stringliteral">&lt;/form&gt;</emphasis>
+00409 <emphasis role="stringliteral">&lt;h1&#32;class=&quot;%(statusClass)s&quot;&gt;Submission&#32;%(statusName)s&lt;/h1&gt;</emphasis>
+00410 <emphasis role="stringliteral">%(message)s</emphasis>
+00411 <emphasis role="stringliteral">&lt;p&gt;</emphasis>
+00412 <emphasis role="stringliteral">&lt;hr&gt;</emphasis>
+00413 <emphasis role="stringliteral">&lt;a&#32;href=&quot;/&quot;&gt;Return&#32;to&#32;Summary&lt;/a&gt;</emphasis>
+00414 <emphasis role="stringliteral">&lt;/body&gt;</emphasis>
+00415 <emphasis role="stringliteral">&lt;/html&gt;&quot;&quot;&quot;</emphasis>%locals()
+00416 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>send_string(result)
+00417 
+<anchor xml:id="__scan_view_8py_source_1l00418"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a3847e2d1c53d512e5c9a6fb4dd7dd29f">00418</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a3847e2d1c53d512e5c9a6fb4dd7dd29f">send_open_report</link>(self,&#32;report):
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00420 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;keys&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac3e752b45eaf16835fd37c05d97cbc70">load_report</link>load_report(report)
+00421 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;IOError:
+00422 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.send_error(400,&#32;<emphasis role="stringliteral">&apos;Invalid&#32;report.&apos;</emphasis>)
+00423 
+00424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;file&#32;=&#32;keys.get(<emphasis role="stringliteral">&apos;FILE&apos;</emphasis>)
+00425 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;file&#32;<emphasis role="keywordflow">or</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;posixpath.exists(file):
+00426 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.send_error(400,&#32;<emphasis role="stringliteral">&apos;File&#32;does&#32;not&#32;exist:&#32;&quot;%s&quot;&apos;</emphasis>&#32;%&#32;file)
+00427 
+00428 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;startfile
+00429 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.server.options.debug:
+00430 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;%s:&#32;SERVER:&#32;opening&#32;&quot;%s&quot;&apos;</emphasis>%(sys.argv[0],
+00431 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;file),&#32;file=sys.stderr)
+00432 
+00433 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;status&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">startfile.open</link>(file)
+00434 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;status:
+00435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;res&#32;=&#32;<emphasis role="stringliteral">&apos;Opened:&#32;&quot;%s&quot;&apos;</emphasis>&#32;%&#32;file
+00436 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00437 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;res&#32;=&#32;<emphasis role="stringliteral">&apos;Open&#32;failed:&#32;&quot;%s&quot;&apos;</emphasis>&#32;%&#32;file
+00438 
+00439 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>send_string(res,&#32;<emphasis role="stringliteral">&apos;text/plain&apos;</emphasis>)
+00440 
+<anchor xml:id="__scan_view_8py_source_1l00441"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a302667d7ca0853ad0eafb5b8e030c64d">00441</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a302667d7ca0853ad0eafb5b8e030c64d">get_report_context</link>(self,&#32;report):
+00442 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis>Context(object):
+00443 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;report&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">or</emphasis>&#32;report&#32;==&#32;<emphasis role="stringliteral">&apos;None&apos;</emphasis>:
+00445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;data&#32;=&#32;self.load_crashes()
+00446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Don&apos;t&#32;allow&#32;empty&#32;reports.</emphasis>
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;data:
+00448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;ValueError(<emphasis role="stringliteral">&apos;No&#32;crashes&#32;detected!&apos;</emphasis>)
+00449 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c&#32;=&#32;Context()
+00450 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.title&#32;=&#32;<emphasis role="stringliteral">&apos;clang&#32;static&#32;analyzer&#32;failures&apos;</emphasis>
+00451 
+00452 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderrSummary&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>
+00453 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;item&#32;<emphasis role="keywordflow">in</emphasis>&#32;data:
+00454 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;item:
+00455 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path&#32;=&#32;posixpath.join(self.server.root,&#32;item[<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>])
+00456 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;os.path.exists(path):
+00457 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lns&#32;=&#32;itertools.islice(<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path),&#32;0,&#32;10)
+00458 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderrSummary&#32;+=&#32;<emphasis role="stringliteral">&apos;%s\n--\n%s&apos;</emphasis>&#32;%&#32;(item.get(<emphasis role="stringliteral">&apos;src&apos;</emphasis>,&#32;
+00459 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;unknown&gt;&apos;</emphasis>),
+00460 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>.join(lns))
+00461 
+00462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.description&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00463 <emphasis role="stringliteral">The&#32;clang&#32;static&#32;analyzer&#32;failed&#32;on&#32;these&#32;inputs:</emphasis>
+00464 <emphasis role="stringliteral">%s</emphasis>
+00465 <emphasis role="stringliteral"></emphasis>
+00466 <emphasis role="stringliteral">STDERR&#32;Summary</emphasis>
+00467 <emphasis role="stringliteral">--------------</emphasis>
+00468 <emphasis role="stringliteral">%s</emphasis>
+00469 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>&#32;%&#32;(<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join([item.get(<emphasis role="stringliteral">&apos;src&apos;</emphasis>,<emphasis role="stringliteral">&apos;&lt;unknown&gt;&apos;</emphasis>)&#32;<emphasis role="keywordflow">for</emphasis>&#32;item&#32;<emphasis role="keywordflow">in</emphasis>&#32;data]),
+00470 &#32;&#32;&#32;&#32;&#32;&#32;&#32;stderrSummary)
+00471 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.reportSource&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00472 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.navMarkup&#32;=&#32;<emphasis role="stringliteral">&quot;Report&#32;Crashes&#32;&gt;&#32;&quot;</emphasis>
+00473 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files&#32;=&#32;[]
+00474 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;item&#32;<emphasis role="keywordflow">in</emphasis>&#32;data:&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00475 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files.append(item.get(<emphasis role="stringliteral">&apos;src&apos;</emphasis>,<emphasis role="stringliteral">&apos;&apos;</emphasis>))
+00476 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files.append(posixpath.join(self.server.root,
+00477 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;item.get(<emphasis role="stringliteral">&apos;file&apos;</emphasis>,<emphasis role="stringliteral">&apos;&apos;</emphasis>)))
+00478 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files.append(posixpath.join(self.server.root,
+00479 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;item.get(<emphasis role="stringliteral">&apos;clangfile&apos;</emphasis>,<emphasis role="stringliteral">&apos;&apos;</emphasis>)))
+00480 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files.append(posixpath.join(self.server.root,
+00481 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;item.get(<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>,<emphasis role="stringliteral">&apos;&apos;</emphasis>)))
+00482 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files.append(posixpath.join(self.server.root,
+00483 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;item.get(<emphasis role="stringliteral">&apos;info&apos;</emphasis>,<emphasis role="stringliteral">&apos;&apos;</emphasis>)))
+00484 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Just&#32;in&#32;case&#32;something&#32;failed,&#32;ignore&#32;files&#32;which&#32;don&apos;t</emphasis>
+00485 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;exist.</emphasis>
+00486 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files&#32;=&#32;[f&#32;<emphasis role="keywordflow">for</emphasis>&#32;f&#32;<emphasis role="keywordflow">in</emphasis>&#32;c.files
+00487 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;os.path.exists(f)&#32;<emphasis role="keywordflow">and</emphasis>&#32;os.path.isfile(f)]
+00488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00489 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Check&#32;that&#32;this&#32;is&#32;a&#32;valid&#32;report.&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;</emphasis>
+00490 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path&#32;=&#32;posixpath.join(self.server.root,&#32;<emphasis role="stringliteral">&apos;report-%s.html&apos;</emphasis>&#32;%&#32;report)
+00491 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;posixpath.exists(path):
+00492 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;ValueError(<emphasis role="stringliteral">&apos;Invalid&#32;report&#32;ID&apos;</emphasis>)
+00493 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;keys&#32;=&#32;self.load_report(report)
+00494 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c&#32;=&#32;Context()
+00495 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.title&#32;=&#32;keys.get(<emphasis role="stringliteral">&apos;DESC&apos;</emphasis>,<emphasis role="stringliteral">&apos;clang&#32;error&#32;(unrecognized&apos;</emphasis>)
+00496 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.description&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00497 <emphasis role="stringliteral">Bug&#32;reported&#32;by&#32;the&#32;clang&#32;static&#32;analyzer.</emphasis>
+00498 <emphasis role="stringliteral"></emphasis>
+00499 <emphasis role="stringliteral">Description:&#32;%s</emphasis>
+00500 <emphasis role="stringliteral">File:&#32;%s</emphasis>
+00501 <emphasis role="stringliteral">Line:&#32;%s</emphasis>
+00502 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>%(c.title,&#32;keys.get(<emphasis role="stringliteral">&apos;FILE&apos;</emphasis>,<emphasis role="stringliteral">&apos;&lt;unknown&gt;&apos;</emphasis>),&#32;keys.get(<emphasis role="stringliteral">&apos;LINE&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&lt;unknown&gt;&apos;</emphasis>))
+00503 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.reportSource&#32;=&#32;<emphasis role="stringliteral">&apos;report-%s.html&apos;</emphasis>&#32;%&#32;report
+00504 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.navMarkup&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&lt;a&#32;href=&quot;/%s&quot;&gt;Report&#32;%s&lt;/a&gt;&#32;&gt;&#32;&quot;&quot;&quot;</emphasis>&#32;%&#32;(c.reportSource,
+00505 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;report)
+00506 
+00507 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c.files&#32;=&#32;[path]
+00508 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;c
+00509 
+<anchor xml:id="__scan_view_8py_source_1l00510"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a693ea554a85c55ae073cb55e7185c6af">00510</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a693ea554a85c55ae073cb55e7185c6af">send_report</link>(self,&#32;report,&#32;configOverrides=None):
+00511 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>getConfigOption(section,&#32;field):&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00512 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(configOverrides&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">and</emphasis>
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;section&#32;<emphasis role="keywordflow">in</emphasis>&#32;configOverrides&#32;<emphasis role="keywordflow">and</emphasis>
+00514 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;field&#32;<emphasis role="keywordflow">in</emphasis>&#32;configOverrides[section]):
+00515 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;configOverrides[section][field]
+00516 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.server.config.get(section,&#32;field)
+00517 
+00518 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;report&#32;is&#32;None&#32;is&#32;used&#32;for&#32;crashes</emphasis>
+00519 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00520 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a302667d7ca0853ad0eafb5b8e030c64d">get_report_context</link>get_report_context(report)
+00521 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;ValueError&#32;<emphasis role="keyword">as</emphasis>&#32;e:
+00522 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.send_error(400,&#32;e.message)
+00523 
+00524 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;title&#32;=&#32;c.title
+00525 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;description=&#32;c.description
+00526 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reportingFor&#32;=&#32;c.navMarkup
+00527 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;c.reportSource&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00528 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;extraIFrame&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>
+00529 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00530 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;extraIFrame&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00531 <emphasis role="stringliteral">&lt;iframe&#32;src=&quot;/%s&quot;&#32;width=&quot;100%%&quot;&#32;height=&quot;40%%&quot;</emphasis>
+00532 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;scrolling=&quot;auto&quot;&#32;frameborder=&quot;1&quot;&gt;</emphasis>
+00533 <emphasis role="stringliteral">&#32;&#32;&lt;a&#32;href=&quot;/%s&quot;&gt;View&#32;Bug&#32;Report&lt;/a&gt;</emphasis>
+00534 <emphasis role="stringliteral">&lt;/iframe&gt;&quot;&quot;&quot;</emphasis>&#32;%&#32;(c.reportSource,&#32;c.reportSource)
+00535 
+00536 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterSelections&#32;=&#32;[]
+00537 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterOptions&#32;=&#32;[]
+00538 
+00539 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00540 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;active&#32;=&#32;int(getConfigOption(<emphasis role="stringliteral">&apos;ScanView&apos;</emphasis>,<emphasis role="stringliteral">&apos;reporter&apos;</emphasis>))
+00541 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00542 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;active&#32;=&#32;0
+00543 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;i,r&#32;<emphasis role="keywordflow">in</emphasis>&#32;enumerate(self.server.reporters):
+00544 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;selected&#32;=&#32;(i&#32;==&#32;active)
+00545 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;selected:
+00546 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;selectedStr&#32;=&#32;<emphasis role="stringliteral">&apos;&#32;selected&apos;</emphasis>
+00547 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00548 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;selectedStr&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00549 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterSelections.append(<emphasis role="stringliteral">&apos;&lt;option&#32;value=&quot;%d&quot;%s&gt;%s&lt;/option&gt;&apos;</emphasis>%(i,selectedStr,r.getName()))
+00550 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options&#32;=&#32;<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join([&#32;o.getHTML(r,title,getConfigOption)&#32;<emphasis role="keywordflow">for</emphasis>&#32;o&#32;<emphasis role="keywordflow">in</emphasis>&#32;r.getParameters()])
+00551 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;display&#32;=&#32;(<emphasis role="stringliteral">&apos;none&apos;</emphasis>,<emphasis role="stringliteral">&apos;&apos;</emphasis>)[selected]
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterOptions.append(<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00553 <emphasis role="stringliteral">&lt;tr&#32;id=&quot;%sReporterOptions&quot;&#32;style=&quot;display:%s&quot;&gt;</emphasis>
+00554 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_label&quot;&gt;%s&#32;Options&lt;/td&gt;</emphasis>
+00555 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00556 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&lt;table&#32;class=&quot;form_inner_group&quot;&gt;</emphasis>
+00557 <emphasis role="stringliteral">%s</emphasis>
+00558 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&lt;/table&gt;</emphasis>
+00559 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00560 <emphasis role="stringliteral">&lt;/tr&gt;</emphasis>
+00561 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>%(r.getName(),display,r.getName(),options))
+00562 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterSelections&#32;=&#32;<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join(reporterSelections)
+00563 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporterOptionsDivs&#32;=&#32;<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join(reporterOptions)
+00564 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reportersArray&#32;=&#32;<emphasis role="stringliteral">&apos;[%s]&apos;</emphasis>%(<emphasis role="stringliteral">&apos;,&apos;</emphasis>.join([repr(r.getName())&#32;<emphasis role="keywordflow">for</emphasis>&#32;r&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.server.reporters]))
+00565 
+00566 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;c.files:
+00567 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fieldSize&#32;=&#32;min(5,&#32;len(c.files))
+00568 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;attachFileOptions&#32;=&#32;<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join([<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00569 <emphasis role="stringliteral">&lt;option&#32;value=&quot;%d&quot;&#32;selected&gt;%s&lt;/option&gt;&quot;&quot;&quot;</emphasis>&#32;%&#32;(i,v)&#32;<emphasis role="keywordflow">for</emphasis>&#32;i,v&#32;<emphasis role="keywordflow">in</emphasis>&#32;enumerate(c.files)])
+00570 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;attachFileRow&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00571 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00572 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_label&quot;&gt;Attach:&lt;/td&gt;</emphasis>
+00573 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00574 <emphasis role="stringliteral">&lt;select&#32;style=&quot;width:100%%&quot;&#32;name=&quot;files&quot;&#32;multiple&#32;size=%d&gt;</emphasis>
+00575 <emphasis role="stringliteral">%s</emphasis>
+00576 <emphasis role="stringliteral">&lt;/select&gt;</emphasis>
+00577 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00578 <emphasis role="stringliteral">&lt;/tr&gt;</emphasis>
+00579 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>&#32;%&#32;(min(5,&#32;len(c.files)),&#32;attachFileOptions)
+00580 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00581 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;attachFileRow&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>
+00582 
+00583 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&lt;html&gt;</emphasis>
+00584 <emphasis role="stringliteral">&lt;head&gt;</emphasis>
+00585 <emphasis role="stringliteral">&#32;&#32;&lt;title&gt;File&#32;Bug&lt;/title&gt;</emphasis>
+00586 <emphasis role="stringliteral">&#32;&#32;&lt;link&#32;rel=&quot;stylesheet&quot;&#32;type=&quot;text/css&quot;&#32;href=&quot;/scanview.css&quot;&#32;/&gt;</emphasis>
+00587 <emphasis role="stringliteral">&lt;/head&gt;</emphasis>
+00588 <emphasis role="stringliteral">&lt;script&#32;language=&quot;javascript&quot;&#32;type=&quot;text/javascript&quot;&gt;</emphasis>
+00589 <emphasis role="stringliteral">var&#32;reporters&#32;=&#32;%(reportersArray)s;</emphasis>
+00590 <emphasis role="stringliteral">function&#32;updateReporterOptions()&#32;{</emphasis>
+00591 <emphasis role="stringliteral">&#32;&#32;index&#32;=&#32;document.getElementById(&apos;reporter&apos;).selectedIndex;</emphasis>
+00592 <emphasis role="stringliteral">&#32;&#32;for&#32;(var&#32;i=0;&#32;i&#32;&lt;&#32;reporters.length;&#32;++i)&#32;{</emphasis>
+00593 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;o&#32;=&#32;document.getElementById(reporters[i]&#32;+&#32;&quot;ReporterOptions&quot;);</emphasis>
+00594 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;if&#32;(i&#32;==&#32;index)&#32;{</emphasis>
+00595 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;o.style.display&#32;=&#32;&quot;&quot;;</emphasis>
+00596 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;}&#32;else&#32;{</emphasis>
+00597 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;o.style.display&#32;=&#32;&quot;none&quot;;</emphasis>
+00598 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;}</emphasis>
+00599 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00600 <emphasis role="stringliteral">}</emphasis>
+00601 <emphasis role="stringliteral">&lt;/script&gt;</emphasis>
+00602 <emphasis role="stringliteral">&lt;body&#32;onLoad=&quot;updateReporterOptions()&quot;&gt;</emphasis>
+00603 <emphasis role="stringliteral">&lt;h3&gt;</emphasis>
+00604 <emphasis role="stringliteral">&lt;a&#32;href=&quot;/&quot;&gt;Summary&lt;/a&gt;&#32;&gt;&#32;</emphasis>
+00605 <emphasis role="stringliteral">%(reportingFor)s</emphasis>
+00606 <emphasis role="stringliteral">File&#32;Bug&lt;/h3&gt;</emphasis>
+00607 <emphasis role="stringliteral">&lt;form&#32;name=&quot;form&quot;&#32;action=&quot;/report_submit&quot;&#32;method=&quot;post&quot;&gt;</emphasis>
+00608 <emphasis role="stringliteral">&lt;input&#32;type=&quot;hidden&quot;&#32;name=&quot;report&quot;&#32;value=&quot;%(report)s&quot;&gt;</emphasis>
+00609 <emphasis role="stringliteral"></emphasis>
+00610 <emphasis role="stringliteral">&lt;table&#32;class=&quot;form&quot;&gt;</emphasis>
+00611 <emphasis role="stringliteral">&lt;tr&gt;&lt;td&gt;</emphasis>
+00612 <emphasis role="stringliteral">&lt;table&#32;class=&quot;form_group&quot;&gt;</emphasis>
+00613 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00614 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_clabel&quot;&gt;Title:&lt;/td&gt;</emphasis>
+00615 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00616 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&lt;input&#32;type=&quot;text&quot;&#32;name=&quot;title&quot;&#32;size=&quot;50&quot;&#32;value=&quot;%(title)s&quot;&gt;</emphasis>
+00617 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00618 <emphasis role="stringliteral">&lt;/tr&gt;</emphasis>
+00619 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00620 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_label&quot;&gt;Description:&lt;/td&gt;</emphasis>
+00621 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00622 <emphasis role="stringliteral">&lt;textarea&#32;rows=&quot;10&quot;&#32;cols=&quot;80&quot;&#32;name=&quot;description&quot;&gt;</emphasis>
+00623 <emphasis role="stringliteral">%(description)s</emphasis>
+00624 <emphasis role="stringliteral">&lt;/textarea&gt;</emphasis>
+00625 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00626 <emphasis role="stringliteral">&lt;/tr&gt;</emphasis>
+00627 <emphasis role="stringliteral"></emphasis>
+00628 <emphasis role="stringliteral">%(attachFileRow)s</emphasis>
+00629 <emphasis role="stringliteral"></emphasis>
+00630 <emphasis role="stringliteral">&lt;/table&gt;</emphasis>
+00631 <emphasis role="stringliteral">&lt;br&gt;</emphasis>
+00632 <emphasis role="stringliteral">&lt;table&#32;class=&quot;form_group&quot;&gt;</emphasis>
+00633 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00634 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_clabel&quot;&gt;Method:&lt;/td&gt;</emphasis>
+00635 <emphasis role="stringliteral">&#32;&#32;&lt;td&#32;class=&quot;form_value&quot;&gt;</emphasis>
+00636 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&lt;select&#32;id=&quot;reporter&quot;&#32;name=&quot;reporter&quot;&#32;onChange=&quot;updateReporterOptions()&quot;&gt;</emphasis>
+00637 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;%(reporterSelections)s</emphasis>
+00638 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&lt;/select&gt;</emphasis>
+00639 <emphasis role="stringliteral">&#32;&#32;&lt;/td&gt;</emphasis>
+00640 <emphasis role="stringliteral">&lt;/tr&gt;</emphasis>
+00641 <emphasis role="stringliteral">%(reporterOptionsDivs)s</emphasis>
+00642 <emphasis role="stringliteral">&lt;/table&gt;</emphasis>
+00643 <emphasis role="stringliteral">&lt;br&gt;</emphasis>
+00644 <emphasis role="stringliteral">&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00645 <emphasis role="stringliteral">&lt;tr&gt;&lt;td&#32;class=&quot;form_submit&quot;&gt;</emphasis>
+00646 <emphasis role="stringliteral">&#32;&#32;&lt;input&#32;align=&quot;right&quot;&#32;type=&quot;submit&quot;&#32;name=&quot;Submit&quot;&#32;value=&quot;Submit&quot;&gt;</emphasis>
+00647 <emphasis role="stringliteral">&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00648 <emphasis role="stringliteral">&lt;/table&gt;</emphasis>
+00649 <emphasis role="stringliteral">&lt;/form&gt;</emphasis>
+00650 <emphasis role="stringliteral"></emphasis>
+00651 <emphasis role="stringliteral">%(extraIFrame)s</emphasis>
+00652 <emphasis role="stringliteral"></emphasis>
+00653 <emphasis role="stringliteral">&lt;/body&gt;</emphasis>
+00654 <emphasis role="stringliteral">&lt;/html&gt;&quot;&quot;&quot;</emphasis>%locals()
+00655 
+00656 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>send_string(result)
+00657 
+<anchor xml:id="__scan_view_8py_source_1l00658"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a72138b63ef18bce4d55a57b0ae2c9fa4">00658</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a72138b63ef18bce4d55a57b0ae2c9fa4">send_head</link>(self,&#32;fields=None):
+00659 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(self.server.options.onlyServeLocal&#32;<emphasis role="keywordflow">and</emphasis>
+00660 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.client_address[0]&#32;!=&#32;<emphasis role="stringliteral">&apos;127.0.0.1&apos;</emphasis>):
+00661 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.send_error(401,&#32;<emphasis role="stringliteral">&apos;Unauthorized&#32;host.&apos;</emphasis>)
+00662 
+00663 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;fields&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00664 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fields&#32;=&#32;{}
+<anchor xml:id="__scan_view_8py_source_1l00665"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">00665</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">fields</link>fields&#32;=&#32;fields
+00666 
+00667 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;o&#32;=&#32;urlparse(self.path)
+00668 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa6c98fcb431e0bb6afe73394d8547be6">fields</link>fields&#32;=&#32;<link linkend="_namespace_scan_view_1a888165eb0c614e524aca2396fbd24d42">parse_query</link>(o.query,&#32;fields)
+00669 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path&#32;=&#32;posixpath.normpath(unquote(o.path))
+00670 
+00671 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Split&#32;the&#32;components&#32;and&#32;strip&#32;the&#32;root&#32;prefix.</emphasis>
+00672 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;components&#32;=&#32;path.split(<emphasis role="stringliteral">&apos;/&apos;</emphasis>)[1:]
+00673 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00674 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Special&#32;case&#32;some&#32;top-level&#32;entries.</emphasis>
+00675 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;components:
+00676 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;name&#32;=&#32;components[0]
+00677 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;len(components)==2:
+00678 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;name==<emphasis role="stringliteral">&apos;report&apos;</emphasis>:
+00679 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a693ea554a85c55ae073cb55e7185c6af">send_report</link>send_report(components[1])
+00680 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;name==<emphasis role="stringliteral">&apos;open&apos;</emphasis>:
+00681 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a3847e2d1c53d512e5c9a6fb4dd7dd29f">send_open_report</link>send_open_report(components[1])
+00682 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;len(components)==1:
+00683 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;name==<emphasis role="stringliteral">&apos;quit&apos;</emphasis>:
+00684 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.server.halt()
+00685 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>send_string(<emphasis role="stringliteral">&apos;Goodbye.&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;text/plain&apos;</emphasis>)
+00686 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;name==<emphasis role="stringliteral">&apos;report_submit&apos;</emphasis>:
+00687 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a0913f3b844213d82ee4c849d4c4fad4b">send_report_submit</link>send_report_submit()
+00688 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;name==<emphasis role="stringliteral">&apos;report_crashes&apos;</emphasis>:
+00689 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;overrides&#32;=&#32;{&#32;<emphasis role="stringliteral">&apos;ScanView&apos;</emphasis>&#32;:&#32;{},
+00690 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;Radar&apos;</emphasis>&#32;:&#32;{},
+00691 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;Email&apos;</emphasis>&#32;:&#32;{}&#32;}
+00692 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;i,r&#32;<emphasis role="keywordflow">in</emphasis>&#32;enumerate(self.server.reporters):
+00693 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;r.getName()&#32;==&#32;<emphasis role="stringliteral">&apos;Radar&apos;</emphasis>:
+00694 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;overrides[<emphasis role="stringliteral">&apos;ScanView&apos;</emphasis>][<emphasis role="stringliteral">&apos;reporter&apos;</emphasis>]&#32;=&#32;i
+00695 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00696 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;overrides[<emphasis role="stringliteral">&apos;Radar&apos;</emphasis>][<emphasis role="stringliteral">&apos;Component&apos;</emphasis>]&#32;=&#32;<emphasis role="stringliteral">&apos;llvm&#32;-&#32;checker&apos;</emphasis>
+00697 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;overrides[<emphasis role="stringliteral">&apos;Radar&apos;</emphasis>][<emphasis role="stringliteral">&apos;Component&#32;Version&apos;</emphasis>]&#32;=&#32;<emphasis role="stringliteral">&apos;X&apos;</emphasis>
+00698 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a693ea554a85c55ae073cb55e7185c6af">send_report</link>send_report(<emphasis role="keywordtype">None</emphasis>,&#32;overrides)
+00699 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;name==<emphasis role="stringliteral">&apos;favicon.ico&apos;</emphasis>:
+00700 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a41311fd7ec3ea5bd46022b635cc79559">send_path</link>send_path(posixpath.join(kShare,<emphasis role="stringliteral">&apos;bugcatcher.ico&apos;</emphasis>))
+00701 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00702 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Match&#32;directory&#32;entries.</emphasis>
+00703 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;components[-1]&#32;==&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>:
+00704 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;components[-1]&#32;=&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>
+00705 
+00706 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;relpath&#32;=&#32;<emphasis role="stringliteral">&apos;/&apos;</emphasis>.join(components)
+00707 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path&#32;=&#32;posixpath.join(self.server.root,&#32;relpath)
+00708 
+00709 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;self.server.options.debug&#32;&gt;&#32;1:
+00710 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;%s:&#32;SERVER:&#32;sending&#32;path&#32;&quot;%s&quot;&apos;</emphasis>%(sys.argv[0],
+00711 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;path),&#32;file=sys.stderr)
+00712 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a41311fd7ec3ea5bd46022b635cc79559">send_path</link>send_path(path)
+00713 
+<anchor xml:id="__scan_view_8py_source_1l00714"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac201abcb9dfa32ef2f65c81de9155c97">00714</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac201abcb9dfa32ef2f65c81de9155c97">send_404</link>(self):
+00715 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_error(404,&#32;<emphasis role="stringliteral">&quot;File&#32;not&#32;found&quot;</emphasis>)
+00716 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00717 
+<anchor xml:id="__scan_view_8py_source_1l00718"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a41311fd7ec3ea5bd46022b635cc79559">00718</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a41311fd7ec3ea5bd46022b635cc79559">send_path</link>(self,&#32;path):
+00719 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;If&#32;the&#32;requested&#32;path&#32;is&#32;outside&#32;the&#32;root&#32;directory,&#32;do&#32;not&#32;open&#32;it</emphasis>
+00720 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;rel&#32;=&#32;os.path.abspath(path)
+00721 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;rel.startswith(os.path.abspath(self.server.root)):
+00722 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac201abcb9dfa32ef2f65c81de9155c97">send_404</link>send_404()
+00723 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00724 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ctype&#32;=&#32;self.guess_type(path)
+00725 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;ctype.startswith(<emphasis role="stringliteral">&apos;text/&apos;</emphasis>):
+00726 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Patch&#32;file&#32;instead</emphasis>
+00727 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1af93597a77111c981dc7faee1c82ac42f">send_patched_file</link>send_patched_file(path,&#32;ctype)
+00728 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00729 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;mode&#32;=&#32;<emphasis role="stringliteral">&apos;rb&apos;</emphasis>
+00730 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00731 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path,&#32;mode)
+00732 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;IOError:
+00733 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac201abcb9dfa32ef2f65c81de9155c97">send_404</link>send_404()
+00734 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1acfc78f0a065f76837797671ca695322e">send_file</link>send_file(f,&#32;ctype)
+00735 
+<anchor xml:id="__scan_view_8py_source_1l00736"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1acfc78f0a065f76837797671ca695322e">00736</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1acfc78f0a065f76837797671ca695322e">send_file</link>(self,&#32;f,&#32;ctype):
+00737 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Patch&#32;files&#32;to&#32;add&#32;links,&#32;but&#32;skip&#32;binary&#32;files.</emphasis>
+00738 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_response(200)
+00739 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_header(<emphasis role="stringliteral">&quot;Content-type&quot;</emphasis>,&#32;ctype)
+00740 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fs&#32;=&#32;os.fstat(f.fileno())
+00741 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_header(<emphasis role="stringliteral">&quot;Content-Length&quot;</emphasis>,&#32;str(fs[6]))
+00742 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_header(<emphasis role="stringliteral">&quot;Last-Modified&quot;</emphasis>,&#32;self.date_time_string(fs.st_mtime))
+00743 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.end_headers()
+00744 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;f
+00745 
+<anchor xml:id="__scan_view_8py_source_1l00746"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">00746</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>(self,&#32;s,&#32;ctype=&apos;text/html&apos;,&#32;headers=True,&#32;mtime=None):
+00747 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;encoded_s&#32;=&#32;s.encode(<emphasis role="stringliteral">&apos;utf-8&apos;</emphasis>)
+00748 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;headers:
+00749 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_response(200)
+00750 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_header(<emphasis role="stringliteral">&quot;Content-type&quot;</emphasis>,&#32;ctype)
+00751 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_header(<emphasis role="stringliteral">&quot;Content-Length&quot;</emphasis>,&#32;str(len(encoded_s)))
+00752 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;mtime&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00753 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;mtime&#32;=&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1aa090f71298600fe2e88035a295465966">dynamic_mtime</link>dynamic_mtime
+00754 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.send_header(<emphasis role="stringliteral">&quot;Last-Modified&quot;</emphasis>,&#32;self.date_time_string(mtime))
+00755 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.end_headers()
+00756 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;BytesIO(encoded_s)
+00757 
+<anchor xml:id="__scan_view_8py_source_1l00758"/><link linkend="_class_scan_view_1_1_scan_view_request_handler_1af93597a77111c981dc7faee1c82ac42f">00758</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_scan_view_1_1_scan_view_request_handler_1af93597a77111c981dc7faee1c82ac42f">send_patched_file</link>(self,&#32;path,&#32;ctype):
+00759 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Allow&#32;a&#32;very&#32;limited&#32;set&#32;of&#32;variables.&#32;This&#32;is&#32;pretty&#32;gross.</emphasis>
+00760 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;variables&#32;=&#32;{}
+00761 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;variables[<emphasis role="stringliteral">&apos;report&apos;</emphasis>]&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00762 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;m&#32;=&#32;kReportFileRE.match(path)
+00763 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;m:
+00764 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;variables[<emphasis role="stringliteral">&apos;report&apos;</emphasis>]&#32;=&#32;m.group(2)
+00765 
+00766 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00767 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;f&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path,<emphasis role="stringliteral">&apos;rb&apos;</emphasis>)
+00768 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;IOError:
+00769 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1ac201abcb9dfa32ef2f65c81de9155c97">send_404</link>send_404()
+00770 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fs&#32;=&#32;os.fstat(f.fileno())
+00771 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;data&#32;=&#32;f.read().<link linkend="_namespacelibscanbuild_1_1shell_1ae2a3d56a48c3f8031021d617491be88c">decode</link>(<emphasis role="stringliteral">&apos;utf-8&apos;</emphasis>)
+00772 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;a,b&#32;<emphasis role="keywordflow">in</emphasis>&#32;kReportReplacements:
+00773 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;data&#32;=&#32;a.sub(b&#32;%&#32;variables,&#32;data)
+00774 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_scan_view_1_1_scan_view_request_handler_1a1e383bae6ec3293b00eed32175864e44">send_string</link>send_string(data,&#32;ctype,&#32;mtime=fs.st_mtime)
+00775 
+00776 
+<anchor xml:id="__scan_view_8py_source_1l00777"/><link linkend="_namespace_scan_view_1ab481c5fed161da33b07c059f7149ead2">00777</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespace_scan_view_1ab481c5fed161da33b07c059f7149ead2">create_server</link>(address,&#32;options,&#32;root):
+00778 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;Reporter
+00779 
+00780 &#32;&#32;&#32;&#32;reporters&#32;=&#32;<link linkend="_namespace_reporter_1a7d107236b793eae14407e638cfb86fba">Reporter.getReporters</link>()
+00781 
+00782 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_class_scan_view_1_1_scan_view_server">ScanViewServer</link>(address,&#32;ScanViewRequestHandler,
+00783 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;root,
+00784 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reporters,
+00785 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options)
+</programlisting></section>

@@ -1,0 +1,163 @@
+.TH "clang::cxindex::AttrListInfo" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxindex::AttrListInfo
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXIndexDataConsumer\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBAttrListInfo\fP (const Decl *D, \fBCXIndexDataConsumer\fP &IdxCtx)"
+.br
+.ti -1c
+.RI "const CXIdxAttrInfo *const  * \fBgetAttrs\fP () const"
+.br
+.ti -1c
+.RI "unsigned \fBgetNumAttrs\fP () const"
+.br
+.ti -1c
+.RI "void \fBRetain\fP ()"
+.br
+.ti -1c
+.RI "void \fBRelease\fP ()"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static IntrusiveRefCntPtr< \fBAttrListInfo\fP > \fBcreate\fP (const Decl *D, \fBCXIndexDataConsumer\fP &IdxCtx)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 239 of file CXIndexDataConsumer\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "AttrListInfo::AttrListInfo (const Decl * D, \fBCXIndexDataConsumer\fP & IdxCtx)"
+
+.PP
+Definition at line 279 of file CXIndexDataConsumer\&.cpp\&.
+.PP
+.nf
+280   : SA(IdxCtx), ref_cnt(0) {
+281 
+282   if (!D->hasAttrs())
+283     return;
+284 
+285   for (const auto *A : D->attrs()) {
+286     CXCursor C = MakeCXCursor(A, D, IdxCtx\&.CXTU);
+287     CXIdxLoc Loc =  IdxCtx\&.getIndexLoc(A->getLocation());
+288     switch (C\&.kind) {
+289     default:
+290       Attrs\&.push_back(AttrInfo(CXIdxAttr_Unexposed, C, Loc, A));
+291       break;
+292     case CXCursor_IBActionAttr:
+293       Attrs\&.push_back(AttrInfo(CXIdxAttr_IBAction, C, Loc, A));
+294       break;
+295     case CXCursor_IBOutletAttr:
+296       Attrs\&.push_back(AttrInfo(CXIdxAttr_IBOutlet, C, Loc, A));
+297       break;
+298     case CXCursor_IBOutletCollectionAttr:
+299       IBCollAttrs\&.push_back(IBOutletCollectionInfo(C, Loc, A));
+300       break;
+301     }
+302   }
+303 
+304   for (unsigned i = 0, e = IBCollAttrs\&.size(); i != e; ++i) {
+305     IBOutletCollectionInfo &IBInfo = IBCollAttrs[i];
+306     CXAttrs\&.push_back(&IBInfo);
+307 
+308     const IBOutletCollectionAttr *
+309       IBAttr = cast<IBOutletCollectionAttr>(IBInfo\&.A);
+310     SourceLocation InterfaceLocStart =
+311         IBAttr->getInterfaceLoc()->getTypeLoc()\&.getBeginLoc();
+312     IBInfo\&.IBCollInfo\&.attrInfo = &IBInfo;
+313     IBInfo\&.IBCollInfo\&.classLoc = IdxCtx\&.getIndexLoc(InterfaceLocStart);
+314     IBInfo\&.IBCollInfo\&.objcClass = nullptr;
+315     IBInfo\&.IBCollInfo\&.classCursor = clang_getNullCursor();
+316     QualType Ty = IBAttr->getInterface();
+317     if (const ObjCObjectType *ObjectTy = Ty->getAs<ObjCObjectType>()) {
+318       if (const ObjCInterfaceDecl *InterD = ObjectTy->getInterface()) {
+319         IdxCtx\&.getEntityInfo(InterD, IBInfo\&.ClassInfo, SA);
+320         IBInfo\&.IBCollInfo\&.objcClass = &IBInfo\&.ClassInfo;
+321         IBInfo\&.IBCollInfo\&.classCursor =
+322             MakeCursorObjCClassRef(InterD, InterfaceLocStart, IdxCtx\&.CXTU);
+323       }
+324     }
+325   }
+326 
+327   for (unsigned i = 0, e = Attrs\&.size(); i != e; ++i)
+328     CXAttrs\&.push_back(&Attrs[i]);
+329 }
+.fi
+.PP
+References clang::cxindex::AttrInfo::A, clang_getNullCursor(), clang::cxindex::IBOutletCollectionInfo::ClassInfo, clang::cxindex::IBOutletCollectionInfo::IBCollInfo, clang::cxcursor::MakeCursorObjCClassRef(), and clang::cxcursor::MakeCXCursor()\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "IntrusiveRefCntPtr< \fBAttrListInfo\fP > AttrListInfo::create (const Decl * D, \fBCXIndexDataConsumer\fP & IdxCtx)\fC [static]\fP"
+
+.PP
+Definition at line 332 of file CXIndexDataConsumer\&.cpp\&.
+.PP
+.nf
+332                                                                {
+333   ScratchAlloc SA(IdxCtx);
+334   AttrListInfo *attrs = SA\&.allocate<AttrListInfo>();
+335   return new (attrs) AttrListInfo(D, IdxCtx);
+336 }
+.fi
+.PP
+References clang::cxindex::ScratchAlloc::allocate()\&.
+.SS "const CXIdxAttrInfo* const* clang::cxindex::AttrListInfo::getAttrs () const\fC [inline]\fP"
+
+.PP
+Definition at line 255 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+255                                                {
+256     if (CXAttrs\&.empty())
+257       return nullptr;
+258     return CXAttrs\&.data();
+259   }
+.fi
+.SS "unsigned clang::cxindex::AttrListInfo::getNumAttrs () const\fC [inline]\fP"
+
+.PP
+Definition at line 260 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+260 { return (unsigned)CXAttrs\&.size(); }
+.fi
+.SS "void clang::cxindex::AttrListInfo::Release ()\fC [inline]\fP"
+
+.PP
+Definition at line 266 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+266                  {
+267     assert (ref_cnt > 0 && "Reference count is already zero\&.");
+268     if (--ref_cnt == 0) {
+269       // Memory is allocated from a BumpPtrAllocator, no need to delete it\&.
+270       this->~AttrListInfo();
+271     }
+272   }
+.fi
+.SS "void clang::cxindex::AttrListInfo::Retain ()\fC [inline]\fP"
+Retain/Release only useful when we allocate a \fBAttrListInfo\fP from the BumpPtrAllocator, and not from the stack; so that we keep a pointer 
+.PP
+Definition at line 265 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+265 { ++ref_cnt; }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

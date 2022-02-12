@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_clang-import-test_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-import-test/clang-import-test.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-import-test/clang-import-test.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/AST/ASTContext.h&quot;
+#include &quot;clang/AST/ASTImporter.h&quot;
+#include &quot;clang/AST/DeclObjC.h&quot;
+#include &quot;clang/AST/ExternalASTMerger.h&quot;
+#include &quot;clang/Basic/Builtins.h&quot;
+#include &quot;clang/Basic/FileManager.h&quot;
+#include &quot;clang/Basic/IdentifierTable.h&quot;
+#include &quot;clang/Basic/SourceLocation.h&quot;
+#include &quot;clang/Basic/TargetInfo.h&quot;
+#include &quot;clang/Basic/TargetOptions.h&quot;
+#include &quot;clang/CodeGen/ModuleBuilder.h&quot;
+#include &quot;clang/Driver/Types.h&quot;
+#include &quot;clang/Frontend/ASTConsumers.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Frontend/MultiplexConsumer.h&quot;
+#include &quot;clang/Frontend/TextDiagnosticBuffer.h&quot;
+#include &quot;clang/Lex/Lexer.h&quot;
+#include &quot;clang/Lex/Preprocessor.h&quot;
+#include &quot;clang/Parse/ParseAST.h&quot;
+#include &quot;llvm/IR/LLVMContext.h&quot;
+#include &quot;llvm/IR/Module.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/Error.h&quot;
+#include &quot;llvm/Support/Host.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &lt;memory&gt;
+#include &lt;string&gt;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>class <link linkend="_classinit__convenience_1_1_test_diagnostic_consumer">init_convenience::TestDiagnosticConsumer</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespaceinit__convenience">init_convenience</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>std::unique_ptr&lt; CompilerInstance &gt; <link linkend="_namespaceinit__convenience_1a3a792e4d52dcac7d452c453d92cefedb">init_convenience::BuildCompilerInstance</link> ()</para>
+</listitem>
+            <listitem><para>std::unique_ptr&lt; ASTContext &gt; <link linkend="_namespaceinit__convenience_1ad79d228a70afd330881778896518e14f">init_convenience::BuildASTContext</link> (CompilerInstance &amp;CI, SelectorTable &amp;ST, Builtin::Context &amp;BC)</para>
+</listitem>
+            <listitem><para>std::unique_ptr&lt; CodeGenerator &gt; <link linkend="_namespaceinit__convenience_1a68375e72bc1be6e612bf4afc9a1d2afd">init_convenience::BuildCodeGen</link> (CompilerInstance &amp;CI, llvm::LLVMContext &amp;LLVMCtx)</para>
+</listitem>
+            <listitem><para>int <link linkend="_clang-import-test_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_clang-import-test_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>clang-import-test.cpp</secondary></indexterm>
+<indexterm><primary>clang-import-test.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_clang-import-test_8cpp_source_1l00356">356</link> of file <link linkend="_clang-import-test_8cpp_source">clang-import-test.cpp</link>.</para>
+<programlisting>00356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00357 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;DisableCrashReporting&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00358 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0],&#32;DisableCrashReporting);
+00359 &#32;&#32;llvm::cl::ParseCommandLineOptions(argc,&#32;argv);
+00360 &#32;&#32;std::vector&lt;CIAndOrigins&gt;&#32;ImportCIs;
+00361 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;I&#32;:&#32;Imports)&#32;{
+00362 &#32;&#32;&#32;&#32;llvm::Expected&lt;CIAndOrigins&gt;&#32;ImportCI&#32;=&#32;Parse(I,&#32;{},&#32;<emphasis role="keyword">false</emphasis>,&#32;<emphasis role="keyword">false</emphasis>);
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;E&#32;=&#32;ImportCI.takeError())&#32;{
+00364 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;llvm::toString(std::move(E))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00365 &#32;&#32;&#32;&#32;&#32;&#32;exit(-1);
+00366 &#32;&#32;&#32;&#32;}
+00367 &#32;&#32;&#32;&#32;ImportCIs.push_back(std::move(*ImportCI));
+00368 &#32;&#32;}
+00369 &#32;&#32;std::vector&lt;CIAndOrigins&gt;&#32;IndirectCIs;
+00370 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Direct&#32;||&#32;UseOrigins)&#32;{
+00371 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;ImportCI&#32;:&#32;ImportCIs)&#32;{
+00372 &#32;&#32;&#32;&#32;&#32;&#32;CIAndOrigins&#32;IndirectCI&#32;=&#32;BuildIndirect(ImportCI);
+00373 &#32;&#32;&#32;&#32;&#32;&#32;IndirectCIs.push_back(std::move(IndirectCI));
+00374 &#32;&#32;&#32;&#32;}
+00375 &#32;&#32;}
+00376 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(UseOrigins)
+00377 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;ImportCI&#32;:&#32;ImportCIs)
+00378 &#32;&#32;&#32;&#32;&#32;&#32;IndirectCIs.push_back(std::move(ImportCI));
+00379 &#32;&#32;llvm::Expected&lt;CIAndOrigins&gt;&#32;ExpressionCI&#32;=
+00380 &#32;&#32;&#32;&#32;&#32;&#32;Parse(Expression,&#32;(Direct&#32;&amp;&amp;&#32;!UseOrigins)&#32;?&#32;ImportCIs&#32;:&#32;IndirectCIs,
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DumpAST,&#32;DumpIR);
+00382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;E&#32;=&#32;ExpressionCI.takeError())&#32;{
+00383 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;llvm::toString(std::move(E))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00384 &#32;&#32;&#32;&#32;exit(-1);
+00385 &#32;&#32;}
+00386 &#32;&#32;Forget(*ExpressionCI,&#32;(Direct&#32;&amp;&amp;&#32;!UseOrigins)&#32;?&#32;ImportCIs&#32;:&#32;IndirectCIs);
+00387 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00388 }
+</programlisting></section>
+</section>
+</section>

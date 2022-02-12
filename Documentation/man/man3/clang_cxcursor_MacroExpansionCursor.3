@@ -1,0 +1,90 @@
+.TH "clang::cxcursor::MacroExpansionCursor" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxcursor::MacroExpansionCursor
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXCursor\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBMacroExpansionCursor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "const IdentifierInfo * \fBgetName\fP () const"
+.br
+.ti -1c
+.RI "const MacroDefinitionRecord * \fBgetDefinition\fP () const"
+.br
+.ti -1c
+.RI "SourceRange \fBgetSourceRange\fP () const"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Wraps a macro expansion cursor and provides a common interface for a normal macro expansion cursor or a 'pseudo' one\&.
+.PP
+'Pseudo' macro expansion cursors (essentially a macro definition along with a source location) are created in special cases, for example they can be created for identifiers inside macro definitions, if these identifiers are macro names\&. 
+.PP
+Definition at line 166 of file CXCursor\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxcursor::MacroExpansionCursor::MacroExpansionCursor (CXCursor C)\fC [inline]\fP"
+
+.PP
+Definition at line 184 of file CXCursor\&.h\&.
+.PP
+.nf
+184                                    : C(C) {
+185     assert(C\&.kind == CXCursor_MacroExpansion);
+186   }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "const MacroDefinitionRecord * cxcursor::MacroExpansionCursor::getDefinition () const"
+
+.PP
+Definition at line 1023 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1023                                                   {
+1024   if (isPseudo())
+1025     return getAsMacroDefinition();
+1026   return getAsMacroExpansion()->getDefinition();
+1027 }
+.fi
+.SS "const IdentifierInfo * cxcursor::MacroExpansionCursor::getName () const"
+
+.PP
+Definition at line 1017 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1017                                                                   {
+1018   if (isPseudo())
+1019     return getAsMacroDefinition()->getName();
+1020   return getAsMacroExpansion()->getName();
+1021 }
+.fi
+.PP
+Referenced by Reporter\&.TextParameter::getHTML(), Reporter\&.SelectionParameter::getHTML(), and Reporter\&.ReporterParameter::getValue()\&.
+.SS "SourceRange cxcursor::MacroExpansionCursor::getSourceRange () const"
+
+.PP
+Definition at line 1028 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1028                                                                {
+1029   if (isPseudo())
+1030     return getPseudoLoc();
+1031   return getAsMacroExpansion()->getSourceRange();
+1032 }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

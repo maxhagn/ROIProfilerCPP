@@ -1,0 +1,83 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/fuzzer-initialize/fuzzer_initialize.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/fuzzer-initialize/fuzzer_initialize.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'fuzzer_initialize\&.h'\fP
+.br
+\fC#include 'llvm/InitializePasses\&.h'\fP
+.br
+\fC#include 'llvm/PassRegistry\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+\fC#include <cstring>\fP
+.br
+
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBclang_fuzzer\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "const std::vector< const char * > & \fBclang_fuzzer::GetCLArgs\fP ()"
+.br
+.ti -1c
+.RI "int \fBLLVMFuzzerInitialize\fP (int *argc, char ***argv)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This file implements two functions: one that returns the command line arguments for a given call to the fuzz target and one that initializes the fuzzer with the correct command line arguments\&. 
+.PP
+Definition in file \fBfuzzer_initialize\&.cpp\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int LLVMFuzzerInitialize (int * argc, char *** argv)"
+
+.PP
+Definition at line 37 of file fuzzer_initialize\&.cpp\&.
+.PP
+.nf
+37                                                              {
+38   InitializeAllTargets();
+39   InitializeAllTargetMCs();
+40   InitializeAllAsmPrinters();
+41   InitializeAllAsmParsers();
+42   
+43   PassRegistry &Registry = *PassRegistry::getPassRegistry();
+44   initializeCore(Registry);
+45   initializeScalarOpts(Registry);
+46   initializeVectorization(Registry);
+47   initializeIPO(Registry);
+48   initializeAnalysis(Registry);
+49   initializeTransformUtils(Registry);
+50   initializeInstCombine(Registry);
+51   initializeAggressiveInstCombine(Registry);
+52   initializeInstrumentation(Registry);
+53   initializeTarget(Registry);
+54 
+55   CLArgs\&.push_back("-O2");
+56   for (int I = 1; I < *argc; I++) {
+57     if (strcmp((*argv)[I], "-ignore_remaining_args=1") == 0) {
+58       for (I++; I < *argc; I++)
+59         CLArgs\&.push_back((*argv)[I]);
+60       break;
+61     }
+62   }
+63   return 0;
+64 }
+.fi
+.PP
+Referenced by main()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

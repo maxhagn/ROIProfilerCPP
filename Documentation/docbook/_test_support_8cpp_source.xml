@@ -1,0 +1,391 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__test_support_8cpp_source" xml:lang="en-US">
+<title>TestSupport.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-refactor/TestSupport.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===---&#32;TestSupport.cpp&#32;-&#32;Clang-based&#32;refactoring&#32;tool&#32;-------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__test_support_8h">TestSupport.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/DiagnosticError.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/FileManager.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceManager.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/Lexer.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/STLExtras.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Error.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorOr.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/LineIterator.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Regex.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00027 
+00028 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00029 
+00030 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+<anchor xml:id="__test_support_8cpp_source_1l00031"/><link linkend="_namespaceclang_1_1refactor">00031</link> <emphasis role="keyword">namespace&#32;</emphasis>refactor&#32;{
+00032 
+<anchor xml:id="__test_support_8cpp_source_1l00033"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1ae1451cf66bca3fc3c4b1900b34b3a814">00033</link> <emphasis role="keywordtype">void</emphasis>&#32;TestSelectionRangesInFile::dump(raw_ostream&#32;&amp;OS)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00034 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Group&#32;:&#32;GroupedRanges)&#32;{
+00035 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Test&#32;selection&#32;group&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Group.Name&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;:\n&quot;</emphasis>;
+00036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Range&#32;:&#32;Group.Ranges)&#32;{
+00037 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Range.Begin&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>&#32;&lt;&lt;&#32;Range.End&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00038 &#32;&#32;&#32;&#32;}
+00039 &#32;&#32;}
+00040 }
+00041 
+<anchor xml:id="__test_support_8cpp_source_1l00042"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1a9b78c23b403e8df71caecc1a7ddd974e">00042</link> <emphasis role="keywordtype">bool</emphasis>&#32;TestSelectionRangesInFile::foreachRange(
+00043 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,
+00044 &#32;&#32;&#32;&#32;llvm::function_ref&lt;<emphasis role="keywordtype">void</emphasis>(SourceRange)&gt;&#32;Callback)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00045 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;FE&#32;=&#32;SM.getFileManager().getFile(Filename);
+00046 &#32;&#32;FileID&#32;FID&#32;=&#32;FE&#32;?&#32;SM.translateFile(*FE)&#32;:&#32;FileID();
+00047 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FE&#32;||&#32;FID.isInvalid())&#32;{
+00048 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-selection=test:&quot;</emphasis>&#32;&lt;&lt;&#32;Filename
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;:&#32;given&#32;file&#32;is&#32;not&#32;in&#32;the&#32;target&#32;TU&quot;</emphasis>;
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00051 &#32;&#32;}
+00052 &#32;&#32;SourceLocation&#32;FileLoc&#32;=&#32;SM.getLocForStartOfFile(FID);
+00053 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Group&#32;:&#32;GroupedRanges)&#32;{
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_range">TestSelectionRange</link>&#32;&amp;Range&#32;:&#32;Group.Ranges)&#32;{
+00055 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Translate&#32;the&#32;offset&#32;pair&#32;to&#32;a&#32;true&#32;source&#32;range.</emphasis>
+00056 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Start&#32;=
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SM.getMacroArgExpandedLocation(FileLoc.getLocWithOffset(Range.<link linkend="_structclang_1_1refactor_1_1_test_selection_range_1ad1161222f24ee1bd1b93d7a746104519">Begin</link>));
+00058 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;End&#32;=
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SM.getMacroArgExpandedLocation(FileLoc.getLocWithOffset(Range.<link linkend="_structclang_1_1refactor_1_1_test_selection_range_1a4530a14a9d2f1447758b5a7065823abc">End</link>));
+00060 &#32;&#32;&#32;&#32;&#32;&#32;assert(Start.isValid()&#32;&amp;&amp;&#32;End.isValid()&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;unexpected&#32;invalid&#32;range&quot;</emphasis>);
+00061 &#32;&#32;&#32;&#32;&#32;&#32;Callback(SourceRange(Start,&#32;End));
+00062 &#32;&#32;&#32;&#32;}
+00063 &#32;&#32;}
+00064 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00065 }
+00066 
+00067 <emphasis role="keyword">namespace&#32;</emphasis>{
+00068 
+00069 <emphasis role="keywordtype">void</emphasis>&#32;dumpChanges(<emphasis role="keyword">const</emphasis>&#32;tooling::AtomicChanges&#32;&amp;Changes,&#32;raw_ostream&#32;&amp;OS)&#32;{
+00070 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Change&#32;:&#32;Changes)
+00071 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;const_cast&lt;tooling::AtomicChange&#32;&amp;&gt;(Change).toYAMLString()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00072 }
+00073 
+00074 <emphasis role="keywordtype">bool</emphasis>&#32;areChangesSame(<emphasis role="keyword">const</emphasis>&#32;tooling::AtomicChanges&#32;&amp;LHS,
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;tooling::AtomicChanges&#32;&amp;RHS)&#32;{
+00076 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(LHS.size()&#32;!=&#32;RHS.size())
+00077 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00078 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;I&#32;:&#32;llvm::zip(LHS,&#32;RHS))&#32;{
+00079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!(std::get&lt;0&gt;(I)&#32;==&#32;std::get&lt;1&gt;(I)))
+00080 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00081 &#32;&#32;}
+00082 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00083 }
+00084 
+00085 <emphasis role="keywordtype">bool</emphasis>&#32;printRewrittenSources(<emphasis role="keyword">const</emphasis>&#32;tooling::AtomicChanges&#32;&amp;Changes,
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS)&#32;{
+00087 &#32;&#32;std::set&lt;std::string&gt;&#32;Files;
+00088 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Change&#32;:&#32;Changes)
+00089 &#32;&#32;&#32;&#32;Files.insert(Change.getFilePath());
+00090 &#32;&#32;tooling::ApplyChangesSpec&#32;Spec;
+00091 &#32;&#32;Spec.Cleanup&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00092 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;File&#32;:&#32;Files)&#32;{
+00093 &#32;&#32;&#32;&#32;llvm::ErrorOr&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt;&#32;BufferErr&#32;=
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFile(File);
+00095 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BufferErr)&#32;{
+00096 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;failed&#32;to&#32;open&quot;</emphasis>&#32;&lt;&lt;&#32;File&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00097 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00098 &#32;&#32;&#32;&#32;}
+00099 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Result&#32;=&#32;tooling::applyAtomicChanges(File,&#32;(*BufferErr)-&gt;getBuffer(),
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Changes,&#32;Spec);
+00101 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Result)&#32;{
+00102 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;toString(Result.takeError());
+00103 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00104 &#32;&#32;&#32;&#32;}
+00105 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;*Result;
+00106 &#32;&#32;}
+00107 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00108 }
+00109 
+00110 <emphasis role="keyword">class&#32;</emphasis>TestRefactoringResultConsumer&#32;final
+00111 &#32;&#32;&#32;&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ClangRefactorToolConsumerInterface&#32;{
+00112 <emphasis role="keyword">public</emphasis>:
+00113 &#32;&#32;TestRefactoringResultConsumer(<emphasis role="keyword">const</emphasis>&#32;TestSelectionRangesInFile&#32;&amp;TestRanges)
+00114 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;TestRanges(TestRanges)&#32;{
+00115 &#32;&#32;&#32;&#32;Results.push_back({});
+00116 &#32;&#32;}
+00117 
+00118 &#32;&#32;~TestRefactoringResultConsumer()&#32;{
+00119 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Ensure&#32;all&#32;results&#32;are&#32;checked.</emphasis>
+00120 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Group&#32;:&#32;Results)&#32;{
+00121 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Result&#32;:&#32;Group)&#32;{
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Result)&#32;{
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(void)llvm::toString(Result.takeError());
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00125 &#32;&#32;&#32;&#32;&#32;&#32;}
+00126 &#32;&#32;&#32;&#32;}
+00127 &#32;&#32;}
+00128 
+00129 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handleError(llvm::Error&#32;Err)<emphasis role="keyword">&#32;override&#32;</emphasis>{&#32;handleResult(std::move(Err));&#32;}
+00130 
+00131 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handle(tooling::AtomicChanges&#32;Changes)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00132 &#32;&#32;&#32;&#32;handleResult(std::move(Changes));
+00133 &#32;&#32;}
+00134 
+00135 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handle(tooling::SymbolOccurrences&#32;Occurrences)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00136 &#32;&#32;&#32;&#32;tooling::RefactoringResultConsumer::handle(std::move(Occurrences));
+00137 &#32;&#32;}
+00138 
+00139 <emphasis role="keyword">private</emphasis>:
+00140 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleAllResults();
+00141 
+00142 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handleResult(Expected&lt;tooling::AtomicChanges&gt;&#32;Result)&#32;{
+00143 &#32;&#32;&#32;&#32;Results.back().push_back(std::move(Result));
+00144 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;GroupIndex&#32;=&#32;Results.size()&#32;-&#32;1;
+00145 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Results.back().size()&#32;&gt;=
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TestRanges.GroupedRanges[GroupIndex].Ranges.size())&#32;{
+00147 &#32;&#32;&#32;&#32;&#32;&#32;++GroupIndex;
+00148 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(GroupIndex&#32;&gt;=&#32;TestRanges.GroupedRanges.size())&#32;{
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(handleAllResults())
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(1);&#32;<emphasis role="comment">//&#32;error&#32;has&#32;occurred.</emphasis>
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00152 &#32;&#32;&#32;&#32;&#32;&#32;}
+00153 &#32;&#32;&#32;&#32;&#32;&#32;Results.push_back({});
+00154 &#32;&#32;&#32;&#32;}
+00155 &#32;&#32;}
+00156 
+00157 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TestSelectionRangesInFile&#32;&amp;TestRanges;
+00158 &#32;&#32;std::vector&lt;std::vector&lt;Expected&lt;tooling::AtomicChanges&gt;&gt;&gt;&#32;Results;
+00159 };
+00160 
+00161 std::pair&lt;unsigned,&#32;unsigned&gt;&#32;getLineColumn(StringRef&#32;Filename,
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset)&#32;{
+00163 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;ErrOrFile&#32;=
+00164 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFile(Filename);
+00165 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ErrOrFile)
+00166 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;{0,&#32;0};
+00167 &#32;&#32;StringRef&#32;Source&#32;=&#32;ErrOrFile.get()-&gt;getBuffer();
+00168 &#32;&#32;Source&#32;=&#32;Source.take_front(Offset);
+00169 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;LastLine&#32;=&#32;Source.find_last_of(<emphasis role="stringliteral">&quot;\r\n&quot;</emphasis>);
+00170 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;{Source.count(<emphasis role="charliteral">&apos;\n&apos;</emphasis>)&#32;+&#32;1,
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(LastLine&#32;==&#32;StringRef::npos&#32;?&#32;Offset&#32;:&#32;Offset&#32;-&#32;LastLine)&#32;+&#32;1};
+00172 }
+00173 
+00174 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00175 
+00176 <emphasis role="keywordtype">bool</emphasis>&#32;TestRefactoringResultConsumer::handleAllResults()&#32;{
+00177 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Failed&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00178 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Group&#32;:&#32;llvm::enumerate(Results))&#32;{
+00179 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;All&#32;ranges&#32;in&#32;the&#32;group&#32;must&#32;produce&#32;the&#32;same&#32;result.</emphasis>
+00180 &#32;&#32;&#32;&#32;Optional&lt;tooling::AtomicChanges&gt;&#32;CanonicalResult;
+00181 &#32;&#32;&#32;&#32;Optional&lt;std::string&gt;&#32;CanonicalErrorMessage;
+00182 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;I&#32;:&#32;llvm::enumerate(Group.value()))&#32;{
+00183 &#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;tooling::AtomicChanges&gt;&#32;&amp;Result&#32;=&#32;I.value();
+00184 &#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;ErrorMessage;
+00185 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HasResult&#32;=&#32;!!Result;
+00186 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HasResult)&#32;{
+00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handleAllErrors(
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Result.takeError(),
+00189 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](StringError&#32;&amp;Err)&#32;{&#32;ErrorMessage&#32;=&#32;Err.getMessage();&#32;},
+00190 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](DiagnosticError&#32;&amp;Err)&#32;{
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;const&#32;PartialDiagnosticAt&#32;&amp;Diag&#32;=&#32;Err.getDiagnostic();
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::SmallString&lt;100&gt;&#32;DiagText;
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Diag.second.EmitToString(getDiags(),&#32;DiagText);
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ErrorMessage&#32;=&#32;std::string(DiagText);
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;});
+00196 &#32;&#32;&#32;&#32;&#32;&#32;}
+00197 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CanonicalResult&#32;&amp;&amp;&#32;!CanonicalErrorMessage)&#32;{
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasResult)
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CanonicalResult&#32;=&#32;std::move(*Result);
+00200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CanonicalErrorMessage&#32;=&#32;std::move(ErrorMessage);
+00202 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00203 &#32;&#32;&#32;&#32;&#32;&#32;}
+00204 
+00205 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Verify&#32;that&#32;this&#32;result&#32;corresponds&#32;to&#32;the&#32;canonical&#32;result.</emphasis>
+00206 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CanonicalErrorMessage)&#32;{
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;error&#32;messages&#32;must&#32;match.</emphasis>
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HasResult&#32;&amp;&amp;&#32;ErrorMessage&#32;==&#32;*CanonicalErrorMessage)
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00210 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;assert(CanonicalResult&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;missing&#32;canonical&#32;result&quot;</emphasis>);
+00212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;results&#32;must&#32;match.</emphasis>
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasResult&#32;&amp;&amp;&#32;areChangesSame(*Result,&#32;*CanonicalResult))
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00215 &#32;&#32;&#32;&#32;&#32;&#32;}
+00216 &#32;&#32;&#32;&#32;&#32;&#32;Failed&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00217 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Report&#32;the&#32;mismatch.</emphasis>
+00218 &#32;&#32;&#32;&#32;&#32;&#32;std::pair&lt;unsigned,&#32;unsigned&gt;&#32;LineColumn&#32;=&#32;getLineColumn(
+00219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TestRanges.Filename,
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TestRanges.GroupedRanges[Group.index()].Ranges[I.index()].Begin);
+00221 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()
+00222 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;unexpected&#32;refactoring&#32;result&#32;for&#32;range&#32;starting&#32;at&#32;&quot;</emphasis>
+00223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;LineColumn.first&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;LineColumn.second&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;in&#32;group&#32;&apos;&quot;</emphasis>
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;TestRanges.GroupedRanges[Group.index()].Name&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;:\n&#32;&#32;&quot;</emphasis>;
+00225 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasResult)
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;valid&#32;result&quot;</emphasis>;
+00227 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;ErrorMessage&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+00229 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;does&#32;not&#32;match&#32;initial&#32;&quot;</emphasis>;
+00230 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CanonicalErrorMessage)
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;*CanonicalErrorMessage&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;\n&quot;</emphasis>;
+00232 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00233 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;valid&#32;result\n&quot;</emphasis>;
+00234 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasResult&#32;&amp;&amp;&#32;!CanonicalErrorMessage)&#32;{
+00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Expected&#32;to&#32;Produce:\n&quot;</emphasis>;
+00236 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dumpChanges(*CanonicalResult,&#32;llvm::errs());
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Produced:\n&quot;</emphasis>;
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dumpChanges(*Result,&#32;llvm::errs());
+00239 &#32;&#32;&#32;&#32;&#32;&#32;}
+00240 &#32;&#32;&#32;&#32;}
+00241 
+00242 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Dump&#32;the&#32;results:</emphasis>
+00243 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;TestGroup&#32;=&#32;TestRanges.GroupedRanges[Group.index()];
+00244 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CanonicalResult)&#32;{
+00245 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;TestGroup.Ranges.size()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;TestGroup.Name
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;results:\n&quot;</emphasis>;
+00247 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;*CanonicalErrorMessage&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00248 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00249 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;TestGroup.Ranges.size()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;TestGroup.Name
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;results:\n&quot;</emphasis>;
+00251 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(printRewrittenSources(*CanonicalResult,&#32;llvm::outs()))
+00252 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00253 &#32;&#32;&#32;&#32;}
+00254 &#32;&#32;}
+00255 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Failed;
+00256 }
+00257 
+00258 std::unique_ptr&lt;ClangRefactorToolConsumerInterface&gt;
+<anchor xml:id="__test_support_8cpp_source_1l00259"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1aeb68b4e768a17c72b2b6a70fce24283a">00259</link> TestSelectionRangesInFile::createConsumer()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00260 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TestRefactoringResultConsumer&gt;(*<emphasis role="keyword">this</emphasis>);
+00261 }
+00262 
+00265 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;addColumnOffset(StringRef&#32;Source,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset,
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ColumnOffset)&#32;{
+00267 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ColumnOffset)
+00268 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Offset;
+00269 &#32;&#32;StringRef&#32;Substr&#32;=&#32;Source.drop_front(Offset).take_front(ColumnOffset);
+00270 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;NewlinePos&#32;=&#32;Substr.find_first_of(<emphasis role="stringliteral">&quot;\r\n&quot;</emphasis>);
+00271 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Offset&#32;+
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(NewlinePos&#32;==&#32;StringRef::npos&#32;?&#32;ColumnOffset&#32;:&#32;(unsigned)NewlinePos);
+00273 }
+00274 
+00275 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;addEndLineOffsetAndEndColumn(StringRef&#32;Source,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset,
+00276 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;LineNumberOffset,
+00277 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Column)&#32;{
+00278 &#32;&#32;StringRef&#32;Line&#32;=&#32;Source.drop_front(Offset);
+00279 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;LineOffset&#32;=&#32;0;
+00280 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;LineNumberOffset&#32;!=&#32;0;&#32;--LineNumberOffset)&#32;{
+00281 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;NewlinePos&#32;=&#32;Line.find_first_of(<emphasis role="stringliteral">&quot;\r\n&quot;</emphasis>);
+00282 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Line&#32;offset&#32;goes&#32;out&#32;of&#32;bounds.</emphasis>
+00283 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NewlinePos&#32;==&#32;StringRef::npos)
+00284 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00285 &#32;&#32;&#32;&#32;LineOffset&#32;+=&#32;NewlinePos&#32;+&#32;1;
+00286 &#32;&#32;&#32;&#32;Line&#32;=&#32;Line.drop_front(NewlinePos&#32;+&#32;1);
+00287 &#32;&#32;}
+00288 &#32;&#32;<emphasis role="comment">//&#32;Source&#32;now&#32;points&#32;to&#32;the&#32;line&#32;at&#32;+lineOffset;</emphasis>
+00289 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;LineStart&#32;=&#32;Source.find_last_of(<emphasis role="stringliteral">&quot;\r\n&quot;</emphasis>,&#32;<emphasis role="comment">/*From=*/</emphasis>Offset&#32;+&#32;LineOffset);
+00290 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;addColumnOffset(
+00291 &#32;&#32;&#32;&#32;&#32;&#32;Source,&#32;LineStart&#32;==&#32;StringRef::npos&#32;?&#32;0&#32;:&#32;LineStart&#32;+&#32;1,&#32;Column&#32;-&#32;1);
+00292 }
+00293 
+00294 Optional&lt;TestSelectionRangesInFile&gt;
+<anchor xml:id="__test_support_8cpp_source_1l00295"/><link linkend="_namespaceclang_1_1refactor_1ad9b16108537eeb4a03f8b06f785bdb0f">00295</link> <link linkend="_namespaceclang_1_1refactor_1ad9b16108537eeb4a03f8b06f785bdb0f">findTestSelectionRanges</link>(StringRef&#32;Filename)&#32;{
+00296 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;ErrOrFile&#32;=
+00297 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFile(Filename);
+00298 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ErrOrFile)&#32;{
+00299 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-selection=test:&quot;</emphasis>&#32;&lt;&lt;&#32;Filename
+00300 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;:&#32;could&#32;not&#32;open&#32;the&#32;given&#32;file&quot;</emphasis>;
+00301 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00302 &#32;&#32;}
+00303 &#32;&#32;StringRef&#32;Source&#32;=&#32;ErrOrFile.get()-&gt;getBuffer();
+00304 
+00305 &#32;&#32;<emphasis role="comment">//&#32;See&#32;the&#32;doc&#32;comment&#32;for&#32;this&#32;function&#32;for&#32;the&#32;explanation&#32;of&#32;this</emphasis>
+00306 &#32;&#32;<emphasis role="comment">//&#32;syntax.</emphasis>
+00307 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;Regex&#32;RangeRegex(
+00308 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;range[[:blank:]]*([[:alpha:]_]*)?[[:blank:]]*=[[:&quot;</emphasis>
+00309 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;blank:]]*(\\+[[:digit:]]+)?[[:blank:]]*(-&gt;[[:blank:]&quot;</emphasis>
+00310 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;]*[\\+\\:[:digit:]]+)?&quot;</emphasis>);
+00311 
+00312 &#32;&#32;std::map&lt;std::string,&#32;SmallVector&lt;TestSelectionRange,&#32;8&gt;&gt;&#32;GroupedRanges;
+00313 
+00314 &#32;&#32;LangOptions&#32;LangOpts;
+00315 &#32;&#32;LangOpts.CPlusPlus&#32;=&#32;1;
+00316 &#32;&#32;LangOpts.CPlusPlus11&#32;=&#32;1;
+00317 &#32;&#32;Lexer&#32;Lex(SourceLocation::getFromRawEncoding(0),&#32;LangOpts,&#32;Source.begin(),
+00318 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Source.begin(),&#32;Source.end());
+00319 &#32;&#32;Lex.SetCommentRetentionState(<emphasis role="keyword">true</emphasis>);
+00320 &#32;&#32;Token&#32;Tok;
+00321 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(Lex.LexFromRawLexer(Tok);&#32;Tok.isNot(tok::eof);
+00322 &#32;&#32;&#32;&#32;&#32;&#32;&#32;Lex.LexFromRawLexer(Tok))&#32;{
+00323 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Tok.isNot(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">tok::comment</link>))
+00324 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00325 &#32;&#32;&#32;&#32;StringRef&#32;Comment&#32;=
+00326 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Source.substr(Tok.getLocation().getRawEncoding(),&#32;Tok.getLength());
+00327 &#32;&#32;&#32;&#32;SmallVector&lt;StringRef,&#32;4&gt;&#32;Matches;
+00328 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Try&#32;to&#32;detect&#32;mistyped&#32;&apos;range:&apos;&#32;comments&#32;to&#32;ensure&#32;tests&#32;don&apos;t&#32;miss</emphasis>
+00329 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;anything.</emphasis>
+00330 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;DetectMistypedCommand&#32;=&#32;[&amp;]()&#32;-&gt;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;{
+00331 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Comment.contains_insensitive(<emphasis role="stringliteral">&quot;range&quot;</emphasis>)&#32;&amp;&amp;&#32;Comment.contains(<emphasis role="stringliteral">&quot;=&quot;</emphasis>)&#32;&amp;&amp;
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;!Comment.contains_insensitive(<emphasis role="stringliteral">&quot;run&quot;</emphasis>)&#32;&amp;&amp;&#32;!Comment.contains(<emphasis role="stringliteral">&quot;CHECK&quot;</emphasis>))&#32;{
+00333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;suspicious&#32;comment&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Comment
+00334 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;that&#32;&quot;</emphasis>
+00335 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;resembles&#32;the&#32;range&#32;command&#32;found\n&quot;</emphasis>;
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;note:&#32;please&#32;reword&#32;if&#32;this&#32;isn&apos;t&#32;a&#32;range&#32;command\n&quot;</emphasis>;
+00337 &#32;&#32;&#32;&#32;&#32;&#32;}
+00338 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00339 &#32;&#32;&#32;&#32;};
+00340 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Allow&#32;CHECK:&#32;comments&#32;to&#32;contain&#32;range=&#32;commands.</emphasis>
+00341 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!RangeRegex.match(Comment,&#32;&amp;Matches)&#32;||&#32;Comment.contains(<emphasis role="stringliteral">&quot;CHECK&quot;</emphasis>))&#32;{
+00342 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DetectMistypedCommand())
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00344 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00345 &#32;&#32;&#32;&#32;}
+00346 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset&#32;=&#32;Tok.getEndLoc().getRawEncoding();
+00347 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ColumnOffset&#32;=&#32;0;
+00348 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Matches[2].empty())&#32;{
+00349 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Don&apos;t&#32;forget&#32;to&#32;drop&#32;the&#32;&apos;+&apos;!</emphasis>
+00350 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Matches[2].drop_front().getAsInteger(10,&#32;ColumnOffset))
+00351 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;assert(<emphasis role="keyword">false</emphasis>&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;regex&#32;should&#32;have&#32;produced&#32;a&#32;number&quot;</emphasis>);
+00352 &#32;&#32;&#32;&#32;}
+00353 &#32;&#32;&#32;&#32;Offset&#32;=&#32;addColumnOffset(Source,&#32;Offset,&#32;ColumnOffset);
+00354 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;EndOffset;
+00355 
+00356 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Matches[3].empty())&#32;{
+00357 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;Regex&#32;EndLocRegex(
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;-&gt;[[:blank:]]*(\\+[[:digit:]]+):([[:digit:]]+)&quot;</emphasis>);
+00359 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;StringRef,&#32;4&gt;&#32;EndLocMatches;
+00360 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!EndLocRegex.match(Matches[3],&#32;&amp;EndLocMatches))&#32;{
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DetectMistypedCommand())
+00362 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00364 &#32;&#32;&#32;&#32;&#32;&#32;}
+00365 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;EndLineOffset&#32;=&#32;0,&#32;EndColumn&#32;=&#32;0;
+00366 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EndLocMatches[1].drop_front().getAsInteger(10,&#32;EndLineOffset)&#32;||
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;EndLocMatches[2].getAsInteger(10,&#32;EndColumn))
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;assert(<emphasis role="keyword">false</emphasis>&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;regex&#32;should&#32;have&#32;produced&#32;a&#32;number&quot;</emphasis>);
+00369 &#32;&#32;&#32;&#32;&#32;&#32;EndOffset&#32;=&#32;addEndLineOffsetAndEndColumn(Source,&#32;Offset,&#32;EndLineOffset,
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;EndColumn);
+00371 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00372 &#32;&#32;&#32;&#32;&#32;&#32;EndOffset&#32;=&#32;Offset;
+00373 &#32;&#32;&#32;&#32;}
+00374 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_range">TestSelectionRange</link>&#32;Range&#32;=&#32;{Offset,&#32;EndOffset};
+00375 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;It&#32;=&#32;GroupedRanges.insert(std::make_pair(
+00376 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Matches[1].str(),&#32;SmallVector&lt;TestSelectionRange,&#32;8&gt;{Range}));
+00377 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!It.second)
+00378 &#32;&#32;&#32;&#32;&#32;&#32;It.first-&gt;second.push_back(Range);
+00379 &#32;&#32;}
+00380 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(GroupedRanges.empty())&#32;{
+00381 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-selection=test:&quot;</emphasis>&#32;&lt;&lt;&#32;Filename
+00382 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;no&#32;&apos;range&apos;&#32;commands&quot;</emphasis>;
+00383 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00384 &#32;&#32;}
+00385 
+00386 &#32;&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link>&#32;TestRanges&#32;=&#32;{Filename.str(),&#32;{}};
+00387 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Group&#32;:&#32;GroupedRanges)
+00388 &#32;&#32;&#32;&#32;TestRanges.GroupedRanges.push_back({Group.first,&#32;std::move(Group.second)});
+00389 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::move(TestRanges);
+00390 }
+00391 
+00392 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;refactor</emphasis>
+00393 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;clang</emphasis>
+</programlisting></section>

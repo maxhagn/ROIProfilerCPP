@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_test__clang_8py_source" xml:lang="en-US">
+<title>test_clang.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/unit/test_clang.py</primary></indexterm>
+<programlisting><anchor xml:id="_test__clang_8py_source_1l00001"/><link linkend="_namespacetests_1_1unit_1_1test__clang">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 
+00006 <emphasis role="keyword">import</emphasis>&#32;libear
+00007 <emphasis role="keyword">import</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1clang">libscanbuild.clang</link>&#32;<emphasis role="keyword">as</emphasis>&#32;sut
+00008 <emphasis role="keyword">import</emphasis>&#32;unittest
+00009 <emphasis role="keyword">import</emphasis>&#32;os.path
+00010 <emphasis role="keyword">import</emphasis>&#32;sys
+00011 
+00012 
+<anchor xml:id="_test__clang_8py_source_1l00013"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_version">00013</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_version">ClangGetVersion</link>(unittest.TestCase):
+<anchor xml:id="_test__clang_8py_source_1l00014"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_version_1a0e043cb5971f4e8bc1d12a58e2cb4f46">00014</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_version_1a0e043cb5971f4e8bc1d12a58e2cb4f46">test_get_version_is_not_empty</link>(self):
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(sut.get_version(<emphasis role="stringliteral">&apos;clang&apos;</emphasis>))
+00016 
+<anchor xml:id="_test__clang_8py_source_1l00017"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_version_1a0ed3393b7aae3edbab66b35346e8e1c8">00017</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_version_1a0ed3393b7aae3edbab66b35346e8e1c8">test_get_version_throws</link>(self):
+00018 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;self.assertRaises(OSError):
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.get_version(<emphasis role="stringliteral">&apos;notexists&apos;</emphasis>)
+00020 
+00021 
+<anchor xml:id="_test__clang_8py_source_1l00022"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test">00022</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test">ClangGetArgumentsTest</link>(unittest.TestCase):
+<anchor xml:id="_test__clang_8py_source_1l00023"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test_1a2e97034833b7531db10e657467e6a939">00023</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test_1a2e97034833b7531db10e657467e6a939">test_get_clang_arguments</link>(self):
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename&#32;=&#32;os.path.join(tmpdir,&#32;<emphasis role="stringliteral">&apos;test.c&apos;</emphasis>)
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<emphasis role="stringliteral">&apos;&apos;</emphasis>)
+00028 
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;sut.get_arguments(
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;filename,&#32;<emphasis role="stringliteral">&apos;-DNDEBUG&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Dvar=&quot;this&#32;is&#32;it&quot;&apos;</emphasis>],
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tmpdir)
+00032 
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;NDEBUG&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;result)
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;var=&quot;this&#32;is&#32;it&quot;&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;result)
+00035 
+<anchor xml:id="_test__clang_8py_source_1l00036"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test_1a220d1d821e638014456d0866c1f1f52b">00036</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test_1a220d1d821e638014456d0866c1f1f52b">test_get_clang_arguments_fails</link>(self):
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;self.assertRaises(Exception):
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.get_arguments([<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-x&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;notexist.c&apos;</emphasis>],&#32;<emphasis role="stringliteral">&apos;.&apos;</emphasis>)
+00039 
+<anchor xml:id="_test__clang_8py_source_1l00040"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test_1a7fa704f157284b3d3ea65c7080901b9e">00040</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_arguments_test_1a7fa704f157284b3d3ea65c7080901b9e">test_get_clang_arguments_fails_badly</link>(self):
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;self.assertRaises(OSError):
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sut.get_arguments([<emphasis role="stringliteral">&apos;notexist&apos;</emphasis>],&#32;<emphasis role="stringliteral">&apos;.&apos;</emphasis>)
+00043 
+00044 
+<anchor xml:id="_test__clang_8py_source_1l00045"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test">00045</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test">ClangGetCheckersTest</link>(unittest.TestCase):
+<anchor xml:id="_test__clang_8py_source_1l00046"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a5ac9d345162a0dfe077717d4b6af91ff">00046</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a5ac9d345162a0dfe077717d4b6af91ff">test_get_checkers</link>(self):
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;this&#32;test&#32;is&#32;only&#32;to&#32;see&#32;is&#32;not&#32;crashing</emphasis>
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;sut.get_checkers(<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;[])
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(len(result))
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;do&#32;check&#32;result&#32;types</emphasis>
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;string_type&#32;=&#32;unicode&#32;<emphasis role="keywordflow">if</emphasis>&#32;sys.version_info&#32;&lt;&#32;(3,)&#32;<emphasis role="keywordflow">else</emphasis>&#32;str
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;key,&#32;value&#32;<emphasis role="keywordflow">in</emphasis>&#32;result.items():
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(string_type,&#32;type(key))
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(string_type,&#32;type(value[0]))
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(bool,&#32;type(value[1]))
+00056 
+<anchor xml:id="_test__clang_8py_source_1l00057"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a033e9723f2c96798ad765b5cccc614b1">00057</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a033e9723f2c96798ad765b5cccc614b1">test_get_active_checkers</link>(self):
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;this&#32;test&#32;is&#32;only&#32;to&#32;see&#32;is&#32;not&#32;crashing</emphasis>
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;sut.get_active_checkers(<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;[])
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(len(result))
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;do&#32;check&#32;result&#32;types</emphasis>
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;value&#32;<emphasis role="keywordflow">in</emphasis>&#32;result:
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(str,&#32;type(value))
+00064 
+<anchor xml:id="_test__clang_8py_source_1l00065"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a163adca9449257639f0841e0f176d858">00065</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a163adca9449257639f0841e0f176d858">test_is_active</link>(self):
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;test&#32;=&#32;sut.is_active([<emphasis role="stringliteral">&apos;a&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;b.b&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;c.c.c&apos;</emphasis>])
+00067 
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;a&apos;</emphasis>))
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;a.b&apos;</emphasis>))
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;b.b&apos;</emphasis>))
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;b.b.c&apos;</emphasis>))
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;c.c.c.p&apos;</emphasis>))
+00073 
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;ab&apos;</emphasis>))
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;ba&apos;</emphasis>))
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;bb&apos;</emphasis>))
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;c.c&apos;</emphasis>))
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;b&apos;</emphasis>))
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;d&apos;</emphasis>))
+00080 
+<anchor xml:id="_test__clang_8py_source_1l00081"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a65c91366d4f8b84d5a5b08737b2f3468">00081</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_checkers_test_1a65c91366d4f8b84d5a5b08737b2f3468">test_parse_checkers</link>(self):
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lines&#32;=&#32;[
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;OVERVIEW:&#32;Clang&#32;Static&#32;Analyzer&#32;Checkers&#32;List&apos;</emphasis>,
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>,
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;CHECKERS:&apos;</emphasis>,
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&#32;&#32;checker.one&#32;&#32;&#32;&#32;&#32;&#32;&#32;Checker&#32;One&#32;description&apos;</emphasis>,
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&#32;&#32;checker.two&apos;</emphasis>,
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Checker&#32;Two&#32;description&apos;</emphasis>]
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;dict(sut.parse_checkers(lines))
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;checker.one&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;result)
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="stringliteral">&apos;Checker&#32;One&#32;description&apos;</emphasis>,&#32;result.get(<emphasis role="stringliteral">&apos;checker.one&apos;</emphasis>))
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<emphasis role="stringliteral">&apos;checker.two&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;result)
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(<emphasis role="stringliteral">&apos;Checker&#32;Two&#32;description&apos;</emphasis>,&#32;result.get(<emphasis role="stringliteral">&apos;checker.two&apos;</emphasis>))
+00094 
+00095 
+<anchor xml:id="_test__clang_8py_source_1l00096"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_is_ctu_capable_test">00096</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_is_ctu_capable_test">ClangIsCtuCapableTest</link>(unittest.TestCase):
+<anchor xml:id="_test__clang_8py_source_1l00097"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_is_ctu_capable_test_1ae8f381a2f42e96cfe663871cbf9d17e2">00097</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_is_ctu_capable_test_1ae8f381a2f42e96cfe663871cbf9d17e2">test_ctu_not_found</link>(self):
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;is_ctu&#32;=&#32;sut.is_ctu_capable(<emphasis role="stringliteral">&apos;not-found-clang-extdef-mapping&apos;</emphasis>)
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(is_ctu)
+00100 
+00101 
+<anchor xml:id="_test__clang_8py_source_1l00102"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_triple_arch_test">00102</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_triple_arch_test">ClangGetTripleArchTest</link>(unittest.TestCase):
+<anchor xml:id="_test__clang_8py_source_1l00103"/><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_triple_arch_test_1a39a0704ac5ae96e52b787a76c9b3e156">00103</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__clang_1_1_clang_get_triple_arch_test_1a39a0704ac5ae96e52b787a76c9b3e156">test_arch_is_not_empty</link>(self):
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;arch&#32;=&#32;sut.get_triple_arch([<emphasis role="stringliteral">&apos;clang&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-E&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-&apos;</emphasis>],&#32;<emphasis role="stringliteral">&apos;.&apos;</emphasis>)
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(len(arch)&#32;&gt;&#32;0)
+</programlisting></section>

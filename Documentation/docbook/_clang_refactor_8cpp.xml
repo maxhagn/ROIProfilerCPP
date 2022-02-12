@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_refactor_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-refactor/ClangRefactor.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-refactor/ClangRefactor.cpp</primary></indexterm>
+<programlisting>#include &quot;TestSupport.h&quot;
+#include &quot;clang/Frontend/CommandLineSourceLoc.h&quot;
+#include &quot;clang/Frontend/TextDiagnosticPrinter.h&quot;
+#include &quot;clang/Rewrite/Core/Rewriter.h&quot;
+#include &quot;clang/Tooling/CommonOptionsParser.h&quot;
+#include &quot;clang/Tooling/Refactoring.h&quot;
+#include &quot;clang/Tooling/Refactoring/RefactoringAction.h&quot;
+#include &quot;clang/Tooling/Refactoring/RefactoringOptions.h&quot;
+#include &quot;clang/Tooling/Refactoring/Rename/RenamingAction.h&quot;
+#include &quot;clang/Tooling/Tooling.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+#include &lt;string&gt;
+</programlisting><simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespaceopts">opts</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_refactor_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+
+<para>This file implements a clang-refactor tool that performs various source transformations. </para>
+<para>
+Definition in file <link linkend="__clang_refactor_8cpp_source">ClangRefactor.cpp</link>.</para>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_refactor_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangRefactor.cpp</secondary></indexterm>
+<indexterm><primary>ClangRefactor.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_refactor_8cpp_source_1l00610">610</link> of file <link linkend="__clang_refactor_8cpp_source">ClangRefactor.cpp</link>.</para>
+<programlisting>00610 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00611 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+00612 
+00613 &#32;&#32;ClangRefactorTool&#32;RefactorTool;
+00614 
+00615 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=&#32;CommonOptionsParser::create(
+00616 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,&#32;cl::GeneralCategory,&#32;cl::ZeroOrMore,
+00617 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Clang-based&#32;refactoring&#32;tool&#32;for&#32;C,&#32;C++&#32;and&#32;Objective-C&quot;</emphasis>);
+00618 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00619 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00620 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00621 &#32;&#32;}
+00622 &#32;&#32;CommonOptionsParser&#32;&amp;Options&#32;=&#32;ExpectedParser.get();
+00623 
+00624 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;Err&#32;=&#32;RefactorTool.Init())&#32;{
+00625 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(std::move(Err))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00626 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00627 &#32;&#32;}
+00628 
+00629 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ActionFactory&#32;=&#32;RefactorTool.getFrontendActionFactory();
+00630 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ActionFactory)&#32;{
+00631 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(ActionFactory.takeError())&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00632 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00633 &#32;&#32;}
+00634 &#32;&#32;ClangTool&#32;Tool(Options.getCompilations(),&#32;Options.getSourcePathList());
+00635 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Failed&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00636 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Tool.run(ActionFactory-&gt;get())&#32;!=&#32;0)&#32;{
+00637 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Failed&#32;to&#32;run&#32;refactoring&#32;action&#32;on&#32;files\n&quot;</emphasis>;
+00638 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;It&#32;is&#32;possible&#32;that&#32;TUs&#32;are&#32;broken&#32;while&#32;changes&#32;are&#32;generated&#32;correctly,</emphasis>
+00639 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;so&#32;we&#32;still&#32;try&#32;applying&#32;changes.</emphasis>
+00640 &#32;&#32;&#32;&#32;Failed&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00641 &#32;&#32;}
+00642 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;RefactorTool.applySourceChanges()&#32;||&#32;Failed&#32;||
+00643 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RefactorTool.hasFailed();
+00644 }
+</programlisting></section>
+</section>
+</section>

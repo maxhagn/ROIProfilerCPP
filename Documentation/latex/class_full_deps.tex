@@ -1,0 +1,139 @@
+\hypertarget{class_full_deps}{}\doxysection{Full\+Deps Class Reference}
+\label{class_full_deps}\index{FullDeps@{FullDeps}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_full_deps_a90a35d77f844e3f4c93e1d7c27c503d1}{merge\+Deps}} (String\+Ref Input, Full\+Dependencies\+Result FDR, size\+\_\+t Input\+Index)
+\item 
+void \mbox{\hyperlink{class_full_deps_a3a42a88ad1367c97148feb477792e39d}{print\+Full\+Output}} (raw\+\_\+ostream \&OS)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 266 of file Clang\+Scan\+Deps.\+cpp.
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_full_deps_a90a35d77f844e3f4c93e1d7c27c503d1}\label{class_full_deps_a90a35d77f844e3f4c93e1d7c27c503d1}} 
+\index{FullDeps@{FullDeps}!mergeDeps@{mergeDeps}}
+\index{mergeDeps@{mergeDeps}!FullDeps@{FullDeps}}
+\doxysubsubsection{\texorpdfstring{mergeDeps()}{mergeDeps()}}
+{\footnotesize\ttfamily void Full\+Deps\+::merge\+Deps (\begin{DoxyParamCaption}\item[{String\+Ref}]{Input,  }\item[{Full\+Dependencies\+Result}]{FDR,  }\item[{size\+\_\+t}]{Input\+Index }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 268 of file Clang\+Scan\+Deps.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{269                                     \{}
+\DoxyCodeLine{270     \textcolor{keyword}{const} FullDependencies \&FD = FDR.FullDeps;}
+\DoxyCodeLine{271 }
+\DoxyCodeLine{272     InputDeps ID;}
+\DoxyCodeLine{273     ID.FileName = std::string(Input);}
+\DoxyCodeLine{274     ID.ContextHash = std::move(FD.ID.ContextHash);}
+\DoxyCodeLine{275     ID.FileDeps = std::move(FD.FileDeps);}
+\DoxyCodeLine{276     ID.ModuleDeps = std::move(FD.ClangModuleDeps);}
+\DoxyCodeLine{277 }
+\DoxyCodeLine{278     std::unique\_lock<std::mutex> ul(Lock);}
+\DoxyCodeLine{279     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} ModuleDeps \&MD : FDR.DiscoveredModules) \{}
+\DoxyCodeLine{280       \textcolor{keyword}{auto} I = Modules.find(\{MD.ID, 0\});}
+\DoxyCodeLine{281       \textcolor{keywordflow}{if} (I != Modules.end()) \{}
+\DoxyCodeLine{282         I-\/>first.InputIndex = std::min(I-\/>first.InputIndex, InputIndex);}
+\DoxyCodeLine{283         \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{284       \}}
+\DoxyCodeLine{285       Modules.insert(I, \{\{MD.ID, InputIndex\}, std::move(MD)\});}
+\DoxyCodeLine{286     \}}
+\DoxyCodeLine{287 }
+\DoxyCodeLine{288     ID.AdditionalCommandLine =}
+\DoxyCodeLine{289         GenerateModulesPathArgs}
+\DoxyCodeLine{290             ? FD.getAdditionalArgs(}
+\DoxyCodeLine{291                   [\&](ModuleID MID) \{ \textcolor{keywordflow}{return} lookupPCMPath(MID); \},}
+\DoxyCodeLine{292                   [\&](ModuleID MID) -\/> \textcolor{keyword}{const} ModuleDeps \& \{}
+\DoxyCodeLine{293                     \textcolor{keywordflow}{return} lookupModuleDeps(MID);}
+\DoxyCodeLine{294                   \})}
+\DoxyCodeLine{295             : FD.getAdditionalArgsWithoutModulePaths();}
+\DoxyCodeLine{296 }
+\DoxyCodeLine{297     Inputs.push\_back(std::move(ID));}
+\DoxyCodeLine{298   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_full_deps_a3a42a88ad1367c97148feb477792e39d}\label{class_full_deps_a3a42a88ad1367c97148feb477792e39d}} 
+\index{FullDeps@{FullDeps}!printFullOutput@{printFullOutput}}
+\index{printFullOutput@{printFullOutput}!FullDeps@{FullDeps}}
+\doxysubsubsection{\texorpdfstring{printFullOutput()}{printFullOutput()}}
+{\footnotesize\ttfamily void Full\+Deps\+::print\+Full\+Output (\begin{DoxyParamCaption}\item[{raw\+\_\+ostream \&}]{OS }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 300 of file Clang\+Scan\+Deps.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{300                                         \{}
+\DoxyCodeLine{301     \textcolor{comment}{// Sort the modules by name to get a deterministic order.}}
+\DoxyCodeLine{302     std::vector<IndexedModuleID> ModuleIDs;}
+\DoxyCodeLine{303     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} \&\&M : Modules)}
+\DoxyCodeLine{304       ModuleIDs.push\_back(M.first);}
+\DoxyCodeLine{305     llvm::sort(ModuleIDs,}
+\DoxyCodeLine{306                [](\textcolor{keyword}{const} IndexedModuleID \&A, \textcolor{keyword}{const} IndexedModuleID \&B) \{}
+\DoxyCodeLine{307                  \textcolor{keywordflow}{return} std::tie(A.ID.ModuleName, A.InputIndex) <}
+\DoxyCodeLine{308                         std::tie(B.ID.ModuleName, B.InputIndex);}
+\DoxyCodeLine{309                \});}
+\DoxyCodeLine{310 }
+\DoxyCodeLine{311     llvm::sort(Inputs, [](\textcolor{keyword}{const} InputDeps \&A, \textcolor{keyword}{const} InputDeps \&B) \{}
+\DoxyCodeLine{312       \textcolor{keywordflow}{return} A.FileName < B.FileName;}
+\DoxyCodeLine{313     \});}
+\DoxyCodeLine{314 }
+\DoxyCodeLine{315     \textcolor{keyword}{using namespace }llvm::json;}
+\DoxyCodeLine{316 }
+\DoxyCodeLine{317     Array OutModules;}
+\DoxyCodeLine{318     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} \&\&ModID : ModuleIDs) \{}
+\DoxyCodeLine{319       \textcolor{keyword}{auto} \&MD = Modules[ModID];}
+\DoxyCodeLine{320       Object O\{}
+\DoxyCodeLine{321           \{\textcolor{stringliteral}{"{}name"{}}, MD.ID.ModuleName\},}
+\DoxyCodeLine{322           \{\textcolor{stringliteral}{"{}context-\/hash"{}}, MD.ID.ContextHash\},}
+\DoxyCodeLine{323           \{\textcolor{stringliteral}{"{}file-\/deps"{}}, toJSONSorted(MD.FileDeps)\},}
+\DoxyCodeLine{324           \{\textcolor{stringliteral}{"{}clang-\/module-\/deps"{}}, toJSONSorted(MD.ClangModuleDeps)\},}
+\DoxyCodeLine{325           \{\textcolor{stringliteral}{"{}clang-\/modulemap-\/file"{}}, MD.ClangModuleMapFile\},}
+\DoxyCodeLine{326           \{\textcolor{stringliteral}{"{}command-\/line"{}},}
+\DoxyCodeLine{327            GenerateModulesPathArgs}
+\DoxyCodeLine{328                ? MD.getCanonicalCommandLine(}
+\DoxyCodeLine{329                      [\&](ModuleID MID) \{ \textcolor{keywordflow}{return} lookupPCMPath(MID); \},}
+\DoxyCodeLine{330                      [\&](ModuleID MID) -\/> \textcolor{keyword}{const} ModuleDeps \& \{}
+\DoxyCodeLine{331                        \textcolor{keywordflow}{return} lookupModuleDeps(MID);}
+\DoxyCodeLine{332                      \})}
+\DoxyCodeLine{333                : MD.getCanonicalCommandLineWithoutModulePaths()\},}
+\DoxyCodeLine{334       \};}
+\DoxyCodeLine{335       OutModules.push\_back(std::move(O));}
+\DoxyCodeLine{336     \}}
+\DoxyCodeLine{337 }
+\DoxyCodeLine{338     Array TUs;}
+\DoxyCodeLine{339     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} \&\&I : Inputs) \{}
+\DoxyCodeLine{340       Object O\{}
+\DoxyCodeLine{341           \{\textcolor{stringliteral}{"{}input-\/file"{}}, I.FileName\},}
+\DoxyCodeLine{342           \{\textcolor{stringliteral}{"{}clang-\/context-\/hash"{}}, I.ContextHash\},}
+\DoxyCodeLine{343           \{\textcolor{stringliteral}{"{}file-\/deps"{}}, I.FileDeps\},}
+\DoxyCodeLine{344           \{\textcolor{stringliteral}{"{}clang-\/module-\/deps"{}}, toJSONSorted(I.ModuleDeps)\},}
+\DoxyCodeLine{345           \{\textcolor{stringliteral}{"{}command-\/line"{}}, I.AdditionalCommandLine\},}
+\DoxyCodeLine{346       \};}
+\DoxyCodeLine{347       TUs.push\_back(std::move(O));}
+\DoxyCodeLine{348     \}}
+\DoxyCodeLine{349 }
+\DoxyCodeLine{350     Object Output\{}
+\DoxyCodeLine{351         \{\textcolor{stringliteral}{"{}modules"{}}, std::move(OutModules)\},}
+\DoxyCodeLine{352         \{\textcolor{stringliteral}{"{}translation-\/units"{}}, std::move(TUs)\},}
+\DoxyCodeLine{353     \};}
+\DoxyCodeLine{354 }
+\DoxyCodeLine{355     OS << llvm::formatv(\textcolor{stringliteral}{"{}\{0:2\}\(\backslash\)n"{}}, Value(std::move(Output)));}
+\DoxyCodeLine{356   \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/scan-\/deps/\mbox{\hyperlink{_clang_scan_deps_8cpp}{Clang\+Scan\+Deps.\+cpp}}\end{DoxyCompactItemize}

@@ -1,0 +1,62 @@
+\hypertarget{_a_p_i_notes_test_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/apinotes-\/test/\+APINotes\+Test.cpp File Reference}
+\label{_a_p_i_notes_test_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/apinotes-\/test/APINotesTest.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/apinotes-\/test/APINotesTest.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+APINotes/\+APINotes\+YAMLCompiler.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Memory\+Buffer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Tool\+Output\+File.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+With\+Color.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_a_p_i_notes_test_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_a_p_i_notes_test_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_a_p_i_notes_test_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{APINotesTest.cpp@{APINotesTest.cpp}!main@{main}}
+\index{main@{main}!APINotesTest.cpp@{APINotesTest.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 25 of file APINotes\+Test.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{25                                       \{}
+\DoxyCodeLine{26   \textcolor{keyword}{const} \textcolor{keywordtype}{bool} DisableCrashReporting = \textcolor{keyword}{true};}
+\DoxyCodeLine{27   llvm::sys::PrintStackTraceOnErrorSignal(argv[0], DisableCrashReporting);}
+\DoxyCodeLine{28   llvm::cl::ParseCommandLineOptions(argc, argv);}
+\DoxyCodeLine{29 }
+\DoxyCodeLine{30   \textcolor{keyword}{auto} Error = [](\textcolor{keyword}{const} llvm::Twine \&Msg) \{}
+\DoxyCodeLine{31     llvm::WithColor::error(llvm::errs(), \textcolor{stringliteral}{"{}apinotes-\/test"{}}) << Msg << \textcolor{charliteral}{'\(\backslash\)n'};}
+\DoxyCodeLine{32   \};}
+\DoxyCodeLine{33 }
+\DoxyCodeLine{34   std::error\_code EC;}
+\DoxyCodeLine{35   \textcolor{keyword}{auto} Out = std::make\_unique<llvm::ToolOutputFile>(OutputFileName, EC,}
+\DoxyCodeLine{36                                                     llvm::sys::fs::OF\_None);}
+\DoxyCodeLine{37   \textcolor{keywordflow}{if} (EC) \{}
+\DoxyCodeLine{38     Error(\textcolor{stringliteral}{"{}failed to open '"{}} + OutputFileName + \textcolor{stringliteral}{"{}': "{}} + EC.message());}
+\DoxyCodeLine{39     \textcolor{keywordflow}{return} EXIT\_FAILURE;}
+\DoxyCodeLine{40   \}}
+\DoxyCodeLine{41 }
+\DoxyCodeLine{42   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} std::string \&Notes : APINotes) \{}
+\DoxyCodeLine{43     llvm::ErrorOr<std::unique\_ptr<llvm::MemoryBuffer>> NotesOrError =}
+\DoxyCodeLine{44         llvm::MemoryBuffer::getFileOrSTDIN(Notes);}
+\DoxyCodeLine{45     \textcolor{keywordflow}{if} (std::error\_code EC = NotesOrError.getError()) \{}
+\DoxyCodeLine{46       llvm::errs() << EC.message() << \textcolor{charliteral}{'\(\backslash\)n'};}
+\DoxyCodeLine{47       \textcolor{keywordflow}{return} EXIT\_FAILURE;}
+\DoxyCodeLine{48     \}}
+\DoxyCodeLine{49 }
+\DoxyCodeLine{50     clang::api\_notes::parseAndDumpAPINotes((*NotesOrError)-\/>getBuffer(),}
+\DoxyCodeLine{51                                            Out-\/>os());}
+\DoxyCodeLine{52   \}}
+\DoxyCodeLine{53 }
+\DoxyCodeLine{54   \textcolor{keywordflow}{return} EXIT\_SUCCESS;}
+\DoxyCodeLine{55 \}}
+
+\end{DoxyCode}

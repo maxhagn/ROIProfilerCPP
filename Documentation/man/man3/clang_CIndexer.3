@@ -1,0 +1,241 @@
+.TH "clang::CIndexer" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::CIndexer
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CIndexer\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCIndexer\fP (std::shared_ptr< PCHContainerOperations > PCHContainerOps=std::make_shared< PCHContainerOperations >())"
+.br
+.ti -1c
+.RI "bool \fBgetOnlyLocalDecls\fP () const"
+.br
+.ti -1c
+.RI "void \fBsetOnlyLocalDecls\fP (bool Local=true)"
+.br
+.ti -1c
+.RI "bool \fBgetDisplayDiagnostics\fP () const"
+.br
+.ti -1c
+.RI "void \fBsetDisplayDiagnostics\fP (bool Display=true)"
+.br
+.ti -1c
+.RI "std::shared_ptr< PCHContainerOperations > \fBgetPCHContainerOperations\fP () const"
+.br
+.ti -1c
+.RI "unsigned \fBgetCXGlobalOptFlags\fP () const"
+.br
+.ti -1c
+.RI "void \fBsetCXGlobalOptFlags\fP (unsigned options)"
+.br
+.ti -1c
+.RI "bool \fBisOptEnabled\fP (CXGlobalOptFlags opt) const"
+.br
+.ti -1c
+.RI "const std::string & \fBgetClangResourcesPath\fP ()"
+.br
+.RI "Get the path of the clang resource files\&. "
+.ti -1c
+.RI "StringRef \fBgetClangToolchainPath\fP ()"
+.br
+.ti -1c
+.RI "void \fBsetInvocationEmissionPath\fP (StringRef Str)"
+.br
+.ti -1c
+.RI "StringRef \fBgetInvocationEmissionPath\fP () const"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 34 of file CIndexer\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::CIndexer::CIndexer (std::shared_ptr< PCHContainerOperations > PCHContainerOps = \fCstd::make_shared<PCHContainerOperations>()\fP)\fC [inline]\fP"
+
+.PP
+Definition at line 47 of file CIndexer\&.h\&.
+.PP
+.nf
+49       : OnlyLocalDecls(false), DisplayDiagnostics(false),
+50         Options(CXGlobalOpt_None), PCHContainerOps(std::move(PCHContainerOps)) {
+51   }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "const std::string & CIndexer::getClangResourcesPath ()"
+
+.PP
+Get the path of the clang resource files\&. 
+.PP
+Definition at line 99 of file CIndexer\&.cpp\&.
+.PP
+.nf
+99                                                  {
+100   // Did we already compute the path?
+101   if (!ResourcesPath\&.empty())
+102     return ResourcesPath;
+103 
+104   SmallString<128> LibClangPath;
+105 
+106   // Find the location where this library lives (libclang\&.dylib)\&.
+107 #ifdef _WIN32
+108   MEMORY_BASIC_INFORMATION mbi;
+109   char path[MAX_PATH];
+110   VirtualQuery((void *)(uintptr_t)clang_createTranslationUnit, &mbi,
+111                sizeof(mbi));
+112   GetModuleFileNameA((HINSTANCE)mbi\&.AllocationBase, path, MAX_PATH);
+113 
+114 #ifdef __CYGWIN__
+115   char w32path[MAX_PATH];
+116   strcpy(w32path, path);
+117 #if CYGWIN_VERSION_API_MAJOR > 0 || CYGWIN_VERSION_API_MINOR >= 181
+118   cygwin_conv_path(CCP_WIN_A_TO_POSIX, w32path, path, MAX_PATH);
+119 #else
+120   cygwin_conv_to_full_posix_path(w32path, path);
+121 #endif
+122 #endif
+123 
+124   LibClangPath += path;
+125 #elif defined(_AIX)
+126   getClangResourcesPathImplAIX(LibClangPath);
+127 #else
+128   // This silly cast below avoids a C++ warning\&.
+129   Dl_info info;
+130   if (dladdr((void *)(uintptr_t)clang_createTranslationUnit, &info) == 0)
+131     llvm_unreachable("Call to dladdr() failed");
+132 
+133   // We now have the CIndex directory, locate clang relative to it\&.
+134   LibClangPath += info\&.dli_fname;
+135 #endif
+136 
+137   // Cache our result\&.
+138   ResourcesPath = driver::Driver::GetResourcesPath(LibClangPath);
+139   return ResourcesPath;
+140 }
+.fi
+.PP
+References clang_createTranslationUnit()\&.
+.PP
+Referenced by getClangToolchainPath()\&.
+.SS "StringRef CIndexer::getClangToolchainPath ()"
+
+.PP
+Definition at line 142 of file CIndexer\&.cpp\&.
+.PP
+.nf
+142                                           {
+143   if (!ToolchainPath\&.empty())
+144     return ToolchainPath;
+145   StringRef ResourcePath = getClangResourcesPath();
+146   ToolchainPath =
+147       std::string(llvm::sys::path::parent_path(llvm::sys::path::parent_path(
+148           llvm::sys::path::parent_path(ResourcePath))));
+149   return ToolchainPath;
+150 }
+.fi
+.PP
+References getClangResourcesPath()\&.
+.PP
+Referenced by clang::LibclangInvocationReporter::LibclangInvocationReporter()\&.
+.SS "unsigned clang::CIndexer::getCXGlobalOptFlags () const\fC [inline]\fP"
+
+.PP
+Definition at line 68 of file CIndexer\&.h\&.
+.PP
+.nf
+68 { return Options; }
+.fi
+.SS "bool clang::CIndexer::getDisplayDiagnostics () const\fC [inline]\fP"
+
+.PP
+Definition at line 59 of file CIndexer\&.h\&.
+.PP
+.nf
+59 { return DisplayDiagnostics; }
+.fi
+.SS "StringRef clang::CIndexer::getInvocationEmissionPath () const\fC [inline]\fP"
+
+.PP
+Definition at line 84 of file CIndexer\&.h\&.
+.PP
+.nf
+84 { return InvocationEmissionPath; }
+.fi
+.PP
+Referenced by clang::LibclangInvocationReporter::LibclangInvocationReporter()\&.
+.SS "bool clang::CIndexer::getOnlyLocalDecls () const\fC [inline]\fP"
+Whether we only want to see 'local' declarations (that did not come from a previous precompiled header)\&. If false, we want to see all declarations\&. 
+.PP
+Definition at line 56 of file CIndexer\&.h\&.
+.PP
+.nf
+56 { return OnlyLocalDecls; }
+.fi
+.SS "std::shared_ptr<PCHContainerOperations> clang::CIndexer::getPCHContainerOperations () const\fC [inline]\fP"
+
+.PP
+Definition at line 64 of file CIndexer\&.h\&.
+.PP
+.nf
+64                                                                           {
+65     return PCHContainerOps;
+66   }
+.fi
+.SS "bool clang::CIndexer::isOptEnabled (CXGlobalOptFlags opt) const\fC [inline]\fP"
+
+.PP
+Definition at line 71 of file CIndexer\&.h\&.
+.PP
+.nf
+71                                                 {
+72     return Options & opt;
+73   }
+.fi
+.SS "void clang::CIndexer::setCXGlobalOptFlags (unsigned options)\fC [inline]\fP"
+
+.PP
+Definition at line 69 of file CIndexer\&.h\&.
+.PP
+.nf
+69 { Options = options; }
+.fi
+.SS "void clang::CIndexer::setDisplayDiagnostics (bool Display = \fCtrue\fP)\fC [inline]\fP"
+
+.PP
+Definition at line 60 of file CIndexer\&.h\&.
+.PP
+.nf
+60                                                   {
+61     DisplayDiagnostics = Display;
+62   }
+.fi
+.SS "void clang::CIndexer::setInvocationEmissionPath (StringRef Str)\fC [inline]\fP"
+
+.PP
+Definition at line 80 of file CIndexer\&.h\&.
+.PP
+.nf
+80                                                 {
+81     InvocationEmissionPath = std::string(Str);
+82   }
+.fi
+.SS "void clang::CIndexer::setOnlyLocalDecls (bool Local = \fCtrue\fP)\fC [inline]\fP"
+
+.PP
+Definition at line 57 of file CIndexer\&.h\&.
+.PP
+.nf
+57 { OnlyLocalDecls = Local; }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

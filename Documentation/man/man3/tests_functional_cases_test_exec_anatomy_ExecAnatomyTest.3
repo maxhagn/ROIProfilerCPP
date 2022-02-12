@@ -1,0 +1,67 @@
+.TH "tests.functional.cases.test_exec_anatomy.ExecAnatomyTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_exec_anatomy.ExecAnatomyTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBassertEqualJson\fP (self, expected, result)"
+.br
+.ti -1c
+.RI "def \fBtest_all_exec_calls\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 31 of file test_exec_anatomy\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.assertEqualJson ( self,  expected,  result)"
+
+.PP
+Definition at line 32 of file test_exec_anatomy\&.py\&.
+.PP
+.nf
+32     def assertEqualJson(self, expected, result):
+33         def read_json(filename):
+34             with open(filename) as handler:
+35                 return json\&.load(handler)
+36 
+37         lhs = read_json(expected)
+38         rhs = read_json(result)
+39         for item in lhs:
+40             self\&.assertTrue(rhs\&.count(item))
+41         for item in rhs:
+42             self\&.assertTrue(lhs\&.count(item))
+43 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.test_all_exec_calls()\&.
+.SS "def tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.test_all_exec_calls ( self)"
+
+.PP
+Definition at line 44 of file test_exec_anatomy\&.py\&.
+.PP
+.nf
+44     def test_all_exec_calls(self):
+45         this_dir, _ = os\&.path\&.split(__file__)
+46         source_dir = os\&.path\&.abspath(os\&.path\&.join(this_dir, '\&.\&.', 'exec'))
+47         with libear\&.TemporaryDirectory() as tmp_dir:
+48             expected, result = run(source_dir, tmp_dir)
+49             self\&.assertEqualJson(expected, result)
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.assertEqualJson(), tests\&.functional\&.cases\&.test_exec_anatomy\&.run(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

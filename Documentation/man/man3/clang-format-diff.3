@@ -1,0 +1,125 @@
+.TH "clang-format-diff" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang-format-diff
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBmain\fP ()"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def clang\-format\-diff\&.main (void)"
+
+.PP
+Definition at line 38 of file clang\-format\-diff\&.py\&.
+.PP
+.nf
+38 def main():
+39   parser = argparse\&.ArgumentParser(description=__doc__,
+40                                    formatter_class=
+41                                            argparse\&.RawDescriptionHelpFormatter)
+42   parser\&.add_argument('-i', action='store_true', default=False,
+43                       help='apply edits to files instead of displaying a diff')
+44   parser\&.add_argument('-p', metavar='NUM', default=0,
+45                       help='strip the smallest prefix containing P slashes')
+46   parser\&.add_argument('-regex', metavar='PATTERN', default=None,
+47                       help='custom pattern selecting file paths to reformat '
+48                       '(case sensitive, overrides -iregex)')
+49   parser\&.add_argument('-iregex', metavar='PATTERN', default=
+50                       r'\&.*\\&.(cpp|cc|c\+\+|cxx|c|cl|h|hh|hpp|hxx|m|mm|inc|js|ts'
+51                       r'|proto|protodevel|java|cs|json)',
+52                       help='custom pattern selecting file paths to reformat '
+53                       '(case insensitive, overridden by -regex)')
+54   parser\&.add_argument('-sort-includes', action='store_true', default=False,
+55                       help='let clang-format sort include blocks')
+56   parser\&.add_argument('-v', '--verbose', action='store_true',
+57                       help='be more verbose, ineffective without -i')
+58   parser\&.add_argument('-style',
+59                       help='formatting style to apply (LLVM, GNU, Google, Chromium, '
+60                       'Microsoft, Mozilla, WebKit)')
+61   parser\&.add_argument('-binary', default='clang-format',
+62                       help='location of binary to use for clang-format')
+63   args = parser\&.parse_args()
+64 
+65   # Extract changed lines for each file\&.
+66   filename = None
+67   lines_by_file = {}
+68   for line in sys\&.stdin:
+69     match = re\&.search(r'^\+\+\+\ (\&.*?/){%s}(\S*)' % args\&.p, line)
+70     if match:
+71       filename = match\&.group(2)
+72     if filename is None:
+73       continue
+74 
+75     if args\&.regex is not None:
+76       if not re\&.match('^%s$' % args\&.regex, filename):
+77         continue
+78     else:
+79       if not re\&.match('^%s$' % args\&.iregex, filename, re\&.IGNORECASE):
+80         continue
+81 
+82     match = re\&.search(r'^@@\&.*\+(\d+)(,(\d+))?', line)
+83     if match:
+84       start_line = int(match\&.group(1))
+85       line_count = 1
+86       if match\&.group(3):
+87         line_count = int(match\&.group(3))
+88       if line_count == 0:
+89         continue
+90       end_line = start_line + line_count - 1
+91       lines_by_file\&.setdefault(filename, [])\&.extend(
+92           ['-lines', str(start_line) + ':' + str(end_line)])
+93 
+94   # Reformat files containing changes in place\&.
+95   for filename, lines in lines_by_file\&.items():
+96     if args\&.i and args\&.verbose:
+97       print('Formatting {}'\&.format(filename))
+98     command = [args\&.binary, filename]
+99     if args\&.i:
+100       command\&.append('-i')
+101     if args\&.sort_includes:
+102       command\&.append('-sort-includes')
+103     command\&.extend(lines)
+104     if args\&.style:
+105       command\&.extend(['-style', args\&.style])
+106 
+107     try:
+108       p = subprocess\&.Popen(command,
+109                            stdout=subprocess\&.PIPE,
+110                            stderr=None,
+111                            stdin=subprocess\&.PIPE,
+112                            universal_newlines=True)
+113     except OSError as e:
+114       # Give the user more context when clang-format isn't
+115       # found/isn't executable, etc\&.
+116       raise RuntimeError(
+117         'Failed to run "%s" - %s"' % (" "\&.join(command), e\&.strerror))
+118 
+119     stdout, stderr = p\&.communicate()
+120     if p\&.returncode != 0:
+121       sys\&.exit(p\&.returncode)
+122 
+123     if not args\&.i:
+124       with open(filename) as f:
+125         code = f\&.readlines()
+126       formatted_code = StringIO(stdout)\&.readlines()
+127       diff = difflib\&.unified_diff(code, formatted_code,
+128                                   filename, filename,
+129                                   '(before formatting)', '(after formatting)')
+130       diff_string = ''\&.join(diff)
+131       if len(diff_string) > 0:
+132         sys\&.stdout\&.write(diff_string)
+133 
+.fi
+.PP
+References startfile\&.open(), and print()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

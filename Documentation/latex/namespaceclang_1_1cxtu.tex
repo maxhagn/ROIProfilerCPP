@@ -1,0 +1,78 @@
+\hypertarget{namespaceclang_1_1cxtu}{}\doxysection{clang\+::cxtu Namespace Reference}
+\label{namespaceclang_1_1cxtu}\index{clang::cxtu@{clang::cxtu}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classclang_1_1cxtu_1_1_c_x_t_u_owner}{CXTUOwner}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{struct_c_x_translation_unit_impl}{CXTranslation\+Unit\+Impl}} $\ast$ \mbox{\hyperlink{namespaceclang_1_1cxtu_a00c98a9560b39abf66fa58c2059de48e}{Make\+CXTranslation\+Unit}} (\mbox{\hyperlink{classclang_1_1_c_indexer}{CIndexer}} $\ast$CIdx, std\+::unique\+\_\+ptr$<$ ASTUnit $>$ AU)
+\item 
+bool \mbox{\hyperlink{namespaceclang_1_1cxtu_a780a13d3a9c39b2898045b05ff18c05e}{is\+ASTRead\+Error}} (ASTUnit $\ast$AU)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang_1_1cxtu_a780a13d3a9c39b2898045b05ff18c05e}\label{namespaceclang_1_1cxtu_a780a13d3a9c39b2898045b05ff18c05e}} 
+\index{clang::cxtu@{clang::cxtu}!isASTReadError@{isASTReadError}}
+\index{isASTReadError@{isASTReadError}!clang::cxtu@{clang::cxtu}}
+\doxysubsubsection{\texorpdfstring{isASTReadError()}{isASTReadError()}}
+{\footnotesize\ttfamily bool clang\+::cxtu\+::is\+ASTRead\+Error (\begin{DoxyParamCaption}\item[{ASTUnit $\ast$}]{AU }\end{DoxyParamCaption})}
+
+\begin{DoxyReturn}{Returns}
+true if the ASTUnit has a diagnostic about the AST file being corrupted. 
+\end{DoxyReturn}
+
+
+Definition at line 90 of file CIndex.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{90                                      \{}
+\DoxyCodeLine{91   \textcolor{keywordflow}{for} (ASTUnit::stored\_diag\_iterator D = AU-\/>stored\_diag\_begin(),}
+\DoxyCodeLine{92                                      DEnd = AU-\/>stored\_diag\_end();}
+\DoxyCodeLine{93        D != DEnd; ++D) \{}
+\DoxyCodeLine{94     \textcolor{keywordflow}{if} (D-\/>getLevel() >= DiagnosticsEngine::Error \&\&}
+\DoxyCodeLine{95         DiagnosticIDs::getCategoryNumberForDiag(D-\/>getID()) ==}
+\DoxyCodeLine{96             diag::DiagCat\_AST\_Deserialization\_Issue)}
+\DoxyCodeLine{97       \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{98   \}}
+\DoxyCodeLine{99   \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{100 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{namespaceclang_1_1cxtu_a00c98a9560b39abf66fa58c2059de48e}\label{namespaceclang_1_1cxtu_a00c98a9560b39abf66fa58c2059de48e}} 
+\index{clang::cxtu@{clang::cxtu}!MakeCXTranslationUnit@{MakeCXTranslationUnit}}
+\index{MakeCXTranslationUnit@{MakeCXTranslationUnit}!clang::cxtu@{clang::cxtu}}
+\doxysubsubsection{\texorpdfstring{MakeCXTranslationUnit()}{MakeCXTranslationUnit()}}
+{\footnotesize\ttfamily CXTranslation\+Unit clang\+::cxtu\+::\+Make\+CXTranslation\+Unit (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classclang_1_1_c_indexer}{CIndexer}} $\ast$}]{CIdx,  }\item[{std\+::unique\+\_\+ptr$<$ ASTUnit $>$}]{AU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 73 of file CIndex.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{74                                                                          \{}
+\DoxyCodeLine{75   \textcolor{keywordflow}{if} (!AU)}
+\DoxyCodeLine{76     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{77   assert(CIdx);}
+\DoxyCodeLine{78   CXTranslationUnit D = \textcolor{keyword}{new} \mbox{\hyperlink{struct_c_x_translation_unit_impl}{CXTranslationUnitImpl}}();}
+\DoxyCodeLine{79   D-\/>CIdx = CIdx;}
+\DoxyCodeLine{80   D-\/>TheASTUnit = AU.release();}
+\DoxyCodeLine{81   D-\/>StringPool = \textcolor{keyword}{new} \mbox{\hyperlink{classclang_1_1cxstring_1_1_c_x_string_pool}{cxstring::CXStringPool}}();}
+\DoxyCodeLine{82   D-\/>Diagnostics = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{83   D-\/>OverridenCursorsPool = \mbox{\hyperlink{namespaceclang_1_1cxcursor_af71b6ad00df82de093f378557ee93240}{createOverridenCXCursorsPool}}();}
+\DoxyCodeLine{84   D-\/>CommentToXML = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{85   D-\/>ParsingOptions = 0;}
+\DoxyCodeLine{86   D-\/>Arguments = \{\};}
+\DoxyCodeLine{87   \textcolor{keywordflow}{return} D;}
+\DoxyCodeLine{88 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxcursor\+::create\+Overriden\+CXCursors\+Pool().
+

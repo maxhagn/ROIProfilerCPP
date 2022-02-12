@@ -1,0 +1,246 @@
+.TH "clang::CXDiagnosticImpl" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::CXDiagnosticImpl
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CIndexDiagnostic\&.h>\fP
+.PP
+Inherited by \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBKind\fP { \fBStoredDiagnosticKind\fP, \fBLoadedDiagnosticKind\fP, \fBCustomNoteDiagnosticKind\fP }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "virtual \fB~CXDiagnosticImpl\fP ()"
+.br
+.ti -1c
+.RI "virtual CXDiagnosticSeverity \fBgetSeverity\fP () const =0"
+.br
+.RI "Return the severity of the diagnostic\&. "
+.ti -1c
+.RI "virtual CXSourceLocation \fBgetLocation\fP () const =0"
+.br
+.RI "Return the location of the diagnostic\&. "
+.ti -1c
+.RI "virtual CXString \fBgetSpelling\fP () const =0"
+.br
+.RI "Return the spelling of the diagnostic\&. "
+.ti -1c
+.RI "virtual CXString \fBgetDiagnosticOption\fP (CXString *Disable) const =0"
+.br
+.RI "Return the text for the diagnostic option\&. "
+.ti -1c
+.RI "virtual unsigned \fBgetCategory\fP () const =0"
+.br
+.RI "Return the category of the diagnostic\&. "
+.ti -1c
+.RI "virtual CXString \fBgetCategoryText\fP () const =0"
+.br
+.RI "Return the category string of the diagnostic\&. "
+.ti -1c
+.RI "virtual unsigned \fBgetNumRanges\fP () const =0"
+.br
+.RI "Return the number of source ranges for the diagnostic\&. "
+.ti -1c
+.RI "virtual CXSourceRange \fBgetRange\fP (unsigned Range) const =0"
+.br
+.RI "Return the source ranges for the diagnostic\&. "
+.ti -1c
+.RI "virtual unsigned \fBgetNumFixIts\fP () const =0"
+.br
+.RI "Return the number of FixIts\&. "
+.ti -1c
+.RI "virtual CXString \fBgetFixIt\fP (unsigned FixIt, CXSourceRange *ReplacementRange) const =0"
+.br
+.RI "Return the FixIt information (source range and inserted text)\&. "
+.ti -1c
+.RI "\fBKind\fP \fBgetKind\fP () const"
+.br
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP & \fBgetChildDiagnostics\fP ()"
+.br
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCXDiagnosticImpl\fP (\fBKind\fP k)"
+.br
+.ti -1c
+.RI "void \fBappend\fP (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)"
+.br
+.in -1c
+.SS "Protected Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP \fBChildDiags\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 54 of file CIndexDiagnostic\&.h\&.
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBclang::CXDiagnosticImpl::Kind\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIStoredDiagnosticKind \fP\fP
+.TP
+\fB\fILoadedDiagnosticKind \fP\fP
+.TP
+\fB\fICustomNoteDiagnosticKind \fP\fP
+.PP
+Definition at line 56 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+56             { StoredDiagnosticKind, LoadedDiagnosticKind,
+57               CustomNoteDiagnosticKind };
+.fi
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "CXDiagnosticImpl::~CXDiagnosticImpl ()\fC [virtual]\fP"
+
+.PP
+Definition at line 37 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+37 {}
+.fi
+.SS "clang::CXDiagnosticImpl::CXDiagnosticImpl (\fBKind\fP k)\fC [inline]\fP, \fC [protected]\fP"
+
+.PP
+Definition at line 99 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+99 : K(k) {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "void clang::CXDiagnosticImpl::append (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)\fC [inline]\fP, \fC [protected]\fP"
+
+.PP
+Definition at line 102 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+102                                                  {
+103     ChildDiags\&.appendDiagnostic(std::move(D));
+104   }
+.fi
+.PP
+References clang::CXDiagnosticSetImpl::appendDiagnostic(), and ChildDiags\&.
+.SS "virtual unsigned clang::CXDiagnosticImpl::getCategory () const\fC [pure virtual]\fP"
+
+.PP
+Return the category of the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SS "virtual CXString clang::CXDiagnosticImpl::getCategoryText () const\fC [pure virtual]\fP"
+
+.PP
+Return the category string of the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SS "\fBCXDiagnosticSetImpl\fP& clang::CXDiagnosticImpl::getChildDiagnostics ()\fC [inline]\fP"
+
+.PP
+Definition at line 94 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+94                                              {
+95     return ChildDiags;
+96   }
+.fi
+.PP
+References ChildDiags\&.
+.SS "virtual CXString clang::CXDiagnosticImpl::getDiagnosticOption (CXString * Disable) const\fC [pure virtual]\fP"
+
+.PP
+Return the text for the diagnostic option\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SS "virtual CXString clang::CXDiagnosticImpl::getFixIt (unsigned FixIt, CXSourceRange * ReplacementRange) const\fC [pure virtual]\fP"
+
+.PP
+Return the FixIt information (source range and inserted text)\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.PP
+Referenced by clang_getDiagnosticFixIt()\&.
+.SS "\fBKind\fP clang::CXDiagnosticImpl::getKind () const\fC [inline]\fP"
+
+.PP
+Definition at line 92 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+92 { return K; }
+.fi
+.PP
+Referenced by clang::CXStoredDiagnostic::classof(), and clang::CXLoadedDiagnostic::classof()\&.
+.SS "virtual CXSourceLocation clang::CXDiagnosticImpl::getLocation () const\fC [pure virtual]\fP"
+
+.PP
+Return the location of the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SS "virtual unsigned clang::CXDiagnosticImpl::getNumFixIts () const\fC [pure virtual]\fP"
+
+.PP
+Return the number of FixIts\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.PP
+Referenced by clang_getDiagnosticFixIt()\&.
+.SS "virtual unsigned clang::CXDiagnosticImpl::getNumRanges () const\fC [pure virtual]\fP"
+
+.PP
+Return the number of source ranges for the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.PP
+Referenced by clang_getDiagnosticRange()\&.
+.SS "virtual CXSourceRange clang::CXDiagnosticImpl::getRange (unsigned Range) const\fC [pure virtual]\fP"
+
+.PP
+Return the source ranges for the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.PP
+Referenced by clang_getDiagnosticRange()\&.
+.SS "virtual CXDiagnosticSeverity clang::CXDiagnosticImpl::getSeverity () const\fC [pure virtual]\fP"
+
+.PP
+Return the severity of the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SS "virtual CXString clang::CXDiagnosticImpl::getSpelling () const\fC [pure virtual]\fP"
+
+.PP
+Return the spelling of the diagnostic\&. 
+.PP
+Implemented in \fBclang::CXLoadedDiagnostic\fP, and \fBclang::CXStoredDiagnostic\fP\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "\fBCXDiagnosticSetImpl\fP clang::CXDiagnosticImpl::ChildDiags\fC [protected]\fP"
+
+.PP
+Definition at line 100 of file CIndexDiagnostic\&.h\&.
+.PP
+Referenced by append(), and getChildDiagnostics()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

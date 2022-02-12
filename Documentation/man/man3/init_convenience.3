@@ -1,0 +1,122 @@
+.TH "init_convenience" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+init_convenience
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBTestDiagnosticConsumer\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "std::unique_ptr< CompilerInstance > \fBBuildCompilerInstance\fP ()"
+.br
+.ti -1c
+.RI "std::unique_ptr< ASTContext > \fBBuildASTContext\fP (CompilerInstance &CI, SelectorTable &ST, Builtin::Context &BC)"
+.br
+.ti -1c
+.RI "std::unique_ptr< CodeGenerator > \fBBuildCodeGen\fP (CompilerInstance &CI, llvm::LLVMContext &LLVMCtx)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "std::unique_ptr<ASTContext> init_convenience::BuildASTContext (CompilerInstance & CI, SelectorTable & ST, Builtin::Context & BC)"
+
+.PP
+Definition at line 220 of file clang\-import\-test\&.cpp\&.
+.PP
+.nf
+220                                                                              {
+221   auto AST = std::make_unique<ASTContext>(
+222       CI\&.getLangOpts(), CI\&.getSourceManager(),
+223       CI\&.getPreprocessor()\&.getIdentifierTable(), ST, BC);
+224   AST->InitBuiltinTypes(CI\&.getTarget());
+225   return AST;
+226 }
+.fi
+.SS "std::unique_ptr<CodeGenerator> init_convenience::BuildCodeGen (CompilerInstance & CI, llvm::LLVMContext & LLVMCtx)"
+
+.PP
+Definition at line 228 of file clang\-import\-test\&.cpp\&.
+.PP
+.nf
+229                                                                       {
+230   StringRef ModuleName("$__module");
+231   return std::unique_ptr<CodeGenerator>(CreateLLVMCodeGen(
+232       CI\&.getDiagnostics(), ModuleName, CI\&.getHeaderSearchOpts(),
+233       CI\&.getPreprocessorOpts(), CI\&.getCodeGenOpts(), LLVMCtx));
+234 }
+.fi
+.SS "std::unique_ptr<CompilerInstance> init_convenience::BuildCompilerInstance ()"
+
+.PP
+Definition at line 163 of file clang\-import\-test\&.cpp\&.
+.PP
+.nf
+163                                                         {
+164   auto Ins = std::make_unique<CompilerInstance>();
+165   auto DC = std::make_unique<TestDiagnosticConsumer>();
+166   const bool ShouldOwnClient = true;
+167   Ins->createDiagnostics(DC\&.release(), ShouldOwnClient);
+168 
+169   auto Inv = std::make_unique<CompilerInvocation>();
+170 
+171   std::vector<const char *> ClangArgv(ClangArgs\&.size());
+172   std::transform(ClangArgs\&.begin(), ClangArgs\&.end(), ClangArgv\&.begin(),
+173                  [](const std::string &s) -> const char * { return s\&.data(); });
+174   CompilerInvocation::CreateFromArgs(*Inv, ClangArgv, Ins->getDiagnostics());
+175 
+176   {
+177     using namespace driver::types;
+178     ID Id = lookupTypeForTypeSpecifier(Input\&.c_str());
+179     assert(Id != TY_INVALID);
+180     if (isCXX(Id)) {
+181       Inv->getLangOpts()->CPlusPlus = true;
+182       Inv->getLangOpts()->CPlusPlus11 = true;
+183       Inv->getHeaderSearchOpts()\&.UseLibcxx = true;
+184     }
+185     if (isObjC(Id)) {
+186       Inv->getLangOpts()->ObjC = 1;
+187     }
+188   }
+189   Inv->getLangOpts()->ObjCAutoRefCount = ObjCARC;
+190 
+191   Inv->getLangOpts()->Bool = true;
+192   Inv->getLangOpts()->WChar = true;
+193   Inv->getLangOpts()->Blocks = true;
+194   Inv->getLangOpts()->DebuggerSupport = true;
+195   Inv->getLangOpts()->SpellChecking = false;
+196   Inv->getLangOpts()->ThreadsafeStatics = false;
+197   Inv->getLangOpts()->AccessControl = false;
+198   Inv->getLangOpts()->DollarIdents = true;
+199   Inv->getLangOpts()->Exceptions = true;
+200   Inv->getLangOpts()->CXXExceptions = true;
+201   // Needed for testing dynamic_cast\&.
+202   Inv->getLangOpts()->RTTI = true;
+203   Inv->getCodeGenOpts()\&.setDebugInfo(codegenoptions::FullDebugInfo);
+204   Inv->getTargetOpts()\&.Triple = llvm::sys::getDefaultTargetTriple();
+205 
+206   Ins->setInvocation(std::move(Inv));
+207 
+208   TargetInfo *TI = TargetInfo::CreateTargetInfo(
+209       Ins->getDiagnostics(), Ins->getInvocation()\&.TargetOpts);
+210   Ins->setTarget(TI);
+211   Ins->getTarget()\&.adjust(Ins->getDiagnostics(), Ins->getLangOpts());
+212   Ins->createFileManager();
+213   Ins->createSourceManager(Ins->getFileManager());
+214   Ins->createPreprocessor(TU_Complete);
+215 
+216   return Ins;
+217 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

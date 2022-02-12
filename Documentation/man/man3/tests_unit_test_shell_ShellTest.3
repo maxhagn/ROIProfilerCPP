@@ -1,0 +1,87 @@
+.TH "tests.unit.test_shell.ShellTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_shell.ShellTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_encode_decode_are_same\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_decode_encode_are_same\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_encode\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 10 of file test_shell\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_shell\&.ShellTest\&.test_decode_encode_are_same ( self)"
+
+.PP
+Definition at line 20 of file test_shell\&.py\&.
+.PP
+.nf
+20     def test_decode_encode_are_same(self):
+21         def test(value):
+22             self\&.assertEqual(sut\&.decode(sut\&.encode(value)), value)
+23 
+24         test([])
+25         test(['clang'])
+26         test(['clang', 'this', 'and', 'that'])
+27         test(['clang', 'this and', 'that'])
+28         test(['clang', "it's me", 'again'])
+29         test(['clang', 'some "words" are', 'quoted'])
+30 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_shell\&.ShellTest\&.test_encode ( self)"
+
+.PP
+Definition at line 31 of file test_shell\&.py\&.
+.PP
+.nf
+31     def test_encode(self):
+32         self\&.assertEqual(sut\&.encode(['clang', "it's me", 'again']),
+33                          'clang "it\'s me" again')
+34         self\&.assertEqual(sut\&.encode(['clang', "it(s me", 'again)']),
+35                          'clang "it(s me" "again)"')
+36         self\&.assertEqual(sut\&.encode(['clang', 'redirect > it']),
+37                          'clang "redirect > it"')
+38         self\&.assertEqual(sut\&.encode(['clang', '-DKEY="VALUE"']),
+39                          'clang -DKEY=\\"VALUE\\"')
+40         self\&.assertEqual(sut\&.encode(['clang', '-DKEY="value with spaces"']),
+41                          'clang -DKEY=\\"value with spaces\\"')
+.fi
+.SS "def tests\&.unit\&.test_shell\&.ShellTest\&.test_encode_decode_are_same ( self)"
+
+.PP
+Definition at line 12 of file test_shell\&.py\&.
+.PP
+.nf
+12     def test_encode_decode_are_same(self):
+13         def test(value):
+14             self\&.assertEqual(sut\&.encode(sut\&.decode(value)), value)
+15 
+16         test("")
+17         test("clang")
+18         test("clang this and that")
+19 
+.fi
+.PP
+References test()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

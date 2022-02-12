@@ -1,0 +1,208 @@
+.TH "clang" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang \- -rename  
+
+.SH SYNOPSIS
+.br
+.PP
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBcomments\fP"
+.br
+.ti -1c
+.RI " \fBcxcomment\fP"
+.br
+.ti -1c
+.RI " \fBcxcursor\fP"
+.br
+.ti -1c
+.RI " \fBcxdiag\fP"
+.br
+.ti -1c
+.RI " \fBcxindex\fP"
+.br
+.ti -1c
+.RI " \fBcxloc\fP"
+.br
+.ti -1c
+.RI " \fBcxstring\fP"
+.br
+.ti -1c
+.RI " \fBcxtu\fP"
+.br
+.ti -1c
+.RI " \fBcxtype\fP"
+.br
+.ti -1c
+.RI " \fBformat\fP"
+.br
+.ti -1c
+.RI " \fBindex\fP"
+.br
+.ti -1c
+.RI " \fBrefactor\fP"
+.br
+.in -1c
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBCXDiagnosticSetImpl\fP"
+.br
+.ti -1c
+.RI "class \fBCXDiagnosticImpl\fP"
+.br
+.ti -1c
+.RI "struct \fBCXStoredDiagnostic\fP"
+.br
+.RI "The storage behind a CXDiagnostic\&. "
+.ti -1c
+.RI "class \fBCIndexer\fP"
+.br
+.ti -1c
+.RI "class \fBLibclangInvocationReporter\fP"
+.br
+.ti -1c
+.RI "class \fBCXLoadedDiagnostic\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBRunSafely\fP (llvm::CrashRecoveryContext &CRC, llvm::function_ref< void()> Fn, unsigned Size)"
+.br
+.ti -1c
+.RI "unsigned \fBGetSafetyThreadStackSize\fP ()"
+.br
+.RI "Return the current size to request for 'safety'\&. "
+.ti -1c
+.RI "void \fBSetSafetyThreadStackSize\fP (unsigned Value)"
+.br
+.ti -1c
+.RI "void \fBsetThreadBackgroundPriority\fP ()"
+.br
+.ti -1c
+.RI "void \fBPrintLibclangResourceUsage\fP (CXTranslationUnit TU)"
+.br
+.RI "Print libclang's resource usage to standard error\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+-rename 
+
+
+.PP
+.nf
+Minimal clang-rename integration with Vim.
+
+Before installing make sure one of the following is satisfied:
+
+* clang-rename is in your PATH
+* `g:clang_rename_path` in ~/.vimrc points to valid clang-rename executable
+* `binary` in clang-rename.py points to valid to clang-rename executable
+
+To install, simply put this into your ~/.vimrc for python2 support
+
+    noremap <leader>cr :pyf <path-to>/clang-rename.py<cr>
+
+For python3 use the following command (note the change from :pyf to :py3f)
+
+    noremap <leader>cr :py3f <path-to>/clang-rename.py<cr>
+
+IMPORTANT NOTE: Before running the tool, make sure you saved the file.
+
+All you have to do now is to place a cursor on a variable/function/class which
+you would like to rename and press '<leader>cr'. You will be prompted for a new
+name if the cursor points to a valid symbol.
+
+.fi
+.PP
+ 
+.SH "Function Documentation"
+.PP 
+.SS "unsigned clang::GetSafetyThreadStackSize ()"
+
+.PP
+Return the current size to request for 'safety'\&. 
+.PP
+Definition at line 8979 of file CIndex\&.cpp\&.
+.PP
+.nf
+8979 { return SafetyStackThreadSize; }
+.fi
+.PP
+Referenced by RunSafely()\&.
+.SS "void clang::PrintLibclangResourceUsage (CXTranslationUnit TU)"
+
+.PP
+Print libclang's resource usage to standard error\&. 
+.PP
+Definition at line 8915 of file CIndex\&.cpp\&.
+.PP
+.nf
+8915                                                            {
+8916   CXTUResourceUsage Usage = clang_getCXTUResourceUsage(TU);
+8917   for (unsigned I = 0; I != Usage\&.numEntries; ++I)
+8918     fprintf(stderr, "  %s: %lu\n",
+8919             clang_getTUResourceUsageName(Usage\&.entries[I]\&.kind),
+8920             Usage\&.entries[I]\&.amount);
+8921 
+8922   clang_disposeCXTUResourceUsage(Usage);
+8923 }
+.fi
+.PP
+References clang_disposeCXTUResourceUsage(), clang_getCXTUResourceUsage(), and clang_getTUResourceUsageName()\&.
+.SS "bool clang::RunSafely (llvm::CrashRecoveryContext & CRC, llvm::function_ref< void()> Fn, unsigned Size = \fC0\fP)"
+Execution the given code 'safely', using crash recovery or safety threads when possible\&.
+.PP
+\fBReturns\fP
+.RS 4
+False if a crash was detected\&. 
+.RE
+.PP
+
+.PP
+Definition at line 8970 of file CIndex\&.cpp\&.
+.PP
+.nf
+8971                               {
+8972   if (!Size)
+8973     Size = GetSafetyThreadStackSize();
+8974   if (Size && !getenv("LIBCLANG_NOTHREADS"))
+8975     return CRC\&.RunSafelyOnThread(Fn, Size);
+8976   return CRC\&.RunSafely(Fn);
+8977 }
+.fi
+.PP
+References GetSafetyThreadStackSize()\&.
+.SS "void clang::SetSafetyThreadStackSize (unsigned Value)"
+Set the current size to request for 'safety' (or 0, if safety threads should not be used)\&. 
+.PP
+Definition at line 8981 of file CIndex\&.cpp\&.
+.PP
+.nf
+8981 { SafetyStackThreadSize = Value; }
+.fi
+.SS "void clang::setThreadBackgroundPriority ()"
+Set the thread priority to background\&. FIXME: Move to llvm/Support\&. 
+.PP
+Definition at line 8985 of file CIndex\&.cpp\&.
+.PP
+.nf
+8985                                         {
+8986   if (getenv("LIBCLANG_BGPRIO_DISABLE"))
+8987     return;
+8988 
+8989 #if LLVM_ENABLE_THREADS
+8990   llvm::set_thread_priority(llvm::ThreadPriority::Background);
+8991 #endif
+8992 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

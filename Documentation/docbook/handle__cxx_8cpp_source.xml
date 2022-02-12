@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_handle__cxx_8cpp_source" xml:lang="en-US">
+<title>handle_cxx.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/handle-cxx/handle_cxx.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//==--&#32;handle_cxx.cpp&#32;-&#32;Helper&#32;function&#32;for&#32;Clang&#32;fuzzers&#32;------------------==//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;Implements&#32;HandleCXX&#32;for&#32;use&#32;by&#32;the&#32;Clang&#32;fuzzers.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="_handle__cxx_8h">handle_cxx.h</link>&quot;</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/CodeGen/CodeGenAction.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/PreprocessorOptions.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Tooling.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/Option/Option.h&quot;</emphasis>
+00020 
+00021 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00022 
+<anchor xml:id="_handle__cxx_8cpp_source_1l00023"/><link linkend="_namespaceclang__fuzzer_1a27dbd4f50876f9f3532cb6145a78da33">00023</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1a27dbd4f50876f9f3532cb6145a78da33">clang_fuzzer::HandleCXX</link>(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;S,
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*FileName,
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;&amp;ExtraArgs)&#32;{
+00026 &#32;&#32;llvm::opt::ArgStringList&#32;CC1Args;
+00027 &#32;&#32;CC1Args.push_back(<emphasis role="stringliteral">&quot;-cc1&quot;</emphasis>);
+00028 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;A&#32;:&#32;ExtraArgs)
+00029 &#32;&#32;&#32;&#32;CC1Args.push_back(A);
+00030 &#32;&#32;CC1Args.push_back(FileName);
+00031 
+00032 &#32;&#32;llvm::IntrusiveRefCntPtr&lt;FileManager&gt;&#32;Files(
+00033 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;FileManager(FileSystemOptions()));
+00034 &#32;&#32;IgnoringDiagConsumer&#32;Diags;
+00035 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions();
+00036 &#32;&#32;DiagnosticsEngine&#32;Diagnostics(
+00037 &#32;&#32;&#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;clang::DiagnosticIDs&gt;(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs()),&#32;&amp;*DiagOpts,
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&amp;Diags,&#32;<emphasis role="keyword">false</emphasis>);
+00039 &#32;&#32;std::unique_ptr&lt;clang::CompilerInvocation&gt;&#32;Invocation(
+00040 &#32;&#32;&#32;&#32;&#32;&#32;tooling::newInvocation(&amp;Diagnostics,&#32;CC1Args,&#32;<emphasis role="comment">/*BinaryName=*/</emphasis><emphasis role="keyword">nullptr</emphasis>));
+00041 &#32;&#32;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&#32;Input&#32;=
+00042 &#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getMemBuffer(S);
+00043 &#32;&#32;Invocation-&gt;getPreprocessorOpts().addRemappedFile(FileName,
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Input.release());
+00045 &#32;&#32;std::unique_ptr&lt;tooling::ToolAction&gt;&#32;action(
+00046 &#32;&#32;&#32;&#32;&#32;&#32;tooling::newFrontendActionFactory&lt;clang::EmitObjAction&gt;());
+00047 &#32;&#32;std::shared_ptr&lt;PCHContainerOperations&gt;&#32;PCHContainerOps&#32;=
+00048 &#32;&#32;&#32;&#32;&#32;&#32;std::make_shared&lt;PCHContainerOperations&gt;();
+00049 &#32;&#32;action-&gt;runInvocation(std::move(Invocation),&#32;Files.get(),&#32;PCHContainerOps,
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;Diags);
+00051 }
+00052 
+</programlisting></section>

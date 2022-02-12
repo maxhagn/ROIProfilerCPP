@@ -1,0 +1,76 @@
+.TH "clang::cxdiag" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxdiag
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP * \fBlazyCreateDiags\fP (CXTranslationUnit TU, bool checkIfChanged=false)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "\fBCXDiagnosticSetImpl\fP * clang::cxdiag::lazyCreateDiags (CXTranslationUnit TU, bool checkIfChanged = \fCfalse\fP)"
+
+.PP
+Definition at line 149 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+150                                                                   {
+151   ASTUnit *AU = cxtu::getASTUnit(TU);
+152 
+153   if (TU->Diagnostics && checkIfChanged) {
+154     // In normal use, ASTUnit's diagnostics should not change unless we reparse\&.
+155     // Currently they can only change by using the internal testing flag
+156     // '-error-on-deserialized-decl' which will error during deserialization of
+157     // a declaration\&. What will happen is:
+158     //
+159     //  -c-index-test gets a CXTranslationUnit
+160     //  -checks the diagnostics, the diagnostics set is lazily created,
+161     //     no errors are reported
+162     //  -later does an operation, like annotation of tokens, that triggers
+163     //     -error-on-deserialized-decl, that will emit a diagnostic error,
+164     //     that ASTUnit will catch and add to its stored diagnostics vector\&.
+165     //  -c-index-test wants to check whether an error occurred after performing
+166     //     the operation but can only query the lazily created set\&.
+167     //
+168     // We check here if a new diagnostic was appended since the last time the
+169     // diagnostic set was created, in which case we reset it\&.
+170 
+171     CXDiagnosticSetImpl *
+172       Set = static_cast<CXDiagnosticSetImpl*>(TU->Diagnostics);
+173     if (AU->stored_diag_size() != Set->getNumDiagnostics()) {
+174       // Diagnostics in the ASTUnit were updated, reset the associated
+175       // diagnostics\&.
+176       delete Set;
+177       TU->Diagnostics = nullptr;
+178     }
+179   }
+180 
+181   if (!TU->Diagnostics) {
+182     CXDiagnosticSetImpl *Set = new CXDiagnosticSetImpl();
+183     TU->Diagnostics = Set;
+184     IntrusiveRefCntPtr<DiagnosticOptions> DOpts = new DiagnosticOptions;
+185     CXDiagnosticRenderer Renderer(AU->getASTContext()\&.getLangOpts(),
+186                                   &*DOpts, Set);
+187     
+188     for (ASTUnit::stored_diag_iterator it = AU->stored_diag_begin(),
+189          ei = AU->stored_diag_end(); it != ei; ++it) {
+190       Renderer\&.emitStoredDiagnostic(*it);
+191     }
+192   }
+193   return static_cast<CXDiagnosticSetImpl*>(TU->Diagnostics);
+194 }
+.fi
+.PP
+References clang::CXDiagnosticSetImpl::getNumDiagnostics()\&.
+.PP
+Referenced by clang_getDiagnosticSetFromTU(), clang_getNumDiagnostics(), and clang::cxindex::CXIndexDataConsumer::indexDiagnostics()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

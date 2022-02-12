@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_c_x_x_8cpp_source" xml:lang="en-US">
+<title>CIndexCXX.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCXX.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CIndexCXX.cpp&#32;-&#32;Clang-C&#32;Source&#32;Indexing&#32;Library&#32;--------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;the&#32;libclang&#32;support&#32;for&#32;C++&#32;cursors.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_indexer_8h">CIndexer.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_type_8h">CXType.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclCXX.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclTemplate.h&quot;</emphasis>
+00018 
+00019 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00020 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1cxcursor">clang::cxcursor</link>;
+00021 
+<anchor xml:id="__c_index_c_x_x_8cpp_source_1l00022"/><link linkend="__c_index_c_x_x_8cpp_1aaf7993362c5af9475b57fa2e577c2112">00022</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_index_c_x_x_8cpp_1abdcc0d170ceac8f26fb6974b08471ae2">clang_isVirtualBase</link>(CXCursor&#32;C)&#32;{
+00023 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(C.kind&#32;!=&#32;CXCursor_CXXBaseSpecifier)
+00024 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00025 &#32;&#32;
+00026 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;*B&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a05b387c1d9aeb75b3de539f8622e0964">getCursorCXXBaseSpecifier</link>(C);
+00027 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;B-&gt;isVirtual();
+00028 }
+00029 
+00030 <emphasis role="keyword">enum</emphasis>&#32;CX_CXXAccessSpecifier&#32;<link linkend="__c_index_c_x_x_8cpp_1aaf7993362c5af9475b57fa2e577c2112">clang_getCXXAccessSpecifier</link>(CXCursor&#32;C)&#32;{
+00031 &#32;&#32;AccessSpecifier&#32;spec&#32;=&#32;AS_none;
+00032 
+00033 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(C.kind&#32;==&#32;CXCursor_CXXAccessSpecifier&#32;||&#32;<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+00034 &#32;&#32;&#32;&#32;spec&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C)-&gt;getAccess();
+00035 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(C.kind&#32;==&#32;CXCursor_CXXBaseSpecifier)
+00036 &#32;&#32;&#32;&#32;spec&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a05b387c1d9aeb75b3de539f8622e0964">getCursorCXXBaseSpecifier</link>(C)-&gt;getAccessSpecifier();
+00037 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00038 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CX_CXXInvalidAccessSpecifier;
+00039 &#32;&#32;
+00040 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(spec)&#32;{
+00041 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;AS_public:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CX_CXXPublic;
+00042 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;AS_protected:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CX_CXXProtected;
+00043 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;AS_private:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CX_CXXPrivate;
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;AS_none:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CX_CXXInvalidAccessSpecifier;
+00045 &#32;&#32;}
+00046 
+00047 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;AccessSpecifier!&quot;</emphasis>);
+00048 }
+00049 
+00050 <emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;<link linkend="__c_index_c_x_x_8cpp_1a0cd4d29291d3ab2471553122ed855599">clang_getTemplateCursorKind</link>(CXCursor&#32;C)&#32;{
+00051 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1cxcursor">clang::cxcursor</link>;
+00052 &#32;&#32;
+00053 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C.kind)&#32;{
+00054 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_ClassTemplate:&#32;
+00055 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_FunctionTemplate:
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TemplateDecl&#32;*Template
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;dyn_cast_or_null&lt;TemplateDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C)))
+00058 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(Template-&gt;getTemplatedDecl(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C)).kind;
+00059 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00060 &#32;&#32;&#32;&#32;&#32;&#32;
+00061 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_ClassTemplatePartialSpecialization:
+00062 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateSpecializationDecl&#32;*PartialSpec
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;dyn_cast_or_null&lt;ClassTemplatePartialSpecializationDecl&gt;(
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C)))&#32;{
+00065 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(PartialSpec-&gt;getTagKind())&#32;{
+00066 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TTK_Interface:
+00067 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TTK_Struct:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_StructDecl;
+00068 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TTK_Class:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ClassDecl;
+00069 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TTK_Union:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_UnionDecl;
+00070 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TTK_Enum:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NoDeclFound;
+00071 &#32;&#32;&#32;&#32;&#32;&#32;}
+00072 &#32;&#32;&#32;&#32;}
+00073 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00074 &#32;&#32;&#32;&#32;&#32;&#32;
+00075 &#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00076 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00077 &#32;&#32;}
+00078 &#32;&#32;
+00079 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NoDeclFound;
+00080 }
+00081 
+<anchor xml:id="__c_index_c_x_x_8cpp_source_1l00082"/><link linkend="__c_index_c_x_x_8cpp_1a53aeb792021508f8ef3810927064b136">00082</link> CXCursor&#32;<link linkend="__c_index_c_x_x_8cpp_1a53aeb792021508f8ef3810927064b136">clang_getSpecializedCursorTemplate</link>(CXCursor&#32;C)&#32;{
+00083 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00085 &#32;&#32;&#32;&#32;
+00086 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C);
+00087 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00088 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00089 
+00090 &#32;&#32;Decl&#32;*Template&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00091 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*CXXRecord&#32;=&#32;dyn_cast&lt;CXXRecordDecl&gt;(D))&#32;{
+00092 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ClassTemplatePartialSpecializationDecl&#32;*PartialSpec
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;dyn_cast&lt;ClassTemplatePartialSpecializationDecl&gt;(CXXRecord))
+00094 &#32;&#32;&#32;&#32;&#32;&#32;Template&#32;=&#32;PartialSpec-&gt;getSpecializedTemplate();
+00095 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateSpecializationDecl&#32;*ClassSpec&#32;
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;dyn_cast&lt;ClassTemplateSpecializationDecl&gt;(CXXRecord))&#32;{
+00097 &#32;&#32;&#32;&#32;&#32;&#32;llvm::PointerUnion&lt;ClassTemplateDecl&#32;*,
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ClassTemplatePartialSpecializationDecl&#32;*&gt;&#32;Result
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;ClassSpec-&gt;getSpecializedTemplateOrPartial();
+00100 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Result.is&lt;ClassTemplateDecl&#32;*&gt;())
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Template&#32;=&#32;Result.get&lt;ClassTemplateDecl&#32;*&gt;();
+00102 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Template&#32;=&#32;Result.get&lt;ClassTemplatePartialSpecializationDecl&#32;*&gt;();
+00104 &#32;&#32;&#32;&#32;&#32;&#32;
+00105 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;
+00106 &#32;&#32;&#32;&#32;&#32;&#32;Template&#32;=&#32;CXXRecord-&gt;getInstantiatedFromMemberClass();
+00107 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*Function&#32;=&#32;dyn_cast&lt;FunctionDecl&gt;(D))&#32;{
+00108 &#32;&#32;&#32;&#32;Template&#32;=&#32;Function-&gt;getPrimaryTemplate();
+00109 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Template)
+00110 &#32;&#32;&#32;&#32;&#32;&#32;Template&#32;=&#32;Function-&gt;getInstantiatedFromMemberFunction();
+00111 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*Var&#32;=&#32;dyn_cast&lt;VarDecl&gt;(D))&#32;{
+00112 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Var-&gt;isStaticDataMember())
+00113 &#32;&#32;&#32;&#32;&#32;&#32;Template&#32;=&#32;Var-&gt;getInstantiatedFromStaticDataMember();
+00114 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;RedeclarableTemplateDecl&#32;*Tmpl
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;dyn_cast&lt;RedeclarableTemplateDecl&gt;(D))
+00116 &#32;&#32;&#32;&#32;Template&#32;=&#32;Tmpl-&gt;getInstantiatedFromMemberTemplate();
+00117 &#32;&#32;
+00118 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Template)
+00119 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00120 &#32;&#32;
+00121 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(Template,&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+00122 }
+</programlisting></section>

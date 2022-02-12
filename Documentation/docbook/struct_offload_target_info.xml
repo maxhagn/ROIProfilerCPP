@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_struct_offload_target_info" xml:lang="en-US">
+<title>OffloadTargetInfo Struct Reference</title>
+<indexterm><primary>OffloadTargetInfo</primary></indexterm>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para><link linkend="_struct_offload_target_info_1a201b4e994213afcdd776867b7b6d1eae">OffloadTargetInfo</link> (const StringRef Target)</para>
+</listitem>
+            <listitem><para>bool <link linkend="_struct_offload_target_info_1a2eb3794ca870118bef52b97bd65a6ad0">hasHostKind</link> () const</para>
+</listitem>
+            <listitem><para>bool <link linkend="_struct_offload_target_info_1ab482a9cf689cd876afbe7c5bc1befca3">isOffloadKindValid</link> () const</para>
+</listitem>
+            <listitem><para>bool <link linkend="_struct_offload_target_info_1a659a3f9dcf7c8df811d60209d4387a23">isTripleValid</link> () const</para>
+</listitem>
+            <listitem><para>bool <link linkend="_struct_offload_target_info_1a55d64188846e6f5cf8d94ddc7a086177">operator==</link> (const <link linkend="_struct_offload_target_info">OffloadTargetInfo</link> &amp;Target) const</para>
+</listitem>
+            <listitem><para>std::string <link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link> ()</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Public Attributes    </title>
+        <itemizedlist>
+            <listitem><para>StringRef <link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link></para>
+</listitem>
+            <listitem><para>llvm::Triple <link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link></para>
+</listitem>
+            <listitem><para>StringRef <link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+
+<para>Obtain the offload kind, real machine triple, and an optional GPUArch out of the target information specified by the user. Bundle Entry ID (or, Offload Target String) has following components:<itemizedlist>
+<listitem>
+<para>Offload Kind - Host, OpenMP, or HIP</para>
+</listitem><listitem>
+<para>Triple - Standard <link linkend="_namespace_l_l_v_m">LLVM</link> Triple</para>
+</listitem><listitem>
+<para>GPUArch (Optional) - Processor name, like gfx906 or sm_30 In presence of Proc, the Triple should contain separator &quot;-&quot; for all standard four components, even if they are empty. </para>
+</listitem></itemizedlist>
+</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00139">139</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+</section>
+<section>
+<title>Constructor &amp; Destructor Documentation</title>
+<anchor xml:id="_struct_offload_target_info_1a201b4e994213afcdd776867b7b6d1eae"/>    <section>
+    <title>OffloadTargetInfo()</title>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<para><computeroutput>OffloadTargetInfo::OffloadTargetInfo (const StringRef Target)<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00144">144</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00145 &#32;&#32;&#32;&#32;SmallVector&lt;StringRef,&#32;6&gt;&#32;Components;
+00146 &#32;&#32;&#32;&#32;Target.split(Components,&#32;<emphasis role="charliteral">&apos;-&apos;</emphasis>,&#32;5);
+00147 &#32;&#32;&#32;&#32;Components.resize(6);
+00148 &#32;&#32;&#32;&#32;this-&gt;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;=&#32;Components[0];
+00149 &#32;&#32;&#32;&#32;this-&gt;<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>&#32;=&#32;llvm::Triple(Components[1],&#32;Components[2],&#32;Components[3],
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Components[4]);
+00151 &#32;&#32;&#32;&#32;this-&gt;<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>&#32;=&#32;Components[5];
+00152 &#32;&#32;}
+</programlisting></section>
+</section>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_struct_offload_target_info_1a2eb3794ca870118bef52b97bd65a6ad0"/>    <section>
+    <title>hasHostKind()</title>
+<indexterm><primary>hasHostKind</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>hasHostKind</secondary></indexterm>
+<para><computeroutput>bool OffloadTargetInfo::hasHostKind ( ) const<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00154">154</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00154 {&#32;<emphasis role="keywordflow">return</emphasis>&#32;this-&gt;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;==&#32;<emphasis role="stringliteral">&quot;host&quot;</emphasis>;&#32;}
+</programlisting>    </section><anchor xml:id="_struct_offload_target_info_1ab482a9cf689cd876afbe7c5bc1befca3"/>    <section>
+    <title>isOffloadKindValid()</title>
+<indexterm><primary>isOffloadKindValid</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>isOffloadKindValid</secondary></indexterm>
+<para><computeroutput>bool OffloadTargetInfo::isOffloadKindValid ( ) const<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00156">156</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00157 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;==&#32;<emphasis role="stringliteral">&quot;host&quot;</emphasis>&#32;||&#32;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;==&#32;<emphasis role="stringliteral">&quot;openmp&quot;</emphasis>&#32;||
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;==&#32;<emphasis role="stringliteral">&quot;hip&quot;</emphasis>&#32;||&#32;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;==&#32;<emphasis role="stringliteral">&quot;hipv4&quot;</emphasis>;
+00159 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_struct_offload_target_info_1a659a3f9dcf7c8df811d60209d4387a23"/>    <section>
+    <title>isTripleValid()</title>
+<indexterm><primary>isTripleValid</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>isTripleValid</secondary></indexterm>
+<para><computeroutput>bool OffloadTargetInfo::isTripleValid ( ) const<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00161">161</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00162 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>.str().empty()&#32;&amp;&amp;&#32;<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>.getArch()&#32;!=&#32;Triple::UnknownArch;
+00163 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_struct_offload_target_info_1a55d64188846e6f5cf8d94ddc7a086177"/>    <section>
+    <title>operator==()</title>
+<indexterm><primary>operator==</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>operator==</secondary></indexterm>
+<para><computeroutput>bool OffloadTargetInfo::operator== (const <link linkend="_struct_offload_target_info">OffloadTargetInfo</link> &amp; Target) const<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00165">165</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00166 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;==&#32;Target.<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;&amp;&amp;
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>.isCompatibleWith(Target.<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>)&#32;&amp;&amp;&#32;<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>&#32;==&#32;Target.<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>;
+00168 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4"/>    <section>
+    <title>str()</title>
+<indexterm><primary>str</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>str</secondary></indexterm>
+<para><computeroutput>std::string OffloadTargetInfo::str ( )<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00170">170</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00171 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Twine(<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;+&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>&#32;+&#32;<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>.str()&#32;+&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>&#32;+&#32;<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>).str();
+00172 &#32;&#32;}
+</programlisting><para>
+Referenced by <link linkend="__clang_offload_bundler_8cpp_source_1l01061">isCodeObjectCompatible()</link>.</para>
+</section>
+</section>
+<section>
+<title>Member Data Documentation</title>
+<anchor xml:id="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739"/>    <section>
+    <title>GPUArch</title>
+<indexterm><primary>GPUArch</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>GPUArch</secondary></indexterm>
+<para><computeroutput>StringRef OffloadTargetInfo::GPUArch</computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00142">142</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<para>
+Referenced by <link linkend="__clang_offload_bundler_8cpp_source_1l01061">isCodeObjectCompatible()</link>.</para>
+    </section><anchor xml:id="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b"/>    <section>
+    <title>OffloadKind</title>
+<indexterm><primary>OffloadKind</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>OffloadKind</secondary></indexterm>
+<para><computeroutput>StringRef OffloadTargetInfo::OffloadKind</computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00140">140</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<para>
+Referenced by <link linkend="__clang_offload_bundler_8cpp_source_1l01061">isCodeObjectCompatible()</link>.</para>
+    </section><anchor xml:id="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4"/>    <section>
+    <title>Triple</title>
+<indexterm><primary>Triple</primary><secondary>OffloadTargetInfo</secondary></indexterm>
+<indexterm><primary>OffloadTargetInfo</primary><secondary>Triple</secondary></indexterm>
+<para><computeroutput>llvm::Triple OffloadTargetInfo::Triple</computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00141">141</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<para>
+Referenced by <link linkend="__clang_offload_bundler_8cpp_source_1l01061">isCodeObjectCompatible()</link>.</para>
+</section>
+<para>
+The documentation for this struct was generated from the following file:</para>
+/Users/maximilian/clang-llvm/clang/tools/clang-offload-bundler/<link linkend="__clang_offload_bundler_8cpp">ClangOffloadBundler.cpp</link></section>
+</section>

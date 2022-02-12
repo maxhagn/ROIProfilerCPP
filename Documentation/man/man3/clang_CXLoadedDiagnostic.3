@@ -1,0 +1,510 @@
+.TH "clang::CXLoadedDiagnostic" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::CXLoadedDiagnostic
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXLoadedDiagnostic\&.h>\fP
+.PP
+Inherits \fBclang::CXDiagnosticImpl\fP\&.
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBLocation\fP"
+.br
+.in -1c
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBKind\fP { \fBStoredDiagnosticKind\fP, \fBLoadedDiagnosticKind\fP, \fBCustomNoteDiagnosticKind\fP }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCXLoadedDiagnostic\fP ()"
+.br
+.ti -1c
+.RI "\fB~CXLoadedDiagnostic\fP () override"
+.br
+.ti -1c
+.RI "CXDiagnosticSeverity \fBgetSeverity\fP () const override"
+.br
+.RI "Return the severity of the diagnostic\&. "
+.ti -1c
+.RI "CXSourceLocation \fBgetLocation\fP () const override"
+.br
+.RI "Return the location of the diagnostic\&. "
+.ti -1c
+.RI "CXString \fBgetSpelling\fP () const override"
+.br
+.RI "Return the spelling of the diagnostic\&. "
+.ti -1c
+.RI "CXString \fBgetDiagnosticOption\fP (CXString *Disable) const override"
+.br
+.RI "Return the text for the diagnostic option\&. "
+.ti -1c
+.RI "unsigned \fBgetCategory\fP () const override"
+.br
+.RI "Return the category of the diagnostic\&. "
+.ti -1c
+.RI "CXString \fBgetCategoryText\fP () const override"
+.br
+.RI "Return the category string of the diagnostic\&. "
+.ti -1c
+.RI "unsigned \fBgetNumRanges\fP () const override"
+.br
+.RI "Return the number of source ranges for the diagnostic\&. "
+.ti -1c
+.RI "CXSourceRange \fBgetRange\fP (unsigned Range) const override"
+.br
+.RI "Return the source ranges for the diagnostic\&. "
+.ti -1c
+.RI "unsigned \fBgetNumFixIts\fP () const override"
+.br
+.RI "Return the number of FixIts\&. "
+.ti -1c
+.RI "CXString \fBgetFixIt\fP (unsigned FixIt, CXSourceRange *ReplacementRange) const override"
+.br
+.RI "Return the FixIt information (source range and inserted text)\&. "
+.ti -1c
+.RI "\fBKind\fP \fBgetKind\fP () const"
+.br
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP & \fBgetChildDiagnostics\fP ()"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static bool \fBclassof\fP (const \fBCXDiagnosticImpl\fP *D)"
+.br
+.ti -1c
+.RI "static void \fBdecodeLocation\fP (CXSourceLocation location, CXFile *file, unsigned *line, unsigned *column, unsigned *offset)"
+.br
+.RI "Decode the CXSourceLocation into file, line, column, and offset\&. "
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBLocation\fP \fBDiagLoc\fP"
+.br
+.ti -1c
+.RI "std::vector< CXSourceRange > \fBRanges\fP"
+.br
+.ti -1c
+.RI "std::vector< std::pair< CXSourceRange, const char * > > \fBFixIts\fP"
+.br
+.ti -1c
+.RI "const char * \fBSpelling\fP"
+.br
+.ti -1c
+.RI "llvm::StringRef \fBDiagOption\fP"
+.br
+.ti -1c
+.RI "llvm::StringRef \fBCategoryText\fP"
+.br
+.ti -1c
+.RI "unsigned \fBseverity\fP"
+.br
+.ti -1c
+.RI "unsigned \fBcategory\fP"
+.br
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBappend\fP (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)"
+.br
+.in -1c
+.SS "Protected Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP \fBChildDiags\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 23 of file CXLoadedDiagnostic\&.h\&.
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBclang::CXDiagnosticImpl::Kind\fP\fC [inherited]\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIStoredDiagnosticKind \fP\fP
+.TP
+\fB\fILoadedDiagnosticKind \fP\fP
+.TP
+\fB\fICustomNoteDiagnosticKind \fP\fP
+.PP
+Definition at line 56 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+56             { StoredDiagnosticKind, LoadedDiagnosticKind,
+57               CustomNoteDiagnosticKind };
+.fi
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::CXLoadedDiagnostic::CXLoadedDiagnostic ()\fC [inline]\fP"
+
+.PP
+Definition at line 25 of file CXLoadedDiagnostic\&.h\&.
+.PP
+.nf
+25                        : CXDiagnosticImpl(LoadedDiagnosticKind),
+26     severity(0), category(0) {}
+.fi
+.SS "CXLoadedDiagnostic::~CXLoadedDiagnostic ()\fC [override]\fP"
+
+.PP
+Definition at line 63 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+63 {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "void clang::CXDiagnosticImpl::append (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)\fC [inline]\fP, \fC [protected]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 102 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+102                                                  {
+103     ChildDiags\&.appendDiagnostic(std::move(D));
+104   }
+.fi
+.PP
+References clang::CXDiagnosticSetImpl::appendDiagnostic(), and clang::CXDiagnosticImpl::ChildDiags\&.
+.SS "static bool clang::CXLoadedDiagnostic::classof (const \fBCXDiagnosticImpl\fP * D)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 61 of file CXLoadedDiagnostic\&.h\&.
+.PP
+.nf
+61                                                  {
+62     return D->getKind() == LoadedDiagnosticKind;
+63   }
+.fi
+.PP
+References clang::CXDiagnosticImpl::getKind(), and clang::CXDiagnosticImpl::LoadedDiagnosticKind\&.
+.SS "void CXLoadedDiagnostic::decodeLocation (CXSourceLocation location, CXFile * file, unsigned * line, unsigned * column, unsigned * offset)\fC [static]\fP"
+
+.PP
+Decode the CXSourceLocation into file, line, column, and offset\&. 
+.PP
+Definition at line 148 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+152                                                               {
+153   
+154   
+155   // CXSourceLocation consists of the following fields:
+156   //
+157   //   void *ptr_data[2];
+158   //   unsigned int_data;
+159   //
+160   // The lowest bit of ptr_data[0] is always set to 1 to indicate this
+161   // is a persistent diagnostic\&.
+162   //
+163   // For now, do the unoptimized approach and store the data in a side
+164   // data structure\&.  We can optimize this case later\&.
+165   
+166   uintptr_t V = (uintptr_t) location\&.ptr_data[0];
+167   assert((V & 0x1) == 1);
+168   V &= ~(uintptr_t)1;
+169   
+170   const Location &Loc = *((Location*)V);
+171   
+172   if (file)
+173     *file = Loc\&.file;  
+174   if (line)
+175     *line = Loc\&.line;
+176   if (column)
+177     *column = Loc\&.column;
+178   if (offset)
+179     *offset = Loc\&.offset;
+180 }
+.fi
+.PP
+References clang::CXLoadedDiagnostic::Location::column, clang::CXLoadedDiagnostic::Location::file, clang::CXLoadedDiagnostic::Location::line, and clang::CXLoadedDiagnostic::Location::offset\&.
+.SS "unsigned CXLoadedDiagnostic::getCategory () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the category of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 119 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+119                                                {
+120   return category;
+121 }
+.fi
+.PP
+References category\&.
+.SS "CXString CXLoadedDiagnostic::getCategoryText () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the category string of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 123 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+123                                                    {
+124   return cxstring::createDup(CategoryText);
+125 }
+.fi
+.PP
+References CategoryText, and clang::cxstring::createDup()\&.
+.SS "\fBCXDiagnosticSetImpl\fP& clang::CXDiagnosticImpl::getChildDiagnostics ()\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 94 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+94                                              {
+95     return ChildDiags;
+96   }
+.fi
+.PP
+References clang::CXDiagnosticImpl::ChildDiags\&.
+.SS "CXString CXLoadedDiagnostic::getDiagnosticOption (CXString * Disable) const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the text for the diagnostic option\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 109 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+109                                                                         {
+110   if (DiagOption\&.empty())
+111     return cxstring::createEmpty();
+112 
+113   // FIXME: possibly refactor with logic in CXStoredDiagnostic\&.
+114   if (Disable)
+115     *Disable = cxstring::createDup((Twine("-Wno-") + DiagOption)\&.str());
+116   return cxstring::createDup((Twine("-W") + DiagOption)\&.str());
+117 }
+.fi
+.PP
+References clang::cxstring::createDup(), clang::cxstring::createEmpty(), and DiagOption\&.
+.SS "CXString CXLoadedDiagnostic::getFixIt (unsigned FixIt, CXSourceRange * ReplacementRange) const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the FixIt information (source range and inserted text)\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 140 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+141                                                                              {
+142   assert(FixIt < FixIts\&.size());
+143   if (ReplacementRange)
+144     *ReplacementRange = FixIts[FixIt]\&.first;
+145   return cxstring::createRef(FixIts[FixIt]\&.second);
+146 }
+.fi
+.PP
+References clang::cxstring::createRef(), and FixIts\&.
+.SS "\fBKind\fP clang::CXDiagnosticImpl::getKind () const\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 92 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+92 { return K; }
+.fi
+.PP
+Referenced by clang::CXStoredDiagnostic::classof(), and classof()\&.
+.SS "CXSourceLocation CXLoadedDiagnostic::getLocation () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the location of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 99 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+99                                                        {
+100   // The lowest bit of ptr_data[0] is always set to 1 to indicate this
+101   // is a persistent diagnostic\&.
+102   return makeLocation(&DiagLoc);
+103 }
+.fi
+.SS "unsigned CXLoadedDiagnostic::getNumFixIts () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the number of FixIts\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 136 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+136                                                 {
+137   return FixIts\&.size();
+138 }
+.fi
+.PP
+References FixIts\&.
+.SS "unsigned CXLoadedDiagnostic::getNumRanges () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the number of source ranges for the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 127 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+127                                                 {
+128   return Ranges\&.size();
+129 }
+.fi
+.PP
+References Ranges\&.
+.SS "CXSourceRange CXLoadedDiagnostic::getRange (unsigned Range) const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the source ranges for the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 131 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+131                                                                {
+132   assert(Range < Ranges\&.size());
+133   return Ranges[Range];
+134 }
+.fi
+.PP
+References Ranges\&.
+.SS "CXDiagnosticSeverity CXLoadedDiagnostic::getSeverity () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the severity of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 69 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+69                                                            {
+70   // FIXME: Fail more softly if the diagnostic level is unknown?
+71   auto severityAsLevel = static_cast<serialized_diags::Level>(severity);
+72   assert(severity == static_cast<unsigned>(severityAsLevel) &&
+73          "unknown serialized diagnostic level");
+74 
+75   switch (severityAsLevel) {
+76 #define CASE(X) case serialized_diags::X: return CXDiagnostic_##X;
+77   CASE(Ignored)
+78   CASE(Note)
+79   CASE(Warning)
+80   CASE(Error)
+81   CASE(Fatal)
+82 #undef CASE
+83   // The 'Remark' level isn't represented in the stable API\&.
+84   case serialized_diags::Remark: return CXDiagnostic_Warning;
+85   }
+86   
+87   llvm_unreachable("Invalid diagnostic level");
+88 }
+.fi
+.PP
+References CASE, and severity\&.
+.SS "CXString CXLoadedDiagnostic::getSpelling () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the spelling of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 105 of file CXLoadedDiagnostic\&.cpp\&.
+.PP
+.nf
+105                                                {
+106   return cxstring::createRef(Spelling);
+107 }
+.fi
+.PP
+References clang::cxstring::createRef(), and Spelling\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "unsigned clang::CXLoadedDiagnostic::category"
+
+.PP
+Definition at line 89 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getCategory()\&.
+.SS "llvm::StringRef clang::CXLoadedDiagnostic::CategoryText"
+
+.PP
+Definition at line 87 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getCategoryText()\&.
+.SS "\fBCXDiagnosticSetImpl\fP clang::CXDiagnosticImpl::ChildDiags\fC [protected]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 100 of file CIndexDiagnostic\&.h\&.
+.PP
+Referenced by clang::CXDiagnosticImpl::append(), and clang::CXDiagnosticImpl::getChildDiagnostics()\&.
+.SS "\fBLocation\fP clang::CXLoadedDiagnostic::DiagLoc"
+
+.PP
+Definition at line 81 of file CXLoadedDiagnostic\&.h\&.
+.SS "llvm::StringRef clang::CXLoadedDiagnostic::DiagOption"
+
+.PP
+Definition at line 86 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getDiagnosticOption()\&.
+.SS "std::vector<std::pair<CXSourceRange, const char *> > clang::CXLoadedDiagnostic::FixIts"
+
+.PP
+Definition at line 84 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getFixIt(), and getNumFixIts()\&.
+.SS "std::vector<CXSourceRange> clang::CXLoadedDiagnostic::Ranges"
+
+.PP
+Definition at line 83 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getNumRanges(), and getRange()\&.
+.SS "unsigned clang::CXLoadedDiagnostic::severity"
+
+.PP
+Definition at line 88 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getSeverity()\&.
+.SS "const char* clang::CXLoadedDiagnostic::Spelling"
+
+.PP
+Definition at line 85 of file CXLoadedDiagnostic\&.h\&.
+.PP
+Referenced by getSpelling()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

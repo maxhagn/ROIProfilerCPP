@@ -1,0 +1,109 @@
+\hypertarget{_clang_repl_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/repl/\+Clang\+Repl.cpp File Reference}
+\label{_clang_repl_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/repl/ClangRepl.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/repl/ClangRepl.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Diagnostic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Frontend\+Diagnostic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Interpreter/\+Interpreter.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Execution\+Engine/\+Orc/\+LLJIT.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Line\+Editor/\+Line\+Editor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Managed\+Static.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Target\+Select.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_repl_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+llvm\+::\+Exit\+On\+Error \mbox{\hyperlink{_clang_repl_8cpp_aa40b8256f877190e9a1f1223ce18ad16}{Exit\+On\+Err}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_repl_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_repl_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangRepl.cpp@{ClangRepl.cpp}!main@{main}}
+\index{main@{main}!ClangRepl.cpp@{ClangRepl.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 50 of file Clang\+Repl.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{50                                       \{}
+\DoxyCodeLine{51   \mbox{\hyperlink{_clang_repl_8cpp_aa40b8256f877190e9a1f1223ce18ad16}{ExitOnErr}}.setBanner(\textcolor{stringliteral}{"{}clang-\/repl: "{}});}
+\DoxyCodeLine{52   llvm::cl::ParseCommandLineOptions(argc, argv);}
+\DoxyCodeLine{53 }
+\DoxyCodeLine{54   std::vector<const char *> ClangArgv(ClangArgs.size());}
+\DoxyCodeLine{55   std::transform(ClangArgs.begin(), ClangArgs.end(), ClangArgv.begin(),}
+\DoxyCodeLine{56                  [](\textcolor{keyword}{const} std::string \&s) -\/> \textcolor{keyword}{const} \textcolor{keywordtype}{char} * \{ return s.data(); \});}
+\DoxyCodeLine{57   llvm::InitializeNativeTarget();}
+\DoxyCodeLine{58   llvm::InitializeNativeTargetAsmPrinter();}
+\DoxyCodeLine{59 }
+\DoxyCodeLine{60   \textcolor{keywordflow}{if} (OptHostSupportsJit) \{}
+\DoxyCodeLine{61     \textcolor{keyword}{auto} J = llvm::orc::LLJITBuilder().create();}
+\DoxyCodeLine{62     \textcolor{keywordflow}{if} (J)}
+\DoxyCodeLine{63       llvm::outs() << \textcolor{stringliteral}{"{}true\(\backslash\)n"{}};}
+\DoxyCodeLine{64     \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{65       llvm::consumeError(J.takeError());}
+\DoxyCodeLine{66       llvm::outs() << \textcolor{stringliteral}{"{}false\(\backslash\)n"{}};}
+\DoxyCodeLine{67     \}}
+\DoxyCodeLine{68     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{69   \}}
+\DoxyCodeLine{70 }
+\DoxyCodeLine{71   \textcolor{comment}{// FIXME: Investigate if we could use runToolOnCodeWithArgs from tooling. It}}
+\DoxyCodeLine{72   \textcolor{comment}{// can replace the boilerplate code for creation of the compiler instance.}}
+\DoxyCodeLine{73   \textcolor{keyword}{auto} CI = \mbox{\hyperlink{_clang_repl_8cpp_aa40b8256f877190e9a1f1223ce18ad16}{ExitOnErr}}(clang::IncrementalCompilerBuilder::create(ClangArgv));}
+\DoxyCodeLine{74 }
+\DoxyCodeLine{75   \textcolor{comment}{// Set an error handler, so that any LLVM backend diagnostics go through our}}
+\DoxyCodeLine{76   \textcolor{comment}{// error handler.}}
+\DoxyCodeLine{77   llvm::install\_fatal\_error\_handler(LLVMErrorHandler,}
+\DoxyCodeLine{78                                     \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{void} *\textcolor{keyword}{>}(\&CI-\/>getDiagnostics()));}
+\DoxyCodeLine{79 }
+\DoxyCodeLine{80   \textcolor{keyword}{auto} Interp = \mbox{\hyperlink{_clang_repl_8cpp_aa40b8256f877190e9a1f1223ce18ad16}{ExitOnErr}}(clang::Interpreter::create(std::move(CI)));}
+\DoxyCodeLine{81   llvm::LineEditor LE(\textcolor{stringliteral}{"{}clang-\/repl"{}});}
+\DoxyCodeLine{82   \textcolor{comment}{// FIXME: Add LE.setListCompleter}}
+\DoxyCodeLine{83   \textcolor{keywordflow}{while} (llvm::Optional<std::string> Line = LE.readLine()) \{}
+\DoxyCodeLine{84     \textcolor{keywordflow}{if} (*Line == \textcolor{stringliteral}{"{}quit"{}})}
+\DoxyCodeLine{85       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{86     \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} Err = Interp-\/>ParseAndExecute(*Line))}
+\DoxyCodeLine{87       llvm::logAllUnhandledErrors(std::move(Err), llvm::errs(), \textcolor{stringliteral}{"{}error: "{}});}
+\DoxyCodeLine{88   \}}
+\DoxyCodeLine{89 }
+\DoxyCodeLine{90   \textcolor{comment}{// Our error handler depends on the Diagnostics object, which we're}}
+\DoxyCodeLine{91   \textcolor{comment}{// potentially about to delete. Uninstall the handler now so that any}}
+\DoxyCodeLine{92   \textcolor{comment}{// later errors use the default handling behavior instead.}}
+\DoxyCodeLine{93   llvm::remove\_fatal\_error\_handler();}
+\DoxyCodeLine{94 }
+\DoxyCodeLine{95   llvm::llvm\_shutdown();}
+\DoxyCodeLine{96 }
+\DoxyCodeLine{97   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{98 \}}
+
+\end{DoxyCode}
+
+
+References Exit\+On\+Err.
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{_clang_repl_8cpp_aa40b8256f877190e9a1f1223ce18ad16}\label{_clang_repl_8cpp_aa40b8256f877190e9a1f1223ce18ad16}} 
+\index{ClangRepl.cpp@{ClangRepl.cpp}!ExitOnErr@{ExitOnErr}}
+\index{ExitOnErr@{ExitOnErr}!ClangRepl.cpp@{ClangRepl.cpp}}
+\doxysubsubsection{\texorpdfstring{ExitOnErr}{ExitOnErr}}
+{\footnotesize\ttfamily llvm\+::\+Exit\+On\+Error Exit\+On\+Err}
+
+
+
+Definition at line 49 of file Clang\+Repl.\+cpp.
+
+
+
+Referenced by main().
+

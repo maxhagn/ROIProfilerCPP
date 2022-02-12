@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__test_support_8h_source" xml:lang="en-US">
+<title>TestSupport.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-refactor/TestSupport.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===---&#32;TestSupport.h&#32;-&#32;Clang-based&#32;refactoring&#32;tool&#32;-----------*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_CLANG_REFACTOR_TEST_SUPPORT_H</emphasis>
+00016 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_CLANG_REFACTOR_TEST_SUPPORT_H</emphasis>
+00017 
+00018 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__tool_refactoring_result_consumer_8h">ToolRefactoringResultConsumer.h</link>&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceLocation.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/Optional.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallVector.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Error.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&lt;map&gt;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00026 
+00027 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00028 
+00029 <emphasis role="keyword">class&#32;</emphasis>SourceManager;
+00030 
+00031 <emphasis role="keyword">namespace&#32;</emphasis>refactor&#32;{
+00032 
+<anchor xml:id="__test_support_8h_source_1l00048"/><link linkend="_structclang_1_1refactor_1_1_test_selection_range">00048</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1refactor_1_1_test_selection_range">TestSelectionRange</link>&#32;{
+<anchor xml:id="__test_support_8h_source_1l00049"/><link linkend="_structclang_1_1refactor_1_1_test_selection_range_1ad1161222f24ee1bd1b93d7a746104519">00049</link> &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_range_1ad1161222f24ee1bd1b93d7a746104519">Begin</link>,&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_range_1a4530a14a9d2f1447758b5a7065823abc">End</link>;
+00050 };
+00051 
+<anchor xml:id="__test_support_8h_source_1l00053"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">00053</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link>&#32;{
+<anchor xml:id="__test_support_8h_source_1l00054"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1aed71fb7bda4e5d154426e6695986bf8a">00054</link> &#32;&#32;std::string&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1aed71fb7bda4e5d154426e6695986bf8a">Filename</link>;
+<anchor xml:id="__test_support_8h_source_1l00055"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1_1_range_group">00055</link> &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1_1_range_group">RangeGroup</link>&#32;{
+<anchor xml:id="__test_support_8h_source_1l00056"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1_1_range_group_1aedfd2081a194135f2cc4e5c5f7620ff2">00056</link> &#32;&#32;&#32;&#32;std::string&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1_1_range_group_1aedfd2081a194135f2cc4e5c5f7620ff2">Name</link>;
+<anchor xml:id="__test_support_8h_source_1l00057"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1_1_range_group_1a566c37fe1e5df701761c3cb889a8f437">00057</link> &#32;&#32;&#32;&#32;SmallVector&lt;TestSelectionRange,&#32;8&gt;&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1_1_range_group_1a566c37fe1e5df701761c3cb889a8f437">Ranges</link>;
+00058 &#32;&#32;};
+<anchor xml:id="__test_support_8h_source_1l00059"/><link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1a7ef1a07e6dc8e96c2410290bd009a515">00059</link> &#32;&#32;std::vector&lt;RangeGroup&gt;&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1a7ef1a07e6dc8e96c2410290bd009a515">GroupedRanges</link>;
+00060 
+00061 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1a9b78c23b403e8df71caecc1a7ddd974e">foreachRange</link>(<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::function_ref&lt;<emphasis role="keywordtype">void</emphasis>(SourceRange)&gt;&#32;Callback)&#32;<emphasis role="keyword">const</emphasis>;
+00063 
+00064 &#32;&#32;std::unique_ptr&lt;ClangRefactorToolConsumerInterface&gt;&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1aeb68b4e768a17c72b2b6a70fce24283a">createConsumer</link>()&#32;<emphasis role="keyword">const</emphasis>;
+00065 
+00066 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file_1ae1451cf66bca3fc3c4b1900b34b3a814">dump</link>(llvm::raw_ostream&#32;&amp;OS)&#32;<emphasis role="keyword">const</emphasis>;
+00067 };
+00068 
+00098 Optional&lt;TestSelectionRangesInFile&gt;&#32;<link linkend="_namespaceclang_1_1refactor_1ad9b16108537eeb4a03f8b06f785bdb0f">findTestSelectionRanges</link>(StringRef&#32;Filename);
+00099 
+00100 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;refactor</emphasis>
+00101 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;clang</emphasis>
+00102 
+00103 <emphasis role="preprocessor">#endif&#32;</emphasis><emphasis role="comment">//&#32;LLVM_CLANG_TOOLS_CLANG_REFACTOR_TEST_SUPPORT_H</emphasis>
+</programlisting></section>

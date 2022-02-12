@@ -1,0 +1,161 @@
+.TH "clang-format" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang-format
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBget_buffer\fP (encoding)"
+.br
+.ti -1c
+.RI "def \fBmain\fP ()"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "string \fBbinary\fP = 'clang\-format'"
+.br
+.ti -1c
+.RI "\fBstyle\fP = None"
+.br
+.ti -1c
+.RI "\fBfallback_style\fP = None"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def clang\-format\&.get_buffer ( encoding)"
+
+.PP
+Definition at line 64 of file clang\-format\&.py\&.
+.PP
+.nf
+64 def get_buffer(encoding):
+65   if platform\&.python_version_tuple()[0] == '3':
+66     return vim\&.current\&.buffer
+67   return [ line\&.decode(encoding) for line in vim\&.current\&.buffer ]
+68 
+.fi
+.PP
+Referenced by main()\&.
+.SS "def clang\-format\&.main (void)"
+
+.PP
+Definition at line 69 of file clang\-format\&.py\&.
+.PP
+.nf
+69 def main():
+70   # Get the current text\&.
+71   encoding = vim\&.eval("&encoding")
+72   buf = get_buffer(encoding)
+73   # Join the buffer into a single string with a terminating newline
+74   text = ('\n'\&.join(buf) + '\n')\&.encode(encoding)
+75 
+76   # Determine range to format\&.
+77   if vim\&.eval('exists("l:lines")') == '1':
+78     lines = ['-lines', vim\&.eval('l:lines')]
+79   elif vim\&.eval('exists("l:formatdiff")') == '1':
+80     with open(vim\&.current\&.buffer\&.name, 'r') as f:
+81       ondisk = f\&.read()\&.splitlines();
+82     sequence = difflib\&.SequenceMatcher(None, ondisk, vim\&.current\&.buffer)
+83     lines = []
+84     for op in reversed(sequence\&.get_opcodes()):
+85       if op[0] not in ['equal', 'delete']:
+86         lines += ['-lines', '%s:%s' % (op[3] + 1, op[4])]
+87     if lines == []:
+88       return
+89   else:
+90     lines = ['-lines', '%s:%s' % (vim\&.current\&.range\&.start + 1,
+91                                   vim\&.current\&.range\&.end + 1)]
+92 
+93   # Convert cursor (line, col) to bytes\&.
+94   # Don't use line2byte: https://github\&.com/vim/vim/issues/5930
+95   _, cursor_line, cursor_col, _ = vim\&.eval('getpos("\&.")') # 1-based
+96   cursor_byte = 0
+97   for line in text\&.split(b'\n')[:int(cursor_line) - 1]:
+98     cursor_byte += len(line) + 1
+99   cursor_byte += int(cursor_col) - 1
+100   if cursor_byte < 0:
+101     print('Couldn\'t determine cursor position\&. Is your file empty?')
+102     return
+103 
+104   # Avoid flashing an ugly, ugly cmd prompt on Windows when invoking clang-format\&.
+105   startupinfo = None
+106   if sys\&.platform\&.startswith('win32'):
+107     startupinfo = subprocess\&.STARTUPINFO()
+108     startupinfo\&.dwFlags |= subprocess\&.STARTF_USESHOWWINDOW
+109     startupinfo\&.wShowWindow = subprocess\&.SW_HIDE
+110 
+111   # Call formatter\&.
+112   command = [binary, '-cursor', str(cursor_byte)]
+113   if lines != ['-lines', 'all']:
+114     command += lines
+115   if style:
+116     command\&.extend(['-style', style])
+117   if fallback_style:
+118     command\&.extend(['-fallback-style', fallback_style])
+119   if vim\&.current\&.buffer\&.name:
+120     command\&.extend(['-assume-filename', vim\&.current\&.buffer\&.name])
+121   p = subprocess\&.Popen(command,
+122                        stdout=subprocess\&.PIPE, stderr=subprocess\&.PIPE,
+123                        stdin=subprocess\&.PIPE, startupinfo=startupinfo)
+124   stdout, stderr = p\&.communicate(input=text)
+125 
+126   # If successful, replace buffer contents\&.
+127   if stderr:
+128     print(stderr)
+129 
+130   if not stdout:
+131     print(
+132         'No output from clang-format (crashed?)\&.\n'
+133         'Please report to bugs\&.llvm\&.org\&.'
+134     )
+135   else:
+136     header, content = stdout\&.split(b'\n', 1)
+137     header = json\&.loads(header)
+138     # Strip off the trailing newline (added above)\&.
+139     # This maintains trailing empty lines present in the buffer if
+140     # the -lines specification requests them to remain unchanged\&.
+141     lines = content\&.decode(encoding)\&.split('\n')[:-1]
+142     sequence = difflib\&.SequenceMatcher(None, buf, lines)
+143     for op in reversed(sequence\&.get_opcodes()):
+144       if op[0] != 'equal':
+145         vim\&.current\&.buffer[op[1]:op[2]] = lines[op[3]:op[4]]
+146     if header\&.get('IncompleteFormat'):
+147       print('clang-format: incomplete (syntax errors)')
+148     # Convert cursor bytes to (line, col)
+149     # Don't use goto: https://github\&.com/vim/vim/issues/5930
+150     cursor_byte = int(header['Cursor'])
+151     prefix = content[0:cursor_byte]
+152     cursor_line = 1 + prefix\&.count(b'\n')
+153     cursor_column = 1 + len(prefix\&.rsplit(b'\n', 1)[-1])
+154     vim\&.command('call cursor(%d, %d)' % (cursor_line, cursor_column))
+155 
+156 main()
+.fi
+.PP
+References libscanbuild\&.shell\&.encode(), get_buffer(), startfile\&.open(), and print()\&.
+.SH "Variable Documentation"
+.PP 
+.SS "clang\-format\&.binary = 'clang\-format'"
+
+.PP
+Definition at line 51 of file clang\-format\&.py\&.
+.SS "clang\-format\&.fallback_style = None"
+
+.PP
+Definition at line 60 of file clang\-format\&.py\&.
+.SS "clang\-format\&.style = None"
+
+.PP
+Definition at line 59 of file clang\-format\&.py\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

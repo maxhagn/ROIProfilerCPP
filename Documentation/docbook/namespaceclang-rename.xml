@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespaceclang-rename" xml:lang="en-US">
+<title>clang-rename Namespace Reference</title>
+<indexterm><primary>clang-rename</primary></indexterm>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_namespaceclang-rename_1a72623062ae6b8f10b4d7bb810bb743e4">main</link> ()</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespaceclang-rename_1a72623062ae6b8f10b4d7bb810bb743e4"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>clang-rename</secondary></indexterm>
+<indexterm><primary>clang-rename</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>def clang-rename.main (void )</computeroutput></para><para>
+Definition at line <link linkend="_clang-rename_8py_source_1l00030">30</link> of file <link linkend="_clang-rename_8py_source">clang-rename.py</link>.</para>
+<programlisting>00030 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespaceclang-rename_1a72623062ae6b8f10b4d7bb810bb743e4">main</link>():
+00031 &#32;&#32;&#32;&#32;binary&#32;=&#32;<emphasis role="stringliteral">&apos;clang-rename&apos;</emphasis>
+00032 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;vim.eval(<emphasis role="stringliteral">&apos;exists(&quot;g:clang_rename_path&quot;)&apos;</emphasis>)&#32;==&#32;<emphasis role="stringliteral">&quot;1&quot;</emphasis>:
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;binary&#32;=&#32;vim.eval(<emphasis role="stringliteral">&apos;g:clang_rename_path&apos;</emphasis>)
+00034 
+00035 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Get&#32;arguments&#32;for&#32;clang-rename&#32;binary.</emphasis>
+00036 &#32;&#32;&#32;&#32;offset&#32;=&#32;int(vim.eval(<emphasis role="stringliteral">&apos;line2byte(line(&quot;.&quot;))+col(&quot;.&quot;)&apos;</emphasis>))&#32;-&#32;2
+00037 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;offset&#32;&lt;&#32;0:
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;Couldn\&apos;t&#32;determine&#32;cursor&#32;position.&#32;Is&#32;your&#32;file&#32;empty?&apos;</emphasis>,
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;file=sys.stderr)
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>
+00041 &#32;&#32;&#32;&#32;filename&#32;=&#32;vim.current.buffer.name
+00042 
+00043 &#32;&#32;&#32;&#32;new_name_request_message&#32;=&#32;<emphasis role="stringliteral">&apos;type&#32;new&#32;name:&apos;</emphasis>
+00044 &#32;&#32;&#32;&#32;new_name&#32;=&#32;vim.eval(<emphasis role="stringliteral">&quot;input(&apos;{}\n&apos;)&quot;</emphasis>.format(new_name_request_message))
+00045 
+00046 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Call&#32;clang-rename.</emphasis>
+00047 &#32;&#32;&#32;&#32;command&#32;=&#32;[binary,
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename,
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-i&apos;</emphasis>,
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-offset&apos;</emphasis>,&#32;str(offset),
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-new-name&apos;</emphasis>,&#32;str(new_name)]
+00052 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;FIXME:&#32;make&#32;it&#32;possible&#32;to&#32;run&#32;the&#32;tool&#32;on&#32;unsaved&#32;file.</emphasis>
+00053 &#32;&#32;&#32;&#32;p&#32;=&#32;subprocess.Popen(command,
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stdout=subprocess.PIPE,
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderr=subprocess.PIPE)
+00056 &#32;&#32;&#32;&#32;stdout,&#32;stderr&#32;=&#32;p.communicate()
+00057 
+00058 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;stderr:
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(stderr)
+00060 
+00061 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Reload&#32;all&#32;buffers&#32;in&#32;Vim.</emphasis>
+00062 &#32;&#32;&#32;&#32;vim.command(<emphasis role="stringliteral">&quot;checktime&quot;</emphasis>)
+00063 
+00064 
+</programlisting><para>
+References <link linkend="__function_call_decl_8cpp_source_1l00003">print()</link>.</para>
+</section>
+</section>
+</section>

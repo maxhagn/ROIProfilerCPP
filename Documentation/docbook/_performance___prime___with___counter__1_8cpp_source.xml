@@ -1,0 +1,203 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__performance___prime___with___counter__1_8cpp_source" xml:lang="en-US">
+<title>Performance_Prime_With_Counter_1.cpp</title>
+<indexterm><primary>Tests/Prime Tests Cases/Performance_Prime_With_Counter_1.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//&#32;---------------------------------------------------------------------------</emphasis>
+00002 <emphasis role="comment">//&#32;PrimeCPP.cpp&#32;:&#32;Pol&#32;Marcet&apos;s&#32;Modified&#32;version&#32;of&#32;Dave&apos;s&#32;Garage&#32;Prime&#32;Sieve</emphasis>
+00003 <emphasis role="comment">//&#32;Some&#32;great&#32;ideas&#32;taken&#32;from&#32;Rust&apos;s&#32;implementation&#32;from&#32;Michael&#32;Barber</emphasis>
+00004 <emphasis role="comment">//&#32;@mike-barber&#32;https://www.github.com/mike-barber&#32;(bit-storage-rotate)</emphasis>
+00005 <emphasis role="comment">//&#32;---------------------------------------------------------------------------</emphasis>
+00006 
+00007 <emphasis role="preprocessor">#include&#32;&lt;chrono&gt;</emphasis>
+00008 <emphasis role="preprocessor">#include&#32;&lt;ctime&gt;</emphasis>
+00009 <emphasis role="preprocessor">#include&#32;&lt;iostream&gt;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&lt;bitset&gt;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&lt;map&gt;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&lt;cstring&gt;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&lt;cmath&gt;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&lt;fstream&gt;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;../lib/DataStorage.cpp&quot;</emphasis>
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00016"/><link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">00016</link> <link linkend="_class_data_storage">DataStorage</link>&#32;<link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>(<emphasis role="stringliteral">&quot;Runtime,Scope,CustomCompoundStmt&#32;i000002,WhileStmt&#32;2876156&quot;</emphasis>);
+00017 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>std;
+00018 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>std::chrono;
+00019 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00020"/><link linkend="_class_bit_array">00020</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_bit_array">BitArray</link>&#32;{
+00021 &#32;&#32;&#32;&#32;uint32_t&#32;*array;
+00022 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;arrSize;
+00023 
+00024 &#32;&#32;&#32;&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;arraySize(<emphasis role="keywordtype">size_t</emphasis>&#32;size)&#32;{
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(size&#32;&gt;&gt;&#32;5)&#32;+&#32;((size&#32;&amp;&#32;31)&#32;&gt;&#32;0);
+00026 &#32;&#32;&#32;&#32;}
+00027 
+00028 &#32;&#32;&#32;&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;index(<emphasis role="keywordtype">size_t</emphasis>&#32;n)&#32;{
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(n&#32;&gt;&gt;&#32;5);
+00030 &#32;&#32;&#32;&#32;}
+00031 
+00032 &#32;&#32;&#32;&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;uint32_t&#32;getSubindex(<emphasis role="keywordtype">size_t</emphasis>&#32;n,&#32;uint32_t&#32;d)&#32;{
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;d&#32;&amp;&#32;uint32_t(uint32_t(0x01)&#32;&lt;&lt;&#32;(n&#32;%&#32;32));
+00034 &#32;&#32;&#32;&#32;}
+00035 
+00036 &#32;&#32;&#32;&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;setFalseSubindex(<emphasis role="keywordtype">size_t</emphasis>&#32;n,&#32;uint32_t&#32;&amp;d)&#32;{
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;d&#32;&amp;=&#32;~uint32_t(uint32_t(0x01)&#32;&lt;&lt;&#32;(n&#32;%&#32;(8*<emphasis role="keyword">sizeof</emphasis>(uint32_t))));
+00038 &#32;&#32;&#32;&#32;}
+00039 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00040"/><link linkend="_class_bit_array_1a79275b2a0a9a7d1039a022c7ac2acab1">00040</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">explicit</emphasis>&#32;<link linkend="_class_bit_array_1a79275b2a0a9a7d1039a022c7ac2acab1">BitArray</link>(<emphasis role="keywordtype">size_t</emphasis>&#32;size)&#32;:&#32;arrSize(size)&#32;{
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;array&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;uint32_t[arraySize(size)];
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::memset(array,&#32;0xFF,&#32;(size&#32;&gt;&gt;&#32;3)&#32;+&#32;((size&#32;&amp;&#32;7)&#32;&gt;&#32;0));
+00043 &#32;&#32;&#32;&#32;}
+00044 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00045"/><link linkend="_class_bit_array_1a8f4d14141e3c7093ac8558604710736f">00045</link> &#32;&#32;&#32;&#32;<link linkend="_class_bit_array_1a8f4d14141e3c7093ac8558604710736f">~BitArray</link>()&#32;{<emphasis role="keyword">delete</emphasis>&#32;[]&#32;array;}
+00046 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00047"/><link linkend="_class_bit_array_1a687c9d8bad72ee9873d24051d74dad45">00047</link> &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_class_bit_array_1a687c9d8bad72ee9873d24051d74dad45">get</link>(<emphasis role="keywordtype">size_t</emphasis>&#32;n)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getSubindex(n,&#32;array[index(n)]);
+00049 &#32;&#32;&#32;&#32;}
+00050 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00051"/><link linkend="_class_bit_array_1ab4ba1bbe426655b4279d7b2d87400bf1">00051</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;constexpr&#32;uint32_t&#32;<link linkend="_class_bit_array_1ab4ba1bbe426655b4279d7b2d87400bf1">rol</link>(uint32_t&#32;x,&#32;uint32_t&#32;n)&#32;{
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(x&lt;&lt;n)&#32;|&#32;(x&gt;&gt;(32-n));
+00053 &#32;&#32;&#32;&#32;}
+00054 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00055"/><link linkend="_class_bit_array_1a07e5ee143240de80ab2ab0ab64818f50">00055</link> &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_class_bit_array_1a07e5ee143240de80ab2ab0ab64818f50">setFlagsFalse</link>(<emphasis role="keywordtype">size_t</emphasis>&#32;n,&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;skip)&#32;{
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;rolling_mask&#32;=&#32;~uint32_t(1&#32;&lt;&lt;&#32;n&#32;%&#32;32);
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;roll_bits&#32;=&#32;skip&#32;%&#32;32;
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(n&#32;&lt;&#32;arrSize)&#32;{
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;array[index(n)]&#32;&amp;=&#32;rolling_mask;
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;n&#32;+=&#32;skip;
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;rolling_mask&#32;=&#32;rol(rolling_mask,&#32;roll_bits);
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00063 &#32;&#32;&#32;&#32;}
+00064 };
+00065 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00066"/><link linkend="_classprime__sieve">00066</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classprime__sieve">prime_sieve</link>
+00067 {
+00068 &#32;&#32;<emphasis role="keyword">private</emphasis>:
+00069 
+00070 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">long</emphasis>&#32;sieveSize&#32;=&#32;0;
+00071 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_bit_array">BitArray</link>&#32;Bits;
+00072 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;std::map&lt;const&#32;long&#32;long,&#32;const&#32;int&gt;&#32;resultsDictionary;
+00073 
+00074 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;validateResults()
+00075 &#32;&#32;&#32;&#32;&#32;&#32;{
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;result&#32;=&#32;resultsDictionary.find(sieveSize);
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(resultsDictionary.end()&#32;==&#32;result)
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result-&gt;second&#32;==&#32;countPrimes();
+00080 &#32;&#32;&#32;&#32;&#32;&#32;}
+00081 
+00082 &#32;&#32;&#32;<emphasis role="keyword">public</emphasis>:
+00083 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00084"/><link linkend="_classprime__sieve_1a47b9a2b81728204ba19142627c904dd8">00084</link> &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classprime__sieve_1a47b9a2b81728204ba19142627c904dd8">prime_sieve</link>(<emphasis role="keywordtype">long</emphasis>&#32;n)
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Bits(n),&#32;sieveSize(n)
+00086 &#32;&#32;&#32;&#32;&#32;&#32;{
+00087 &#32;&#32;&#32;&#32;&#32;&#32;}
+00088 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00089"/><link linkend="_classprime__sieve_1a3018e6766362f92bace591eaa3b630f3">00089</link> &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classprime__sieve_1a3018e6766362f92bace591eaa3b630f3">~prime_sieve</link>()
+00090 &#32;&#32;&#32;&#32;&#32;&#32;{
+00091 &#32;&#32;&#32;&#32;&#32;&#32;}
+00092 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00093"/><link linkend="_classprime__sieve_1a2b85505623489a789ed59910899c45bd">00093</link> &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classprime__sieve_1a2b85505623489a789ed59910899c45bd">runSieve</link>()
+00094 &#32;&#32;&#32;&#32;&#32;&#32;{
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;factor&#32;=&#32;3;
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;q&#32;=&#32;(int)&#32;sqrt(sieveSize);
+00097 
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(factor&#32;&lt;=&#32;q)
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;num&#32;=&#32;factor;&#32;num&#32;&lt;&#32;sieveSize;&#32;num&#32;+=&#32;2)
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Bits.<link linkend="_class_bit_array_1a687c9d8bad72ee9873d24051d74dad45">get</link>(num))
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;factor&#32;=&#32;num;
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Bits.<link linkend="_class_bit_array_1a07e5ee143240de80ab2ab0ab64818f50">setFlagsFalse</link>(factor&#32;*&#32;factor,&#32;factor&#32;+&#32;factor);
+00109 
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;factor&#32;+=&#32;2;
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00112 &#32;&#32;&#32;&#32;&#32;&#32;}
+00113 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00114"/><link linkend="_classprime__sieve_1abe49383c754984e443258176cbc88d4a">00114</link> &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classprime__sieve_1abe49383c754984e443258176cbc88d4a">printResults</link>(<emphasis role="keywordtype">bool</emphasis>&#32;showResults,&#32;<emphasis role="keywordtype">double</emphasis>&#32;duration,&#32;<emphasis role="keywordtype">int</emphasis>&#32;passes)
+00115 &#32;&#32;&#32;&#32;&#32;&#32;{
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(showResults)
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;2,&#32;&quot;</emphasis>);
+00118 
+00119 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;count&#32;=&#32;(sieveSize&#32;&gt;=&#32;2);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Starting&#32;count&#32;(2&#32;is&#32;prime)</emphasis>
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;num&#32;=&#32;3;&#32;num&#32;&lt;=&#32;sieveSize;&#32;num+=2)
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Bits.<link linkend="_class_bit_array_1a687c9d8bad72ee9873d24051d74dad45">get</link>(num))
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(showResults)
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;%d,&#32;&quot;</emphasis>,&#32;num);
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;count++;
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00129 
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(showResults)
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+00132 
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ofstream&#32;outfile;
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outfile.open(<emphasis role="stringliteral">&quot;Time_Performance_Prime.txt&quot;</emphasis>,&#32;ios_base::app);
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outfile&#32;&lt;&lt;&#32;passes&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*printf(&quot;Passes:&#32;%d,&#32;Time:&#32;%lf,&#32;Avg:&#32;%lf,&#32;Limit:&#32;%ld,&#32;Count1:&#32;%d,&#32;Count2:&#32;%d,&#32;Valid:&#32;%d\n&quot;,</emphasis>
+00137 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;passes,</emphasis>
+00138 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;duration,</emphasis>
+00139 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;duration&#32;/&#32;passes,</emphasis>
+00140 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sieveSize,</emphasis>
+00141 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;count,</emphasis>
+00142 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;countPrimes(),</emphasis>
+00143 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;validateResults());</emphasis>
+00144 <emphasis role="comment"></emphasis>
+00145 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;//&#32;Following&#32;2&#32;lines&#32;added&#32;by&#32;rbergen&#32;to&#32;conform&#32;to&#32;drag&#32;race&#32;output&#32;format</emphasis>
+00146 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(&quot;\n&quot;);</emphasis>
+00147 <emphasis role="comment">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(&quot;davepl_pol;%d;%f;1;algorithm=base,faithful=yes,bits=1\n&quot;,&#32;passes,&#32;duration);*/</emphasis>
+00148 &#32;&#32;&#32;&#32;&#32;&#32;}
+00149 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00150"/><link linkend="_classprime__sieve_1a0e243144818a8c019dc96d13e95657ec">00150</link> &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_classprime__sieve_1a0e243144818a8c019dc96d13e95657ec">countPrimes</link>()
+00151 &#32;&#32;&#32;&#32;&#32;&#32;{
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;count&#32;=&#32;&#32;(sieveSize&#32;&gt;=&#32;2);;
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;3;&#32;i&#32;&lt;&#32;sieveSize;&#32;i+=2)
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Bits.<link linkend="_class_bit_array_1a687c9d8bad72ee9873d24051d74dad45">get</link>(i))
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;count++;
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;count;
+00157 &#32;&#32;&#32;&#32;&#32;&#32;}
+00158 };
+00159 
+00160 <emphasis role="keyword">const</emphasis>&#32;std::map&lt;const&#32;long&#32;long,&#32;const&#32;int&gt;&#32;prime_sieve::resultsDictionary&#32;=
+00161 {
+00162 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;10LL,&#32;4&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;},&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Historical&#32;data&#32;for&#32;validating&#32;our&#32;results&#32;-&#32;the&#32;number&#32;of&#32;primes</emphasis>
+00163 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;100LL,&#32;25&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;},&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;to&#32;be&#32;found&#32;under&#32;some&#32;limit,&#32;such&#32;as&#32;168&#32;primes&#32;under&#32;1000</emphasis>
+00164 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;1000LL,&#32;168&#32;&#32;&#32;&#32;&#32;&#32;&#32;},
+00165 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;10000LL,&#32;1229&#32;&#32;&#32;&#32;&#32;&#32;},
+00166 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;&#32;100000LL,&#32;9592&#32;&#32;&#32;&#32;&#32;&#32;},
+00167 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;&#32;1000000LL,&#32;78498&#32;&#32;&#32;&#32;&#32;},
+00168 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;&#32;10000000LL,&#32;664579&#32;&#32;&#32;&#32;},
+00169 &#32;&#32;&#32;&#32;{&#32;&#32;&#32;100000000LL,&#32;5761455&#32;&#32;&#32;},
+00170 &#32;&#32;&#32;&#32;{&#32;&#32;1000000000LL,&#32;50847534&#32;&#32;},
+00171 &#32;&#32;&#32;&#32;{&#32;10000000000LL,&#32;455052511&#32;},
+00172 };
+00173 
+<anchor xml:id="__performance___prime___with___counter__1_8cpp_source_1l00174"/><link linkend="__performance___prime___with___counter__1_8cpp_1ae66f6b31b5ad750f1fe042a706a4e3d4">00174</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__performance___prime___with___counter__1_8cpp_1ae66f6b31b5ad750f1fe042a706a4e3d4">main</link>()
+00175 {
+00176 <link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1a927960040591eba171b0dbbfa4b9b5bd">startEvent</link>(0);
+00177 &#32;&#32;&#32;&#32;<link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1a927960040591eba171b0dbbfa4b9b5bd">startEvent</link>(2);
+00178 <emphasis role="keyword">auto</emphasis>&#32;passes&#32;=&#32;0;
+00179 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;tStart&#32;=&#32;steady_clock::now();
+00180 
+00181 &#32;&#32;&#32;&#32;<link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1ade8287e335af60ba18c8455d4485094c">endEvent</link>(2);
+00182 <link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1a927960040591eba171b0dbbfa4b9b5bd">startEvent</link>(3);
+00183 <emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">true</emphasis>)
+00184 &#32;&#32;&#32;&#32;{
+00185 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classprime__sieve">prime_sieve</link>&#32;sieve(1000000L);
+00186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sieve.<link linkend="_classprime__sieve_1a2b85505623489a789ed59910899c45bd">runSieve</link>();
+00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;passes++;
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(duration_cast&lt;seconds&gt;(steady_clock::now()&#32;-&#32;tStart).count()&#32;&gt;=&#32;5)
+00189 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00190 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sieve.<link linkend="_classprime__sieve_1abe49383c754984e443258176cbc88d4a">printResults</link>(<emphasis role="keyword">false</emphasis>,&#32;duration_cast&lt;microseconds&gt;(steady_clock::now()&#32;-&#32;tStart).count()&#32;/&#32;1000000.0,&#32;passes);
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00193 &#32;&#32;&#32;&#32;}
+00194 <link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1ade8287e335af60ba18c8455d4485094c">endEvent</link>(3);
+00195 
+00196 &#32;&#32;&#32;&#32;<link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1ade8287e335af60ba18c8455d4485094c">endEvent</link>(0);
+00197 <link linkend="__performance___prime___with___counter__1_8cpp_1a360f9e2b15333dec5bf817c962387bb7">dataStorage</link>.<link linkend="_class_data_storage_1a94ef68ba0c97efa1c78b6f6909eb133c">print</link>();<emphasis role="keywordflow">return</emphasis>&#32;0;
+00198 }
+</programlisting></section>

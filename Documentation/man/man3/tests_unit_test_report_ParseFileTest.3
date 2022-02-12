@@ -1,0 +1,152 @@
+.TH "tests.unit.test_report.ParseFileTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_report.ParseFileTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_parse_bug\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_parse_bug_empty\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_parse_crash\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_parse_real_crash\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 31 of file test_report\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_report\&.ParseFileTest\&.test_parse_bug ( self)"
+
+.PP
+Definition at line 33 of file test_report\&.py\&.
+.PP
+.nf
+33     def test_parse_bug(self):
+34         content = [
+35             "some header\n",
+36             "<!-- BUGDESC Division by zero -->\n",
+37             "<!-- BUGTYPE Division by zero -->\n",
+38             "<!-- BUGCATEGORY Logic error -->\n",
+39             "<!-- BUGFILE xx -->\n",
+40             "<!-- BUGLINE 5 -->\n",
+41             "<!-- BUGCOLUMN 22 -->\n",
+42             "<!-- BUGPATHLENGTH 4 -->\n",
+43             "<!-- BUGMETAEND -->\n",
+44             "<!-- REPORTHEADER -->\n",
+45             "some tails\n"]
+46         result = run_bug_parse(content)
+47         self\&.assertEqual(result['bug_category'], 'Logic error')
+48         self\&.assertEqual(result['bug_path_length'], 4)
+49         self\&.assertEqual(result['bug_line'], 5)
+50         self\&.assertEqual(result['bug_description'], 'Division by zero')
+51         self\&.assertEqual(result['bug_type'], 'Division by zero')
+52         self\&.assertEqual(result['bug_file'], 'xx')
+53 
+.fi
+.PP
+References tests\&.unit\&.test_report\&.run_bug_parse()\&.
+.SS "def tests\&.unit\&.test_report\&.ParseFileTest\&.test_parse_bug_empty ( self)"
+
+.PP
+Definition at line 54 of file test_report\&.py\&.
+.PP
+.nf
+54     def test_parse_bug_empty(self):
+55         content = []
+56         result = run_bug_parse(content)
+57         self\&.assertEqual(result['bug_category'], 'Other')
+58         self\&.assertEqual(result['bug_path_length'], 1)
+59         self\&.assertEqual(result['bug_line'], 0)
+60 
+.fi
+.PP
+References tests\&.unit\&.test_report\&.run_bug_parse()\&.
+.SS "def tests\&.unit\&.test_report\&.ParseFileTest\&.test_parse_crash ( self)"
+
+.PP
+Definition at line 61 of file test_report\&.py\&.
+.PP
+.nf
+61     def test_parse_crash(self):
+62         content = [
+63             "/some/path/file\&.c\n",
+64             "Some very serious Error\n",
+65             "bla\n",
+66             "bla-bla\n"]
+67         result = run_crash_parse(content, 'file\&.i')
+68         self\&.assertEqual(result['source'], content[0]\&.rstrip())
+69         self\&.assertEqual(result['problem'], content[1]\&.rstrip())
+70         self\&.assertEqual(os\&.path\&.basename(result['file']),
+71                          'file\&.i')
+72         self\&.assertEqual(os\&.path\&.basename(result['info']),
+73                          'file\&.i\&.info\&.txt')
+74         self\&.assertEqual(os\&.path\&.basename(result['stderr']),
+75                          'file\&.i\&.stderr\&.txt')
+76 
+.fi
+.PP
+References tests\&.unit\&.test_report\&.run_crash_parse()\&.
+.SS "def tests\&.unit\&.test_report\&.ParseFileTest\&.test_parse_real_crash ( self)"
+
+.PP
+Definition at line 77 of file test_report\&.py\&.
+.PP
+.nf
+77     def test_parse_real_crash(self):
+78         import libscanbuild\&.analyze as sut2
+79         import re
+80         with libear\&.TemporaryDirectory() as tmpdir:
+81             filename = os\&.path\&.join(tmpdir, 'test\&.c')
+82             with open(filename, 'w') as handle:
+83                 handle\&.write('int main() { return 0')
+84             # produce failure report
+85             opts = {
+86                 'clang': 'clang',
+87                 'directory': os\&.getcwd(),
+88                 'flags': [],
+89                 'file': filename,
+90                 'output_dir': tmpdir,
+91                 'language': 'c',
+92                 'error_type': 'other_error',
+93                 'error_output': 'some output',
+94                 'exit_code': 13
+95             }
+96             sut2\&.report_failure(opts)
+97             # find the info file
+98             pp_file = None
+99             for root, _, files in os\&.walk(tmpdir):
+100                 keys = [os\&.path\&.join(root, name) for name in files]
+101                 for key in keys:
+102                     if re\&.match(r'^(\&.*/)+clang(\&.*)\\&.i$', key):
+103                         pp_file = key
+104             self\&.assertIsNot(pp_file, None)
+105             # read the failure report back
+106             result = sut\&.parse_crash(pp_file + '\&.info\&.txt')
+107             self\&.assertEqual(result['source'], filename)
+108             self\&.assertEqual(result['problem'], 'Other Error')
+109             self\&.assertEqual(result['file'], pp_file)
+110             self\&.assertEqual(result['info'], pp_file + '\&.info\&.txt')
+111             self\&.assertEqual(result['stderr'], pp_file + '\&.stderr\&.txt')
+112 
+113 
+.fi
+.PP
+References startfile\&.open(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

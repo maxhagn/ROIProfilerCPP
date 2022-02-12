@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_fuzzer__initialize_8cpp_source" xml:lang="en-US">
+<title>fuzzer_initialize.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/fuzzer-initialize/fuzzer_initialize.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;fuzzer_initialize.cpp&#32;-&#32;Fuzz&#32;Clang&#32;--------------------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="_fuzzer__initialize_8h">fuzzer_initialize.h</link>&quot;</emphasis>
+00017 
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/InitializePasses.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/PassRegistry.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/TargetSelect.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&lt;cstring&gt;</emphasis>
+00022 
+00023 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang__fuzzer">clang_fuzzer</link>;
+00024 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00025 
+00026 
+<anchor xml:id="_fuzzer__initialize_8cpp_source_1l00027"/><link linkend="_namespaceclang__fuzzer">00027</link> <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang__fuzzer">clang_fuzzer</link>&#32;{
+00028 
+00029 <emphasis role="keyword">static</emphasis>&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;CLArgs;
+00030 
+<anchor xml:id="_fuzzer__initialize_8cpp_source_1l00031"/><link linkend="_namespaceclang__fuzzer_1a7204f11d358bc8d6b48eb043fdba0ce4">00031</link> <emphasis role="keyword">const</emphasis>&#32;std::vector&lt;const&#32;char&#32;*&gt;&amp;&#32;<link linkend="_namespaceclang__fuzzer_1a7204f11d358bc8d6b48eb043fdba0ce4">GetCLArgs</link>()&#32;{
+00032 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CLArgs;
+00033 }
+00034 
+00035 }
+00036 
+<anchor xml:id="_fuzzer__initialize_8cpp_source_1l00037"/><link linkend="_fuzzer__initialize_8cpp_1aa30889313cc057073351a87b2590b886">00037</link> <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="stringliteral">&quot;C&quot;</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_fuzzer__initialize_8cpp_1aa30889313cc057073351a87b2590b886">LLVMFuzzerInitialize</link>(<emphasis role="keywordtype">int</emphasis>&#32;*argc,&#32;<emphasis role="keywordtype">char</emphasis>&#32;***argv)&#32;{
+00038 &#32;&#32;InitializeAllTargets();
+00039 &#32;&#32;InitializeAllTargetMCs();
+00040 &#32;&#32;InitializeAllAsmPrinters();
+00041 &#32;&#32;InitializeAllAsmParsers();
+00042 &#32;&#32;
+00043 &#32;&#32;PassRegistry&#32;&amp;Registry&#32;=&#32;*PassRegistry::getPassRegistry();
+00044 &#32;&#32;initializeCore(Registry);
+00045 &#32;&#32;initializeScalarOpts(Registry);
+00046 &#32;&#32;initializeVectorization(Registry);
+00047 &#32;&#32;initializeIPO(Registry);
+00048 &#32;&#32;initializeAnalysis(Registry);
+00049 &#32;&#32;initializeTransformUtils(Registry);
+00050 &#32;&#32;initializeInstCombine(Registry);
+00051 &#32;&#32;initializeAggressiveInstCombine(Registry);
+00052 &#32;&#32;initializeInstrumentation(Registry);
+00053 &#32;&#32;initializeTarget(Registry);
+00054 
+00055 &#32;&#32;CLArgs.push_back(<emphasis role="stringliteral">&quot;-O2&quot;</emphasis>);
+00056 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;I&#32;=&#32;1;&#32;I&#32;&lt;&#32;*argc;&#32;I++)&#32;{
+00057 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp((*argv)[I],&#32;<emphasis role="stringliteral">&quot;-ignore_remaining_args=1&quot;</emphasis>)&#32;==&#32;0)&#32;{
+00058 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(I++;&#32;I&#32;&lt;&#32;*argc;&#32;I++)
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CLArgs.push_back((*argv)[I]);
+00060 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00061 &#32;&#32;&#32;&#32;}
+00062 &#32;&#32;}
+00063 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00064 }
+</programlisting></section>

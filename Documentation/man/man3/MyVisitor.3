@@ -1,0 +1,190 @@
+.TH "MyVisitor" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+MyVisitor
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits RecursiveASTVisitor< MyVisitor >\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBMyVisitor\fP (ASTContext *Context)"
+.br
+.ti -1c
+.RI "virtual bool \fBVisitStmt\fP (Stmt *stmt)"
+.br
+.RI "Visit every statement linked to input file\&. If a stmt option is specified the tools searches for the first occurrence of an statement with the specified id\&. The statement is then casted to the matching statement class and body of the statement will be extracted and annotated\&. "
+.ti -1c
+.RI "virtual bool \fBVisitFunctionDecl\fP (FunctionDecl *func)"
+.br
+.RI "Visit every function linked to input file\&. The functions are traversed to find locations for initialization, runtime performance counter and for printing the summary\&. If stmt option is not specified, the main method will be traversed\&. "
+.ti -1c
+.RI "virtual \fB~MyVisitor\fP ()"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 220 of file RegionProfile\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "MyVisitor::MyVisitor (ASTContext * Context)\fC [inline]\fP, \fC [explicit]\fP"
+
+.PP
+Definition at line 225 of file RegionProfile\&.cpp\&.
+.PP
+.nf
+226             : astContext( Context ) // initialize private members
+227     {
+228         rewriter\&.setSourceMgr( astContext->getSourceManager( ),
+229                                astContext->getLangOpts( ));
+230     }
+.fi
+.PP
+References rewriter\&.
+.SS "virtual MyVisitor::~MyVisitor ()\fC [inline]\fP, \fC [virtual]\fP"
+
+.PP
+Definition at line 357 of file RegionProfile\&.cpp\&.
+.PP
+.nf
+357 { }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "virtual bool MyVisitor::VisitFunctionDecl (FunctionDecl * func)\fC [inline]\fP, \fC [virtual]\fP"
+
+.PP
+Visit every function linked to input file\&. The functions are traversed to find locations for initialization, runtime performance counter and for printing the summary\&. If stmt option is not specified, the main method will be traversed\&. ! 
+.PP
+Definition at line 295 of file RegionProfile\&.cpp\&.
+.PP
+.nf
+295                                                          {
+296 
+297         // find initialization location for includes and initialization of hagn lib
+298         if ( initializationLocation\&.isInvalid( ) &&
+299              astContext->getSourceManager( )\&.isInMainFile( func->getLocation( ))) {
+300 
+301             SourceLocation lastLocation;
+302             for ( auto it = astContext->getSourceManager( )\&.fileinfo_begin( );
+303                   it != astContext->getSourceManager( )\&.fileinfo_end( ); it++ ) {
+304                 SourceLocation currentLocation = astContext->getSourceManager( )\&.getIncludeLoc(
+305                         astContext->getSourceManager( )\&.translateFile( it->first ));
+306                 if (currentLocation\&.isValid() && astContext->getSourceManager()\&.isInFileID(currentLocation, astContext->getSourceManager( )\&.getMainFileID( ))) {
+307                     if ( astContext->getSourceManager( )\&.getSpellingLineNumber( lastLocation ) <= astContext->getSourceManager( )\&.getSpellingLineNumber( currentLocation ) ) {
+308                         lastLocation = currentLocation;
+309                     }
+310                 }
+311             }
+312 
+313             initializationLocation = astContext->getSourceManager( )\&.translateFileLineCol(
+314                     astContext->getSourceManager( )\&.getFileEntryForID( astContext->getSourceManager( )\&.getMainFileID( ) ),
+315                     astContext->getSourceManager( )\&.getSpellingLineNumber( lastLocation )+1, 1 );
+316         }
+317 
+318         // find first location in main class for runtime measurement
+319         if ( runtimeStartLocation\&.isInvalid( ) &&
+320              astContext->getSourceManager( )\&.isInMainFile( func->getLocation( ))) {
+321             if ( func->isMain( )) {
+322                 SourceLocation locAfterBrace( clang::Lexer::findLocationAfterToken(
+323                         func->getBody( )->getBeginLoc( )\&.getLocWithOffset( -1 ), clang::tok::l_brace,
+324                         astContext->getSourceManager( ),
+325                         astContext->getLangOpts( ), true ));
+326 
+327                 runtimeStartLocation = locAfterBrace;
+328             }
+329         }
+330 
+331         // find summary location in main class for ending runtime event and print event
+332         if ( summaryLocation\&.isInvalid( ) &&
+333              astContext->getSourceManager( )\&.isInMainFile( func->getLocation( ))) {
+334             if ( func->isMain( )) {
+335                 for ( Stmt::child_iterator i = func->getBody( )->child_begin( ), e = func->getBody( )->child_end( );
+336                       i != e; ++i ) {
+337                     Stmt *currStmt = *i;
+338                     if ( currStmt->getStmtClass( ) == Stmt::ReturnStmtClass ) {
+339                         summaryLocation = currStmt->getBeginLoc( );
+340                     }
+341                 }
+342             }
+343         }
+344 
+345         // annotate only main function if statement option is start
+346         if ( astContext->getSourceManager( )\&.isInMainFile( func->getLocation( ))) {
+347             if ( statementOption == "start" ) {
+348                 if ( func->isMain( )) {
+349                     traverseChildren( func->getBody( ), astContext );
+350                 }
+351             }
+352         }
+353 
+354         return 1;
+355     }
+.fi
+.PP
+References initializationLocation, runtimeStartLocation, statementOption, summaryLocation, and traverseChildren()\&.
+.SS "virtual bool MyVisitor::VisitStmt (Stmt * stmt)\fC [inline]\fP, \fC [virtual]\fP"
+
+.PP
+Visit every statement linked to input file\&. If a stmt option is specified the tools searches for the first occurrence of an statement with the specified id\&. The statement is then casted to the matching statement class and body of the statement will be extracted and annotated\&. ! 
+.PP
+Definition at line 240 of file RegionProfile\&.cpp\&.
+.PP
+.nf
+240                                          {
+241         // only statements in main file
+242         if ( astContext->getSourceManager( )\&.isInMainFile( stmt->getBeginLoc( ))) {
+243             // when stmt identifier is specified
+244             if ( statementOption != "start" ) {
+245 
+246                 // get statement identifier and cast to string
+247                 int64_t currentId = stmt->getID( *astContext );
+248                 std::string currentIdString = std::to_string( currentId );
+249 
+250                 // find statement with matching id
+251                 if ( currentIdString == statementOption ) {
+252                     rewriter\&.InsertText( stmt->getBeginLoc( ), "dataStorage\&.startEvent(1);\n" );
+253                     rewriter\&.InsertText( getLocationAfterToken( stmt->getEndLoc( ), astContext ),
+254                                          "dataStorage\&.endEvent(1);\n" );
+255 
+256                     if ( stmt->getStmtClass( ) == Stmt::CallExprClass ) {
+257                         CallExpr *expr = cast<CallExpr>( stmt );
+258                         Stmt *nextBody = expr->getDirectCallee( )->getBody( );
+259                         traverseChildren( nextBody, astContext );
+260                     }
+261                     if ( stmt->getStmtClass( ) == Stmt::ForStmtClass ) {
+262                         ForStmt *forStmt = cast<ForStmt>( stmt );
+263                         Stmt *nextBody = forStmt->getBody( );
+264                         traverseChildren( nextBody, astContext );
+265                     }
+266                     if ( stmt->getStmtClass( ) == Stmt::WhileStmtClass ) {
+267                         WhileStmt *whileStmt = cast<WhileStmt>( stmt );
+268                         Stmt *nextBody = whileStmt->getBody( );
+269                         traverseChildren( nextBody, astContext );
+270                     }
+271                     if ( stmt->getStmtClass( ) == Stmt::IfStmtClass ) {
+272                         IfStmt *ifStmt = cast<IfStmt>( stmt );
+273                         Stmt *nextBody = ifStmt->getThen( );
+274                         traverseChildren( nextBody, astContext );
+275                     }
+276                     if ( stmt->getStmtClass( ) == Stmt::CXXMemberCallExprClass ) {
+277                         CXXMemberCallExpr *cxxMemberCallExpr = cast<CXXMemberCallExpr>( stmt );
+278                         Stmt *nextBody = cxxMemberCallExpr->getDirectCallee( )->getBody();
+279                         traverseChildren( nextBody, astContext );
+280                     }
+281                 }
+282             }
+283         }
+284         return 1;
+285     }
+.fi
+.PP
+References getLocationAfterToken(), rewriter, statementOption, and traverseChildren()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

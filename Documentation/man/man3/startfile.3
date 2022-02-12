@@ -1,0 +1,155 @@
+.TH "startfile" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+startfile
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBBaseController\fP"
+.br
+.ti -1c
+.RI "class \fBController\fP"
+.br
+.ti -1c
+.RI "class \fBStart\fP"
+.br
+.ti -1c
+.RI "class \fBKfmClient\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBdetect_desktop_environment\fP ()"
+.br
+.ti -1c
+.RI "def \fBregister_X_controllers\fP ()"
+.br
+.ti -1c
+.RI "def \fBget\fP ()"
+.br
+.ti -1c
+.RI "def \fBopen\fP (filename)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def startfile\&.detect_desktop_environment ()"
+
+.PP
+.nf
+Checks for known desktop environments
+
+Return the desktop environments name, lowercase (kde, gnome, xfce)
+or "generic"
+.fi
+.PP
+ 
+.PP
+Definition at line 148 of file startfile\&.py\&.
+.PP
+.nf
+148     def detect_desktop_environment():
+149         '''Checks for known desktop environments
+150 
+151         Return the desktop environments name, lowercase (kde, gnome, xfce)
+152         or "generic"
+153 
+154         '''
+155 
+156         desktop_environment = 'generic'
+157 
+158         if os\&.environ\&.get('KDE_FULL_SESSION') == 'true':
+159             desktop_environment = 'kde'
+160         elif os\&.environ\&.get('GNOME_DESKTOP_SESSION_ID'):
+161             desktop_environment = 'gnome'
+162         else:
+163             try:
+164                 info = getoutput('xprop -root _DT_SAVE_MODE')
+165                 if ' = "xfce4"' in info:
+166                     desktop_environment = 'xfce'
+167             except (OSError, RuntimeError):
+168                 pass
+169 
+170         return desktop_environment
+171 
+172 
+.fi
+.PP
+Referenced by get()\&.
+.SS "def startfile\&.get ()"
+
+.PP
+Definition at line 181 of file startfile\&.py\&.
+.PP
+.nf
+181     def get():
+182         controllers_map = {
+183             'gnome': 'gnome-open',
+184             'kde': 'kde-open',
+185             'xfce': 'exo-open',
+186         }
+187 
+188         desktop_environment = detect_desktop_environment()
+189 
+190         try:
+191             controller_name = controllers_map[desktop_environment]
+192             return _controllers[controller_name]\&.open
+193 
+194         except KeyError:
+195             if 'xdg-open' in _controllers:
+196                 return _controllers['xdg-open']\&.open
+197             else:
+198                 return webbrowser\&.open
+199 
+200 
+.fi
+.PP
+References detect_desktop_environment(), and register_X_controllers()\&.
+.PP
+Referenced by clang::cxcursor::CursorVisitor\&.RunVisitorWorkList(), and ScanView\&.ScanViewRequestHandler\&.submit_bug()\&.
+.SS "def startfile\&.open ( filename)"
+
+.PP
+.nf
+Open a file or a URL in the registered default application.
+.fi
+.PP
+ 
+.PP
+Definition at line 206 of file startfile\&.py\&.
+.PP
+.nf
+206 def open(filename):
+207     '''Open a file or a URL in the registered default application\&.'''
+208 
+209     return _open(filename)
+.fi
+.PP
+Referenced by libscanbuild\&.report\&.assemble_cover(), tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.assertEqualJson(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.assertTitleEqual(), Reporter\&.EmailReporter\&.attachFile(), libscanbuild\&.report\&.bug_report(), libscanbuild\&.report\&.bug_summary(), libscanbuild\&.intercept\&.capture(), libscanbuild\&.report\&.commonprefix_from(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.count_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.count_entries(), libscanbuild\&.report\&.crash_report(), tests\&.functional\&.cases\&.create_empty_file(), ScanView\&.ScanViewRequestHandler\&.load_crashes(), ScanView\&.ScanViewRequestHandler\&.load_report(), clang\-format\-diff\&.main(), clang\-format\&.main(), libscanbuild\&.analyze\&.merge_ctu_extdef_maps(), libscanbuild\&.report\&.merge_sarif_files(), libscanbuild\&.report\&.parse_bug_html(), libscanbuild\&.report\&.parse_bug_plist(), libscanbuild\&.report\&.parse_crash(), libscanbuild\&.intercept\&.parse_exec_trace(), tests\&.functional\&.cases\&.test_from_cdb\&.prepare_cdb(), libscanbuild\&.analyze\&.report_failure(), tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.run_analyzer(), libscanbuild\&.analyze\&.run_analyzer_parallel(), tests\&.unit\&.test_report\&.run_bug_parse(), tests\&.unit\&.test_report\&.run_crash_parse(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), ScanView\&.ScanViewServer\&.save_config(), ScanView\&.ScanViewRequestHandler\&.send_open_report(), ScanView\&.ScanViewRequestHandler\&.send_patched_file(), ScanView\&.ScanViewRequestHandler\&.send_path(), tests\&.unit\&.test_clang\&.ClangGetArgumentsTest\&.test_get_clang_arguments(), tests\&.unit\&.test_report\&.MergeSarifTest\&.test_merge_updates_embedded_link(), tests\&.unit\&.test_report\&.MergeSarifTest\&.test_merging_sarif(), tests\&.unit\&.test_report\&.MergeSarifTest\&.test_overflow_run_count(), tests\&.unit\&.test_report\&.ParseFileTest\&.test_parse_real_crash(), tests\&.unit\&.test_analyze\&.ReportFailureTest\&.test_report_failure_create_files(), tests\&.unit\&.test_intercept\&.InterceptUtilTest\&.test_sip(), libear\&.Configure\&.write_by_template(), and libscanbuild\&.intercept\&.write_exec_trace()\&.
+.SS "def startfile\&.register_X_controllers ()"
+
+.PP
+Definition at line 173 of file startfile\&.py\&.
+.PP
+.nf
+173     def register_X_controllers():
+174         if _iscommand('kfmclient'):
+175             _controllers['kde-open'] = KfmClient()
+176 
+177         for command in ('gnome-open', 'exo-open', 'xdg-open'):
+178             if _iscommand(command):
+179                 _controllers[command] = Controller(command)
+180 
+.fi
+.PP
+Referenced by get()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

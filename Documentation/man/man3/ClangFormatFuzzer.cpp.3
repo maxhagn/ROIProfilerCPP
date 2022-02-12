@@ -1,0 +1,47 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-format/fuzzer/ClangFormatFuzzer.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-format/fuzzer/ClangFormatFuzzer.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Format/Format\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBLLVMFuzzerTestOneInput\fP (uint8_t *data, size_t size)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This file implements a function that runs Clang format on a single input\&. This function is then linked into the Fuzzer library\&. 
+.PP
+Definition in file \fBClangFormatFuzzer\&.cpp\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int LLVMFuzzerTestOneInput (uint8_t * data, size_t size)"
+
+.PP
+Definition at line 17 of file ClangFormatFuzzer\&.cpp\&.
+.PP
+.nf
+17                                                                   {
+18   // FIXME: fuzz more things: different styles, different style features\&.
+19   std::string s((const char *)data, size);
+20   auto Style = getGoogleStyle(clang::format::FormatStyle::LK_Cpp);
+21   Style\&.ColumnLimit = 60;
+22   auto Replaces = reformat(Style, s, clang::tooling::Range(0, s\&.size()));
+23   auto Result = applyAllReplacements(s, Replaces);
+24 
+25   // Output must be checked, as otherwise we crash\&.
+26   if (!Result) {}
+27   return 0;
+28 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

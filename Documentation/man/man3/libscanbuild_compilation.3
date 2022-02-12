@@ -1,0 +1,225 @@
+.TH "libscanbuild.compilation" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libscanbuild.compilation
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBsplit_command\fP (command)"
+.br
+.ti -1c
+.RI "def \fBclassify_source\fP (filename, c_compiler=True)"
+.br
+.ti -1c
+.RI "def \fBcompiler_language\fP (command)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "dictionary \fBIGNORED_FLAGS\fP"
+.br
+.ti -1c
+.RI "\fBCOMPILER_PATTERNS\fP"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def libscanbuild\&.compilation\&.classify_source ( filename,  c_compiler = \fCTrue\fP)"
+
+.PP
+.nf
+ Return the language from file name extension. 
+.fi
+.PP
+ 
+.PP
+Definition at line 103 of file compilation\&.py\&.
+.PP
+.nf
+103 def classify_source(filename, c_compiler=True):
+104     """ Return the language from file name extension\&. """
+105 
+106     mapping = {
+107         '\&.c': 'c' if c_compiler else 'c++',
+108         '\&.i': 'c-cpp-output' if c_compiler else 'c++-cpp-output',
+109         '\&.ii': 'c++-cpp-output',
+110         '\&.m': 'objective-c',
+111         '\&.mi': 'objective-c-cpp-output',
+112         '\&.mm': 'objective-c++',
+113         '\&.mii': 'objective-c++-cpp-output',
+114         '\&.C': 'c++',
+115         '\&.cc': 'c++',
+116         '\&.CC': 'c++',
+117         '\&.cp': 'c++',
+118         '\&.cpp': 'c++',
+119         '\&.cxx': 'c++',
+120         '\&.c++': 'c++',
+121         '\&.C++': 'c++',
+122         '\&.txx': 'c++'
+123     }
+124 
+125     __, extension = os\&.path\&.splitext(os\&.path\&.basename(filename))
+126     return mapping\&.get(extension)
+127 
+128 
+.fi
+.PP
+Referenced by libscanbuild\&.analyze\&.classify_parameters(), libscanbuild\&.analyze\&.language_check(), and libscanbuild\&.compilation\&.split_command()\&.
+.SS "def libscanbuild\&.compilation\&.compiler_language ( command)"
+
+.PP
+.nf
+ A predicate to decide the command is a compiler call or not.
+
+Returns 'c' or 'c++' when it match. None otherwise. 
+.fi
+.PP
+ 
+.PP
+Definition at line 129 of file compilation\&.py\&.
+.PP
+.nf
+129 def compiler_language(command):
+130     """ A predicate to decide the command is a compiler call or not\&.
+131 
+132     Returns 'c' or 'c++' when it match\&. None otherwise\&. """
+133 
+134     cplusplus = re\&.compile(r'^(\&.+)(\+\+)(-\&.+|)$')
+135 
+136     if command:
+137         executable = os\&.path\&.basename(command[0])
+138         if any(pattern\&.match(executable) for pattern in COMPILER_PATTERNS):
+139             return 'c++' if cplusplus\&.match(executable) else 'c'
+140     return None
+.fi
+.PP
+Referenced by libscanbuild\&.analyze\&.classify_parameters(), and libscanbuild\&.compilation\&.split_command()\&.
+.SS "def libscanbuild\&.compilation\&.split_command ( command)"
+
+.PP
+.nf
+ Returns a value when the command is a compilation, None otherwise.
+
+The value on success is a named tuple with the following attributes:
+
+    files:    list of source files
+    flags:    list of compile options
+    compiler: string value of 'c' or 'c++' 
+.fi
+.PP
+ 
+.PP
+Definition at line 59 of file compilation\&.py\&.
+.PP
+.nf
+59 def split_command(command):
+60     """ Returns a value when the command is a compilation, None otherwise\&.
+61 
+62     The value on success is a named tuple with the following attributes:
+63 
+64         files:    list of source files
+65         flags:    list of compile options
+66         compiler: string value of 'c' or 'c++' """
+67 
+68     # the result of this method
+69     result = collections\&.namedtuple('Compilation',
+70                                     ['compiler', 'flags', 'files'])
+71     result\&.compiler = compiler_language(command)
+72     result\&.flags = []
+73     result\&.files = []
+74     # quit right now, if the program was not a C/C++ compiler
+75     if not result\&.compiler:
+76         return None
+77     # iterate on the compile options
+78     args = iter(command[1:])
+79     for arg in args:
+80         # quit when compilation pass is not involved
+81         if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
+82             return None
+83         # ignore some flags
+84         elif arg in IGNORED_FLAGS:
+85             count = IGNORED_FLAGS[arg]
+86             for _ in range(count):
+87                 next(args)
+88         elif re\&.match(r'^-(l|L|Wl,)\&.+', arg):
+89             pass
+90         # some parameters could look like filename, take as compile option
+91         elif arg in {'-D', '-I'}:
+92             result\&.flags\&.extend([arg, next(args)])
+93         # parameter which looks source file is taken\&.\&.\&.
+94         elif re\&.match(r'^[^-]\&.+', arg) and classify_source(arg):
+95             result\&.files\&.append(arg)
+96         # and consider everything else as compile option\&.
+97         else:
+98             result\&.flags\&.append(arg)
+99     # do extra check on number of source files
+100     return result if result\&.files else None
+101 
+102 
+.fi
+.PP
+References libscanbuild\&.compilation\&.classify_source(), and libscanbuild\&.compilation\&.compiler_language()\&.
+.PP
+Referenced by libscanbuild\&.analyze\&.analyze_compiler_wrapper_impl(), and libscanbuild\&.intercept\&.format_entry()\&.
+.SH "Variable Documentation"
+.PP 
+.SS "libscanbuild\&.compilation\&.COMPILER_PATTERNS"
+\fBInitial value:\fP
+.PP
+.nf
+1 =  frozenset([
+2     re\&.compile(r'^(intercept-|analyze-|)c(c|\+\+)$'),
+3     re\&.compile(r'^([^-]*-)*[mg](cc|\+\+)(-\d+(\\&.\d+){0,2})?$'),
+4     re\&.compile(r'^([^-]*-)*clang(\+\+)?(-\d+(\\&.\d+){0,2})?$'),
+5     re\&.compile(r'^llvm-g(cc|\+\+)$'),
+6 ])
+.fi
+.PP
+Definition at line 51 of file compilation\&.py\&.
+.SS "dictionary libscanbuild\&.compilation\&.IGNORED_FLAGS"
+\fBInitial value:\fP
+.PP
+.nf
+1 =  {
+2     # compiling only flag, ignored because the creator of compilation
+3     # database will explicitly set it\&.
+4     '-c': 0,
+5     # preprocessor macros, ignored because would cause duplicate entries in
+6     # the output (the only difference would be these flags)\&. this is actual
+7     # finding from users, who suffered longer execution time caused by the
+8     # duplicates\&.
+9     '-MD': 0,
+10     '-MMD': 0,
+11     '-MG': 0,
+12     '-MP': 0,
+13     '-MF': 1,
+14     '-MT': 1,
+15     '-MQ': 1,
+16     # linker options, ignored because for compilation database will contain
+17     # compilation commands only\&. so, the compiler would ignore these flags
+18     # anyway\&. the benefit to get rid of them is to make the output more
+19     # readable\&.
+20     '-static': 0,
+21     '-shared': 0,
+22     '-s': 0,
+23     '-rdynamic': 0,
+24     '-l': 1,
+25     '-L': 1,
+26     '-u': 1,
+27     '-z': 1,
+28     '-T': 1,
+29     '-Xlinker': 1
+30 }
+.fi
+.PP
+Definition at line 19 of file compilation\&.py\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

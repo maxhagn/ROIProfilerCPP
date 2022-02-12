@@ -1,0 +1,106 @@
+\hypertarget{classclang_1_1cxstring_1_1_c_x_string_pool}{}\doxysection{clang\+::cxstring\+::CXString\+Pool Class Reference}
+\label{classclang_1_1cxstring_1_1_c_x_string_pool}\index{clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}}
+
+
+A string pool used for fast allocation/deallocation of strings.  
+
+
+
+
+{\ttfamily \#include $<$CXString.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classclang_1_1cxstring_1_1_c_x_string_pool_a7c918ea91ae7883d4b56563c84260553}{$\sim$\+CXString\+Pool}} ()
+\item 
+\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf}{CXString\+Buf}} $\ast$ \mbox{\hyperlink{classclang_1_1cxstring_1_1_c_x_string_pool_a283bd45dc821db389405ee85514ae8e5}{get\+CXString\+Buf}} (CXTranslation\+Unit TU)
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{classclang_1_1cxstring_1_1_c_x_string_pool_ab905909ab6df34271840b9a9881f0ca7}{CXString\+Buf}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+A string pool used for fast allocation/deallocation of strings. 
+
+Definition at line 73 of file CXString.\+h.
+
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classclang_1_1cxstring_1_1_c_x_string_pool_a7c918ea91ae7883d4b56563c84260553}\label{classclang_1_1cxstring_1_1_c_x_string_pool_a7c918ea91ae7883d4b56563c84260553}} 
+\index{clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}!````~CXStringPool@{$\sim$CXStringPool}}
+\index{````~CXStringPool@{$\sim$CXStringPool}!clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}}
+\doxysubsubsection{\texorpdfstring{$\sim$CXStringPool()}{~CXStringPool()}}
+{\footnotesize\ttfamily clang\+::cxstring\+::\+CXString\+Pool\+::$\sim$\+CXString\+Pool (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 127 of file CXString.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{127                             \{}
+\DoxyCodeLine{128   \textcolor{keywordflow}{for} (std::vector<CXStringBuf *>::iterator I = Pool.begin(), E = Pool.end();}
+\DoxyCodeLine{129        I != E; ++I) \{}
+\DoxyCodeLine{130     \textcolor{keyword}{delete} *I;}
+\DoxyCodeLine{131   \}}
+\DoxyCodeLine{132 \}}
+
+\end{DoxyCode}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classclang_1_1cxstring_1_1_c_x_string_pool_a283bd45dc821db389405ee85514ae8e5}\label{classclang_1_1cxstring_1_1_c_x_string_pool_a283bd45dc821db389405ee85514ae8e5}} 
+\index{clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}!getCXStringBuf@{getCXStringBuf}}
+\index{getCXStringBuf@{getCXStringBuf}!clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}}
+\doxysubsubsection{\texorpdfstring{getCXStringBuf()}{getCXStringBuf()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf}{CXString\+Buf}} $\ast$ clang\+::cxstring\+::\+CXString\+Pool\+::get\+CXString\+Buf (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 134 of file CXString.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{134                                                               \{}
+\DoxyCodeLine{135   \textcolor{keywordflow}{if} (Pool.empty())}
+\DoxyCodeLine{136     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \mbox{\hyperlink{classclang_1_1cxstring_1_1_c_x_string_pool_ab905909ab6df34271840b9a9881f0ca7}{CXStringBuf}}(TU);}
+\DoxyCodeLine{137 }
+\DoxyCodeLine{138   \mbox{\hyperlink{classclang_1_1cxstring_1_1_c_x_string_pool_ab905909ab6df34271840b9a9881f0ca7}{CXStringBuf}} *Buf = Pool.back();}
+\DoxyCodeLine{139   Buf-\/>Data.clear();}
+\DoxyCodeLine{140   Pool.pop\_back();}
+\DoxyCodeLine{141   \textcolor{keywordflow}{return} Buf;}
+\DoxyCodeLine{142 \}}
+
+\end{DoxyCode}
+
+
+References CXString\+Buf, and clang\+::cxstring\+::\+CXString\+Buf\+::\+Data.
+
+
+
+\doxysubsection{Friends And Related Function Documentation}
+\mbox{\Hypertarget{classclang_1_1cxstring_1_1_c_x_string_pool_ab905909ab6df34271840b9a9881f0ca7}\label{classclang_1_1cxstring_1_1_c_x_string_pool_ab905909ab6df34271840b9a9881f0ca7}} 
+\index{clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}!CXStringBuf@{CXStringBuf}}
+\index{CXStringBuf@{CXStringBuf}!clang::cxstring::CXStringPool@{clang::cxstring::CXStringPool}}
+\doxysubsubsection{\texorpdfstring{CXStringBuf}{CXStringBuf}}
+{\footnotesize\ttfamily friend struct \mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf}{CXString\+Buf}}\hspace{0.3cm}{\ttfamily [friend]}}
+
+
+
+Definition at line 82 of file CXString.\+h.
+
+
+
+Referenced by get\+CXString\+Buf().
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_c_x_string_8h}{CXString.\+h}}\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_c_x_string_8cpp}{CXString.\+cpp}}\end{DoxyCompactItemize}

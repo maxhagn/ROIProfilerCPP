@@ -1,0 +1,214 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_loop__proto__to__llvm_8cpp_source" xml:lang="en-US">
+<title>loop_proto_to_llvm.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/proto-to-llvm/loop_proto_to_llvm.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//==--&#32;loop_proto_to_llvm.cpp&#32;-&#32;Protobuf-C++&#32;conversion</emphasis>
+00002 <emphasis role="comment">//---------------------==//</emphasis>
+00003 <emphasis role="comment">//</emphasis>
+00004 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00005 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00006 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00007 <emphasis role="comment">//</emphasis>
+00008 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00009 <emphasis role="comment">//</emphasis>
+00010 <emphasis role="comment">//&#32;Implements&#32;functions&#32;for&#32;converting&#32;between&#32;protobufs&#32;and&#32;LLVM&#32;IR.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//</emphasis>
+00013 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="_loop__proto__to__llvm_8h">loop_proto_to_llvm.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;cxx_loop_proto.pb.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;../handle-llvm/input_arrays.h&quot;</emphasis>
+00018 
+00019 <emphasis role="comment">//&#32;The&#32;following&#32;is&#32;needed&#32;to&#32;convert&#32;protos&#32;in&#32;human-readable&#32;form</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&lt;google/protobuf/text_format.h&gt;</emphasis>
+00021 
+00022 <emphasis role="preprocessor">#include&#32;&lt;ostream&gt;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&lt;sstream&gt;</emphasis>
+00024 
+00025 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang__fuzzer">clang_fuzzer</link>&#32;{
+00026 
+00027 <emphasis role="comment">//&#32;Forward&#32;decls</emphasis>
+00028 std::string&#32;<link linkend="_namespaceclang__fuzzer_1a2a135ddb6bd40169f7f809210bded8b3">BinopToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;BinaryOp&#32;&amp;x);
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00029"/><link linkend="_namespaceclang__fuzzer_1aa61cc7ac7e7f548b02f20fdbdd5aedc3">00029</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1aa61cc7ac7e7f548b02f20fdbdd5aedc3">StateSeqToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;StatementSeq&#32;&amp;x);
+00030 
+00031 <emphasis role="comment">//&#32;Counter&#32;variable&#32;to&#32;generate&#32;new&#32;LLVM&#32;IR&#32;variable&#32;names&#32;and&#32;wrapper&#32;function</emphasis>
+00032 <emphasis role="keyword">static</emphasis>&#32;std::string&#32;get_var()&#32;{
+00033 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;ctr&#32;=&#32;0;
+00034 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;%var&quot;</emphasis>&#32;+&#32;std::to_string(ctr++);
+00035 }
+00036 
+00037 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;inner_loop&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00038 <emphasis role="keyword">class&#32;</emphasis>InnerLoop&#32;{
+00039 &#32;&#32;<emphasis role="keyword">public</emphasis>:
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00040"/><link linkend="_classclang__fuzzer_1_1_inner_loop_1a3dd86f82bc4add7f2a25d1c974034d28">00040</link> &#32;&#32;<link linkend="_classclang__fuzzer_1_1_inner_loop_1a3dd86f82bc4add7f2a25d1c974034d28">InnerLoop</link>()&#32;{
+00041 &#32;&#32;&#32;&#32;inner_loop&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00042 &#32;&#32;}
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00043"/><link linkend="_classclang__fuzzer_1_1_inner_loop_1a2cae2f5516dfa033e33cc78c653bc199">00043</link> &#32;&#32;<link linkend="_classclang__fuzzer_1_1_inner_loop_1a2cae2f5516dfa033e33cc78c653bc199">~InnerLoop</link>()&#32;{
+00044 &#32;&#32;&#32;&#32;inner_loop&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00045 &#32;&#32;}
+00046 };
+00047 
+00048 
+00049 <emphasis role="comment">//&#32;Proto&#32;to&#32;LLVM.</emphasis>
+00050 
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00051"/><link linkend="_namespaceclang__fuzzer_1a4286ea62a31f17f2f81fdbe82e84d30e">00051</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1a4286ea62a31f17f2f81fdbe82e84d30e">ConstToString</link>(<emphasis role="keyword">const</emphasis>&#32;Const&#32;&amp;x)&#32;{
+00052 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::to_string(x.val());
+00053 }
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00054"/><link linkend="_namespaceclang__fuzzer_1a42168c5369d315d97d112481cedf9e5a">00054</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1a42168c5369d315d97d112481cedf9e5a">VarRefToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;VarRef&#32;&amp;x)&#32;{
+00055 &#32;&#32;std::string&#32;which_loop&#32;=&#32;inner_loop&#32;?&#32;<emphasis role="stringliteral">&quot;inner&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;outer&quot;</emphasis>;
+00056 &#32;&#32;std::string&#32;arr;
+00057 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>(x.arr())&#32;{
+00058 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;VarRef::ARR_A:
+00059 &#32;&#32;&#32;&#32;arr&#32;=&#32;<emphasis role="stringliteral">&quot;%a&quot;</emphasis>;
+00060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00061 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;VarRef::ARR_B:
+00062 &#32;&#32;&#32;&#32;arr&#32;=&#32;<emphasis role="stringliteral">&quot;%b&quot;</emphasis>;
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00064 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;VarRef::ARR_C:
+00065 &#32;&#32;&#32;&#32;arr&#32;=&#32;<emphasis role="stringliteral">&quot;%c&quot;</emphasis>;
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00067 &#32;&#32;}
+00068 &#32;&#32;std::string&#32;ptr_var&#32;=&#32;get_var();
+00069 &#32;&#32;os&#32;&lt;&lt;&#32;ptr_var&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;=&#32;getelementptr&#32;inbounds&#32;i32,&#32;i32*&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;arr
+00070 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;i64&#32;%&quot;</emphasis>&#32;&lt;&lt;&#32;which_loop&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;_ct\n&quot;</emphasis>;
+00071 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ptr_var;
+00072 }
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00073"/><link linkend="_namespaceclang__fuzzer_1af95d943f747b8628a4981aec82abb9d8">00073</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1af95d943f747b8628a4981aec82abb9d8">RvalueToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Rvalue&#32;&amp;x)&#32;{
+00074 &#32;&#32;<emphasis role="keywordflow">if</emphasis>(x.has_cons())
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1a4286ea62a31f17f2f81fdbe82e84d30e">ConstToString</link>(x.cons());
+00076 &#32;&#32;<emphasis role="keywordflow">if</emphasis>(x.has_binop())
+00077 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1a2a135ddb6bd40169f7f809210bded8b3">BinopToString</link>(os,&#32;x.binop());
+00078 &#32;&#32;<emphasis role="keywordflow">if</emphasis>(x.has_varref())&#32;{
+00079 &#32;&#32;&#32;&#32;std::string&#32;var_ref&#32;=&#32;<link linkend="_namespaceclang__fuzzer_1a42168c5369d315d97d112481cedf9e5a">VarRefToString</link>(os,&#32;x.varref());
+00080 &#32;&#32;&#32;&#32;std::string&#32;val_var&#32;=&#32;get_var();
+00081 &#32;&#32;&#32;&#32;os&#32;&lt;&lt;&#32;val_var&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;=&#32;load&#32;i32,&#32;i32*&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;var_ref&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00082 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;val_var;
+00083 &#32;&#32;}
+00084 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;1&quot;</emphasis>;
+00085 
+00086 }
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00087"/><link linkend="_namespaceclang__fuzzer_1a2a135ddb6bd40169f7f809210bded8b3">00087</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1a2a135ddb6bd40169f7f809210bded8b3">BinopToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;BinaryOp&#32;&amp;x)&#32;{
+00088 &#32;&#32;std::string&#32;left&#32;=&#32;<link linkend="_namespaceclang__fuzzer_1af95d943f747b8628a4981aec82abb9d8">RvalueToString</link>(os,&#32;x.left());
+00089 &#32;&#32;std::string&#32;right&#32;=&#32;<link linkend="_namespaceclang__fuzzer_1af95d943f747b8628a4981aec82abb9d8">RvalueToString</link>(os,&#32;x.right());
+00090 &#32;&#32;std::string&#32;op;
+00091 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(x.op())&#32;{
+00092 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::PLUS:
+00093 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;add&quot;</emphasis>;
+00094 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00095 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::MINUS:
+00096 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;sub&quot;</emphasis>;
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00098 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::MUL:
+00099 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;mul&quot;</emphasis>;
+00100 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00101 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::XOR:
+00102 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;xor&quot;</emphasis>;
+00103 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00104 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::AND:
+00105 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;and&quot;</emphasis>;
+00106 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00107 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::OR:
+00108 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;or&quot;</emphasis>;
+00109 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00110 &#32;&#32;<emphasis role="comment">//&#32;Support&#32;for&#32;Boolean&#32;operators&#32;will&#32;be&#32;added&#32;later</emphasis>
+00111 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::EQ:
+00112 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::NE:
+00113 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::LE:
+00114 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::GE:
+00115 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::LT:
+00116 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::GT:
+00117 &#32;&#32;&#32;&#32;op&#32;=&#32;<emphasis role="stringliteral">&quot;add&quot;</emphasis>;
+00118 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00119 &#32;&#32;}
+00120 &#32;&#32;std::string&#32;val_var&#32;=&#32;get_var();
+00121 &#32;&#32;os&#32;&lt;&lt;&#32;val_var&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;=&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;op&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;i32&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;left&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;right&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00122 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;val_var;
+00123 }
+00124 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;AssignmentStatement&#32;&amp;x)&#32;{
+00125 &#32;&#32;std::string&#32;rvalue&#32;=&#32;<link linkend="_namespaceclang__fuzzer_1af95d943f747b8628a4981aec82abb9d8">RvalueToString</link>(os,&#32;x.rvalue());
+00126 &#32;&#32;std::string&#32;var_ref&#32;=&#32;<link linkend="_namespaceclang__fuzzer_1a42168c5369d315d97d112481cedf9e5a">VarRefToString</link>(os,&#32;x.varref());
+00127 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;store&#32;i32&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;rvalue&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;i32*&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;var_ref&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00128 }
+00129 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Statement&#32;&amp;x)&#32;{
+00130 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.assignment();
+00131 }
+00132 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;StatementSeq&#32;&amp;x)&#32;{
+00133 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;st&#32;:&#32;x.statements())&#32;{
+00134 &#32;&#32;&#32;&#32;os&#32;&lt;&lt;&#32;st;
+00135 &#32;&#32;}
+00136 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os;
+00137 }
+00138 <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1a1de27ebdd8a199c6bdbb5a195631f553">NestedLoopToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;LoopFunction&#32;&amp;x)&#32;{
+00139 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;target&#32;triple&#32;=&#32;\&quot;x86_64-unknown-linux-gnu\&quot;\n&quot;</emphasis>
+00140 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;define&#32;void&#32;@foo(i32*&#32;%a,&#32;i32*&#32;%b,&#32;i32*&#32;noalias&#32;%c,&#32;i64&#32;%s)&#32;{\n&quot;</emphasis>
+00141 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;outer_loop_start:\n&quot;</emphasis>
+00142 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%cmp&#32;=&#32;icmp&#32;sgt&#32;i64&#32;%s,&#32;0\n&quot;</emphasis>
+00143 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;i1&#32;%cmp,&#32;label&#32;%inner_loop_start,&#32;label&#32;%end\n&quot;</emphasis>
+00144 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;outer_loop:\n&quot;</emphasis>
+00145 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;x.outer_statements()
+00146 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%o_ct_new&#32;=&#32;add&#32;i64&#32;%outer_ct,&#32;1\n&quot;</emphasis>
+00147 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%jmp_outer&#32;=&#32;icmp&#32;eq&#32;i64&#32;%o_ct_new,&#32;%s\n&quot;</emphasis>
+00148 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;i1&#32;%jmp_outer,&#32;label&#32;%end,&#32;label&#32;%inner_loop_start\n&quot;</emphasis>
+00149 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;inner_loop_start:\n&quot;</emphasis>
+00150 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%outer_ct&#32;=&#32;phi&#32;i64&#32;[%o_ct_new,&#32;%outer_loop],&#32;[0,&#32;%outer_loop_start]\n&quot;</emphasis>
+00151 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;label&#32;%inner_loop\n&quot;</emphasis>
+00152 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;inner_loop:\n&quot;</emphasis>
+00153 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%inner_ct&#32;=&#32;phi&#32;i64&#32;[0,&#32;%inner_loop_start],&#32;[%i_ct_new,&#32;%inner_loop]\n&quot;</emphasis>;
+00154 &#32;&#32;{
+00155 &#32;&#32;&#32;&#32;InnerLoop&#32;IL;
+00156 &#32;&#32;&#32;&#32;os&#32;&lt;&lt;&#32;x.inner_statements();
+00157 &#32;&#32;}
+00158 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%i_ct_new&#32;=&#32;add&#32;i64&#32;%inner_ct,&#32;1\n&quot;</emphasis>
+00159 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%jmp_inner&#32;=&#32;icmp&#32;eq&#32;i64&#32;%i_ct_new,&#32;%s\n&quot;</emphasis>
+00160 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;i1&#32;%jmp_inner,&#32;label&#32;%outer_loop,&#32;label&#32;%inner_loop,&#32;!llvm.loop&#32;!0\n&quot;</emphasis>
+00161 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;end:\n&quot;</emphasis>
+00162 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;ret&#32;void\n&quot;</emphasis>
+00163 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>
+00164 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!0&#32;=&#32;distinct&#32;!{!0,&#32;!1,&#32;!2}\n&quot;</emphasis>
+00165 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!1&#32;=&#32;!{!\&quot;llvm.loop.vectorize.enable\&quot;,&#32;i1&#32;true}\n&quot;</emphasis>
+00166 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!2&#32;=&#32;!{!\&quot;llvm.loop.vectorize.width\&quot;,&#32;i32&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;kArraySize&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00167 }
+00168 <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1acecea2c5371f615b84065480211f1374">SingleLoopToString</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;LoopFunction&#32;&amp;x)&#32;{
+00169 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;target&#32;triple&#32;=&#32;\&quot;x86_64-unknown-linux-gnu\&quot;\n&quot;</emphasis>
+00170 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;define&#32;void&#32;@foo(i32*&#32;%a,&#32;i32*&#32;%b,&#32;i32*&#32;noalias&#32;%c,&#32;i64&#32;%s)&#32;{\n&quot;</emphasis>
+00171 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%cmp&#32;=&#32;icmp&#32;sgt&#32;i64&#32;%s,&#32;0\n&quot;</emphasis>
+00172 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;i1&#32;%cmp,&#32;label&#32;%start,&#32;label&#32;%end\n&quot;</emphasis>
+00173 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;start:\n&quot;</emphasis>
+00174 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;label&#32;%loop\n&quot;</emphasis>
+00175 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;end:\n&quot;</emphasis>
+00176 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;ret&#32;void\n&quot;</emphasis>
+00177 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;loop:\n&quot;</emphasis>
+00178 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%outer_ct&#32;=&#32;phi&#32;i64&#32;[&#32;%ctnew,&#32;%loop&#32;],&#32;[&#32;0,&#32;%start&#32;]\n&quot;</emphasis>
+00179 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;x.outer_statements()
+00180 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%ctnew&#32;=&#32;add&#32;i64&#32;%outer_ct,&#32;1\n&quot;</emphasis>
+00181 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%j&#32;=&#32;icmp&#32;eq&#32;i64&#32;%ctnew,&#32;%s\n&quot;</emphasis>
+00182 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;br&#32;i1&#32;%j,&#32;label&#32;%end,&#32;label&#32;%loop,&#32;!llvm.loop&#32;!0\n}\n&quot;</emphasis>
+00183 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!0&#32;=&#32;distinct&#32;!{!0,&#32;!1,&#32;!2}\n&quot;</emphasis>
+00184 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!1&#32;=&#32;!{!\&quot;llvm.loop.vectorize.enable\&quot;,&#32;i1&#32;true}\n&quot;</emphasis>
+00185 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!2&#32;=&#32;!{!\&quot;llvm.loop.vectorize.width\&quot;,&#32;i32&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;kArraySize&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00186 }
+00187 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;LoopFunction&#32;&amp;x)&#32;{
+00188 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_inner_statements())
+00189 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang__fuzzer_1a1de27ebdd8a199c6bdbb5a195631f553">NestedLoopToString</link>(os,&#32;x);
+00190 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00191 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang__fuzzer_1acecea2c5371f615b84065480211f1374">SingleLoopToString</link>(os,&#32;x);
+00192 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os;
+00193 }
+00194 
+00195 <emphasis role="comment">//&#32;---------------------------------</emphasis>
+00196 
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00197"/><link linkend="_namespaceclang__fuzzer_1a35ef2ec34abd6c5c09fcf55180046986">00197</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1a35ef2ec34abd6c5c09fcf55180046986">LoopFunctionToLLVMString</link>(<emphasis role="keyword">const</emphasis>&#32;LoopFunction&#32;&amp;input)&#32;{
+00198 &#32;&#32;std::ostringstream&#32;os;
+00199 &#32;&#32;os&#32;&lt;&lt;&#32;input;
+00200 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.str();
+00201 }
+<anchor xml:id="_loop__proto__to__llvm_8cpp_source_1l00202"/><link linkend="_namespaceclang__fuzzer_1af604fc28b812e241cd6abfebaedc4797">00202</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1af604fc28b812e241cd6abfebaedc4797">LoopProtoToLLVM</link>(<emphasis role="keyword">const</emphasis>&#32;uint8_t&#32;*data,&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;size)&#32;{
+00203 &#32;&#32;LoopFunction&#32;message;
+00204 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!message.ParsePartialFromArray(data,&#32;size))
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;#error&#32;invalid&#32;proto\n&quot;</emphasis>;
+00206 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1a35ef2ec34abd6c5c09fcf55180046986">LoopFunctionToLLVMString</link>(message);
+00207 }
+00208 
+00209 }&#32;<emphasis role="comment">//&#32;namespace&#32;clang_fuzzer</emphasis>
+</programlisting></section>

@@ -1,0 +1,126 @@
+\hypertarget{core__main_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/c-\/index-\/test/core\+\_\+main.cpp File Reference}
+\label{core__main_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/c-\/index-\/test/core\_main.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/c-\/index-\/test/core\_main.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Mangle.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Lang\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Code\+Gen/\+Object\+File\+PCHContainer\+Operations.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Invocation.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Frontend\+Action.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Index/\+Index\+Data\+Consumer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Index/\+Indexing\+Action.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Index/\+USRGeneration.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Lex/\+Preprocessor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Serialization/\+ASTReader.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Pretty\+Stack\+Trace.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Program.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+String\+Saver.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespaceoptions}{options}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{core__main_8cpp_a246a1675ed106163b7d4f141406d3005}{indextest\+\_\+core\+\_\+main}} (int argc, const char $\ast$$\ast$argv)
+\item 
+int \mbox{\hyperlink{core__main_8cpp_abf8b8cca4d3659c057fd2ab49afb69be}{indextest\+\_\+perform\+\_\+shell\+\_\+execution}} (const char $\ast$command\+\_\+line)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{core__main_8cpp_a246a1675ed106163b7d4f141406d3005}\label{core__main_8cpp_a246a1675ed106163b7d4f141406d3005}} 
+\index{core\_main.cpp@{core\_main.cpp}!indextest\_core\_main@{indextest\_core\_main}}
+\index{indextest\_core\_main@{indextest\_core\_main}!core\_main.cpp@{core\_main.cpp}}
+\doxysubsubsection{\texorpdfstring{indextest\_core\_main()}{indextest\_core\_main()}}
+{\footnotesize\ttfamily int indextest\+\_\+core\+\_\+main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 330 of file core\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{330                                                      \{}
+\DoxyCodeLine{331   sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{332   PrettyStackTraceProgram X(argc, argv);}
+\DoxyCodeLine{333   \textcolor{keywordtype}{void} *MainAddr = (\textcolor{keywordtype}{void}*) (intptr\_t) \mbox{\hyperlink{core__main_8cpp_a246a1675ed106163b7d4f141406d3005}{indextest\_core\_main}};}
+\DoxyCodeLine{334   std::string Executable = llvm::sys::fs::getMainExecutable(argv[0], MainAddr);}
+\DoxyCodeLine{335 }
+\DoxyCodeLine{336   assert(argv[1] == StringRef(\textcolor{stringliteral}{"{}core"{}}));}
+\DoxyCodeLine{337   ++argv;}
+\DoxyCodeLine{338   -\/-\/argc;}
+\DoxyCodeLine{339 }
+\DoxyCodeLine{340   std::vector<const char *> CompArgs;}
+\DoxyCodeLine{341   \textcolor{keyword}{const} \textcolor{keywordtype}{char} **DoubleDash = std::find(argv, argv + argc, StringRef(\textcolor{stringliteral}{"{}-\/-\/"{}}));}
+\DoxyCodeLine{342   \textcolor{keywordflow}{if} (DoubleDash != argv + argc) \{}
+\DoxyCodeLine{343     CompArgs = std::vector<const char *>(DoubleDash + 1, argv + argc);}
+\DoxyCodeLine{344     argc = DoubleDash -\/ argv;}
+\DoxyCodeLine{345   \}}
+\DoxyCodeLine{346 }
+\DoxyCodeLine{347   cl::HideUnrelatedOptions(options::IndexTestCoreCategory);}
+\DoxyCodeLine{348   cl::ParseCommandLineOptions(argc, argv, \textcolor{stringliteral}{"{}index-\/test-\/core"{}});}
+\DoxyCodeLine{349 }
+\DoxyCodeLine{350   \textcolor{keywordflow}{if} (options::Action == ActionType::None) \{}
+\DoxyCodeLine{351     errs() << \textcolor{stringliteral}{"{}error: action required; pass '-\/help' for options\(\backslash\)n"{}};}
+\DoxyCodeLine{352     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{353   \}}
+\DoxyCodeLine{354 }
+\DoxyCodeLine{355   \textcolor{keywordflow}{if} (options::Action == ActionType::PrintSourceSymbols) \{}
+\DoxyCodeLine{356     \textcolor{keywordflow}{if} (!options::ModuleFilePath.empty()) \{}
+\DoxyCodeLine{357       \textcolor{keywordflow}{return} printSourceSymbolsFromModule(options::ModuleFilePath,}
+\DoxyCodeLine{358                                           options::ModuleFormat);}
+\DoxyCodeLine{359     \}}
+\DoxyCodeLine{360     \textcolor{keywordflow}{if} (CompArgs.empty()) \{}
+\DoxyCodeLine{361       errs() << \textcolor{stringliteral}{"{}error: missing compiler args; pass '-\/-\/ <compiler arguments>'\(\backslash\)n"{}};}
+\DoxyCodeLine{362       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{363     \}}
+\DoxyCodeLine{364     \textcolor{keywordflow}{return} printSourceSymbols(Executable.c\_str(), CompArgs,}
+\DoxyCodeLine{365                               options::DumpModuleImports,}
+\DoxyCodeLine{366                               options::IncludeLocals, options::IgnoreMacros);}
+\DoxyCodeLine{367   \}}
+\DoxyCodeLine{368 }
+\DoxyCodeLine{369   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{370 \}}
+
+\end{DoxyCode}
+
+
+References indextest\+\_\+core\+\_\+main().
+
+
+
+Referenced by indextest\+\_\+core\+\_\+main().
+
+\mbox{\Hypertarget{core__main_8cpp_abf8b8cca4d3659c057fd2ab49afb69be}\label{core__main_8cpp_abf8b8cca4d3659c057fd2ab49afb69be}} 
+\index{core\_main.cpp@{core\_main.cpp}!indextest\_perform\_shell\_execution@{indextest\_perform\_shell\_execution}}
+\index{indextest\_perform\_shell\_execution@{indextest\_perform\_shell\_execution}!core\_main.cpp@{core\_main.cpp}}
+\doxysubsubsection{\texorpdfstring{indextest\_perform\_shell\_execution()}{indextest\_perform\_shell\_execution()}}
+{\footnotesize\ttfamily int indextest\+\_\+perform\+\_\+shell\+\_\+execution (\begin{DoxyParamCaption}\item[{const char $\ast$}]{command\+\_\+line }\end{DoxyParamCaption})}
+
+
+
+Definition at line 376 of file core\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{376                                                                 \{}
+\DoxyCodeLine{377   BumpPtrAllocator Alloc;}
+\DoxyCodeLine{378   llvm::StringSaver Saver(Alloc);}
+\DoxyCodeLine{379   SmallVector<const char *, 4> Args;}
+\DoxyCodeLine{380   llvm::cl::TokenizeGNUCommandLine(command\_line, Saver, Args);}
+\DoxyCodeLine{381   \textcolor{keyword}{auto} Program = llvm::sys::findProgramByName(Args[0]);}
+\DoxyCodeLine{382   \textcolor{keywordflow}{if} (std::error\_code ec = Program.getError()) \{}
+\DoxyCodeLine{383     llvm::errs() << \textcolor{stringliteral}{"{}command not found: "{}} << Args[0] << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{384     \textcolor{keywordflow}{return} ec.value();}
+\DoxyCodeLine{385   \}}
+\DoxyCodeLine{386   SmallVector<StringRef, 8> execArgs(Args.begin(), Args.end());}
+\DoxyCodeLine{387   \textcolor{keywordflow}{return} llvm::sys::ExecuteAndWait(*Program, execArgs);}
+\DoxyCodeLine{388 \}}
+
+\end{DoxyCode}

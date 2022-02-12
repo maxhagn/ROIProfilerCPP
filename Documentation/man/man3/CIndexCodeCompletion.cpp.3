@@ -1,0 +1,604 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCodeCompletion.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCodeCompletion.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CIndexDiagnostic\&.h'\fP
+.br
+\fC#include 'CLog\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/AST/Decl\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclObjC\&.h'\fP
+.br
+\fC#include 'clang/AST/Type\&.h'\fP
+.br
+\fC#include 'clang/Basic/FileManager\&.h'\fP
+.br
+\fC#include 'clang/Basic/SourceManager\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Sema/CodeCompleteConsumer\&.h'\fP
+.br
+\fC#include 'clang/Sema/Sema\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallString\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringExtras\&.h'\fP
+.br
+\fC#include 'llvm/Support/CrashRecoveryContext\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/FormatVariadic\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Program\&.h'\fP
+.br
+\fC#include 'llvm/Support/Timer\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <atomic>\fP
+.br
+\fC#include <cstdio>\fP
+.br
+\fC#include <cstdlib>\fP
+.br
+\fC#include <string>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "enum CXCompletionChunkKind \fBclang_getCompletionChunkKind\fP (CXCompletionString completion_string, unsigned chunk_number)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCompletionChunkText\fP (CXCompletionString completion_string, unsigned chunk_number)"
+.br
+.ti -1c
+.RI "CXCompletionString \fBclang_getCompletionChunkCompletionString\fP (CXCompletionString completion_string, unsigned chunk_number)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getNumCompletionChunks\fP (CXCompletionString completion_string)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getCompletionPriority\fP (CXCompletionString completion_string)"
+.br
+.ti -1c
+.RI "enum CXAvailabilityKind \fBclang_getCompletionAvailability\fP (CXCompletionString completion_string)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getCompletionNumAnnotations\fP (CXCompletionString completion_string)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCompletionAnnotation\fP (CXCompletionString completion_string, unsigned annotation_number)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCompletionParent\fP (CXCompletionString completion_string, CXCursorKind *kind)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCompletionBriefComment\fP (CXCompletionString completion_string)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getCompletionNumFixIts\fP (CXCodeCompleteResults *results, unsigned completion_index)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCompletionFixIt\fP (CXCodeCompleteResults *results, unsigned completion_index, unsigned fixit_index, CXSourceRange *replacement_range)"
+.br
+.ti -1c
+.RI "CXCodeCompleteResults * \fBclang_codeCompleteAt\fP (CXTranslationUnit TU, const char *complete_filename, unsigned complete_line, unsigned complete_column, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, unsigned options)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_defaultCodeCompleteOptions\fP (void)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeCodeCompleteResults\fP (CXCodeCompleteResults *ResultsIn)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_codeCompleteGetNumDiagnostics\fP (CXCodeCompleteResults *ResultsIn)"
+.br
+.ti -1c
+.RI "CXDiagnostic \fBclang_codeCompleteGetDiagnostic\fP (CXCodeCompleteResults *ResultsIn, unsigned Index)"
+.br
+.ti -1c
+.RI "unsigned long long \fBclang_codeCompleteGetContexts\fP (CXCodeCompleteResults *ResultsIn)"
+.br
+.ti -1c
+.RI "enum CXCursorKind \fBclang_codeCompleteGetContainerKind\fP (CXCodeCompleteResults *ResultsIn, unsigned *IsIncomplete)"
+.br
+.ti -1c
+.RI "CXString \fBclang_codeCompleteGetContainerUSR\fP (CXCodeCompleteResults *ResultsIn)"
+.br
+.ti -1c
+.RI "CXString \fBclang_codeCompleteGetObjCSelector\fP (CXCodeCompleteResults *ResultsIn)"
+.br
+.ti -1c
+.RI "void \fBclang_sortCodeCompletionResults\fP (CXCompletionResult *Results, unsigned NumResults)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXCodeCompleteResults* clang_codeCompleteAt (CXTranslationUnit TU, const char * complete_filename, unsigned complete_line, unsigned complete_column, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, unsigned options)"
+
+.PP
+Definition at line 851 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+857                                                               {
+858   LOG_FUNC_SECTION {
+859     *Log << TU << ' '
+860          << complete_filename << ':' << complete_line << ':' << complete_column;
+861   }
+862 
+863   if (num_unsaved_files && !unsaved_files)
+864     return nullptr;
+865 
+866   CXCodeCompleteResults *result;
+867   auto CodeCompleteAtImpl = [=, &result]() {
+868     result = clang_codeCompleteAt_Impl(
+869         TU, complete_filename, complete_line, complete_column,
+870         llvm::makeArrayRef(unsaved_files, num_unsaved_files), options);
+871   };
+872 
+873   llvm::CrashRecoveryContext CRC;
+874 
+875   if (!RunSafely(CRC, CodeCompleteAtImpl)) {
+876     fprintf(stderr, "libclang: crash detected in code completion\n");
+877     cxtu::getASTUnit(TU)->setUnsafeToFree(true);
+878     return nullptr;
+879   } else if (getenv("LIBCLANG_RESOURCE_USAGE"))
+880     PrintLibclangResourceUsage(TU);
+881 
+882   return result;
+883 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.SS "enum CXCursorKind clang_codeCompleteGetContainerKind (CXCodeCompleteResults * ResultsIn, unsigned * IsIncomplete)"
+
+.PP
+Definition at line 926 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+937                                                                              {
+938   AllocatedCXCodeCompleteResults *Results =
+939     static_cast<AllocatedCXCodeCompleteResults *>(ResultsIn);
+940   if (!Results)
+941     return CXCursor_InvalidCode;
+942 
+943   if (IsIncomplete != nullptr) {
+944     *IsIncomplete = Results->ContainerIsIncomplete;
+945   }
+946   
+947   return Results->ContainerKind;
+948 }
+.fi
+.SS "CXString clang_codeCompleteGetContainerUSR (CXCodeCompleteResults * ResultsIn)"
+
+.PP
+Definition at line 950 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+950                                                                              {
+951   AllocatedCXCodeCompleteResults *Results =
+952     static_cast<AllocatedCXCodeCompleteResults *>(ResultsIn);
+953   if (!Results)
+954     return cxstring::createEmpty();
+955 
+956   return cxstring::createRef(Results->ContainerUSR\&.c_str());
+957 }
+.fi
+.SS "unsigned long long clang_codeCompleteGetContexts (CXCodeCompleteResults * ResultsIn)"
+
+.PP
+Definition at line 926 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+926                                                                 {
+927   AllocatedCXCodeCompleteResults *Results
+928     = static_cast<AllocatedCXCodeCompleteResults*>(ResultsIn);
+929   if (!Results)
+930     return 0;
+931   
+932   return Results->Contexts;
+933 }
+.fi
+.SS "CXDiagnostic clang_codeCompleteGetDiagnostic (CXCodeCompleteResults * ResultsIn, unsigned Index)"
+
+.PP
+Definition at line 909 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+910                                                 {
+911   AllocatedCXCodeCompleteResults *Results
+912     = static_cast<AllocatedCXCodeCompleteResults*>(ResultsIn);
+913   if (!Results || Index >= Results->Diagnostics\&.size())
+914     return nullptr;
+915 
+916   CXStoredDiagnostic *Diag = Results->DiagnosticsWrappers[Index]\&.get();
+917   if (!Diag)
+918     Diag = (Results->DiagnosticsWrappers[Index] =
+919                 std::make_unique<CXStoredDiagnostic>(
+920                     Results->Diagnostics[Index], Results->LangOpts))
+921                \&.get();
+922   return Diag;
+923 }
+.fi
+.SS "unsigned clang_codeCompleteGetNumDiagnostics (CXCodeCompleteResults * ResultsIn)"
+
+.PP
+Definition at line 899 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+899                                                                       {
+900   AllocatedCXCodeCompleteResults *Results
+901     = static_cast<AllocatedCXCodeCompleteResults*>(ResultsIn);
+902   if (!Results)
+903     return 0;
+904 
+905   return Results->Diagnostics\&.size();
+906 }
+.fi
+.SS "CXString clang_codeCompleteGetObjCSelector (CXCodeCompleteResults * ResultsIn)"
+
+.PP
+Definition at line 960 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+960                                                                              {
+961   AllocatedCXCodeCompleteResults *Results =
+962     static_cast<AllocatedCXCodeCompleteResults *>(ResultsIn);
+963   if (!Results)
+964     return cxstring::createEmpty();
+965   
+966   return cxstring::createDup(Results->Selector);
+967 }
+.fi
+.SS "unsigned clang_defaultCodeCompleteOptions (void)"
+
+.PP
+Definition at line 885 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+885                                                 {
+886   return CXCodeComplete_IncludeMacros;
+887 }
+.fi
+.PP
+Referenced by perform_code_completion()\&.
+.SS "void clang_disposeCodeCompleteResults (CXCodeCompleteResults * ResultsIn)"
+
+.PP
+Definition at line 889 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+889                                                                         {
+890   if (!ResultsIn)
+891     return;
+892 
+893   AllocatedCXCodeCompleteResults *Results
+894     = static_cast<AllocatedCXCodeCompleteResults*>(ResultsIn);
+895   delete Results;
+896 }
+.fi
+.SS "CXString clang_getCompletionAnnotation (CXCompletionString completion_string, unsigned annotation_number)"
+
+.PP
+Definition at line 210 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+211                                                                    {
+212   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+213   return CCStr ? cxstring::createRef(CCStr->getAnnotation(annotation_number))
+214                : cxstring::createNull();
+215 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "enum CXAvailabilityKind clang_getCompletionAvailability (CXCompletionString completion_string)"
+
+.PP
+Definition at line 192 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+198                                                                       {
+199   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+200   return CCStr? static_cast<CXAvailabilityKind>(CCStr->getAvailability())
+201               : CXAvailability_Available;
+202 }
+.fi
+.SS "CXString clang_getCompletionBriefComment (CXCompletionString completion_string)"
+
+.PP
+Definition at line 231 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+231                                                                       {
+232   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+233 
+234   if (!CCStr)
+235     return cxstring::createNull();
+236 
+237   return cxstring::createRef(CCStr->getBriefComment());
+238 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXCompletionString clang_getCompletionChunkCompletionString (CXCompletionString completion_string, unsigned chunk_number)"
+
+.PP
+Definition at line 150 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+151                                                                 {
+152   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+153   if (!CCStr || chunk_number >= CCStr->size())
+154     return nullptr;
+155 
+156   switch ((*CCStr)[chunk_number]\&.Kind) {
+157   case CodeCompletionString::CK_TypedText:
+158   case CodeCompletionString::CK_Text:
+159   case CodeCompletionString::CK_Placeholder:
+160   case CodeCompletionString::CK_CurrentParameter:
+161   case CodeCompletionString::CK_Informative:
+162   case CodeCompletionString::CK_LeftParen:
+163   case CodeCompletionString::CK_RightParen:
+164   case CodeCompletionString::CK_LeftBracket:
+165   case CodeCompletionString::CK_RightBracket:
+166   case CodeCompletionString::CK_LeftBrace:
+167   case CodeCompletionString::CK_RightBrace:
+168   case CodeCompletionString::CK_LeftAngle:
+169   case CodeCompletionString::CK_RightAngle:
+170   case CodeCompletionString::CK_Comma:
+171   case CodeCompletionString::CK_ResultType:
+172   case CodeCompletionString::CK_Colon:
+173   case CodeCompletionString::CK_SemiColon:
+174   case CodeCompletionString::CK_Equal:
+175   case CodeCompletionString::CK_HorizontalSpace:
+176   case CodeCompletionString::CK_VerticalSpace:
+177     return nullptr;
+178 
+179   case CodeCompletionString::CK_Optional:
+180     // Note: treated as an empty text block\&.
+181     return (*CCStr)[chunk_number]\&.Optional;
+182   }
+183 
+184   llvm_unreachable("Invalid CompletionKind!");
+185 }
+.fi
+.SS "enum CXCompletionChunkKind clang_getCompletionChunkKind (CXCompletionString completion_string, unsigned chunk_number)"
+
+.PP
+Definition at line 1 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+58                                                     {
+59   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+60   if (!CCStr || chunk_number >= CCStr->size())
+61     return CXCompletionChunk_Text;
+62 
+63   switch ((*CCStr)[chunk_number]\&.Kind) {
+64   case CodeCompletionString::CK_TypedText:
+65     return CXCompletionChunk_TypedText;
+66   case CodeCompletionString::CK_Text:
+67     return CXCompletionChunk_Text;
+68   case CodeCompletionString::CK_Optional:
+69     return CXCompletionChunk_Optional;
+70   case CodeCompletionString::CK_Placeholder:
+71     return CXCompletionChunk_Placeholder;
+72   case CodeCompletionString::CK_Informative:
+73     return CXCompletionChunk_Informative;
+74   case CodeCompletionString::CK_ResultType:
+75     return CXCompletionChunk_ResultType;
+76   case CodeCompletionString::CK_CurrentParameter:
+77     return CXCompletionChunk_CurrentParameter;
+78   case CodeCompletionString::CK_LeftParen:
+79     return CXCompletionChunk_LeftParen;
+80   case CodeCompletionString::CK_RightParen:
+81     return CXCompletionChunk_RightParen;
+82   case CodeCompletionString::CK_LeftBracket:
+83     return CXCompletionChunk_LeftBracket;
+84   case CodeCompletionString::CK_RightBracket:
+85     return CXCompletionChunk_RightBracket;
+86   case CodeCompletionString::CK_LeftBrace:
+87     return CXCompletionChunk_LeftBrace;
+88   case CodeCompletionString::CK_RightBrace:
+89     return CXCompletionChunk_RightBrace;
+90   case CodeCompletionString::CK_LeftAngle:
+91     return CXCompletionChunk_LeftAngle;
+92   case CodeCompletionString::CK_RightAngle:
+93     return CXCompletionChunk_RightAngle;
+94   case CodeCompletionString::CK_Comma:
+95     return CXCompletionChunk_Comma;
+96   case CodeCompletionString::CK_Colon:
+97     return CXCompletionChunk_Colon;
+98   case CodeCompletionString::CK_SemiColon:
+99     return CXCompletionChunk_SemiColon;
+100   case CodeCompletionString::CK_Equal:
+101     return CXCompletionChunk_Equal;
+102   case CodeCompletionString::CK_HorizontalSpace:
+103     return CXCompletionChunk_HorizontalSpace;
+104   case CodeCompletionString::CK_VerticalSpace:
+105     return CXCompletionChunk_VerticalSpace;
+106   }
+107 
+108   llvm_unreachable("Invalid CompletionKind!");
+109 }
+.fi
+.SS "CXString clang_getCompletionChunkText (CXCompletionString completion_string, unsigned chunk_number)"
+
+.PP
+Definition at line 111 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+112                                                              {
+113   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+114   if (!CCStr || chunk_number >= CCStr->size())
+115     return cxstring::createNull();
+116 
+117   switch ((*CCStr)[chunk_number]\&.Kind) {
+118   case CodeCompletionString::CK_TypedText:
+119   case CodeCompletionString::CK_Text:
+120   case CodeCompletionString::CK_Placeholder:
+121   case CodeCompletionString::CK_CurrentParameter:
+122   case CodeCompletionString::CK_Informative:
+123   case CodeCompletionString::CK_LeftParen:
+124   case CodeCompletionString::CK_RightParen:
+125   case CodeCompletionString::CK_LeftBracket:
+126   case CodeCompletionString::CK_RightBracket:
+127   case CodeCompletionString::CK_LeftBrace:
+128   case CodeCompletionString::CK_RightBrace:
+129   case CodeCompletionString::CK_LeftAngle:
+130   case CodeCompletionString::CK_RightAngle:
+131   case CodeCompletionString::CK_Comma:
+132   case CodeCompletionString::CK_ResultType:
+133   case CodeCompletionString::CK_Colon:
+134   case CodeCompletionString::CK_SemiColon:
+135   case CodeCompletionString::CK_Equal:
+136   case CodeCompletionString::CK_HorizontalSpace:
+137   case CodeCompletionString::CK_VerticalSpace:
+138     return cxstring::createRef((*CCStr)[chunk_number]\&.Text);
+139       
+140   case CodeCompletionString::CK_Optional:
+141     // Note: treated as an empty text block\&.
+142     return cxstring::createEmpty();
+143   }
+144 
+145   llvm_unreachable("Invalid CodeCompletionString Kind!");
+146 }
+.fi
+.PP
+References clang::cxstring::createEmpty(), clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_getCompletionFixIt (CXCodeCompleteResults * results, unsigned completion_index, unsigned fixit_index, CXSourceRange * replacement_range)"
+
+.PP
+Definition at line 322 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+325                                                                     {
+326   AllocatedCXCodeCompleteResults *allocated_results = (AllocatedCXCodeCompleteResults *)results;
+327 
+328   if (!allocated_results || allocated_results->FixItsVector\&.size() <= completion_index) {
+329     if (replacement_range)
+330       *replacement_range = clang_getNullRange();
+331     return cxstring::createNull();
+332   }
+333 
+334   ArrayRef<FixItHint> FixIts = allocated_results->FixItsVector[completion_index];
+335   if (FixIts\&.size() <= fixit_index) {
+336     if (replacement_range)
+337       *replacement_range = clang_getNullRange();
+338     return cxstring::createNull();
+339   }
+340 
+341   const FixItHint &FixIt = FixIts[fixit_index];
+342   if (replacement_range) {
+343     *replacement_range = cxloc::translateSourceRange(
+344         *allocated_results->SourceMgr, allocated_results->LangOpts,
+345         FixIt\&.RemoveRange);
+346   }
+347 
+348   return cxstring::createRef(FixIt\&.CodeToInsert\&.c_str());
+349 }
+.fi
+.PP
+References clang_getNullRange(), clang::cxstring::createNull(), clang::cxstring::createRef(), and clang::cxloc::translateSourceRange()\&.
+.SS "unsigned clang_getCompletionNumAnnotations (CXCompletionString completion_string)"
+
+.PP
+Definition at line 204 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+205 {
+206   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+207   return CCStr ? CCStr->getAnnotationCount() : 0;
+208 }
+.fi
+.SS "unsigned clang_getCompletionNumFixIts (CXCodeCompleteResults * results, unsigned completion_index)"
+
+.PP
+Definition at line 312 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+313                                                                  {
+314   AllocatedCXCodeCompleteResults *allocated_results = (AllocatedCXCodeCompleteResults *)results;
+315 
+316   if (!allocated_results || allocated_results->FixItsVector\&.size() <= completion_index)
+317     return 0;
+318 
+319   return static_cast<unsigned>(allocated_results->FixItsVector[completion_index]\&.size());
+320 }
+.fi
+.SS "CXString clang_getCompletionParent (CXCompletionString completion_string, CXCursorKind * kind)"
+
+.PP
+Definition at line 218 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+219                                               {
+220   if (kind)
+221     *kind = CXCursor_NotImplemented;
+222   
+223   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+224   if (!CCStr)
+225     return cxstring::createNull();
+226   
+227   return cxstring::createRef(CCStr->getParentContextName());
+228 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "unsigned clang_getCompletionPriority (CXCompletionString completion_string)"
+
+.PP
+Definition at line 192 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+192                                                                            {
+193   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+194   return CCStr? CCStr->getPriority() : unsigned(CCP_Unlikely);
+195 }
+.fi
+.SS "unsigned clang_getNumCompletionChunks (CXCompletionString completion_string)"
+
+.PP
+Definition at line 187 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+187                                                                             {
+188   CodeCompletionString *CCStr = (CodeCompletionString *)completion_string;
+189   return CCStr? CCStr->size() : 0;
+190 }
+.fi
+.SS "void clang_sortCodeCompletionResults (CXCompletionResult * Results, unsigned NumResults)"
+
+.PP
+Definition at line 1041 of file CIndexCodeCompletion\&.cpp\&.
+.PP
+.nf
+1042                                                           {
+1043   std::stable_sort(Results, Results + NumResults, OrderCompletionResults());
+1044 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

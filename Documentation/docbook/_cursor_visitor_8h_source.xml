@@ -1,0 +1,261 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__cursor_visitor_8h_source" xml:lang="en-US">
+<title>CursorVisitor.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CursorVisitor.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CursorVisitor.h&#32;-&#32;CursorVisitor&#32;interface&#32;----------------*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CURSORVISITOR_H</emphasis>
+00010 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CURSORVISITOR_H</emphasis>
+00011 
+00012 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__index___internal_8h">Index_Internal.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclVisitor.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/TypeLocVisitor.h&quot;</emphasis>
+00017 
+00018 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00019 <emphasis role="keyword">class&#32;</emphasis>PreprocessingRecord;
+00020 <emphasis role="keyword">class&#32;</emphasis>ASTUnit;
+00021 
+<anchor xml:id="__cursor_visitor_8h_source_1l00022"/><link linkend="_namespaceclang_1_1cxcursor">00022</link> <emphasis role="keyword">namespace&#32;</emphasis>cxcursor&#32;{
+00023 
+<anchor xml:id="__cursor_visitor_8h_source_1l00024"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job">00024</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxcursor_1_1_visitor_job">VisitorJob</link>&#32;{
+00025 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__cursor_visitor_8h_source_1l00026"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92">00026</link> &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92">Kind</link>&#32;{
+<anchor xml:id="__cursor_visitor_8h_source_1l00027"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a0015180e463167d7078aa0dc78c224e1">00027</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a0015180e463167d7078aa0dc78c224e1">DeclVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00028"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92ac10e8d81ba4dec533c3597bde1e0e628">00028</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92ac10e8d81ba4dec533c3597bde1e0e628">StmtVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00029"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a910d3000d5ebd97697b1b2f09ccaf12b">00029</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a910d3000d5ebd97697b1b2f09ccaf12b">MemberExprPartsKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00030"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92adf5c1ced13d3d596c10acfa648a1f752">00030</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92adf5c1ced13d3d596c10acfa648a1f752">TypeLocVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00031"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92ad8e8e069a830483f331118386e97cc07">00031</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92ad8e8e069a830483f331118386e97cc07">OverloadExprPartsKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00032"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a5e20f10863531934b9ceb8161fe1d8c5">00032</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a5e20f10863531934b9ceb8161fe1d8c5">DeclRefExprPartsKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00033"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92aa00295bf354768aeca538fa4dc91e161">00033</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92aa00295bf354768aeca538fa4dc91e161">LabelRefVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00034"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a11d9fe5081d3b5eb885fea33416255c6">00034</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a11d9fe5081d3b5eb885fea33416255c6">ExplicitTemplateArgsVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00035"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a4c1fcd74e3dd7d6c199bf1cbbee68cd1">00035</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a4c1fcd74e3dd7d6c199bf1cbbee68cd1">NestedNameSpecifierLocVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00036"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92af50cf21f078e11e9193efa61e3e27956">00036</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92af50cf21f078e11e9193efa61e3e27956">DeclarationNameInfoVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00037"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a46e96453a10977baa1239dde989c9e1f">00037</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a46e96453a10977baa1239dde989c9e1f">MemberRefVisitKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00038"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a5c3c2fc52d5a307d1cb3e5b7f259be6d">00038</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a5c3c2fc52d5a307d1cb3e5b7f259be6d">SizeOfPackExprPartsKind</link>,
+<anchor xml:id="__cursor_visitor_8h_source_1l00039"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a2a8543019a911441dc8f45307db4cc1a">00039</link> &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a2a8543019a911441dc8f45307db4cc1a">LambdaExprPartsKind</link>,
+00040 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a159dff551be5f538e44f7811d92f102b">PostChildrenVisitKind</link>
+<anchor xml:id="__cursor_visitor_8h_source_1l00041"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92a159dff551be5f538e44f7811d92f102b">00041</link> &#32;&#32;};
+00042 
+00043 <emphasis role="keyword">protected</emphasis>:
+<anchor xml:id="__cursor_visitor_8h_source_1l00044"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a9785b32a07dcc73e45007dfa057cb861">00044</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;*<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a9785b32a07dcc73e45007dfa057cb861">data</link>[3];
+<anchor xml:id="__cursor_visitor_8h_source_1l00045"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a4099490981907806b1b16db08f0ff32e">00045</link> &#32;&#32;CXCursor&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a4099490981907806b1b16db08f0ff32e">parent</link>;
+<anchor xml:id="__cursor_visitor_8h_source_1l00046"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1aa710ca7c76b9f0b12b72d34c993f29b3">00046</link> &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92">Kind</link>&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1aa710ca7c76b9f0b12b72d34c993f29b3">K</link>;
+<anchor xml:id="__cursor_visitor_8h_source_1l00047"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a1fe36de4b2f52c917128b52b946d65cf">00047</link> &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a1fe36de4b2f52c917128b52b946d65cf">VisitorJob</link>(CXCursor&#32;C,&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92">Kind</link>&#32;k,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;*d1,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;*d2&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>,
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;*d3&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>)
+00049 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a4099490981907806b1b16db08f0ff32e">parent</link>(C),&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1aa710ca7c76b9f0b12b72d34c993f29b3">K</link>(k)&#32;{
+00050 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a9785b32a07dcc73e45007dfa057cb861">data</link>[0]&#32;=&#32;d1;
+00051 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a9785b32a07dcc73e45007dfa057cb861">data</link>[1]&#32;=&#32;d2;
+00052 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a9785b32a07dcc73e45007dfa057cb861">data</link>[2]&#32;=&#32;d3;
+00053 &#32;&#32;}
+00054 
+00055 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__cursor_visitor_8h_source_1l00056"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1aee9fca3379d1821e847ce816fef67219">00056</link> &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a358d276241e4b5c9c75c3b0c66b0bf92">Kind</link>&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1aee9fca3379d1821e847ce816fef67219">getKind</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1aa710ca7c76b9f0b12b72d34c993f29b3">K</link>;&#32;}
+<anchor xml:id="__cursor_visitor_8h_source_1l00057"/><link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a8d36560caf6be3218295b091a0bcdd55">00057</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXCursor&#32;&amp;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a8d36560caf6be3218295b091a0bcdd55">getParent</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_visitor_job_1a4099490981907806b1b16db08f0ff32e">parent</link>;&#32;}
+00058 };
+00059 
+<anchor xml:id="__cursor_visitor_8h_source_1l00060"/><link linkend="_namespaceclang_1_1cxcursor_1aab4e24121016c9d383e539a5938cb528">00060</link> <emphasis role="keyword">typedef</emphasis>&#32;SmallVector&lt;VisitorJob,&#32;10&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1aab4e24121016c9d383e539a5938cb528">VisitorWorkList</link>;
+00061 
+00062 <emphasis role="comment">//&#32;Cursor&#32;visitor.</emphasis>
+<anchor xml:id="__cursor_visitor_8h_source_1l00063"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor">00063</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor">CursorVisitor</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;DeclVisitor&lt;CursorVisitor,&#32;bool&gt;,
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;TypeLocVisitor&lt;CursorVisitor,&#32;bool&gt;&#32;{
+00065 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__cursor_visitor_8h_source_1l00068"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a519a469dc2dc65abfcd25963a5e9f23d">00068</link> &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;bool&#32;(*<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a519a469dc2dc65abfcd25963a5e9f23d">PostChildrenVisitorTy</link>)(CXCursor&#32;cursor,
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;client_data);
+00070 
+00071 <emphasis role="keyword">private</emphasis>:
+00073 &#32;&#32;CXTranslationUnit&#32;TU;
+00074 &#32;&#32;ASTUnit&#32;*AU;
+00075 
+00077 &#32;&#32;CXCursor&#32;Parent;
+00078 
+00081 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*StmtParent;
+00082 
+00084 &#32;&#32;CXCursorVisitor&#32;Visitor;
+00085 
+00086 &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a519a469dc2dc65abfcd25963a5e9f23d">PostChildrenVisitorTy</link>&#32;PostChildrenVisitor;
+00087 
+00089 &#32;&#32;CXClientData&#32;ClientData;
+00090 
+00093 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitPreprocessorLast;
+00094 
+00097 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitIncludedEntities;
+00098 
+00101 &#32;&#32;SourceRange&#32;RegionOfInterest;
+00102 
+00105 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitDeclsOnly;
+00106 
+00107 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Eventually&#32;remove.&#32;&#32;This&#32;part&#32;of&#32;a&#32;hack&#32;to&#32;support&#32;proper</emphasis>
+00108 &#32;&#32;<emphasis role="comment">//&#32;iteration&#32;over&#32;all&#32;Decls&#32;contained&#32;lexically&#32;within&#32;an&#32;ObjC&#32;container.</emphasis>
+00109 &#32;&#32;DeclContext::decl_iterator&#32;*DI_current;
+00110 &#32;&#32;DeclContext::decl_iterator&#32;DE_current;
+00111 &#32;&#32;SmallVectorImpl&lt;Decl&#32;*&gt;::iterator&#32;*FileDI_current;
+00112 &#32;&#32;SmallVectorImpl&lt;Decl&#32;*&gt;::iterator&#32;FileDE_current;
+00113 
+00114 &#32;&#32;<emphasis role="comment">//&#32;Cache&#32;of&#32;pre-allocated&#32;worklists&#32;for&#32;data-recursion&#32;walk&#32;of&#32;Stmts.</emphasis>
+00115 &#32;&#32;SmallVector&lt;VisitorWorkList&#32;*,&#32;5&gt;&#32;WorkListFreeList;
+00116 &#32;&#32;SmallVector&lt;VisitorWorkList&#32;*,&#32;5&gt;&#32;WorkListCache;
+00117 
+00118 &#32;&#32;<emphasis role="keyword">using</emphasis>&#32;DeclVisitor&lt;CursorVisitor,&#32;bool&gt;::Visit;
+00119 &#32;&#32;<emphasis role="keyword">using</emphasis>&#32;TypeLocVisitor&lt;CursorVisitor,&#32;bool&gt;::Visit;
+00120 
+00125 &#32;&#32;<link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2">RangeComparisonResult</link>&#32;CompareRegionOfInterest(SourceRange&#32;R);
+00126 
+00127 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;visitDeclsFromFileRegion(FileID&#32;File,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Length);
+00128 
+00129 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>SetParentRAII&#32;{
+00130 &#32;&#32;&#32;&#32;CXCursor&#32;&amp;Parent;
+00131 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*&amp;StmtParent;
+00132 &#32;&#32;&#32;&#32;CXCursor&#32;OldParent;
+00133 
+00134 &#32;&#32;<emphasis role="keyword">public</emphasis>:
+00135 &#32;&#32;&#32;&#32;SetParentRAII(CXCursor&#32;&amp;Parent,&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*&amp;StmtParent,&#32;CXCursor&#32;NewParent)
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Parent(Parent),&#32;StmtParent(StmtParent),&#32;OldParent(Parent)&#32;{
+00137 &#32;&#32;&#32;&#32;&#32;&#32;Parent&#32;=&#32;NewParent;
+00138 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(Parent.kind))
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StmtParent&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(Parent);
+00140 &#32;&#32;&#32;&#32;}
+00141 
+00142 &#32;&#32;&#32;&#32;~SetParentRAII()&#32;{
+00143 &#32;&#32;&#32;&#32;&#32;&#32;Parent&#32;=&#32;OldParent;
+00144 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(Parent.kind))
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StmtParent&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(Parent);
+00146 &#32;&#32;&#32;&#32;}
+00147 &#32;&#32;};
+00148 
+00149 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__cursor_visitor_8h_source_1l00150"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a0073624aca671227d17a9c8e0d6bac9f">00150</link> &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a0073624aca671227d17a9c8e0d6bac9f">CursorVisitor</link>(CXTranslationUnit&#32;TU,&#32;CXCursorVisitor&#32;Visitor,
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;ClientData,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitPreprocessorLast,
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitIncludedPreprocessingEntries&#32;=&#32;<emphasis role="keyword">false</emphasis>,
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;RegionOfInterest&#32;=&#32;SourceRange(),
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitDeclsOnly&#32;=&#32;<emphasis role="keyword">false</emphasis>,
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a519a469dc2dc65abfcd25963a5e9f23d">PostChildrenVisitorTy</link>&#32;PostChildrenVisitor&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>)
+00156 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;TU(TU),&#32;AU(cxtu::<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a15a5897204e1c9d037e412c6f94df2a1">getASTUnit</link>(TU)),&#32;Visitor(Visitor),
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PostChildrenVisitor(PostChildrenVisitor),&#32;ClientData(ClientData),
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;VisitPreprocessorLast(VisitPreprocessorLast),
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;VisitIncludedEntities(VisitIncludedPreprocessingEntries),
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RegionOfInterest(RegionOfInterest),&#32;VisitDeclsOnly(VisitDeclsOnly),
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DI_current(nullptr),&#32;FileDI_current(nullptr)&#32;{
+00162 &#32;&#32;&#32;&#32;Parent.kind&#32;=&#32;CXCursor_NoDeclFound;
+00163 &#32;&#32;&#32;&#32;Parent.data[0]&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00164 &#32;&#32;&#32;&#32;Parent.data[1]&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00165 &#32;&#32;&#32;&#32;Parent.data[2]&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00166 &#32;&#32;&#32;&#32;StmtParent&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00167 &#32;&#32;}
+00168 
+<anchor xml:id="__cursor_visitor_8h_source_1l00169"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab7063cb2edd7c820d52c23d2a2151a15">00169</link> &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab7063cb2edd7c820d52c23d2a2151a15">~CursorVisitor</link>()&#32;{
+00170 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Free&#32;the&#32;pre-allocated&#32;worklists&#32;for&#32;data-recursion.</emphasis>
+00171 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(SmallVectorImpl&lt;VisitorWorkList&#32;*&gt;::iterator&#32;I&#32;=&#32;WorkListCache.begin(),
+00172 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;E&#32;=&#32;WorkListCache.end();
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00174 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;*I;
+00175 &#32;&#32;&#32;&#32;}
+00176 &#32;&#32;}
+00177 
+<anchor xml:id="__cursor_visitor_8h_source_1l00178"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a15a5897204e1c9d037e412c6f94df2a1">00178</link> &#32;&#32;ASTUnit&#32;*<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a15a5897204e1c9d037e412c6f94df2a1">getASTUnit</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;AU;&#32;}
+<anchor xml:id="__cursor_visitor_8h_source_1l00179"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a1d2d369b79d1f552fc3224c217990c80">00179</link> &#32;&#32;CXTranslationUnit&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a1d2d369b79d1f552fc3224c217990c80">getTU</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;TU;&#32;}
+00180 
+00181 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a01659df2ce565980ce5b581ba7a970e3">Visit</link>(CXCursor&#32;Cursor,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CheckedRegionOfInterest&#32;=&#32;<emphasis role="keyword">false</emphasis>);
+00182 
+00185 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a24fbcc462d22a47ef5e7c02eef77d610">visitFileRegion</link>();
+00186 
+00187 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a4f29bab7210fb14b41a847ab87705f46">visitPreprocessedEntitiesInRegion</link>();
+00188 
+<anchor xml:id="__cursor_visitor_8h_source_1l00189"/><link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a4fdbc31529cd9171bac1ff4a347db1a6">00189</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a4fdbc31529cd9171bac1ff4a347db1a6">shouldVisitIncludedEntities</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;VisitIncludedEntities;&#32;}
+00190 
+00191 &#32;&#32;<emphasis role="keyword">template</emphasis>&#32;&lt;<emphasis role="keyword">typename</emphasis>&#32;InputIterator&gt;
+00192 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a70914a4f8ef86d9c92d0b65da5177111">visitPreprocessedEntities</link>(InputIterator&#32;First,&#32;InputIterator&#32;Last,
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PreprocessingRecord&#32;&amp;PPRec,
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FileID&#32;FID&#32;=&#32;FileID());
+00195 
+00196 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ada34939666b6f90e3144f4624fc64896">VisitChildren</link>(CXCursor&#32;Parent);
+00197 
+00198 &#32;&#32;<emphasis role="comment">//&#32;Declaration&#32;visitors</emphasis>
+00199 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a8cf4e9055a473162dfae94e08dbad6b0">VisitTypeAliasTemplateDecl</link>(TypeAliasTemplateDecl&#32;*D);
+00200 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab780a653c5903d22b4963df9731255db">VisitTypeAliasDecl</link>(TypeAliasDecl&#32;*D);
+00201 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a3e41de558520b72762489e950d35d0b8">VisitAttributes</link>(Decl&#32;*D);
+00202 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1af1429e52aeadb9b4b1388fa7b1b1ddf4">VisitBlockDecl</link>(BlockDecl&#32;*B);
+00203 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1addf32753eb7872041c23c5e5652d9907">VisitCXXRecordDecl</link>(CXXRecordDecl&#32;*D);
+00204 &#32;&#32;Optional&lt;bool&gt;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a31db49ad4d23960990fa744b69517c0d">shouldVisitCursor</link>(CXCursor&#32;C);
+00205 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a3bca6000335f6c6e012b01a042d10d32">VisitDeclContext</link>(DeclContext&#32;*DC);
+00206 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a255429be0e71e52043ad0b58872878d6">VisitTranslationUnitDecl</link>(TranslationUnitDecl&#32;*D);
+00207 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a5079af293c5b548214614dbb8f33dc70">VisitTypedefDecl</link>(TypedefDecl&#32;*D);
+00208 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a223f8711bd4960db81ca391e57bcd6e0">VisitTagDecl</link>(TagDecl&#32;*D);
+00209 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a876f03daa8892c332f4ed8e7b7acbbd6">VisitClassTemplateSpecializationDecl</link>(ClassTemplateSpecializationDecl&#32;*D);
+00210 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab59de33477389ac551aba37030befef7">VisitClassTemplatePartialSpecializationDecl</link>(
+00211 &#32;&#32;&#32;&#32;&#32;&#32;ClassTemplatePartialSpecializationDecl&#32;*D);
+00212 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a7eacc3f49e7683c24b020e63de315750">VisitTemplateTypeParmDecl</link>(TemplateTypeParmDecl&#32;*D);
+00213 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aee21ccfb817e44aa1fabf5814e435716">VisitEnumConstantDecl</link>(EnumConstantDecl&#32;*D);
+00214 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab44c6ae2ac80500f37d37e2893c37552">VisitDeclaratorDecl</link>(DeclaratorDecl&#32;*DD);
+00215 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a15585d8e991ee7b5472c2971e986b3bf">VisitFunctionDecl</link>(FunctionDecl&#32;*ND);
+00216 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a1504a2ceb50669fa1471f9a61e58f598">VisitFieldDecl</link>(FieldDecl&#32;*D);
+00217 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aa58af31bada238412e23dbba3a928162">VisitVarDecl</link>(VarDecl&#32;*);
+00218 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a400e0fc0d02c32b9307a7ff382fcd76f">VisitNonTypeTemplateParmDecl</link>(NonTypeTemplateParmDecl&#32;*D);
+00219 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aa73d041db79fce203778413557b8cafa">VisitFunctionTemplateDecl</link>(FunctionTemplateDecl&#32;*D);
+00220 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a1046e9b078429deffbd5f129b11d85b4">VisitClassTemplateDecl</link>(ClassTemplateDecl&#32;*D);
+00221 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a1e38e6c0119deb8d59484bc5ccc0946c">VisitTemplateTemplateParmDecl</link>(TemplateTemplateParmDecl&#32;*D);
+00222 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ae4ae51a63ce481b6c3c296d6ff58e4d6">VisitObjCTypeParamDecl</link>(ObjCTypeParamDecl&#32;*D);
+00223 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ae232b4aa473d4eae202b791b6780cd9e">VisitObjCMethodDecl</link>(ObjCMethodDecl&#32;*ND);
+00224 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a6cd04bb7010823f467388f85ee88178a">VisitObjCContainerDecl</link>(ObjCContainerDecl&#32;*D);
+00225 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a1b34b238a762168d11b6b883dcd3b0fe">VisitObjCCategoryDecl</link>(ObjCCategoryDecl&#32;*ND);
+00226 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a2c0feae123024ef1c7aeb8b10194d39a">VisitObjCProtocolDecl</link>(ObjCProtocolDecl&#32;*PID);
+00227 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a605826428470d3401161655fe5ff5900">VisitObjCPropertyDecl</link>(ObjCPropertyDecl&#32;*PD);
+00228 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aaa6cff14e5a41f01f821b18c37b89df3">VisitObjCTypeParamList</link>(ObjCTypeParamList&#32;*typeParamList);
+00229 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1acb338f84620f6368cf377bb111d77b25">VisitObjCInterfaceDecl</link>(ObjCInterfaceDecl&#32;*D);
+00230 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a2e740eceec896420d789bfecb55d7401">VisitObjCImplDecl</link>(ObjCImplDecl&#32;*D);
+00231 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1af01009aeb52463835220b7dd0b7a38a5">VisitObjCCategoryImplDecl</link>(ObjCCategoryImplDecl&#32;*D);
+00232 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aea7885c140d3c98feb0086019ca23a54">VisitObjCImplementationDecl</link>(ObjCImplementationDecl&#32;*D);
+00233 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;ObjCCompatibleAliasDecl&#32;requires&#32;aliased-class&#32;locations.</emphasis>
+00234 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a6bdf80e7aa619732316432b8b393c9bb">VisitObjCPropertyImplDecl</link>(ObjCPropertyImplDecl&#32;*PD);
+00235 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a7be65be3ded3c873b45451a03d19c402">VisitLinkageSpecDecl</link>(LinkageSpecDecl&#32;*D);
+00236 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a8da19ba86bbcba98c07ba9b848887d8e">VisitNamespaceDecl</link>(NamespaceDecl&#32;*D);
+00237 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a93b38c417d905d364965d5e502b9613e">VisitNamespaceAliasDecl</link>(NamespaceAliasDecl&#32;*D);
+00238 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a96fd01a9605ed4dbbdf75b760e9756b1">VisitUsingDirectiveDecl</link>(UsingDirectiveDecl&#32;*D);
+00239 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a0f329ea11a8c32720cde84f12d06ba08">VisitUsingDecl</link>(UsingDecl&#32;*D);
+00240 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab125dfb3d37b39ab6869040fceacfed1">VisitUnresolvedUsingValueDecl</link>(UnresolvedUsingValueDecl&#32;*D);
+00241 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ae5983704e0c3c63718f4adaeab38bb8a">VisitUnresolvedUsingTypenameDecl</link>(UnresolvedUsingTypenameDecl&#32;*D);
+00242 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a993e67b4ec4c7c83711635a211dd78bf">VisitStaticAssertDecl</link>(StaticAssertDecl&#32;*D);
+00243 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a8dcd76b6d78498c519af0357f49b7672">VisitFriendDecl</link>(FriendDecl&#32;*D);
+00244 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a8fc88637e0d32bfd4a776d6a57e08d5e">VisitDecompositionDecl</link>(DecompositionDecl&#32;*D);
+00245 
+00246 &#32;&#32;<emphasis role="comment">//&#32;Name&#32;visitor</emphasis>
+00247 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1adc36610328af99cbbd2f06d7f0292ec9">VisitDeclarationNameInfo</link>(DeclarationNameInfo&#32;Name);
+00248 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aae4d0351c44a0e33f9dc797fdc722445">VisitNestedNameSpecifier</link>(NestedNameSpecifier&#32;*NNS,&#32;SourceRange&#32;Range);
+00249 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a7b754c2b2db487a1286e47d1134365bf">VisitNestedNameSpecifierLoc</link>(NestedNameSpecifierLoc&#32;NNS);
+00250 
+00251 &#32;&#32;<emphasis role="comment">//&#32;Template&#32;visitors</emphasis>
+00252 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aeba17d0f7d6f7154cc856bb0d3ac55de">VisitTemplateParameters</link>(<emphasis role="keyword">const</emphasis>&#32;TemplateParameterList&#32;*Params);
+00253 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1aa6960261f98ac5f02749ece1e771464a">VisitTemplateName</link>(TemplateName&#32;Name,&#32;SourceLocation&#32;Loc);
+00254 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a4a8570d91cfdf0c794c0457c447d49e3">VisitTemplateArgumentLoc</link>(<emphasis role="keyword">const</emphasis>&#32;TemplateArgumentLoc&#32;&amp;TAL);
+00255 
+00256 &#32;&#32;<emphasis role="comment">//&#32;Type&#32;visitors</emphasis>
+<anchor xml:id="__cursor_visitor_8h_source_1l00257"/><link linkend="__cursor_visitor_8h_1a55c58528f838d8fdfa42d024f2cad815">00257</link> <emphasis role="preprocessor">#define&#32;ABSTRACT_TYPELOC(CLASS,&#32;PARENT)</emphasis>
+<anchor xml:id="__cursor_visitor_8h_source_1l00258"/><link linkend="__cursor_visitor_8h_1a63bcd70674be7d8825e683d84b5fad15">00258</link> <emphasis role="preprocessor">#define&#32;TYPELOC(CLASS,&#32;PARENT)&#32;bool&#32;Visit##CLASS##TypeLoc(CLASS##TypeLoc&#32;TyLoc);</emphasis>
+00259 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/TypeLocNodes.def&quot;</emphasis>
+00260 
+00261 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1ab7a464e6d58c07492c20d402c4048612">VisitTagTypeLoc</link>(TagTypeLoc&#32;TL);
+00262 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a15e1e593c973fb6611457f4a624d972c">VisitArrayTypeLoc</link>(ArrayTypeLoc&#32;TL);
+00263 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1af8da0d143e5bf0dd9e597f6584ec605b">VisitFunctionTypeLoc</link>(FunctionTypeLoc&#32;TL,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;SkipResultType&#32;=&#32;<emphasis role="keyword">false</emphasis>);
+00264 
+00265 &#32;&#32;<emphasis role="comment">//&#32;Data-recursive&#32;visitor&#32;functions.</emphasis>
+00266 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a8551795875ea0a81cce4cad0becbe683">IsInRegionOfInterest</link>(CXCursor&#32;C);
+00267 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a63c6b8681070b8b8ae976c37ae90d2a5">RunVisitorWorkList</link>(<link linkend="_namespaceclang_1_1cxcursor_1aab4e24121016c9d383e539a5938cb528">VisitorWorkList</link>&#32;&amp;WL);
+00268 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a7a599a85807e447ee974ccd7a65163cc">EnqueueWorkList</link>(<link linkend="_namespaceclang_1_1cxcursor_1aab4e24121016c9d383e539a5938cb528">VisitorWorkList</link>&#32;&amp;WL,&#32;<emphasis role="keyword">const</emphasis>&#32;Stmt&#32;*S);
+00269 &#32;&#32;LLVM_ATTRIBUTE_NOINLINE&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor_1a01659df2ce565980ce5b581ba7a970e3">Visit</link>(<emphasis role="keyword">const</emphasis>&#32;Stmt&#32;*S);
+00270 
+00271 <emphasis role="keyword">private</emphasis>:
+00272 &#32;&#32;Optional&lt;bool&gt;&#32;handleDeclForVisitation(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D);
+00273 };
+00274 
+00275 }&#32;<emphasis role="comment">//&#32;namespace&#32;cxcursor</emphasis>
+00276 }&#32;<emphasis role="comment">//&#32;namespace&#32;clang</emphasis>
+00277 
+00278 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

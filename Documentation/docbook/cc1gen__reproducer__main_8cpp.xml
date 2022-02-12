@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_cc1gen__reproducer__main_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/driver/cc1gen_reproducer_main.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/driver/cc1gen_reproducer_main.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Basic/Diagnostic.h&quot;
+#include &quot;clang/Basic/LLVM.h&quot;
+#include &quot;clang/Driver/Compilation.h&quot;
+#include &quot;clang/Driver/Driver.h&quot;
+#include &quot;llvm/ADT/ArrayRef.h&quot;
+#include &quot;llvm/ADT/STLExtras.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/Host.h&quot;
+#include &quot;llvm/Support/TargetSelect.h&quot;
+#include &quot;llvm/Support/VirtualFileSystem.h&quot;
+#include &quot;llvm/Support/YAMLTraits.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>struct <link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_unsaved_file_hash_01_4">llvm::yaml::MappingTraits&lt; UnsavedFileHash &gt;</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_clang_invocation_info_01_4">llvm::yaml::MappingTraits&lt; ClangInvocationInfo &gt;</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespacellvm">llvm</link></para>
+</listitem>
+            <listitem><para> <link linkend="_namespacellvm_1_1yaml">llvm::yaml</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>std::string <link linkend="_cc1gen__reproducer__main_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link> (const char *Argv0, bool CanonicalPrefixes)</para>
+</listitem>
+            <listitem><para>int <link linkend="_cc1gen__reproducer__main_8cpp_1a27f0fa14a18bd4a9c735d321f74779d9">cc1gen_reproducer_main</link> (ArrayRef&lt; const char * &gt; Argv, const char *Argv0, void *MainAddr)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_cc1gen__reproducer__main_8cpp_1a27f0fa14a18bd4a9c735d321f74779d9"/>    <section>
+    <title>cc1gen_reproducer_main()</title>
+<indexterm><primary>cc1gen_reproducer_main</primary><secondary>cc1gen_reproducer_main.cpp</secondary></indexterm>
+<indexterm><primary>cc1gen_reproducer_main.cpp</primary><secondary>cc1gen_reproducer_main</secondary></indexterm>
+<para><computeroutput>int cc1gen_reproducer_main (ArrayRef&lt; const char * &gt; Argv, const char * Argv0, void * MainAddr)</computeroutput></para><para>
+Definition at line <link linkend="_cc1gen__reproducer__main_8cpp_source_1l00156">156</link> of file <link linkend="_cc1gen__reproducer__main_8cpp_source">cc1gen_reproducer_main.cpp</link>.</para>
+<programlisting>00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00158 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Argv.size()&#32;&lt;&#32;1)&#32;{
+00159 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;missing&#32;invocation&#32;file\n&quot;</emphasis>;
+00160 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00161 &#32;&#32;}
+00162 &#32;&#32;<emphasis role="comment">//&#32;Parse&#32;the&#32;invocation&#32;descriptor.</emphasis>
+00163 &#32;&#32;StringRef&#32;Input&#32;=&#32;Argv[0];
+00164 &#32;&#32;llvm::ErrorOr&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt;&#32;Buffer&#32;=
+00165 &#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFile(Input,&#32;<emphasis role="comment">/*IsText=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00166 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Buffer)&#32;{
+00167 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;failed&#32;to&#32;read&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Input&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;Buffer.getError().message()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00169 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00170 &#32;&#32;}
+00171 &#32;&#32;llvm::yaml::Input&#32;YAML(Buffer.get()-&gt;getBuffer());
+00172 &#32;&#32;ClangInvocationInfo&#32;InvocationInfo;
+00173 &#32;&#32;YAML&#32;&gt;&gt;&#32;InvocationInfo;
+00174 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Argv.size()&#32;&gt;&#32;1&#32;&amp;&amp;&#32;Argv[1]&#32;==&#32;StringRef(<emphasis role="stringliteral">&quot;-v&quot;</emphasis>))
+00175 &#32;&#32;&#32;&#32;InvocationInfo.Dump&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00176 
+00177 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;an&#32;invocation&#32;that&#32;will&#32;produce&#32;the&#32;reproducer.</emphasis>
+00178 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;DriverArgs;
+00179 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Arg&#32;:&#32;InvocationInfo.Arguments)
+00180 &#32;&#32;&#32;&#32;DriverArgs.push_back(Arg.c_str());
+00181 &#32;&#32;std::string&#32;Path&#32;=&#32;<link linkend="_cc1gen__reproducer__main_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>(Argv0,&#32;<emphasis role="comment">/*CanonicalPrefixes=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00182 &#32;&#32;DriverArgs[0]&#32;=&#32;Path.c_str();
+00183 &#32;&#32;llvm::Optional&lt;driver::Driver::CompilationDiagnosticReport&gt;&#32;Report&#32;=
+00184 &#32;&#32;&#32;&#32;&#32;&#32;generateReproducerForInvocationArguments(DriverArgs,&#32;InvocationInfo);
+00185 
+00186 &#32;&#32;<emphasis role="comment">//&#32;Emit&#32;the&#32;information&#32;about&#32;the&#32;reproduce&#32;files&#32;to&#32;stdout.</emphasis>
+00187 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;Result&#32;=&#32;1;
+00188 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Report)&#32;{
+00189 &#32;&#32;&#32;&#32;printReproducerInformation(llvm::outs(),&#32;InvocationInfo,&#32;*Report);
+00190 &#32;&#32;&#32;&#32;Result&#32;=&#32;0;
+00191 &#32;&#32;}
+00192 
+00193 &#32;&#32;<emphasis role="comment">//&#32;Remove&#32;the&#32;input&#32;file.</emphasis>
+00194 &#32;&#32;llvm::sys::fs::remove(Input);
+00195 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00196 }
+</programlisting>    </section><anchor xml:id="_cc1gen__reproducer__main_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875"/>    <section>
+    <title>GetExecutablePath()</title>
+<indexterm><primary>GetExecutablePath</primary><secondary>cc1gen_reproducer_main.cpp</secondary></indexterm>
+<indexterm><primary>cc1gen_reproducer_main.cpp</primary><secondary>GetExecutablePath</secondary></indexterm>
+<para><computeroutput>std::string GetExecutablePath (const char * Argv0, bool CanonicalPrefixes)</computeroutput></para><para>
+Definition at line <link linkend="_driver_8cpp_source_1l00057">57</link> of file <link linkend="_driver_8cpp_source">driver.cpp</link>.</para>
+<programlisting>00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00058 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CanonicalPrefixes)&#32;{
+00059 &#32;&#32;&#32;&#32;SmallString&lt;128&gt;&#32;ExecutablePath(Argv0);
+00060 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Do&#32;a&#32;PATH&#32;lookup&#32;if&#32;Argv0&#32;isn&apos;t&#32;a&#32;valid&#32;path.</emphasis>
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!llvm::sys::fs::exists(ExecutablePath))
+00062 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::ErrorOr&lt;std::string&gt;&#32;P&#32;=
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::findProgramByName(ExecutablePath))
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ExecutablePath&#32;=&#32;*P;
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::string(ExecutablePath.str());
+00066 &#32;&#32;}
+00067 
+00068 &#32;&#32;<emphasis role="comment">//&#32;This&#32;just&#32;needs&#32;to&#32;be&#32;some&#32;symbol&#32;in&#32;the&#32;binary;&#32;C++&#32;doesn&apos;t</emphasis>
+00069 &#32;&#32;<emphasis role="comment">//&#32;allow&#32;taking&#32;the&#32;address&#32;of&#32;::main&#32;however.</emphasis>
+00070 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*P&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_driver_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>;
+00071 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::fs::getMainExecutable(Argv0,&#32;P);
+00072 }
+</programlisting><para>
+References <link linkend="_driver_8cpp_source_1l00057">GetExecutablePath()</link>.</para>
+<para>
+Referenced by <link linkend="_driver_8cpp_source_1l00057">GetExecutablePath()</link>.</para>
+</section>
+</section>
+</section>

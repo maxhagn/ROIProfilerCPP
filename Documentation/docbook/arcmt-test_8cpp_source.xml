@@ -1,0 +1,381 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_arcmt-test_8cpp_source" xml:lang="en-US">
+<title>arcmt-test.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/arcmt-test/arcmt-test.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;arcmt-test.cpp&#32;-&#32;ARC&#32;Migration&#32;Tool&#32;testbed&#32;-----------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;clang/ARCMigrate/ARCMT.h&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTContext.h&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/PCHContainerOperations.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticPrinter.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/Utils.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/VerifyDiagnosticConsumer.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/Preprocessor.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/PreprocessorOptions.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Path.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&lt;system_error&gt;</emphasis>
+00022 
+00023 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00024 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>arcmt;
+00025 
+00026 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;
+00027 CheckOnly(<emphasis role="stringliteral">&quot;check-only&quot;</emphasis>,
+00028 &#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Just&#32;check&#32;for&#32;issues&#32;that&#32;need&#32;to&#32;be&#32;handled&#32;manually&quot;</emphasis>));
+00029 
+00030 <emphasis role="comment">//static&#32;llvm::cl::opt&lt;bool&gt;</emphasis>
+00031 <emphasis role="comment">//TestResultForARC(&quot;test-result&quot;,</emphasis>
+00032 <emphasis role="comment">//llvm::cl::desc(&quot;Test&#32;the&#32;result&#32;of&#32;transformations&#32;by&#32;parsing&#32;it&#32;in&#32;ARC&#32;mode&quot;));</emphasis>
+00033 
+00034 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;
+00035 OutputTransformations(<emphasis role="stringliteral">&quot;output-transformations&quot;</emphasis>,
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Print&#32;the&#32;source&#32;transformations&quot;</emphasis>));
+00037 
+00038 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;
+00039 VerifyDiags(<emphasis role="stringliteral">&quot;verify&quot;</emphasis>,llvm::cl::desc(<emphasis role="stringliteral">&quot;Verify&#32;emitted&#32;diagnostics&#32;and&#32;warnings&quot;</emphasis>));
+00040 
+00041 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;
+00042 VerboseOpt(<emphasis role="stringliteral">&quot;v&quot;</emphasis>,&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Enable&#32;verbose&#32;output&quot;</emphasis>));
+00043 
+00044 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;
+00045 VerifyTransformedFiles(<emphasis role="stringliteral">&quot;verify-transformed-files&quot;</emphasis>,
+00046 llvm::cl::desc(<emphasis role="stringliteral">&quot;Read&#32;pairs&#32;of&#32;file&#32;mappings&#32;(typically&#32;the&#32;output&#32;of&#32;&quot;</emphasis>
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;c-arcmt-test)&#32;and&#32;compare&#32;their&#32;contents&#32;with&#32;the&#32;filenames&#32;&quot;</emphasis>
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;provided&#32;in&#32;command-line&quot;</emphasis>));
+00049 
+00050 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;std::string&gt;
+00051 RemappingsFile(<emphasis role="stringliteral">&quot;remappings-file&quot;</emphasis>,
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Pairs&#32;of&#32;file&#32;mappings&#32;(typically&#32;the&#32;output&#32;of&#32;&quot;</emphasis>
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;c-arcmt-test)&quot;</emphasis>));
+00054 
+00055 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::list&lt;std::string&gt;
+00056 ResultFiles(llvm::cl::Positional,&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;&lt;filename&gt;...&quot;</emphasis>));
+00057 
+00058 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::extrahelp&#32;extraHelp(
+00059 &#32;&#32;<emphasis role="stringliteral">&quot;\nusage&#32;with&#32;compiler&#32;args:&#32;arcmt-test&#32;[options]&#32;--args&#32;[compiler&#32;flags]\n&quot;</emphasis>);
+00060 
+00061 <emphasis role="comment">//&#32;This&#32;function&#32;isn&apos;t&#32;referenced&#32;outside&#32;its&#32;translation&#32;unit,&#32;but&#32;it</emphasis>
+00062 <emphasis role="comment">//&#32;can&apos;t&#32;use&#32;the&#32;&quot;static&quot;&#32;keyword&#32;because&#32;its&#32;address&#32;is&#32;used&#32;for</emphasis>
+00063 <emphasis role="comment">//&#32;GetMainExecutable&#32;(since&#32;some&#32;platforms&#32;don&apos;t&#32;support&#32;taking&#32;the</emphasis>
+00064 <emphasis role="comment">//&#32;address&#32;of&#32;main,&#32;and&#32;some&#32;platforms&#32;can&apos;t&#32;implement&#32;GetMainExecutable</emphasis>
+00065 <emphasis role="comment">//&#32;without&#32;being&#32;given&#32;the&#32;address&#32;of&#32;a&#32;function&#32;in&#32;the&#32;main&#32;executable).</emphasis>
+<anchor xml:id="_arcmt-test_8cpp_source_1l00066"/><link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">00066</link> std::string&#32;<link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">GetExecutablePath</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0)&#32;{
+00067 &#32;&#32;<emphasis role="comment">//&#32;This&#32;just&#32;needs&#32;to&#32;be&#32;some&#32;symbol&#32;in&#32;the&#32;binary;&#32;C++&#32;doesn&apos;t</emphasis>
+00068 &#32;&#32;<emphasis role="comment">//&#32;allow&#32;taking&#32;the&#32;address&#32;of&#32;::main&#32;however.</emphasis>
+00069 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">GetExecutablePath</link>;
+00070 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::fs::getMainExecutable(Argv0,&#32;MainAddr);
+00071 }
+00072 
+00073 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSourceLocation(SourceLocation&#32;loc,&#32;ASTContext&#32;&amp;Ctx,
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS);
+00075 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSourceRange(CharSourceRange&#32;range,&#32;ASTContext&#32;&amp;Ctx,
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS);
+00077 
+00078 <emphasis role="keyword">namespace&#32;</emphasis>{
+00079 
+00080 <emphasis role="keyword">class&#32;</emphasis>PrintTransforms&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;MigrationProcess::RewriteListener&#32;{
+00081 &#32;&#32;ASTContext&#32;*Ctx;
+00082 &#32;&#32;raw_ostream&#32;&amp;OS;
+00083 
+00084 <emphasis role="keyword">public</emphasis>:
+00085 &#32;&#32;PrintTransforms(raw_ostream&#32;&amp;OS)
+00086 &#32;&#32;&#32;&#32;:&#32;Ctx(nullptr),&#32;OS(OS)&#32;{}
+00087 
+00088 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;start(ASTContext&#32;&amp;ctx)<emphasis role="keyword">&#32;override&#32;</emphasis>{&#32;Ctx&#32;=&#32;&amp;ctx;&#32;}
+00089 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;finish()<emphasis role="keyword">&#32;override&#32;</emphasis>{&#32;Ctx&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;&#32;}
+00090 
+00091 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;insert(SourceLocation&#32;loc,&#32;StringRef&#32;text)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00092 &#32;&#32;&#32;&#32;assert(Ctx);
+00093 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Insert:&#32;&quot;</emphasis>;
+00094 &#32;&#32;&#32;&#32;printSourceLocation(loc,&#32;*Ctx,&#32;OS);
+00095 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;text&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;\n&quot;</emphasis>;
+00096 &#32;&#32;}
+00097 
+00098 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;remove(CharSourceRange&#32;range)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00099 &#32;&#32;&#32;&#32;assert(Ctx);
+00100 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Remove:&#32;&quot;</emphasis>;
+00101 &#32;&#32;&#32;&#32;printSourceRange(range,&#32;*Ctx,&#32;OS);
+00102 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00103 &#32;&#32;}
+00104 };
+00105 
+00106 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00107 
+00108 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;checkForMigration(StringRef&#32;resourcesPath,
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Args)&#32;{
+00110 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions();
+00111 &#32;&#32;DiagnosticConsumer&#32;*DiagClient&#32;=
+00112 &#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;TextDiagnosticPrinter(llvm::errs(),&#32;&amp;*DiagOpts);
+00113 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagID(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00114 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;Diags(
+00115 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticsEngine(DiagID,&#32;&amp;*DiagOpts,&#32;DiagClient));
+00116 &#32;&#32;<emphasis role="comment">//&#32;Chain&#32;in&#32;-verify&#32;checker,&#32;if&#32;requested.</emphasis>
+00117 &#32;&#32;VerifyDiagnosticConsumer&#32;*verifyDiag&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00118 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(VerifyDiags)&#32;{
+00119 &#32;&#32;&#32;&#32;verifyDiag&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;VerifyDiagnosticConsumer(*Diags);
+00120 &#32;&#32;&#32;&#32;Diags-&gt;setClient(verifyDiag);
+00121 &#32;&#32;}
+00122 
+00123 &#32;&#32;CompilerInvocation&#32;CI;
+00124 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CompilerInvocation::CreateFromArgs(CI,&#32;Args,&#32;*Diags))
+00125 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00126 
+00127 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CI.getFrontendOpts().Inputs.empty())&#32;{
+00128 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;no&#32;input&#32;files\n&quot;</emphasis>;
+00129 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00130 &#32;&#32;}
+00131 
+00132 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CI.getLangOpts()-&gt;ObjC)
+00133 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00134 
+00135 &#32;&#32;arcmt::checkForManualIssues(CI,&#32;CI.getFrontendOpts().Inputs[0],
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_shared&lt;PCHContainerOperations&gt;(),
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Diags-&gt;getClient());
+00138 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Diags-&gt;getClient()-&gt;getNumErrors()&#32;&gt;&#32;0;
+00139 }
+00140 
+00141 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printResult(FileRemapper&#32;&amp;remapper,&#32;raw_ostream&#32;&amp;OS)&#32;{
+00142 &#32;&#32;remapper.forEachMapping([](StringRef,&#32;StringRef)&#32;{},
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](StringRef,&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::MemoryBufferRef&#32;&amp;Buffer)&#32;{
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Buffer.getBuffer();
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;});
+00146 }
+00147 
+00148 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;performTransformations(StringRef&#32;resourcesPath,
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Args)&#32;{
+00150 &#32;&#32;<emphasis role="comment">//&#32;Check&#32;first.</emphasis>
+00151 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForMigration(resourcesPath,&#32;Args))
+00152 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00153 
+00154 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions();
+00155 &#32;&#32;DiagnosticConsumer&#32;*DiagClient&#32;=
+00156 &#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;TextDiagnosticPrinter(llvm::errs(),&#32;&amp;*DiagOpts);
+00157 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagID(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00158 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;TopDiags(
+00159 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticsEngine(DiagID,&#32;&amp;*DiagOpts,&#32;&amp;*DiagClient));
+00160 
+00161 &#32;&#32;CompilerInvocation&#32;origCI;
+00162 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CompilerInvocation::CreateFromArgs(origCI,&#32;Args,&#32;*TopDiags))
+00163 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00164 
+00165 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(origCI.getFrontendOpts().Inputs.empty())&#32;{
+00166 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;no&#32;input&#32;files\n&quot;</emphasis>;
+00167 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00168 &#32;&#32;}
+00169 
+00170 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!origCI.getLangOpts()-&gt;ObjC)
+00171 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00172 
+00173 &#32;&#32;MigrationProcess&#32;migration(origCI,&#32;std::make_shared&lt;PCHContainerOperations&gt;(),
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DiagClient);
+00175 
+00176 &#32;&#32;std::vector&lt;TransformFn&gt;
+00177 &#32;&#32;&#32;&#32;transforms&#32;=&#32;arcmt::getAllTransformations(origCI.getLangOpts()-&gt;getGC(),
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;origCI.getMigratorOpts().NoFinalizeRemoval);
+00179 &#32;&#32;assert(!transforms.empty());
+00180 
+00181 &#32;&#32;std::unique_ptr&lt;PrintTransforms&gt;&#32;transformPrinter;
+00182 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputTransformations)
+00183 &#32;&#32;&#32;&#32;transformPrinter.reset(<emphasis role="keyword">new</emphasis>&#32;PrintTransforms(llvm::outs()));
+00184 
+00185 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i=0,&#32;e&#32;=&#32;transforms.size();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00186 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;err&#32;=&#32;migration.applyTransform(transforms[i],&#32;transformPrinter.get());
+00187 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(err)&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00188 
+00189 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(VerboseOpt)&#32;{
+00190 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;==&#32;e-1)
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n#####&#32;FINAL&#32;RESULT&#32;#####\n&quot;</emphasis>;
+00192 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n#####&#32;OUTPUT&#32;AFTER&#32;&quot;</emphasis>&lt;&lt;&#32;i+1&#32;&lt;&lt;<emphasis role="stringliteral">&quot;.&#32;TRANSFORMATION&#32;#####\n&quot;</emphasis>;
+00194 &#32;&#32;&#32;&#32;&#32;&#32;printResult(migration.getRemapper(),&#32;llvm::errs());
+00195 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n##########################\n\n&quot;</emphasis>;
+00196 &#32;&#32;&#32;&#32;}
+00197 &#32;&#32;}
+00198 
+00199 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OutputTransformations)
+00200 &#32;&#32;&#32;&#32;printResult(migration.getRemapper(),&#32;llvm::outs());
+00201 
+00202 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;TestResultForARC</emphasis>
+00203 
+00204 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00205 }
+00206 
+00207 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;filesCompareEqual(StringRef&#32;fname1,&#32;StringRef&#32;fname2)&#32;{
+00208 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00209 
+00210 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;file1&#32;=
+00211 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFile(fname1,&#32;<emphasis role="comment">/*IsText=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00212 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!file1)
+00213 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00214 
+00215 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;file2&#32;=
+00216 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFile(fname2,&#32;<emphasis role="comment">/*IsText=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00217 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!file2)
+00218 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00219 
+00220 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;file1.get()-&gt;getBuffer()&#32;==&#32;file2.get()-&gt;getBuffer();
+00221 }
+00222 
+00223 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;verifyTransformedFiles(ArrayRef&lt;std::string&gt;&#32;resultFiles)&#32;{
+00224 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00225 
+00226 &#32;&#32;assert(!resultFiles.empty());
+00227 
+00228 &#32;&#32;std::map&lt;StringRef,&#32;StringRef&gt;&#32;resultMap;
+00229 
+00230 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ArrayRef&lt;std::string&gt;::iterator
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;resultFiles.begin(),&#32;E&#32;=&#32;resultFiles.end();&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00232 &#32;&#32;&#32;&#32;StringRef&#32;fname(*I);
+00233 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!fname.endswith(<emphasis role="stringliteral">&quot;.result&quot;</emphasis>))&#32;{
+00234 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;filename&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;fname
+00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;does&#32;not&#32;have&#32;&apos;.result&apos;&#32;extension\n&quot;</emphasis>;
+00236 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00237 &#32;&#32;&#32;&#32;}
+00238 &#32;&#32;&#32;&#32;resultMap[sys::path::stem(fname)]&#32;=&#32;fname;
+00239 &#32;&#32;}
+00240 
+00241 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;inputBuf&#32;=&#32;std::error_code();
+00242 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RemappingsFile.empty())
+00243 &#32;&#32;&#32;&#32;inputBuf&#32;=&#32;MemoryBuffer::getSTDIN();
+00244 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00245 &#32;&#32;&#32;&#32;inputBuf&#32;=&#32;MemoryBuffer::getFile(RemappingsFile,&#32;<emphasis role="comment">/*IsText=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00246 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!inputBuf)&#32;{
+00247 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;could&#32;not&#32;read&#32;remappings&#32;input\n&quot;</emphasis>;
+00248 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00249 &#32;&#32;}
+00250 
+00251 &#32;&#32;SmallVector&lt;StringRef,&#32;8&gt;&#32;strs;
+00252 &#32;&#32;inputBuf.get()-&gt;getBuffer().split(strs,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>,&#32;<emphasis role="comment">/*MaxSplit=*/</emphasis>-1,
+00253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*KeepEmpty=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00254 
+00255 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strs.empty())&#32;{
+00256 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;no&#32;files&#32;to&#32;verify&#32;from&#32;stdin\n&quot;</emphasis>;
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00258 &#32;&#32;}
+00259 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strs.size()&#32;%&#32;2&#32;!=&#32;0)&#32;{
+00260 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;files&#32;to&#32;verify&#32;are&#32;not&#32;original/result&#32;pairs\n&quot;</emphasis>;
+00261 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00262 &#32;&#32;}
+00263 
+00264 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;strs.size();&#32;i&#32;!=&#32;e;&#32;i&#32;+=&#32;2)&#32;{
+00265 &#32;&#32;&#32;&#32;StringRef&#32;inputOrigFname&#32;=&#32;strs[i];
+00266 &#32;&#32;&#32;&#32;StringRef&#32;inputResultFname&#32;=&#32;strs[i+1];
+00267 
+00268 &#32;&#32;&#32;&#32;std::map&lt;StringRef,&#32;StringRef&gt;::iterator&#32;It;
+00269 &#32;&#32;&#32;&#32;It&#32;=&#32;resultMap.find(sys::path::filename(inputOrigFname));
+00270 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(It&#32;==&#32;resultMap.end())&#32;{
+00271 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;inputOrigFname&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;is&#32;not&#32;in&#32;the&#32;list&#32;of&#32;&quot;</emphasis>
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;transformed&#32;files&#32;to&#32;verify\n&quot;</emphasis>;
+00273 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00274 &#32;&#32;&#32;&#32;}
+00275 
+00276 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!sys::fs::exists(It-&gt;second))&#32;{
+00277 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;It-&gt;second&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;does&#32;not&#32;exist\n&quot;</emphasis>;
+00278 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00279 &#32;&#32;&#32;&#32;}
+00280 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!sys::fs::exists(inputResultFname))&#32;{
+00281 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;inputResultFname&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;does&#32;not&#32;exist\n&quot;</emphasis>;
+00282 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00283 &#32;&#32;&#32;&#32;}
+00284 
+00285 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!filesCompareEqual(It-&gt;second,&#32;inputResultFname))&#32;{
+00286 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;It-&gt;second&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;is&#32;different&#32;than&#32;&quot;</emphasis>
+00287 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;inputResultFname&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;\n&quot;</emphasis>;
+00288 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00289 &#32;&#32;&#32;&#32;}
+00290 
+00291 &#32;&#32;&#32;&#32;resultMap.erase(It);
+00292 &#32;&#32;}
+00293 
+00294 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!resultMap.empty())&#32;{
+00295 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(std::map&lt;StringRef,&#32;StringRef&gt;::iterator
+00296 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;resultMap.begin(),&#32;E&#32;=&#32;resultMap.end();&#32;I&#32;!=&#32;E;&#32;++I)
+00297 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;I-&gt;second&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;was&#32;not&#32;verified!\n&quot;</emphasis>;
+00298 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00299 &#32;&#32;}
+00300 
+00301 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;
+00302 }
+00303 
+00304 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00305 <emphasis role="comment">//&#32;Misc.&#32;functions.</emphasis>
+00306 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00307 
+00308 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSourceLocation(SourceLocation&#32;loc,&#32;ASTContext&#32;&amp;Ctx,
+00309 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS)&#32;{
+00310 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00311 &#32;&#32;PresumedLoc&#32;PL&#32;=&#32;SM.getPresumedLoc(loc);
+00312 
+00313 &#32;&#32;OS&#32;&lt;&lt;&#32;llvm::sys::path::filename(PL.getFilename());
+00314 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>&#32;&lt;&lt;&#32;PL.getLine()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>
+00315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;PL.getColumn();
+00316 }
+00317 
+00318 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSourceRange(CharSourceRange&#32;range,&#32;ASTContext&#32;&amp;Ctx,
+00319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS)&#32;{
+00320 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00321 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;LangOptions&#32;&amp;langOpts&#32;=&#32;Ctx.getLangOpts();
+00322 
+00323 &#32;&#32;PresumedLoc&#32;PL&#32;=&#32;SM.getPresumedLoc(range.getBegin());
+00324 
+00325 &#32;&#32;OS&#32;&lt;&lt;&#32;llvm::sys::path::filename(PL.getFilename());
+00326 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;[&quot;</emphasis>&#32;&lt;&lt;&#32;PL.getLine()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>
+00327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;PL.getColumn();
+00328 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;-&#32;&quot;</emphasis>;
+00329 
+00330 &#32;&#32;SourceLocation&#32;end&#32;=&#32;range.getEnd();
+00331 &#32;&#32;PL&#32;=&#32;SM.getPresumedLoc(end);
+00332 
+00333 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;endCol&#32;=&#32;PL.getColumn()&#32;-&#32;1;
+00334 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!range.isTokenRange())
+00335 &#32;&#32;&#32;&#32;endCol&#32;+=&#32;Lexer::MeasureTokenLength(end,&#32;SM,&#32;langOpts);
+00336 &#32;&#32;OS&#32;&lt;&lt;&#32;PL.getLine()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>&#32;&lt;&lt;&#32;endCol&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]&quot;</emphasis>;
+00337 }
+00338 
+00339 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00340 <emphasis role="comment">//&#32;Command&#32;line&#32;processing.</emphasis>
+00341 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00342 
+<anchor xml:id="_arcmt-test_8cpp_source_1l00343"/><link linkend="_arcmt-test_8cpp_1a217dbf8b442f20279ea00b898af96f52">00343</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_arcmt-test_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00344 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">GetExecutablePath</link>;
+00345 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+00346 
+00347 &#32;&#32;std::string
+00348 &#32;&#32;&#32;&#32;resourcesPath&#32;=&#32;CompilerInvocation::GetResourcesPath(argv[0],&#32;MainAddr);
+00349 
+00350 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;optargc&#32;=&#32;0;
+00351 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;optargc&#32;!=&#32;argc;&#32;++optargc)&#32;{
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StringRef(argv[optargc])&#32;==&#32;<emphasis role="stringliteral">&quot;--args&quot;</emphasis>)
+00353 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00354 &#32;&#32;}
+00355 &#32;&#32;llvm::cl::ParseCommandLineOptions(optargc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;arcmt-test&quot;</emphasis>);
+00356 
+00357 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(VerifyTransformedFiles)&#32;{
+00358 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ResultFiles.empty())&#32;{
+00359 &#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::PrintHelpMessage();
+00360 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00361 &#32;&#32;&#32;&#32;}
+00362 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;verifyTransformedFiles(ResultFiles);
+00363 &#32;&#32;}
+00364 
+00365 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(optargc&#32;==&#32;argc)&#32;{
+00366 &#32;&#32;&#32;&#32;llvm::cl::PrintHelpMessage();
+00367 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00368 &#32;&#32;}
+00369 
+00370 &#32;&#32;ArrayRef&lt;const&#32;char*&gt;&#32;Args(argv+optargc+1,&#32;argc-optargc-1);
+00371 
+00372 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CheckOnly)
+00373 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;checkForMigration(resourcesPath,&#32;Args);
+00374 
+00375 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;performTransformations(resourcesPath,&#32;Args);
+00376 }
+</programlisting></section>

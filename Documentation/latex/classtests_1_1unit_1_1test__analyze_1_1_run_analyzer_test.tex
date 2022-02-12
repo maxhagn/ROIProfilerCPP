@@ -1,0 +1,171 @@
+\hypertarget{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test}{}\doxysection{tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test Class Reference}
+\label{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test}\index{tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}}
+Inheritance diagram for tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a702dcd34442c191fdf3725d9421cc75a}{test\+\_\+run\+\_\+analyzer}} (self)
+\item 
+def \mbox{\hyperlink{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a3ba6c9e6496dd0a88243bf8c0c18aa83}{test\+\_\+run\+\_\+analyzer\+\_\+crash}} (self)
+\item 
+def \mbox{\hyperlink{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_aee571060a4c53847ba18fa647bc41fb0}{test\+\_\+run\+\_\+analyzer\+\_\+crash\+\_\+and\+\_\+forwarded}} (self)
+\item 
+def \mbox{\hyperlink{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_ad7106ee26eff984ee2d0f8f75d28ce9c}{test\+\_\+run\+\_\+analyzer\+\_\+with\+\_\+sarif}} (self)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a1f6707f9c73cc0beb6ff8ba64d5b1afe}{run\+\_\+analyzer}} (content, failures\+\_\+report, output\+\_\+format=\textquotesingle{}plist\textquotesingle{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 128 of file test\+\_\+analyze.\+py.
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a1f6707f9c73cc0beb6ff8ba64d5b1afe}\label{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a1f6707f9c73cc0beb6ff8ba64d5b1afe}} 
+\index{tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}!run\_analyzer@{run\_analyzer}}
+\index{run\_analyzer@{run\_analyzer}!tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}}
+\doxysubsubsection{\texorpdfstring{run\_analyzer()}{run\_analyzer()}}
+{\footnotesize\ttfamily def tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test.\+run\+\_\+analyzer (\begin{DoxyParamCaption}\item[{}]{content,  }\item[{}]{failures\+\_\+report,  }\item[{}]{output\+\_\+format = {\ttfamily \textquotesingle{}plist\textquotesingle{}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Definition at line 131 of file test\+\_\+analyze.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{131     \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1analyze_a30e68b322e290e30d92b1abd99d3adba}{run\_analyzer}}(content, failures\_report, output\_format='plist'):}
+\DoxyCodeLine{132         \textcolor{keyword}{with} \mbox{\hyperlink{namespacelibear_a44657565063241a3d383ec724243c023}{libear.TemporaryDirectory}}() \textcolor{keyword}{as} tmpdir:}
+\DoxyCodeLine{133             filename = os.path.join(tmpdir, \textcolor{stringliteral}{'test.cpp'})}
+\DoxyCodeLine{134             \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(filename, \textcolor{stringliteral}{'w'}) \textcolor{keyword}{as} handle:}
+\DoxyCodeLine{135                 handle.write(content)}
+\DoxyCodeLine{136 }
+\DoxyCodeLine{137             opts = \{}
+\DoxyCodeLine{138                 \textcolor{stringliteral}{'clang'}: \textcolor{stringliteral}{'clang'},}
+\DoxyCodeLine{139                 \textcolor{stringliteral}{'directory'}: os.getcwd(),}
+\DoxyCodeLine{140                 \textcolor{stringliteral}{'flags'}: [],}
+\DoxyCodeLine{141                 \textcolor{stringliteral}{'direct\_args'}: [],}
+\DoxyCodeLine{142                 \textcolor{stringliteral}{'file'}: filename,}
+\DoxyCodeLine{143                 \textcolor{stringliteral}{'output\_dir'}: tmpdir,}
+\DoxyCodeLine{144                 \textcolor{stringliteral}{'output\_format'}: output\_format,}
+\DoxyCodeLine{145                 \textcolor{stringliteral}{'output\_failures'}: failures\_report}
+\DoxyCodeLine{146             \}}
+\DoxyCodeLine{147             spy = Spy()}
+\DoxyCodeLine{148             result = sut.run\_analyzer(opts, spy.call)}
+\DoxyCodeLine{149             output\_files = []}
+\DoxyCodeLine{150             \textcolor{keywordflow}{for} entry \textcolor{keywordflow}{in} os.listdir(tmpdir):}
+\DoxyCodeLine{151                 output\_files.append(entry)}
+\DoxyCodeLine{152             \textcolor{keywordflow}{return} (result, spy.arg, output\_files)}
+\DoxyCodeLine{153 }
+
+\end{DoxyCode}
+
+
+References startfile.\+open(), and libear.\+Temporary\+Directory().
+
+
+
+Referenced by tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+test\+\_\+clear\+\_\+deletes\+\_\+report\+\_\+dir(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+test\+\_\+clear\+\_\+keeps\+\_\+report\+\_\+dir\+\_\+when\+\_\+asked(), and tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+test\+\_\+regular\+\_\+keeps\+\_\+report\+\_\+dir().
+
+\mbox{\Hypertarget{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a702dcd34442c191fdf3725d9421cc75a}\label{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a702dcd34442c191fdf3725d9421cc75a}} 
+\index{tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}!test\_run\_analyzer@{test\_run\_analyzer}}
+\index{test\_run\_analyzer@{test\_run\_analyzer}!tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}}
+\doxysubsubsection{\texorpdfstring{test\_run\_analyzer()}{test\_run\_analyzer()}}
+{\footnotesize\ttfamily def tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test.\+test\+\_\+run\+\_\+analyzer (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 154 of file test\+\_\+analyze.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{154     \textcolor{keyword}{def }test\_run\_analyzer(self):}
+\DoxyCodeLine{155         content = \textcolor{stringliteral}{"{}int div(int n, int d) \{ return n / d; \}"{}}}
+\DoxyCodeLine{156         (result, fwds, \_) = RunAnalyzerTest.run\_analyzer(content, \textcolor{keyword}{False})}
+\DoxyCodeLine{157         self.assertEqual(\textcolor{keywordtype}{None}, fwds)}
+\DoxyCodeLine{158         self.assertEqual(0, result[\textcolor{stringliteral}{'exit\_code'}])}
+\DoxyCodeLine{159 }
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a3ba6c9e6496dd0a88243bf8c0c18aa83}\label{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_a3ba6c9e6496dd0a88243bf8c0c18aa83}} 
+\index{tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}!test\_run\_analyzer\_crash@{test\_run\_analyzer\_crash}}
+\index{test\_run\_analyzer\_crash@{test\_run\_analyzer\_crash}!tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}}
+\doxysubsubsection{\texorpdfstring{test\_run\_analyzer\_crash()}{test\_run\_analyzer\_crash()}}
+{\footnotesize\ttfamily def tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test.\+test\+\_\+run\+\_\+analyzer\+\_\+crash (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 160 of file test\+\_\+analyze.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{160     \textcolor{keyword}{def }test\_run\_analyzer\_crash(self):}
+\DoxyCodeLine{161         content = \textcolor{stringliteral}{"{}int div(int n, int d) \{ return n / d \}"{}}}
+\DoxyCodeLine{162         (result, fwds, \_) = RunAnalyzerTest.run\_analyzer(content, \textcolor{keyword}{False})}
+\DoxyCodeLine{163         self.assertEqual(\textcolor{keywordtype}{None}, fwds)}
+\DoxyCodeLine{164         self.assertEqual(1, result[\textcolor{stringliteral}{'exit\_code'}])}
+\DoxyCodeLine{165 }
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_aee571060a4c53847ba18fa647bc41fb0}\label{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_aee571060a4c53847ba18fa647bc41fb0}} 
+\index{tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}!test\_run\_analyzer\_crash\_and\_forwarded@{test\_run\_analyzer\_crash\_and\_forwarded}}
+\index{test\_run\_analyzer\_crash\_and\_forwarded@{test\_run\_analyzer\_crash\_and\_forwarded}!tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}}
+\doxysubsubsection{\texorpdfstring{test\_run\_analyzer\_crash\_and\_forwarded()}{test\_run\_analyzer\_crash\_and\_forwarded()}}
+{\footnotesize\ttfamily def tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test.\+test\+\_\+run\+\_\+analyzer\+\_\+crash\+\_\+and\+\_\+forwarded (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 166 of file test\+\_\+analyze.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{166     \textcolor{keyword}{def }test\_run\_analyzer\_crash\_and\_forwarded(self):}
+\DoxyCodeLine{167         content = \textcolor{stringliteral}{"{}int div(int n, int d) \{ return n / d \}"{}}}
+\DoxyCodeLine{168         (\_, fwds, \_) = RunAnalyzerTest.run\_analyzer(content, \textcolor{keyword}{True})}
+\DoxyCodeLine{169         self.assertEqual(1, fwds[\textcolor{stringliteral}{'exit\_code'}])}
+\DoxyCodeLine{170         self.assertTrue(len(fwds[\textcolor{stringliteral}{'error\_output'}]) > 0)}
+\DoxyCodeLine{171 }
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_ad7106ee26eff984ee2d0f8f75d28ce9c}\label{classtests_1_1unit_1_1test__analyze_1_1_run_analyzer_test_ad7106ee26eff984ee2d0f8f75d28ce9c}} 
+\index{tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}!test\_run\_analyzer\_with\_sarif@{test\_run\_analyzer\_with\_sarif}}
+\index{test\_run\_analyzer\_with\_sarif@{test\_run\_analyzer\_with\_sarif}!tests.unit.test\_analyze.RunAnalyzerTest@{tests.unit.test\_analyze.RunAnalyzerTest}}
+\doxysubsubsection{\texorpdfstring{test\_run\_analyzer\_with\_sarif()}{test\_run\_analyzer\_with\_sarif()}}
+{\footnotesize\ttfamily def tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test.\+test\+\_\+run\+\_\+analyzer\+\_\+with\+\_\+sarif (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 172 of file test\+\_\+analyze.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{172     \textcolor{keyword}{def }test\_run\_analyzer\_with\_sarif(self):}
+\DoxyCodeLine{173         content = \textcolor{stringliteral}{"{}int div(int n, int d) \{ return n / d; \}"{}}}
+\DoxyCodeLine{174         (result, fwds, output\_files) = RunAnalyzerTest.run\_analyzer(content, \textcolor{keyword}{False}, output\_format=\textcolor{stringliteral}{'sarif'})}
+\DoxyCodeLine{175         self.assertEqual(\textcolor{keywordtype}{None}, fwds)}
+\DoxyCodeLine{176         self.assertEqual(0, result[\textcolor{stringliteral}{'exit\_code'}])}
+\DoxyCodeLine{177 }
+\DoxyCodeLine{178         pattern = re.compile(\textcolor{stringliteral}{r'\string^result-\/.+\(\backslash\).sarif\$'})}
+\DoxyCodeLine{179         \textcolor{keywordflow}{for} f \textcolor{keywordflow}{in} output\_files:}
+\DoxyCodeLine{180             \textcolor{keywordflow}{if} re.match(pattern, f):}
+\DoxyCodeLine{181                 \textcolor{keywordflow}{return}}
+\DoxyCodeLine{182         self.fail(\textcolor{stringliteral}{'no result sarif files found in output'})}
+\DoxyCodeLine{183 }
+\DoxyCodeLine{184 }
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/scan-\/build-\/py/tests/unit/\mbox{\hyperlink{test__analyze_8py}{test\+\_\+analyze.\+py}}\end{DoxyCompactItemize}

@@ -1,0 +1,196 @@
+\hypertarget{_a_r_c_migrate_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+ARCMigrate.cpp File Reference}
+\label{_a_r_c_migrate_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/ARCMigrate.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/ARCMigrate.cpp}}
+{\ttfamily \#include \char`\"{}clang-\/c/\+Index.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXString.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+ARCMigrate/\+ARCMT.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Config/config.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Text\+Diagnostic\+Buffer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXRemapping \mbox{\hyperlink{_a_r_c_migrate_8cpp_a4285c97c7ad73a51c7d255fdb4bb7c18}{clang\+\_\+get\+Remappings}} (const char $\ast$migrate\+\_\+dir\+\_\+path)
+\item 
+CXRemapping \mbox{\hyperlink{_a_r_c_migrate_8cpp_adb472f66643a6ff2d1ae417d7e3d4272}{clang\+\_\+get\+Remappings\+From\+File\+List}} (const char $\ast$$\ast$file\+Paths, unsigned num\+Files)
+\item 
+unsigned \mbox{\hyperlink{_a_r_c_migrate_8cpp_ad07f3fae8b7bbaf4c308d437e2b02fea}{clang\+\_\+remap\+\_\+get\+Num\+Files}} (CXRemapping map)
+\item 
+void \mbox{\hyperlink{_a_r_c_migrate_8cpp_ac6fdf3d7778a375c6f1701c9a773c38c}{clang\+\_\+remap\+\_\+get\+Filenames}} (CXRemapping map, unsigned index, CXString $\ast$original, CXString $\ast$transformed)
+\item 
+void \mbox{\hyperlink{_a_r_c_migrate_8cpp_a818cc8a2f62f779b54febe2e4185ac3d}{clang\+\_\+remap\+\_\+dispose}} (CXRemapping map)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_a_r_c_migrate_8cpp_a4285c97c7ad73a51c7d255fdb4bb7c18}\label{_a_r_c_migrate_8cpp_a4285c97c7ad73a51c7d255fdb4bb7c18}} 
+\index{ARCMigrate.cpp@{ARCMigrate.cpp}!clang\_getRemappings@{clang\_getRemappings}}
+\index{clang\_getRemappings@{clang\_getRemappings}!ARCMigrate.cpp@{ARCMigrate.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getRemappings()}{clang\_getRemappings()}}
+{\footnotesize\ttfamily CXRemapping clang\+\_\+get\+Remappings (\begin{DoxyParamCaption}\item[{const char $\ast$}]{migrate\+\_\+dir\+\_\+path }\end{DoxyParamCaption})}
+
+
+
+Definition at line 35 of file ARCMigrate.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{35                                                               \{}
+\DoxyCodeLine{36 \textcolor{preprocessor}{\#if !CLANG\_ENABLE\_ARCMT}}
+\DoxyCodeLine{37   llvm::errs() << \textcolor{stringliteral}{"{}error: feature not enabled in this build\(\backslash\)n"{}};}
+\DoxyCodeLine{38   \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{39 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{40   \textcolor{keywordtype}{bool} Logging = ::getenv(\textcolor{stringliteral}{"{}LIBCLANG\_LOGGING"{}});}
+\DoxyCodeLine{41 }
+\DoxyCodeLine{42   \textcolor{keywordflow}{if} (!migrate\_dir\_path) \{}
+\DoxyCodeLine{43     \textcolor{keywordflow}{if} (Logging)}
+\DoxyCodeLine{44       llvm::errs() << \textcolor{stringliteral}{"{}clang\_getRemappings was called with NULL parameter\(\backslash\)n"{}};}
+\DoxyCodeLine{45     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{46   \}}
+\DoxyCodeLine{47 }
+\DoxyCodeLine{48   \textcolor{keywordflow}{if} (!llvm::sys::fs::exists(migrate\_dir\_path)) \{}
+\DoxyCodeLine{49     \textcolor{keywordflow}{if} (Logging) \{}
+\DoxyCodeLine{50       llvm::errs() << \textcolor{stringliteral}{"{}Error by clang\_getRemappings(\(\backslash\)"{}"{}} << migrate\_dir\_path}
+\DoxyCodeLine{51                    << \textcolor{stringliteral}{"{}\(\backslash\)"{})\(\backslash\)n"{}};}
+\DoxyCodeLine{52       llvm::errs() << \textcolor{stringliteral}{"{}\(\backslash\)"{}"{}} << migrate\_dir\_path << \textcolor{stringliteral}{"{}\(\backslash\)"{} does not exist\(\backslash\)n"{}};}
+\DoxyCodeLine{53     \}}
+\DoxyCodeLine{54     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{55   \}}
+\DoxyCodeLine{56 }
+\DoxyCodeLine{57   TextDiagnosticBuffer diagBuffer;}
+\DoxyCodeLine{58   std::unique\_ptr<Remap> remap(\textcolor{keyword}{new} Remap());}
+\DoxyCodeLine{59 }
+\DoxyCodeLine{60   \textcolor{keywordtype}{bool} err = arcmt::getFileRemappings(remap-\/>Vec, migrate\_dir\_path,\&diagBuffer);}
+\DoxyCodeLine{61 }
+\DoxyCodeLine{62   \textcolor{keywordflow}{if} (err) \{}
+\DoxyCodeLine{63     \textcolor{keywordflow}{if} (Logging) \{}
+\DoxyCodeLine{64       llvm::errs() << \textcolor{stringliteral}{"{}Error by clang\_getRemappings(\(\backslash\)"{}"{}} << migrate\_dir\_path}
+\DoxyCodeLine{65                    << \textcolor{stringliteral}{"{}\(\backslash\)"{})\(\backslash\)n"{}};}
+\DoxyCodeLine{66       \textcolor{keywordflow}{for} (TextDiagnosticBuffer::const\_iterator}
+\DoxyCodeLine{67              I = diagBuffer.err\_begin(), E = diagBuffer.err\_end(); I != E; ++I)}
+\DoxyCodeLine{68         llvm::errs() << I-\/>second << \textcolor{charliteral}{'\(\backslash\)n'};}
+\DoxyCodeLine{69     \}}
+\DoxyCodeLine{70     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{71   \}}
+\DoxyCodeLine{72 }
+\DoxyCodeLine{73   \textcolor{keywordflow}{return} remap.release();}
+\DoxyCodeLine{74 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{75 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_a_r_c_migrate_8cpp_adb472f66643a6ff2d1ae417d7e3d4272}\label{_a_r_c_migrate_8cpp_adb472f66643a6ff2d1ae417d7e3d4272}} 
+\index{ARCMigrate.cpp@{ARCMigrate.cpp}!clang\_getRemappingsFromFileList@{clang\_getRemappingsFromFileList}}
+\index{clang\_getRemappingsFromFileList@{clang\_getRemappingsFromFileList}!ARCMigrate.cpp@{ARCMigrate.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getRemappingsFromFileList()}{clang\_getRemappingsFromFileList()}}
+{\footnotesize\ttfamily CXRemapping clang\+\_\+get\+Remappings\+From\+File\+List (\begin{DoxyParamCaption}\item[{const char $\ast$$\ast$}]{file\+Paths,  }\item[{unsigned}]{num\+Files }\end{DoxyParamCaption})}
+
+
+
+Definition at line 77 of file ARCMigrate.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{78                                                                \{}
+\DoxyCodeLine{79 \textcolor{preprocessor}{\#if !CLANG\_ENABLE\_ARCMT}}
+\DoxyCodeLine{80   llvm::errs() << \textcolor{stringliteral}{"{}error: feature not enabled in this build\(\backslash\)n"{}};}
+\DoxyCodeLine{81   \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{82 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{83   \textcolor{keywordtype}{bool} Logging = ::getenv(\textcolor{stringliteral}{"{}LIBCLANG\_LOGGING"{}});}
+\DoxyCodeLine{84 }
+\DoxyCodeLine{85   std::unique\_ptr<Remap> remap(\textcolor{keyword}{new} Remap());}
+\DoxyCodeLine{86 }
+\DoxyCodeLine{87   \textcolor{keywordflow}{if} (numFiles == 0) \{}
+\DoxyCodeLine{88     \textcolor{keywordflow}{if} (Logging)}
+\DoxyCodeLine{89       llvm::errs() << \textcolor{stringliteral}{"{}clang\_getRemappingsFromFileList was called with "{}}}
+\DoxyCodeLine{90                       \textcolor{stringliteral}{"{}numFiles=0\(\backslash\)n"{}};}
+\DoxyCodeLine{91     \textcolor{keywordflow}{return} remap.release();}
+\DoxyCodeLine{92   \}}
+\DoxyCodeLine{93 }
+\DoxyCodeLine{94   \textcolor{keywordflow}{if} (!filePaths) \{}
+\DoxyCodeLine{95     \textcolor{keywordflow}{if} (Logging)}
+\DoxyCodeLine{96       llvm::errs() << \textcolor{stringliteral}{"{}clang\_getRemappingsFromFileList was called with "{}}}
+\DoxyCodeLine{97                       \textcolor{stringliteral}{"{}NULL filePaths\(\backslash\)n"{}};}
+\DoxyCodeLine{98     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{99   \}}
+\DoxyCodeLine{100 }
+\DoxyCodeLine{101   TextDiagnosticBuffer diagBuffer;}
+\DoxyCodeLine{102   SmallVector<StringRef, 32> Files(filePaths, filePaths + numFiles);}
+\DoxyCodeLine{103 }
+\DoxyCodeLine{104   \textcolor{keywordtype}{bool} err = arcmt::getFileRemappingsFromFileList(remap-\/>Vec, Files,}
+\DoxyCodeLine{105                                                   \&diagBuffer);}
+\DoxyCodeLine{106 }
+\DoxyCodeLine{107   \textcolor{keywordflow}{if} (err) \{}
+\DoxyCodeLine{108     \textcolor{keywordflow}{if} (Logging) \{}
+\DoxyCodeLine{109       llvm::errs() << \textcolor{stringliteral}{"{}Error by clang\_getRemappingsFromFileList\(\backslash\)n"{}};}
+\DoxyCodeLine{110       \textcolor{keywordflow}{for} (TextDiagnosticBuffer::const\_iterator}
+\DoxyCodeLine{111              I = diagBuffer.err\_begin(), E = diagBuffer.err\_end(); I != E; ++I)}
+\DoxyCodeLine{112         llvm::errs() << I-\/>second << \textcolor{charliteral}{'\(\backslash\)n'};}
+\DoxyCodeLine{113     \}}
+\DoxyCodeLine{114     \textcolor{keywordflow}{return} remap.release();}
+\DoxyCodeLine{115   \}}
+\DoxyCodeLine{116 }
+\DoxyCodeLine{117   \textcolor{keywordflow}{return} remap.release();}
+\DoxyCodeLine{118 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{119 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_a_r_c_migrate_8cpp_a818cc8a2f62f779b54febe2e4185ac3d}\label{_a_r_c_migrate_8cpp_a818cc8a2f62f779b54febe2e4185ac3d}} 
+\index{ARCMigrate.cpp@{ARCMigrate.cpp}!clang\_remap\_dispose@{clang\_remap\_dispose}}
+\index{clang\_remap\_dispose@{clang\_remap\_dispose}!ARCMigrate.cpp@{ARCMigrate.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_remap\_dispose()}{clang\_remap\_dispose()}}
+{\footnotesize\ttfamily void clang\+\_\+remap\+\_\+dispose (\begin{DoxyParamCaption}\item[{CXRemapping}]{map }\end{DoxyParamCaption})}
+
+
+
+Definition at line 136 of file ARCMigrate.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{136                                           \{}
+\DoxyCodeLine{137   \textcolor{keyword}{delete} \textcolor{keyword}{static\_cast<}Remap *\textcolor{keyword}{>}(map);}
+\DoxyCodeLine{138 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_a_r_c_migrate_8cpp_ac6fdf3d7778a375c6f1701c9a773c38c}\label{_a_r_c_migrate_8cpp_ac6fdf3d7778a375c6f1701c9a773c38c}} 
+\index{ARCMigrate.cpp@{ARCMigrate.cpp}!clang\_remap\_getFilenames@{clang\_remap\_getFilenames}}
+\index{clang\_remap\_getFilenames@{clang\_remap\_getFilenames}!ARCMigrate.cpp@{ARCMigrate.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_remap\_getFilenames()}{clang\_remap\_getFilenames()}}
+{\footnotesize\ttfamily void clang\+\_\+remap\+\_\+get\+Filenames (\begin{DoxyParamCaption}\item[{CXRemapping}]{map,  }\item[{unsigned}]{index,  }\item[{CXString $\ast$}]{original,  }\item[{CXString $\ast$}]{transformed }\end{DoxyParamCaption})}
+
+
+
+Definition at line 126 of file ARCMigrate.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{127                                                                          \{}
+\DoxyCodeLine{128   \textcolor{keywordflow}{if} (original)}
+\DoxyCodeLine{129     *original = \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(}
+\DoxyCodeLine{130                     \textcolor{keyword}{static\_cast<}Remap *\textcolor{keyword}{>}(map)-\/>Vec[index].first);}
+\DoxyCodeLine{131   \textcolor{keywordflow}{if} (transformed)}
+\DoxyCodeLine{132     *transformed = \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(}
+\DoxyCodeLine{133                     \textcolor{keyword}{static\_cast<}Remap *\textcolor{keyword}{>}(map)-\/>Vec[index].second);}
+\DoxyCodeLine{134 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Dup().
+
+\mbox{\Hypertarget{_a_r_c_migrate_8cpp_ad07f3fae8b7bbaf4c308d437e2b02fea}\label{_a_r_c_migrate_8cpp_ad07f3fae8b7bbaf4c308d437e2b02fea}} 
+\index{ARCMigrate.cpp@{ARCMigrate.cpp}!clang\_remap\_getNumFiles@{clang\_remap\_getNumFiles}}
+\index{clang\_remap\_getNumFiles@{clang\_remap\_getNumFiles}!ARCMigrate.cpp@{ARCMigrate.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_remap\_getNumFiles()}{clang\_remap\_getNumFiles()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+remap\+\_\+get\+Num\+Files (\begin{DoxyParamCaption}\item[{CXRemapping}]{map }\end{DoxyParamCaption})}
+
+
+
+Definition at line 121 of file ARCMigrate.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{121                                                   \{}
+\DoxyCodeLine{122   \textcolor{keywordflow}{return} \textcolor{keyword}{static\_cast<}Remap *\textcolor{keyword}{>}(map)-\/>Vec.size();}
+\DoxyCodeLine{123   }
+\DoxyCodeLine{124 \}}
+
+\end{DoxyCode}

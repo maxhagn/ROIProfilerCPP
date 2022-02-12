@@ -1,0 +1,136 @@
+.TH "tests.unit.test_analyze.RunAnalyzerTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_analyze.RunAnalyzerTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_run_analyzer\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_run_analyzer_crash\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_run_analyzer_crash_and_forwarded\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_run_analyzer_with_sarif\fP (self)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun_analyzer\fP (content, failures_report, output_format='plist')"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 128 of file test_analyze\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.run_analyzer ( content,  failures_report,  output_format = \fC'plist'\fP)\fC [static]\fP"
+
+.PP
+Definition at line 131 of file test_analyze\&.py\&.
+.PP
+.nf
+131     def run_analyzer(content, failures_report, output_format='plist'):
+132         with libear\&.TemporaryDirectory() as tmpdir:
+133             filename = os\&.path\&.join(tmpdir, 'test\&.cpp')
+134             with open(filename, 'w') as handle:
+135                 handle\&.write(content)
+136 
+137             opts = {
+138                 'clang': 'clang',
+139                 'directory': os\&.getcwd(),
+140                 'flags': [],
+141                 'direct_args': [],
+142                 'file': filename,
+143                 'output_dir': tmpdir,
+144                 'output_format': output_format,
+145                 'output_failures': failures_report
+146             }
+147             spy = Spy()
+148             result = sut\&.run_analyzer(opts, spy\&.call)
+149             output_files = []
+150             for entry in os\&.listdir(tmpdir):
+151                 output_files\&.append(entry)
+152             return (result, spy\&.arg, output_files)
+153 
+.fi
+.PP
+References startfile\&.open(), and libear\&.TemporaryDirectory()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), and tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_regular_keeps_report_dir()\&.
+.SS "def tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.test_run_analyzer ( self)"
+
+.PP
+Definition at line 154 of file test_analyze\&.py\&.
+.PP
+.nf
+154     def test_run_analyzer(self):
+155         content = "int div(int n, int d) { return n / d; }"
+156         (result, fwds, _) = RunAnalyzerTest\&.run_analyzer(content, False)
+157         self\&.assertEqual(None, fwds)
+158         self\&.assertEqual(0, result['exit_code'])
+159 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.test_run_analyzer_crash ( self)"
+
+.PP
+Definition at line 160 of file test_analyze\&.py\&.
+.PP
+.nf
+160     def test_run_analyzer_crash(self):
+161         content = "int div(int n, int d) { return n / d }"
+162         (result, fwds, _) = RunAnalyzerTest\&.run_analyzer(content, False)
+163         self\&.assertEqual(None, fwds)
+164         self\&.assertEqual(1, result['exit_code'])
+165 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.test_run_analyzer_crash_and_forwarded ( self)"
+
+.PP
+Definition at line 166 of file test_analyze\&.py\&.
+.PP
+.nf
+166     def test_run_analyzer_crash_and_forwarded(self):
+167         content = "int div(int n, int d) { return n / d }"
+168         (_, fwds, _) = RunAnalyzerTest\&.run_analyzer(content, True)
+169         self\&.assertEqual(1, fwds['exit_code'])
+170         self\&.assertTrue(len(fwds['error_output']) > 0)
+171 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.RunAnalyzerTest\&.test_run_analyzer_with_sarif ( self)"
+
+.PP
+Definition at line 172 of file test_analyze\&.py\&.
+.PP
+.nf
+172     def test_run_analyzer_with_sarif(self):
+173         content = "int div(int n, int d) { return n / d; }"
+174         (result, fwds, output_files) = RunAnalyzerTest\&.run_analyzer(content, False, output_format='sarif')
+175         self\&.assertEqual(None, fwds)
+176         self\&.assertEqual(0, result['exit_code'])
+177 
+178         pattern = re\&.compile(r'^result-\&.+\\&.sarif$')
+179         for f in output_files:
+180             if re\&.match(pattern, f):
+181                 return
+182         self\&.fail('no result sarif files found in output')
+183 
+184 
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,241 @@
+.TH "clang::cxindex" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxindex
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBLogger\fP"
+.br
+.ti -1c
+.RI "class \fBScratchAlloc\fP"
+.br
+.ti -1c
+.RI "struct \fBEntityInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBContainerInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBObjCContainerDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBObjCInterfaceDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBObjCProtocolDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBObjCCategoryDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBObjCPropertyDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBCXXClassDeclInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBAttrInfo\fP"
+.br
+.ti -1c
+.RI "struct \fBIBOutletCollectionInfo\fP"
+.br
+.ti -1c
+.RI "class \fBAttrListInfo\fP"
+.br
+.ti -1c
+.RI "class \fBCXIndexDataConsumer\fP"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef IntrusiveRefCntPtr< \fBLogger\fP > \fBLogRef\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBprintDiagsToStderr\fP (ASTUnit *Unit)"
+.br
+.ti -1c
+.RI "MacroInfo * \fBgetMacroInfo\fP (const IdentifierInfo &II, SourceLocation MacroDefLoc, CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "const MacroInfo * \fBgetMacroInfo\fP (const MacroDefinitionRecord *MacroDef, CXTranslationUnit TU)"
+.br
+.RI "Retrieves the corresponding MacroInfo of a MacroDefinitionRecord\&. "
+.ti -1c
+.RI "MacroDefinitionRecord * \fBcheckForMacroInMacroDefinition\fP (const MacroInfo *MI, SourceLocation Loc, CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "MacroDefinitionRecord * \fBcheckForMacroInMacroDefinition\fP (const MacroInfo *MI, const Token &Tok, CXTranslationUnit TU)"
+.br
+.in -1c
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef IntrusiveRefCntPtr<\fBLogger\fP> \fBclang::cxindex::LogRef\fP"
+
+.PP
+Definition at line 31 of file CLog\&.h\&.
+.SH "Function Documentation"
+.PP 
+.SS "MacroDefinitionRecord * clang::cxindex::checkForMacroInMacroDefinition (const MacroInfo * MI, const Token & Tok, CXTranslationUnit TU)"
+If \fCTok\fP resides inside the definition of \fCMI\fP and it points at an identifier that has ever been a macro name, this returns the latest MacroDefinitionRecord for that name, otherwise it returns NULL\&. 
+.PP
+Definition at line 9049 of file CIndex\&.cpp\&.
+.PP
+.nf
+9050                                                               {
+9051   if (!MI || !TU)
+9052     return nullptr;
+9053   if (Tok\&.isNot(tok::raw_identifier))
+9054     return nullptr;
+9055 
+9056   if (MI->getNumTokens() == 0)
+9057     return nullptr;
+9058   SourceRange DefRange(MI->getReplacementToken(0)\&.getLocation(),
+9059                        MI->getDefinitionEndLoc());
+9060   ASTUnit *Unit = cxtu::getASTUnit(TU);
+9061 
+9062   // Check that the token is inside the definition and not its argument list\&.
+9063   SourceManager &SM = Unit->getSourceManager();
+9064   if (SM\&.isBeforeInTranslationUnit(Tok\&.getLocation(), DefRange\&.getBegin()))
+9065     return nullptr;
+9066   if (SM\&.isBeforeInTranslationUnit(DefRange\&.getEnd(), Tok\&.getLocation()))
+9067     return nullptr;
+9068 
+9069   Preprocessor &PP = Unit->getPreprocessor();
+9070   PreprocessingRecord *PPRec = PP\&.getPreprocessingRecord();
+9071   if (!PPRec)
+9072     return nullptr;
+9073 
+9074   IdentifierInfo &II = PP\&.getIdentifierTable()\&.get(Tok\&.getRawIdentifier());
+9075   if (!II\&.hadMacroDefinition())
+9076     return nullptr;
+9077 
+9078   // Check that the identifier is not one of the macro arguments\&.
+9079   if (std::find(MI->param_begin(), MI->param_end(), &II) != MI->param_end())
+9080     return nullptr;
+9081 
+9082   MacroDirective *InnerMD = PP\&.getLocalMacroDirectiveHistory(&II);
+9083   if (!InnerMD)
+9084     return nullptr;
+9085 
+9086   return PPRec->findMacroDefinition(InnerMD->getMacroInfo());
+9087 }
+.fi
+.SS "MacroDefinitionRecord * clang::cxindex::checkForMacroInMacroDefinition (const MacroInfo * MI, SourceLocation Loc, CXTranslationUnit TU)"
+If \fCLoc\fP resides inside the definition of \fCMI\fP and it points at an identifier that has ever been a macro name, this returns the latest MacroDefinitionRecord for that name, otherwise it returns NULL\&. 
+.PP
+Definition at line 9090 of file CIndex\&.cpp\&.
+.PP
+.nf
+9091                                                               {
+9092   if (Loc\&.isInvalid() || !MI || !TU)
+9093     return nullptr;
+9094 
+9095   if (MI->getNumTokens() == 0)
+9096     return nullptr;
+9097   ASTUnit *Unit = cxtu::getASTUnit(TU);
+9098   Preprocessor &PP = Unit->getPreprocessor();
+9099   if (!PP\&.getPreprocessingRecord())
+9100     return nullptr;
+9101   Loc = Unit->getSourceManager()\&.getSpellingLoc(Loc);
+9102   Token Tok;
+9103   if (PP\&.getRawToken(Loc, Tok))
+9104     return nullptr;
+9105 
+9106   return checkForMacroInMacroDefinition(MI, Tok, TU);
+9107 }
+.fi
+.SS "MacroInfo * clang::cxindex::getMacroInfo (const IdentifierInfo & II, SourceLocation MacroDefLoc, CXTranslationUnit TU)"
+If \fCMacroDefLoc\fP points at a macro definition with \fCII\fP as its name, this retrieves its MacroInfo\&. 
+.PP
+Definition at line 9015 of file CIndex\&.cpp\&.
+.PP
+.nf
+9017                                                        {
+9018   if (MacroDefLoc\&.isInvalid() || !TU)
+9019     return nullptr;
+9020   if (!II\&.hadMacroDefinition())
+9021     return nullptr;
+9022 
+9023   ASTUnit *Unit = cxtu::getASTUnit(TU);
+9024   Preprocessor &PP = Unit->getPreprocessor();
+9025   MacroDirective *MD = PP\&.getLocalMacroDirectiveHistory(&II);
+9026   if (MD) {
+9027     for (MacroDirective::DefInfo Def = MD->getDefinition(); Def;
+9028          Def = Def\&.getPreviousDefinition()) {
+9029       if (MacroDefLoc == Def\&.getMacroInfo()->getDefinitionLoc())
+9030         return Def\&.getMacroInfo();
+9031     }
+9032   }
+9033 
+9034   return nullptr;
+9035 }
+.fi
+.PP
+Referenced by getMacroInfo()\&.
+.SS "const MacroInfo * clang::cxindex::getMacroInfo (const MacroDefinitionRecord * MacroDef, CXTranslationUnit TU)"
+
+.PP
+Retrieves the corresponding MacroInfo of a MacroDefinitionRecord\&. 
+.PP
+Definition at line 9037 of file CIndex\&.cpp\&.
+.PP
+.nf
+9038                                                              {
+9039   if (!MacroDef || !TU)
+9040     return nullptr;
+9041   const IdentifierInfo *II = MacroDef->getName();
+9042   if (!II)
+9043     return nullptr;
+9044 
+9045   return getMacroInfo(*II, MacroDef->getLocation(), TU);
+9046 }
+.fi
+.PP
+References getMacroInfo()\&.
+.SS "void clang::cxindex::printDiagsToStderr (ASTUnit * Unit)"
+
+.PP
+Definition at line 8994 of file CIndex\&.cpp\&.
+.PP
+.nf
+8994                                               {
+8995   if (!Unit)
+8996     return;
+8997 
+8998   for (ASTUnit::stored_diag_iterator D = Unit->stored_diag_begin(),
+8999                                      DEnd = Unit->stored_diag_end();
+9000        D != DEnd; ++D) {
+9001     CXStoredDiagnostic Diag(*D, Unit->getLangOpts());
+9002     CXString Msg =
+9003         clang_formatDiagnostic(&Diag, clang_defaultDiagnosticDisplayOptions());
+9004     fprintf(stderr, "%s\n", clang_getCString(Msg));
+9005     clang_disposeString(Msg);
+9006   }
+9007 #ifdef _WIN32
+9008   // On Windows, force a flush, since there may be multiple copies of
+9009   // stderr and stdout in the file system, all with different buffers
+9010   // but writing to the same device\&.
+9011   fflush(stderr);
+9012 #endif
+9013 }
+.fi
+.PP
+References clang_defaultDiagnosticDisplayOptions(), clang_disposeString(), clang_formatDiagnostic(), and clang_getCString()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

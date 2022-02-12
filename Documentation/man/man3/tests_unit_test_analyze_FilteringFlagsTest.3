@@ -1,0 +1,271 @@
+.TH "tests.unit.test_analyze.FilteringFlagsTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_analyze.FilteringFlagsTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_language_captured\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_arch\fP (self)"
+.br
+.ti -1c
+.RI "def \fBassertFlagsChanged\fP (self, expected, flags)"
+.br
+.ti -1c
+.RI "def \fBassertFlagsUnchanged\fP (self, flags)"
+.br
+.ti -1c
+.RI "def \fBassertFlagsFiltered\fP (self, flags)"
+.br
+.ti -1c
+.RI "def \fBtest_optimalizations_pass\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_include_pass\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_define_pass\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_output_filtered\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_some_warning_filtered\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_compile_only_flags_pass\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_compile_and_link_flags_pass\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_some_flags_filtered\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 28 of file test_analyze\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsChanged ( self,  expected,  flags)"
+
+.PP
+Definition at line 51 of file test_analyze\&.py\&.
+.PP
+.nf
+51     def assertFlagsChanged(self, expected, flags):
+52         cmd = ['clang', '-c', 'source\&.c'] + flags
+53         opts = sut\&.classify_parameters(cmd)
+54         self\&.assertEqual(expected, opts['flags'])
+55 
+.fi
+.PP
+Referenced by tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsFiltered(), and tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsFiltered ( self,  flags)"
+
+.PP
+Definition at line 59 of file test_analyze\&.py\&.
+.PP
+.nf
+59     def assertFlagsFiltered(self, flags):
+60         self\&.assertFlagsChanged([], flags)
+61 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsChanged()\&.
+.PP
+Referenced by tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_output_filtered(), tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_some_flags_filtered(), and tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_some_warning_filtered()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged ( self,  flags)"
+
+.PP
+Definition at line 56 of file test_analyze\&.py\&.
+.PP
+.nf
+56     def assertFlagsUnchanged(self, flags):
+57         self\&.assertFlagsChanged(flags, flags)
+58 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsChanged()\&.
+.PP
+Referenced by tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_compile_and_link_flags_pass(), tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_compile_only_flags_pass(), tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_define_pass(), tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_include_pass(), tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_optimalizations_pass(), and tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_some_warning_filtered()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_arch ( self)"
+
+.PP
+Definition at line 40 of file test_analyze\&.py\&.
+.PP
+.nf
+40     def test_arch(self):
+41         def test(flags):
+42             cmd = ['clang', '-c', 'source\&.c'] + flags
+43             opts = sut\&.classify_parameters(cmd)
+44             return opts['arch_list']
+45 
+46         self\&.assertEqual([], test([]))
+47         self\&.assertEqual(['mips'], test(['-arch', 'mips']))
+48         self\&.assertEqual(['mips', 'i386'],
+49                          test(['-arch', 'mips', '-arch', 'i386']))
+50 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_compile_and_link_flags_pass ( self)"
+
+.PP
+Definition at line 103 of file test_analyze\&.py\&.
+.PP
+.nf
+103     def test_compile_and_link_flags_pass(self):
+104         self\&.assertFlagsUnchanged(['-fsinged-char'])
+105         self\&.assertFlagsUnchanged(['-fPIC'])
+106         self\&.assertFlagsUnchanged(['-stdlib=libc++'])
+107         self\&.assertFlagsUnchanged(['--sysroot', '/'])
+108         self\&.assertFlagsUnchanged(['-isysroot', '/'])
+109 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_compile_only_flags_pass ( self)"
+
+.PP
+Definition at line 95 of file test_analyze\&.py\&.
+.PP
+.nf
+95     def test_compile_only_flags_pass(self):
+96         self\&.assertFlagsUnchanged(['-std=C99'])
+97         self\&.assertFlagsUnchanged(['-nostdinc'])
+98         self\&.assertFlagsUnchanged(['-isystem', '/image/debian'])
+99         self\&.assertFlagsUnchanged(['-iprefix', '/usr/local'])
+100         self\&.assertFlagsUnchanged(['-iquote=me'])
+101         self\&.assertFlagsUnchanged(['-iquote', 'me'])
+102 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_define_pass ( self)"
+
+.PP
+Definition at line 80 of file test_analyze\&.py\&.
+.PP
+.nf
+80     def test_define_pass(self):
+81         self\&.assertFlagsUnchanged(['-DNDEBUG'])
+82         self\&.assertFlagsUnchanged(['-UNDEBUG'])
+83         self\&.assertFlagsUnchanged(['-Dvar1=val1', '-Dvar2=val2'])
+84         self\&.assertFlagsUnchanged(['-Dvar="val ues"'])
+85 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_include_pass ( self)"
+
+.PP
+Definition at line 69 of file test_analyze\&.py\&.
+.PP
+.nf
+69     def test_include_pass(self):
+70         self\&.assertFlagsUnchanged([])
+71         self\&.assertFlagsUnchanged(['-include', '/usr/local/include'])
+72         self\&.assertFlagsUnchanged(['-I\&.'])
+73         self\&.assertFlagsUnchanged(['-I', '\&.'])
+74         self\&.assertFlagsUnchanged(['-I/usr/local/include'])
+75         self\&.assertFlagsUnchanged(['-I', '/usr/local/include'])
+76         self\&.assertFlagsUnchanged(['-I/opt', '-I', '/opt/otp/include'])
+77         self\&.assertFlagsUnchanged(['-isystem', '/path'])
+78         self\&.assertFlagsUnchanged(['-isystem=/path'])
+79 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_language_captured ( self)"
+
+.PP
+Definition at line 30 of file test_analyze\&.py\&.
+.PP
+.nf
+30     def test_language_captured(self):
+31         def test(flags):
+32             cmd = ['clang', '-c', 'source\&.c'] + flags
+33             opts = sut\&.classify_parameters(cmd)
+34             return opts['language']
+35 
+36         self\&.assertEqual(None, test([]))
+37         self\&.assertEqual('c', test(['-x', 'c']))
+38         self\&.assertEqual('cpp', test(['-x', 'cpp']))
+39 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_optimalizations_pass ( self)"
+
+.PP
+Definition at line 62 of file test_analyze\&.py\&.
+.PP
+.nf
+62     def test_optimalizations_pass(self):
+63         self\&.assertFlagsUnchanged(['-O'])
+64         self\&.assertFlagsUnchanged(['-O1'])
+65         self\&.assertFlagsUnchanged(['-Os'])
+66         self\&.assertFlagsUnchanged(['-O2'])
+67         self\&.assertFlagsUnchanged(['-O3'])
+68 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_output_filtered ( self)"
+
+.PP
+Definition at line 86 of file test_analyze\&.py\&.
+.PP
+.nf
+86     def test_output_filtered(self):
+87         self\&.assertFlagsFiltered(['-o', 'source\&.o'])
+88 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsFiltered()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_some_flags_filtered ( self)"
+
+.PP
+Definition at line 110 of file test_analyze\&.py\&.
+.PP
+.nf
+110     def test_some_flags_filtered(self):
+111         self\&.assertFlagsFiltered(['-g'])
+112         self\&.assertFlagsFiltered(['-fsyntax-only'])
+113         self\&.assertFlagsFiltered(['-save-temps'])
+114         self\&.assertFlagsFiltered(['-init', 'my_init'])
+115         self\&.assertFlagsFiltered(['-sectorder', 'a', 'b', 'c'])
+116 
+117 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsFiltered()\&.
+.SS "def tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.test_some_warning_filtered ( self)"
+
+.PP
+Definition at line 89 of file test_analyze\&.py\&.
+.PP
+.nf
+89     def test_some_warning_filtered(self):
+90         self\&.assertFlagsFiltered(['-Wall'])
+91         self\&.assertFlagsFiltered(['-Wnoexcept'])
+92         self\&.assertFlagsFiltered(['-Wreorder', '-Wunused', '-Wundef'])
+93         self\&.assertFlagsUnchanged(['-Wno-reorder', '-Wno-unused'])
+94 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsFiltered(), and tests\&.unit\&.test_analyze\&.FilteringFlagsTest\&.assertFlagsUnchanged()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

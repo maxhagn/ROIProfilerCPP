@@ -1,0 +1,152 @@
+.TH "startfile.KfmClient" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+startfile.KfmClient
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBstartfile\&.Controller\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self, kfmclient='kfmclient')"
+.br
+.ti -1c
+.RI "def \fBdetect_kde_version\fP (self)"
+.br
+.ti -1c
+.RI "def \fBfixreturncode\fP (self, returncode)"
+.br
+.ti -1c
+.RI "def \fBopen\fP (self, filename)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBkde_version\fP"
+.br
+.ti -1c
+.RI "\fBargs\fP"
+.br
+.ti -1c
+.RI "\fBname\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+
+.PP
+.nf
+Controller for the KDE kfmclient program.
+.fi
+.PP
+ 
+.PP
+Definition at line 121 of file startfile\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def startfile\&.KfmClient\&.__init__ ( self,  kfmclient = \fC'kfmclient'\fP)"
+
+.PP
+Reimplemented from \fBstartfile\&.BaseController\fP\&.
+.PP
+Definition at line 124 of file startfile\&.py\&.
+.PP
+.nf
+124         def __init__(self, kfmclient='kfmclient'):
+125             super(KfmClient, self)\&.__init__(kfmclient, 'exec')
+126             self\&.kde_version = self\&.detect_kde_version()
+127 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def startfile\&.KfmClient\&.detect_kde_version ( self)"
+
+.PP
+Definition at line 128 of file startfile\&.py\&.
+.PP
+.nf
+128         def detect_kde_version(self):
+129             kde_version = None
+130             try:
+131                 info = getoutput('kde-config --version')
+132 
+133                 for line in info\&.splitlines():
+134                     if line\&.startswith('KDE'):
+135                         kde_version = line\&.split(':')[-1]\&.strip()
+136                         break
+137             except (OSError, RuntimeError):
+138                 pass
+139 
+140             return kde_version
+141 
+.fi
+.SS "def startfile\&.KfmClient\&.fixreturncode ( self,  returncode)"
+
+.PP
+Definition at line 142 of file startfile\&.py\&.
+.PP
+.nf
+142         def fixreturncode(self, returncode):
+143             if returncode is not None and self\&.kde_version > '3\&.5\&.4':
+144                 return returncode
+145             else:
+146                 return os\&.EX_OK
+147 
+148     def detect_desktop_environment():
+.fi
+.PP
+References startfile\&.KfmClient\&.kde_version\&.
+.SS "def startfile\&.Controller\&.open ( self,  filename)\fC [inherited]\fP"
+
+.PP
+Reimplemented from \fBstartfile\&.BaseController\fP\&.
+.PP
+Definition at line 72 of file startfile\&.py\&.
+.PP
+.nf
+72     def open(self, filename):
+73         if isinstance(filename, basestring):
+74             cmdline = self\&.args + [filename]
+75         else:
+76             # assume it is a sequence
+77             cmdline = self\&.args + filename
+78         try:
+79             return self\&._invoke(cmdline)
+80         except OSError:
+81             return False
+82 
+83 
+84 # Platform support for Windows
+.fi
+.PP
+References startfile\&.Controller\&._invoke(), and startfile\&.Controller\&.args\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "startfile\&.Controller\&.args\fC [inherited]\fP"
+
+.PP
+Definition at line 35 of file startfile\&.py\&.
+.PP
+Referenced by startfile\&.Controller\&.open()\&.
+.SS "startfile\&.KfmClient\&.kde_version"
+
+.PP
+Definition at line 126 of file startfile\&.py\&.
+.PP
+Referenced by startfile\&.KfmClient\&.fixreturncode()\&.
+.SS "startfile\&.BaseController\&.name\fC [inherited]\fP"
+
+.PP
+Definition at line 24 of file startfile\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release(), and Reporter\&.ReporterParameter\&.getName()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

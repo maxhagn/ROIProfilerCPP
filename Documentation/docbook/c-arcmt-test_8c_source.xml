@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_c-arcmt-test_8c_source" xml:lang="en-US">
+<title>c-arcmt-test.c</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/c-arcmt-test/c-arcmt-test.c</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">/*&#32;c-arcmt-test.c&#32;*/</emphasis>
+00002 
+00003 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00004 <emphasis role="preprocessor">#include&#32;&lt;stdlib.h&gt;</emphasis>
+00005 <emphasis role="preprocessor">#include&#32;&lt;stdio.h&gt;</emphasis>
+00006 <emphasis role="preprocessor">#include&#32;&lt;string.h&gt;</emphasis>
+00007 <emphasis role="preprocessor">#if&#32;defined(_WIN32)</emphasis>
+00008 <emphasis role="preprocessor">#include&#32;&lt;io.h&gt;</emphasis>
+00009 <emphasis role="preprocessor">#include&#32;&lt;fcntl.h&gt;</emphasis>
+00010 <emphasis role="preprocessor">#endif</emphasis>
+00011 
+00012 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;print_remappings(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path)&#32;{
+00013 &#32;&#32;CXRemapping&#32;remap;
+00014 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i,&#32;N;
+00015 &#32;&#32;CXString&#32;origFname;
+00016 &#32;&#32;CXString&#32;transFname;
+00017 
+00018 &#32;&#32;remap&#32;=&#32;<link linkend="__a_r_c_migrate_8cpp_1a4285c97c7ad73a51c7d255fdb4bb7c18">clang_getRemappings</link>(path);
+00019 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!remap)
+00020 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00021 
+00022 &#32;&#32;N&#32;=&#32;<link linkend="__a_r_c_migrate_8cpp_1ad07f3fae8b7bbaf4c308d437e2b02fea">clang_remap_getNumFiles</link>(remap);
+00023 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;N;&#32;++i)&#32;{
+00024 &#32;&#32;&#32;&#32;<link linkend="__a_r_c_migrate_8cpp_1ac6fdf3d7778a375c6f1701c9a773c38c">clang_remap_getFilenames</link>(remap,&#32;i,&#32;&amp;origFname,&#32;&amp;transFname);
+00025 
+00026 &#32;&#32;&#32;&#32;fprintf(stdout,&#32;<emphasis role="stringliteral">&quot;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(origFname));
+00027 &#32;&#32;&#32;&#32;fprintf(stdout,&#32;<emphasis role="stringliteral">&quot;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(transFname));
+00028 
+00029 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(origFname);
+00030 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(transFname);
+00031 &#32;&#32;}
+00032 
+00033 &#32;&#32;<link linkend="__a_r_c_migrate_8cpp_1a818cc8a2f62f779b54febe2e4185ac3d">clang_remap_dispose</link>(remap);
+00034 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00035 }
+00036 
+00037 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;print_remappings_filelist(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**files,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;numFiles)&#32;{
+00038 &#32;&#32;CXRemapping&#32;remap;
+00039 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i,&#32;N;
+00040 &#32;&#32;CXString&#32;origFname;
+00041 &#32;&#32;CXString&#32;transFname;
+00042 
+00043 &#32;&#32;remap&#32;=&#32;<link linkend="__a_r_c_migrate_8cpp_1adb472f66643a6ff2d1ae417d7e3d4272">clang_getRemappingsFromFileList</link>(files,&#32;numFiles);
+00044 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!remap)
+00045 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00046 
+00047 &#32;&#32;N&#32;=&#32;<link linkend="__a_r_c_migrate_8cpp_1ad07f3fae8b7bbaf4c308d437e2b02fea">clang_remap_getNumFiles</link>(remap);
+00048 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;N;&#32;++i)&#32;{
+00049 &#32;&#32;&#32;&#32;<link linkend="__a_r_c_migrate_8cpp_1ac6fdf3d7778a375c6f1701c9a773c38c">clang_remap_getFilenames</link>(remap,&#32;i,&#32;&amp;origFname,&#32;&amp;transFname);
+00050 
+00051 &#32;&#32;&#32;&#32;fprintf(stdout,&#32;<emphasis role="stringliteral">&quot;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(origFname));
+00052 &#32;&#32;&#32;&#32;fprintf(stdout,&#32;<emphasis role="stringliteral">&quot;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(transFname));
+00053 
+00054 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(origFname);
+00055 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(transFname);
+00056 &#32;&#32;}
+00057 
+00058 &#32;&#32;<link linkend="__a_r_c_migrate_8cpp_1a818cc8a2f62f779b54febe2e4185ac3d">clang_remap_dispose</link>(remap);
+00059 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00060 }
+00061 
+00062 <emphasis role="comment">/******************************************************************************/</emphasis>
+00063 <emphasis role="comment">/*&#32;Command&#32;line&#32;processing.&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*/</emphasis>
+00064 <emphasis role="comment">/******************************************************************************/</emphasis>
+00065 
+00066 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;print_usage(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00067 &#32;&#32;fprintf(stderr,
+00068 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;usage:&#32;c-arcmt-test&#32;-mt-migrate-directory&#32;&lt;path&gt;\n&quot;</emphasis>
+00069 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&#32;&#32;c-arcmt-test&#32;&lt;remap-file-path1&gt;&#32;&lt;remap-file-path2&gt;&#32;...\n\n\n&quot;</emphasis>);
+00070 }
+00071 
+00072 <emphasis role="comment">/***/</emphasis>
+00073 
+<anchor xml:id="_c-arcmt-test_8c_source_1l00074"/><link linkend="_c-arcmt-test_8c_1a8f6fc3f3019fb7d5781963e09ba00c47">00074</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_c-arcmt-test_8c_1a8f6fc3f3019fb7d5781963e09ba00c47">carcmttest_main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00075 &#32;&#32;<link linkend="__c_index_8cpp_1a459c002cff4b09901ca37e1ad44d3df3">clang_enableStackTraces</link>();
+00076 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;==&#32;3&#32;&amp;&amp;&#32;strncmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-mt-migrate-directory&quot;</emphasis>,&#32;21)&#32;==&#32;0)
+00077 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;print_remappings(argv[2]);
+00078 
+00079 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;1)
+00080 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;print_remappings_filelist(argv+1,&#32;argc-1);
+00081 &#32;&#32;
+00082 &#32;&#32;print_usage();
+00083 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00084 }
+00085 
+00086 <emphasis role="comment">/***/</emphasis>
+00087 
+00088 <emphasis role="comment">/*&#32;We&#32;intentionally&#32;run&#32;in&#32;a&#32;separate&#32;thread&#32;to&#32;ensure&#32;we&#32;at&#32;least&#32;minimal</emphasis>
+00089 <emphasis role="comment">&#32;*&#32;testing&#32;of&#32;a&#32;multithreaded&#32;environment&#32;(for&#32;example,&#32;having&#32;a&#32;reduced&#32;stack</emphasis>
+00090 <emphasis role="comment">&#32;*&#32;size).&#32;*/</emphasis>
+00091 
+<anchor xml:id="_c-arcmt-test_8c_source_1l00092"/><link linkend="_structthread__info">00092</link> <emphasis role="keyword">typedef</emphasis>&#32;<emphasis role="keyword">struct&#32;</emphasis><link linkend="_structthread__info">thread_info</link>&#32;{
+<anchor xml:id="_c-arcmt-test_8c_source_1l00093"/><link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">00093</link> &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">argc</link>;
+<anchor xml:id="_c-arcmt-test_8c_source_1l00094"/><link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">00094</link> &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**<link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">argv</link>;
+<anchor xml:id="_c-arcmt-test_8c_source_1l00095"/><link linkend="_structthread__info_1ad2caaa988d61b6beba0b6d681a6589ae">00095</link> &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_structthread__info_1ad2caaa988d61b6beba0b6d681a6589ae">result</link>;
+<anchor xml:id="_c-arcmt-test_8c_source_1l00096"/><link linkend="_c-arcmt-test_8c_1a6b1e111eeb327ab917852dfcd8ba3f72">00096</link> }&#32;<link linkend="_c-arcmt-test_8c_1a6b1e111eeb327ab917852dfcd8ba3f72">thread_info</link>;
+<anchor xml:id="_c-arcmt-test_8c_source_1l00097"/><link linkend="_c-arcmt-test_8c_1a91e96908610b154b9dfe897de0e12b79">00097</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_c-arcmt-test_8c_1a91e96908610b154b9dfe897de0e12b79">thread_runner</link>(<emphasis role="keywordtype">void</emphasis>&#32;*client_data_v)&#32;{
+00098 &#32;&#32;<link linkend="_structthread__info">thread_info</link>&#32;*client_data&#32;=&#32;client_data_v;
+00099 &#32;&#32;client_data-&gt;<link linkend="_structthread__info_1ad2caaa988d61b6beba0b6d681a6589ae">result</link>&#32;=&#32;<link linkend="_c-arcmt-test_8c_1a8f6fc3f3019fb7d5781963e09ba00c47">carcmttest_main</link>(client_data-&gt;<link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">argc</link>,&#32;client_data-&gt;<link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">argv</link>);
+00100 }
+00101 
+00102 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;flush_atexit(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00103 &#32;&#32;<emphasis role="comment">/*&#32;stdout,&#32;and&#32;surprisingly&#32;even&#32;stderr,&#32;are&#32;not&#32;always&#32;flushed&#32;on&#32;process</emphasis>
+00104 <emphasis role="comment">&#32;&#32;&#32;*&#32;and&#32;thread&#32;exit,&#32;particularly&#32;when&#32;the&#32;system&#32;is&#32;under&#32;heavy&#32;load.&#32;*/</emphasis>
+00105 &#32;&#32;fflush(stdout);
+00106 &#32;&#32;fflush(stderr);
+00107 }
+00108 
+<anchor xml:id="_c-arcmt-test_8c_source_1l00109"/><link linkend="_c-arcmt-test_8c_1a217dbf8b442f20279ea00b898af96f52">00109</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_c-arcmt-test_8c_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00110 &#32;&#32;<link linkend="_structthread__info">thread_info</link>&#32;client_data;
+00111 
+00112 &#32;&#32;atexit(flush_atexit);
+00113 
+00114 <emphasis role="preprocessor">#if&#32;defined(_WIN32)</emphasis>
+00115 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_LOGGING&quot;</emphasis>)&#32;==&#32;NULL)
+00116 &#32;&#32;&#32;&#32;putenv(<emphasis role="stringliteral">&quot;LIBCLANG_LOGGING=1&quot;</emphasis>);
+00117 &#32;&#32;_setmode(&#32;_fileno(stdout),&#32;_O_BINARY&#32;);
+00118 <emphasis role="preprocessor">#else</emphasis>
+00119 &#32;&#32;setenv(<emphasis role="stringliteral">&quot;LIBCLANG_LOGGING&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;1&quot;</emphasis>,&#32;<emphasis role="comment">/*overwrite=*/</emphasis>0);
+00120 <emphasis role="preprocessor">#endif</emphasis>
+00121 
+00122 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_NOTHREADS&quot;</emphasis>))
+00123 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-arcmt-test_8c_1a8f6fc3f3019fb7d5781963e09ba00c47">carcmttest_main</link>(argc,&#32;argv);
+00124 
+00125 &#32;&#32;client_data.<link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">argc</link>&#32;=&#32;argc;
+00126 &#32;&#32;client_data.<link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">argv</link>&#32;=&#32;argv;
+00127 &#32;&#32;<link linkend="__c_index_8cpp_1aeb6cae453fe08d2720436c24d4629e8e">clang_executeOnThread</link>(<link linkend="_c-arcmt-test_8c_1a91e96908610b154b9dfe897de0e12b79">thread_runner</link>,&#32;&amp;client_data,&#32;0);
+00128 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;client_data.<link linkend="_structthread__info_1ad2caaa988d61b6beba0b6d681a6589ae">result</link>;
+00129 }
+</programlisting></section>

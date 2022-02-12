@@ -1,0 +1,449 @@
+\hypertarget{namespacelibscanbuild}{}\doxysection{libscanbuild Namespace Reference}
+\label{namespacelibscanbuild}\index{libscanbuild@{libscanbuild}}
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1analyze}{analyze}}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1arguments}{arguments}}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1clang}{clang}}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1compilation}{compilation}}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1intercept}{intercept}}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1report}{report}}
+\item 
+ \mbox{\hyperlink{namespacelibscanbuild_1_1shell}{shell}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_a0ddf12c926f03c7f5e3671f162f92832}{duplicate\+\_\+check}} (method)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_a18b34e68ad68eb5b285d3af3504c9b0c}{run\+\_\+build}} (command, $\ast$args, $\ast$$\ast$kwargs)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\+\_\+command}} (command, cwd=None)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_aa87b6604e799f0262445ea47cf0648c4}{reconfigure\+\_\+logging}} (verbose\+\_\+level)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_aa2ef9a77b4d02551cc7100e4d9d70426}{command\+\_\+entry\+\_\+point}} (function)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_a395e584f9f6636d0f86868b62ef35780}{compiler\+\_\+wrapper}} (function)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_a618962b6b79f889cbadd9fbc5971c938}{wrapper\+\_\+environment}} (args)
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+string \mbox{\hyperlink{namespacelibscanbuild_ac35c3bf96f255eb465f34367c805b72e}{ENVIRONMENT\+\_\+\+KEY}} = \textquotesingle{}INTERCEPT\+\_\+\+BUILD\textquotesingle{}
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_a492b7346544b773c68846c2486718610}{Execution}} = collections.\+namedtuple(\textquotesingle{}Execution\textquotesingle{}, \mbox{[}\textquotesingle{}pid\textquotesingle{}, \textquotesingle{}cwd\textquotesingle{}, \textquotesingle{}cmd\textquotesingle{}\mbox{]})
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_ad6862a74d972673d22f1478908e7544e}{Ctu\+Config}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespacelibscanbuild_aa2ef9a77b4d02551cc7100e4d9d70426}\label{namespacelibscanbuild_aa2ef9a77b4d02551cc7100e4d9d70426}} 
+\index{libscanbuild@{libscanbuild}!command\_entry\_point@{command\_entry\_point}}
+\index{command\_entry\_point@{command\_entry\_point}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{command\_entry\_point()}{command\_entry\_point()}}
+{\footnotesize\ttfamily def libscanbuild.\+command\+\_\+entry\+\_\+point (\begin{DoxyParamCaption}\item[{}]{function }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Decorator for command entry methods.
+
+The decorator initialize/shutdown logging and guard on programming
+errors (catch exceptions).
+
+The decorated method can have arbitrary parameters, the return value will
+be the exit code of the process. \end{DoxyVerb}
+ 
+
+Definition at line 106 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{106 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_aa2ef9a77b4d02551cc7100e4d9d70426}{command\_entry\_point}}(function):}
+\DoxyCodeLine{107     \textcolor{stringliteral}{"{}"{}"{} Decorator for command entry methods.}}
+\DoxyCodeLine{108 \textcolor{stringliteral}{}}
+\DoxyCodeLine{109 \textcolor{stringliteral}{    The decorator initialize/shutdown logging and guard on programming}}
+\DoxyCodeLine{110 \textcolor{stringliteral}{    errors (catch exceptions).}}
+\DoxyCodeLine{111 \textcolor{stringliteral}{}}
+\DoxyCodeLine{112 \textcolor{stringliteral}{    The decorated method can have arbitrary parameters, the return value will}}
+\DoxyCodeLine{113 \textcolor{stringliteral}{    be the exit code of the process. "{}"{}"{}}}
+\DoxyCodeLine{114 }
+\DoxyCodeLine{115     \textcolor{preprocessor}{@functools.wraps(function)}}
+\DoxyCodeLine{116     \textcolor{keyword}{def }wrapper(*args, **kwargs):}
+\DoxyCodeLine{117         \textcolor{stringliteral}{"{}"{}"{} Do housekeeping tasks and execute the wrapped method. "{}"{}"{}}}
+\DoxyCodeLine{118 }
+\DoxyCodeLine{119         \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{120             logging.basicConfig(format=\textcolor{stringliteral}{'\%(name)s: \%(message)s'},}
+\DoxyCodeLine{121                                 level=logging.WARNING,}
+\DoxyCodeLine{122                                 stream=sys.stdout)}
+\DoxyCodeLine{123             \textcolor{comment}{\# This hack to get the executable name as \%(name).}}
+\DoxyCodeLine{124             logging.getLogger().name = os.path.basename(sys.argv[0])}
+\DoxyCodeLine{125             \textcolor{keywordflow}{return} function(*args, **kwargs)}
+\DoxyCodeLine{126         \textcolor{keywordflow}{except} KeyboardInterrupt:}
+\DoxyCodeLine{127             logging.warning(\textcolor{stringliteral}{'Keyboard interrupt'})}
+\DoxyCodeLine{128             \textcolor{keywordflow}{return} 130  \textcolor{comment}{\# Signal received exit code for bash.}}
+\DoxyCodeLine{129         \textcolor{keywordflow}{except} Exception:}
+\DoxyCodeLine{130             logging.exception(\textcolor{stringliteral}{'Internal error.'})}
+\DoxyCodeLine{131             \textcolor{keywordflow}{if} logging.getLogger().isEnabledFor(logging.DEBUG):}
+\DoxyCodeLine{132                 logging.error(\textcolor{stringliteral}{"{}Please report this bug and attach the output "{}}}
+\DoxyCodeLine{133                               \textcolor{stringliteral}{"{}to the bug report"{}})}
+\DoxyCodeLine{134             \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{135                 logging.error(\textcolor{stringliteral}{"{}Please run this command again and turn on "{}}}
+\DoxyCodeLine{136                               \textcolor{stringliteral}{"{}verbose mode (add '-\/vvvv' as argument)."{}})}
+\DoxyCodeLine{137             \textcolor{keywordflow}{return} 64  \textcolor{comment}{\# Some non used exit code for internal errors.}}
+\DoxyCodeLine{138         \textcolor{keywordflow}{finally}:}
+\DoxyCodeLine{139             logging.shutdown()}
+\DoxyCodeLine{140 }
+\DoxyCodeLine{141     \textcolor{keywordflow}{return} wrapper}
+\DoxyCodeLine{142 }
+\DoxyCodeLine{143 }
+
+\end{DoxyCode}
+\mbox{\Hypertarget{namespacelibscanbuild_a395e584f9f6636d0f86868b62ef35780}\label{namespacelibscanbuild_a395e584f9f6636d0f86868b62ef35780}} 
+\index{libscanbuild@{libscanbuild}!compiler\_wrapper@{compiler\_wrapper}}
+\index{compiler\_wrapper@{compiler\_wrapper}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{compiler\_wrapper()}{compiler\_wrapper()}}
+{\footnotesize\ttfamily def libscanbuild.\+compiler\+\_\+wrapper (\begin{DoxyParamCaption}\item[{}]{function }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Implements compiler wrapper base functionality.
+
+A compiler wrapper executes the real compiler, then implement some
+functionality, then returns with the real compiler exit code.
+
+:param function: the extra functionality what the wrapper want to
+do on top of the compiler call. If it throws exception, it will be
+caught and logged.
+:return: the exit code of the real compiler.
+
+The :param function: will receive the following arguments:
+
+:param result:       the exit code of the compilation.
+:param execution:    the command executed by the wrapper. \end{DoxyVerb}
+ 
+
+Definition at line 144 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{144 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_a395e584f9f6636d0f86868b62ef35780}{compiler\_wrapper}}(function):}
+\DoxyCodeLine{145     \textcolor{stringliteral}{"{}"{}"{} Implements compiler wrapper base functionality.}}
+\DoxyCodeLine{146 \textcolor{stringliteral}{}}
+\DoxyCodeLine{147 \textcolor{stringliteral}{    A compiler wrapper executes the real compiler, then implement some}}
+\DoxyCodeLine{148 \textcolor{stringliteral}{    functionality, then returns with the real compiler exit code.}}
+\DoxyCodeLine{149 \textcolor{stringliteral}{}}
+\DoxyCodeLine{150 \textcolor{stringliteral}{    :param function: the extra functionality what the wrapper want to}}
+\DoxyCodeLine{151 \textcolor{stringliteral}{    do on top of the compiler call. If it throws exception, it will be}}
+\DoxyCodeLine{152 \textcolor{stringliteral}{    caught and logged.}}
+\DoxyCodeLine{153 \textcolor{stringliteral}{    :return: the exit code of the real compiler.}}
+\DoxyCodeLine{154 \textcolor{stringliteral}{}}
+\DoxyCodeLine{155 \textcolor{stringliteral}{    The :param function: will receive the following arguments:}}
+\DoxyCodeLine{156 \textcolor{stringliteral}{}}
+\DoxyCodeLine{157 \textcolor{stringliteral}{    :param result:       the exit code of the compilation.}}
+\DoxyCodeLine{158 \textcolor{stringliteral}{    :param execution:    the command executed by the wrapper. "{}"{}"{}}}
+\DoxyCodeLine{159 }
+\DoxyCodeLine{160     \textcolor{keyword}{def }is\_cxx\_compiler():}
+\DoxyCodeLine{161         \textcolor{stringliteral}{"{}"{}"{} Find out was it a C++ compiler call. Compiler wrapper names}}
+\DoxyCodeLine{162 \textcolor{stringliteral}{        contain the compiler type. C++ compiler wrappers ends with `c++`,}}
+\DoxyCodeLine{163 \textcolor{stringliteral}{        but might have `.exe` extension on windows. "{}"{}"{}}}
+\DoxyCodeLine{164 }
+\DoxyCodeLine{165         wrapper\_command = os.path.basename(sys.argv[0])}
+\DoxyCodeLine{166         \textcolor{keywordflow}{return} re.match(\textcolor{stringliteral}{r'(.+)c\(\backslash\)+\(\backslash\)+(.*)'}, wrapper\_command)}
+\DoxyCodeLine{167 }
+\DoxyCodeLine{168     \textcolor{keyword}{def }run\_compiler(executable):}
+\DoxyCodeLine{169         \textcolor{stringliteral}{"{}"{}"{} Execute compilation with the real compiler. "{}"{}"{}}}
+\DoxyCodeLine{170 }
+\DoxyCodeLine{171         command = executable + sys.argv[1:]}
+\DoxyCodeLine{172         logging.debug(\textcolor{stringliteral}{'compilation: \%s'}, command)}
+\DoxyCodeLine{173         result = subprocess.call(command)}
+\DoxyCodeLine{174         logging.debug(\textcolor{stringliteral}{'compilation exit code: \%d'}, result)}
+\DoxyCodeLine{175         \textcolor{keywordflow}{return} result}
+\DoxyCodeLine{176 }
+\DoxyCodeLine{177     \textcolor{comment}{\# Get relevant parameters from environment.}}
+\DoxyCodeLine{178     parameters = json.loads(os.environ[ENVIRONMENT\_KEY])}
+\DoxyCodeLine{179     \mbox{\hyperlink{namespacelibscanbuild_aa87b6604e799f0262445ea47cf0648c4}{reconfigure\_logging}}(parameters[\textcolor{stringliteral}{'verbose'}])}
+\DoxyCodeLine{180     \textcolor{comment}{\# Execute the requested compilation. Do crash if anything goes wrong.}}
+\DoxyCodeLine{181     cxx = is\_cxx\_compiler()}
+\DoxyCodeLine{182     compiler = parameters[\textcolor{stringliteral}{'cxx'}] \textcolor{keywordflow}{if} cxx \textcolor{keywordflow}{else} parameters[\textcolor{stringliteral}{'cc'}]}
+\DoxyCodeLine{183     result = run\_compiler(compiler)}
+\DoxyCodeLine{184     \textcolor{comment}{\# Call the wrapped method and ignore it's return value.}}
+\DoxyCodeLine{185     \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{186         call = \mbox{\hyperlink{namespacelibscanbuild_a492b7346544b773c68846c2486718610}{Execution}}(}
+\DoxyCodeLine{187             pid=os.getpid(),}
+\DoxyCodeLine{188             cwd=os.getcwd(),}
+\DoxyCodeLine{189             cmd=[\textcolor{stringliteral}{'c++'} \textcolor{keywordflow}{if} cxx \textcolor{keywordflow}{else} \textcolor{stringliteral}{'cc'}] + sys.argv[1:])}
+\DoxyCodeLine{190         function(result, call)}
+\DoxyCodeLine{191     \textcolor{keywordflow}{except}:}
+\DoxyCodeLine{192         logging.exception(\textcolor{stringliteral}{'Compiler wrapper failed complete.'})}
+\DoxyCodeLine{193     \textcolor{keywordflow}{finally}:}
+\DoxyCodeLine{194         \textcolor{comment}{\# Always return the real compiler exit code.}}
+\DoxyCodeLine{195         \textcolor{keywordflow}{return} result}
+\DoxyCodeLine{196 }
+\DoxyCodeLine{197 }
+
+\end{DoxyCode}
+
+
+References Execution, and reconfigure\+\_\+logging().
+
+
+
+Referenced by libscanbuild.\+analyze.\+analyze\+\_\+compiler\+\_\+wrapper(), and libscanbuild.\+intercept.\+intercept\+\_\+compiler\+\_\+wrapper().
+
+\mbox{\Hypertarget{namespacelibscanbuild_a0ddf12c926f03c7f5e3671f162f92832}\label{namespacelibscanbuild_a0ddf12c926f03c7f5e3671f162f92832}} 
+\index{libscanbuild@{libscanbuild}!duplicate\_check@{duplicate\_check}}
+\index{duplicate\_check@{duplicate\_check}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{duplicate\_check()}{duplicate\_check()}}
+{\footnotesize\ttfamily def libscanbuild.\+duplicate\+\_\+check (\begin{DoxyParamCaption}\item[{}]{method }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Predicate to detect duplicated entries.
+
+Unique hash method can be use to detect duplicates. Entries are
+represented as dictionaries, which has no default hash method.
+This implementation uses a set datatype to store the unique hash values.
+
+This method returns a method which can detect the duplicate values. \end{DoxyVerb}
+ 
+
+Definition at line 25 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{25 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_a0ddf12c926f03c7f5e3671f162f92832}{duplicate\_check}}(method):}
+\DoxyCodeLine{26     \textcolor{stringliteral}{"{}"{}"{} Predicate to detect duplicated entries.}}
+\DoxyCodeLine{27 \textcolor{stringliteral}{}}
+\DoxyCodeLine{28 \textcolor{stringliteral}{    Unique hash method can be use to detect duplicates. Entries are}}
+\DoxyCodeLine{29 \textcolor{stringliteral}{    represented as dictionaries, which has no default hash method.}}
+\DoxyCodeLine{30 \textcolor{stringliteral}{    This implementation uses a set datatype to store the unique hash values.}}
+\DoxyCodeLine{31 \textcolor{stringliteral}{}}
+\DoxyCodeLine{32 \textcolor{stringliteral}{    This method returns a method which can detect the duplicate values. "{}"{}"{}}}
+\DoxyCodeLine{33 }
+\DoxyCodeLine{34     \textcolor{keyword}{def }predicate(entry):}
+\DoxyCodeLine{35         entry\_hash = predicate.unique(entry)}
+\DoxyCodeLine{36         \textcolor{keywordflow}{if} entry\_hash \textcolor{keywordflow}{not} \textcolor{keywordflow}{in} predicate.state:}
+\DoxyCodeLine{37             predicate.state.add(entry\_hash)}
+\DoxyCodeLine{38             \textcolor{keywordflow}{return} \textcolor{keyword}{False}}
+\DoxyCodeLine{39         \textcolor{keywordflow}{return} \textcolor{keyword}{True}}
+\DoxyCodeLine{40 }
+\DoxyCodeLine{41     predicate.unique = method}
+\DoxyCodeLine{42     predicate.state = set()}
+\DoxyCodeLine{43     \textcolor{keywordflow}{return} predicate}
+\DoxyCodeLine{44 }
+\DoxyCodeLine{45 }
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+intercept.\+capture(), and libscanbuild.\+report.\+read\+\_\+bugs().
+
+\mbox{\Hypertarget{namespacelibscanbuild_aa87b6604e799f0262445ea47cf0648c4}\label{namespacelibscanbuild_aa87b6604e799f0262445ea47cf0648c4}} 
+\index{libscanbuild@{libscanbuild}!reconfigure\_logging@{reconfigure\_logging}}
+\index{reconfigure\_logging@{reconfigure\_logging}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{reconfigure\_logging()}{reconfigure\_logging()}}
+{\footnotesize\ttfamily def libscanbuild.\+reconfigure\+\_\+logging (\begin{DoxyParamCaption}\item[{}]{verbose\+\_\+level }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Reconfigure logging level and format based on the verbose flag.
+
+:param verbose_level: number of `-v` flags received by the command
+:return: no return value
+\end{DoxyVerb}
+ 
+
+Definition at line 82 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{82 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_aa87b6604e799f0262445ea47cf0648c4}{reconfigure\_logging}}(verbose\_level):}
+\DoxyCodeLine{83     \textcolor{stringliteral}{"{}"{}"{} Reconfigure logging level and format based on the verbose flag.}}
+\DoxyCodeLine{84 \textcolor{stringliteral}{}}
+\DoxyCodeLine{85 \textcolor{stringliteral}{    :param verbose\_level: number of `-\/v` flags received by the command}}
+\DoxyCodeLine{86 \textcolor{stringliteral}{    :return: no return value}}
+\DoxyCodeLine{87 \textcolor{stringliteral}{    "{}"{}"{}}}
+\DoxyCodeLine{88     \textcolor{comment}{\# Exit when nothing to do.}}
+\DoxyCodeLine{89     \textcolor{keywordflow}{if} verbose\_level == 0:}
+\DoxyCodeLine{90         \textcolor{keywordflow}{return}}
+\DoxyCodeLine{91 }
+\DoxyCodeLine{92     root = logging.getLogger()}
+\DoxyCodeLine{93     \textcolor{comment}{\# Tune logging level.}}
+\DoxyCodeLine{94     level = logging.WARNING -\/ min(logging.WARNING, (10 * verbose\_level))}
+\DoxyCodeLine{95     root.setLevel(level)}
+\DoxyCodeLine{96     \textcolor{comment}{\# Be verbose with messages.}}
+\DoxyCodeLine{97     \textcolor{keywordflow}{if} verbose\_level <= 3:}
+\DoxyCodeLine{98         fmt\_string = \textcolor{stringliteral}{'\%(name)s: \%(levelname)s: \%(message)s'}}
+\DoxyCodeLine{99     \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{100         fmt\_string = \textcolor{stringliteral}{'\%(name)s: \%(levelname)s: \%(funcName)s: \%(message)s'}}
+\DoxyCodeLine{101     handler = logging.StreamHandler(sys.stdout)}
+\DoxyCodeLine{102     handler.setFormatter(logging.Formatter(fmt=fmt\_string))}
+\DoxyCodeLine{103     root.handlers = [handler]}
+\DoxyCodeLine{104 }
+\DoxyCodeLine{105 }
+
+\end{DoxyCode}
+
+
+Referenced by compiler\+\_\+wrapper(), libscanbuild.\+arguments.\+parse\+\_\+args\+\_\+for\+\_\+analyze\+\_\+build(), libscanbuild.\+arguments.\+parse\+\_\+args\+\_\+for\+\_\+intercept\+\_\+build(), and libscanbuild.\+arguments.\+parse\+\_\+args\+\_\+for\+\_\+scan\+\_\+build().
+
+\mbox{\Hypertarget{namespacelibscanbuild_a18b34e68ad68eb5b285d3af3504c9b0c}\label{namespacelibscanbuild_a18b34e68ad68eb5b285d3af3504c9b0c}} 
+\index{libscanbuild@{libscanbuild}!run\_build@{run\_build}}
+\index{run\_build@{run\_build}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{run\_build()}{run\_build()}}
+{\footnotesize\ttfamily def libscanbuild.\+run\+\_\+build (\begin{DoxyParamCaption}\item[{}]{command,  }\item[{$\ast$}]{args,  }\item[{$\ast$$\ast$}]{kwargs }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Run and report build command execution
+
+:param command: array of tokens
+:return: exit code of the process
+\end{DoxyVerb}
+ 
+
+Definition at line 46 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{46 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_a18b34e68ad68eb5b285d3af3504c9b0c}{run\_build}}(command, *args, **kwargs):}
+\DoxyCodeLine{47     \textcolor{stringliteral}{"{}"{}"{} Run and report build command execution}}
+\DoxyCodeLine{48 \textcolor{stringliteral}{}}
+\DoxyCodeLine{49 \textcolor{stringliteral}{    :param command: array of tokens}}
+\DoxyCodeLine{50 \textcolor{stringliteral}{    :return: exit code of the process}}
+\DoxyCodeLine{51 \textcolor{stringliteral}{    "{}"{}"{}}}
+\DoxyCodeLine{52     environment = kwargs.get(\textcolor{stringliteral}{'env'}, os.environ)}
+\DoxyCodeLine{53     logging.debug(\textcolor{stringliteral}{'run build \%s, in environment: \%s'}, command, environment)}
+\DoxyCodeLine{54     exit\_code = subprocess.call(command, *args, **kwargs)}
+\DoxyCodeLine{55     logging.debug(\textcolor{stringliteral}{'build finished with exit code: \%d'}, exit\_code)}
+\DoxyCodeLine{56     \textcolor{keywordflow}{return} exit\_code}
+\DoxyCodeLine{57 }
+\DoxyCodeLine{58 }
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+intercept.\+capture(), and libscanbuild.\+analyze.\+scan\+\_\+build().
+
+\mbox{\Hypertarget{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}\label{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}} 
+\index{libscanbuild@{libscanbuild}!run\_command@{run\_command}}
+\index{run\_command@{run\_command}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{run\_command()}{run\_command()}}
+{\footnotesize\ttfamily def libscanbuild.\+run\+\_\+command (\begin{DoxyParamCaption}\item[{}]{command,  }\item[{}]{cwd = {\ttfamily None} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Run a given command and report the execution.
+
+:param command: array of tokens
+:param cwd: the working directory where the command will be executed
+:return: output of the command
+\end{DoxyVerb}
+ 
+
+Definition at line 59 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{59 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\_command}}(command, cwd=None):}
+\DoxyCodeLine{60     \textcolor{stringliteral}{"{}"{}"{} Run a given command and report the execution.}}
+\DoxyCodeLine{61 \textcolor{stringliteral}{}}
+\DoxyCodeLine{62 \textcolor{stringliteral}{    :param command: array of tokens}}
+\DoxyCodeLine{63 \textcolor{stringliteral}{    :param cwd: the working directory where the command will be executed}}
+\DoxyCodeLine{64 \textcolor{stringliteral}{    :return: output of the command}}
+\DoxyCodeLine{65 \textcolor{stringliteral}{    "{}"{}"{}}}
+\DoxyCodeLine{66     \textcolor{keyword}{def }decode\_when\_needed(result):}
+\DoxyCodeLine{67         \textcolor{stringliteral}{"{}"{}"{} check\_output returns bytes or string depend on python version "{}"{}"{}}}
+\DoxyCodeLine{68         \textcolor{keywordflow}{return} result.decode(\textcolor{stringliteral}{'utf-\/8'}) \textcolor{keywordflow}{if} isinstance(result, bytes) \textcolor{keywordflow}{else} result}
+\DoxyCodeLine{69 }
+\DoxyCodeLine{70     \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{71         directory = os.path.abspath(cwd) \textcolor{keywordflow}{if} cwd \textcolor{keywordflow}{else} os.getcwd()}
+\DoxyCodeLine{72         logging.debug(\textcolor{stringliteral}{'exec command \%s in \%s'}, command, directory)}
+\DoxyCodeLine{73         output = subprocess.check\_output(command,}
+\DoxyCodeLine{74                                          cwd=directory,}
+\DoxyCodeLine{75                                          stderr=subprocess.STDOUT)}
+\DoxyCodeLine{76         \textcolor{keywordflow}{return} decode\_when\_needed(output).splitlines()}
+\DoxyCodeLine{77     \textcolor{keywordflow}{except} subprocess.CalledProcessError \textcolor{keyword}{as} ex:}
+\DoxyCodeLine{78         ex.output = decode\_when\_needed(ex.output).splitlines()}
+\DoxyCodeLine{79         \textcolor{keywordflow}{raise} ex}
+\DoxyCodeLine{80 }
+\DoxyCodeLine{81 }
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+analyze.\+ctu\+\_\+collect\+\_\+phase(), libscanbuild.\+clang.\+get\+\_\+arguments(), libscanbuild.\+clang.\+get\+\_\+checkers(), libscanbuild.\+clang.\+get\+\_\+version(), libscanbuild.\+clang.\+is\+\_\+ctu\+\_\+capable(), libscanbuild.\+intercept.\+is\+\_\+preload\+\_\+disabled(), libscanbuild.\+analyze.\+report\+\_\+failure(), and libscanbuild.\+analyze.\+run\+\_\+analyzer().
+
+\mbox{\Hypertarget{namespacelibscanbuild_a618962b6b79f889cbadd9fbc5971c938}\label{namespacelibscanbuild_a618962b6b79f889cbadd9fbc5971c938}} 
+\index{libscanbuild@{libscanbuild}!wrapper\_environment@{wrapper\_environment}}
+\index{wrapper\_environment@{wrapper\_environment}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{wrapper\_environment()}{wrapper\_environment()}}
+{\footnotesize\ttfamily def libscanbuild.\+wrapper\+\_\+environment (\begin{DoxyParamCaption}\item[{}]{args }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Set up environment for interpose compiler wrapper.\end{DoxyVerb}
+ 
+
+Definition at line 198 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{198 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_a618962b6b79f889cbadd9fbc5971c938}{wrapper\_environment}}(args):}
+\DoxyCodeLine{199     \textcolor{stringliteral}{"{}"{}"{} Set up environment for interpose compiler wrapper."{}"{}"{}}}
+\DoxyCodeLine{200 }
+\DoxyCodeLine{201     \textcolor{keywordflow}{return} \{}
+\DoxyCodeLine{202         ENVIRONMENT\_KEY: json.dumps(\{}
+\DoxyCodeLine{203             \textcolor{stringliteral}{'verbose'}: args.verbose,}
+\DoxyCodeLine{204             \textcolor{stringliteral}{'cc'}: shlex.split(args.cc),}
+\DoxyCodeLine{205             \textcolor{stringliteral}{'cxx'}: shlex.split(args.cxx)}
+\DoxyCodeLine{206         \})}
+\DoxyCodeLine{207     \}}
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+analyze.\+setup\+\_\+environment(), and libscanbuild.\+intercept.\+setup\+\_\+environment().
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{namespacelibscanbuild_ad6862a74d972673d22f1478908e7544e}\label{namespacelibscanbuild_ad6862a74d972673d22f1478908e7544e}} 
+\index{libscanbuild@{libscanbuild}!CtuConfig@{CtuConfig}}
+\index{CtuConfig@{CtuConfig}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{CtuConfig}{CtuConfig}}
+{\footnotesize\ttfamily libscanbuild.\+Ctu\+Config}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1 =  collections.namedtuple(\textcolor{stringliteral}{'CtuConfig'}, [\textcolor{stringliteral}{'collect'}, \textcolor{stringliteral}{'analyze'}, \textcolor{stringliteral}{'dir'},}
+\DoxyCodeLine{2                                                  \textcolor{stringliteral}{'extdef\_map\_cmd'}])}
+
+\end{DoxyCode}
+
+
+Definition at line 21 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+
+Referenced by libscanbuild.\+arguments.\+create\+\_\+analyze\+\_\+parser(), libscanbuild.\+analyze.\+get\+\_\+ctu\+\_\+config\+\_\+from\+\_\+args(), libscanbuild.\+analyze.\+get\+\_\+ctu\+\_\+config\+\_\+from\+\_\+json(), and libscanbuild.\+analyze.\+govern\+\_\+analyzer\+\_\+runs().
+
+\mbox{\Hypertarget{namespacelibscanbuild_ac35c3bf96f255eb465f34367c805b72e}\label{namespacelibscanbuild_ac35c3bf96f255eb465f34367c805b72e}} 
+\index{libscanbuild@{libscanbuild}!ENVIRONMENT\_KEY@{ENVIRONMENT\_KEY}}
+\index{ENVIRONMENT\_KEY@{ENVIRONMENT\_KEY}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{ENVIRONMENT\_KEY}{ENVIRONMENT\_KEY}}
+{\footnotesize\ttfamily string libscanbuild.\+ENVIRONMENT\+\_\+\+KEY = \textquotesingle{}INTERCEPT\+\_\+\+BUILD\textquotesingle{}}
+
+
+
+Definition at line 17 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+\mbox{\Hypertarget{namespacelibscanbuild_a492b7346544b773c68846c2486718610}\label{namespacelibscanbuild_a492b7346544b773c68846c2486718610}} 
+\index{libscanbuild@{libscanbuild}!Execution@{Execution}}
+\index{Execution@{Execution}!libscanbuild@{libscanbuild}}
+\doxysubsubsection{\texorpdfstring{Execution}{Execution}}
+{\footnotesize\ttfamily libscanbuild.\+Execution = collections.\+namedtuple(\textquotesingle{}Execution\textquotesingle{}, \mbox{[}\textquotesingle{}pid\textquotesingle{}, \textquotesingle{}cwd\textquotesingle{}, \textquotesingle{}cmd\textquotesingle{}\mbox{]})}
+
+
+
+Definition at line 19 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+
+Referenced by compiler\+\_\+wrapper().
+

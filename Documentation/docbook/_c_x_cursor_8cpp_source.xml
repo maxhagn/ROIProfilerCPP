@@ -1,0 +1,1715 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_cursor_8cpp_source" xml:lang="en-US">
+<title>CXCursor.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXCursor.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXCursor.cpp&#32;-&#32;Routines&#32;for&#32;manipulating&#32;CXCursors&#32;-----------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXCursors.&#32;It&#32;should&#32;be&#32;the</emphasis>
+00010 <emphasis role="comment">//&#32;only&#32;file&#32;that&#32;has&#32;internal&#32;knowledge&#32;of&#32;the&#32;encoding&#32;of&#32;the&#32;data&#32;in</emphasis>
+00011 <emphasis role="comment">//&#32;CXCursor.</emphasis>
+00012 <emphasis role="comment">//</emphasis>
+00013 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_type_8h">CXType.h</link>&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Attr.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Decl.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclCXX.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclObjC.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclTemplate.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Expr.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ExprCXX.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ExprObjC.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00030 
+00031 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00032 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00033 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00034"/><link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">00034</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursorKind&#32;K,&#32;CXTranslationUnit&#32;TU)&#32;{
+00035 &#32;&#32;assert(K&#32;&gt;=&#32;CXCursor_FirstInvalid&#32;&amp;&amp;&#32;K&#32;&lt;=&#32;CXCursor_LastInvalid);
+00036 &#32;&#32;CXCursor&#32;C&#32;=&#32;{K,&#32;0,&#32;{<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;TU}};
+00037 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00038 }
+00039 
+00040 <emphasis role="keyword">static</emphasis>&#32;CXCursorKind&#32;GetCursorKind(<emphasis role="keyword">const</emphasis>&#32;Attr&#32;*A)&#32;{
+00041 &#32;&#32;assert(A&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00042 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(A-&gt;getKind())&#32;{
+00043 &#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00045 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::IBAction:
+00046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_IBActionAttr;
+00047 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::IBOutlet:
+00048 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_IBOutletAttr;
+00049 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::IBOutletCollection:
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_IBOutletCollectionAttr;
+00051 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Final:
+00052 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CXXFinalAttr;
+00053 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Override:
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CXXOverrideAttr;
+00055 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Annotate:
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_AnnotateAttr;
+00057 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::AsmLabel:
+00058 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_AsmLabelAttr;
+00059 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Packed:
+00060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_PackedAttr;
+00061 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Pure:
+00062 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_PureAttr;
+00063 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Const:
+00064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ConstAttr;
+00065 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::NoDuplicate:
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NoDuplicateAttr;
+00067 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::CUDAConstant:
+00068 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CUDAConstantAttr;
+00069 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::CUDADevice:
+00070 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CUDADeviceAttr;
+00071 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::CUDAGlobal:
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CUDAGlobalAttr;
+00073 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::CUDAHost:
+00074 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CUDAHostAttr;
+00075 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::CUDAShared:
+00076 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_CUDASharedAttr;
+00077 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Visibility:
+00078 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_VisibilityAttr;
+00079 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::DLLExport:
+00080 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_DLLExport;
+00081 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::DLLImport:
+00082 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_DLLImport;
+00083 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::NSReturnsRetained:
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NSReturnsRetained;
+00085 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::NSReturnsNotRetained:
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NSReturnsNotRetained;
+00087 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::NSReturnsAutoreleased:
+00088 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NSReturnsAutoreleased;
+00089 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::NSConsumesSelf:
+00090 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NSConsumesSelf;
+00091 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::NSConsumed:
+00092 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_NSConsumed;
+00093 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCException:
+00094 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCException;
+00095 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCNSObject:
+00096 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCNSObject;
+00097 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCIndependentClass:
+00098 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCIndependentClass;
+00099 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCPreciseLifetime:
+00100 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCPreciseLifetime;
+00101 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCReturnsInnerPointer:
+00102 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCReturnsInnerPointer;
+00103 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCRequiresSuper:
+00104 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCRequiresSuper;
+00105 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCRootClass:
+00106 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCRootClass;
+00107 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCSubclassingRestricted:
+00108 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCSubclassingRestricted;
+00109 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCExplicitProtocolImpl:
+00110 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCExplicitProtocolImpl;
+00111 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCDesignatedInitializer:
+00112 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCDesignatedInitializer;
+00113 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCRuntimeVisible:
+00114 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCRuntimeVisible;
+00115 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::ObjCBoxable:
+00116 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ObjCBoxable;
+00117 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::FlagEnum:
+00118 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_FlagEnum;
+00119 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Convergent:
+00120 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_ConvergentAttr;
+00121 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::WarnUnused:
+00122 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_WarnUnusedAttr;
+00123 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::WarnUnusedResult:
+00124 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_WarnUnusedResultAttr;
+00125 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;attr::Aligned:
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_AlignedAttr;
+00127 &#32;&#32;}
+00128 
+00129 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_UnexposedAttr;
+00130 }
+00131 
+00132 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(<emphasis role="keyword">const</emphasis>&#32;Attr&#32;*A,&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*Parent,
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00134 &#32;&#32;assert(A&#32;&amp;&amp;&#32;Parent&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00135 &#32;&#32;CXCursor&#32;C&#32;=&#32;{GetCursorKind(A),&#32;0,&#32;{Parent,&#32;A,&#32;TU}};
+00136 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00137 }
+00138 
+00139 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;CXTranslationUnit&#32;TU,
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;RegionOfInterest,
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;FirstInDeclGroup)&#32;{
+00142 &#32;&#32;assert(D&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00143 
+00144 &#32;&#32;CXCursorKind&#32;K&#32;=&#32;getCursorKindForDecl(D);
+00145 
+00146 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(K&#32;==&#32;CXCursor_ObjCClassMethodDecl&#32;||
+00147 &#32;&#32;&#32;&#32;&#32;&#32;K&#32;==&#32;CXCursor_ObjCInstanceMethodDecl)&#32;{
+00148 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;SelectorIdIndex&#32;=&#32;-1;
+00149 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;cursor&#32;points&#32;to&#32;a&#32;selector&#32;id.</emphasis>
+00150 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RegionOfInterest.isValid()&#32;&amp;&amp;
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RegionOfInterest.getBegin()&#32;==&#32;RegionOfInterest.getEnd())&#32;{
+00152 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;SourceLocation,&#32;16&gt;&#32;SelLocs;
+00153 &#32;&#32;&#32;&#32;&#32;&#32;cast&lt;ObjCMethodDecl&gt;(D)-&gt;getSelectorLocs(SelLocs);
+00154 &#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;SourceLocation&gt;::iterator&#32;I&#32;=
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::find(SelLocs,&#32;RegionOfInterest.getBegin());
+00156 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;!=&#32;SelLocs.end())
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SelectorIdIndex&#32;=&#32;I&#32;-&#32;SelLocs.begin();
+00158 &#32;&#32;&#32;&#32;}
+00159 &#32;&#32;&#32;&#32;CXCursor&#32;C&#32;=&#32;{K,
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SelectorIdIndex,
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{D,&#32;(<emphasis role="keywordtype">void</emphasis>&#32;*)(intptr_t)(FirstInDeclGroup&#32;?&#32;1&#32;:&#32;0),&#32;TU}};
+00162 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00163 &#32;&#32;}
+00164 
+00165 &#32;&#32;CXCursor&#32;C&#32;=&#32;{K,&#32;0,&#32;{D,&#32;(<emphasis role="keywordtype">void</emphasis>&#32;*)(intptr_t)(FirstInDeclGroup&#32;?&#32;1&#32;:&#32;0),&#32;TU}};
+00166 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00167 }
+00168 
+00169 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(<emphasis role="keyword">const</emphasis>&#32;Stmt&#32;*S,&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*Parent,
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU,
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;RegionOfInterest)&#32;{
+00172 &#32;&#32;assert(S&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00173 &#32;&#32;CXCursorKind&#32;K&#32;=&#32;CXCursor_NotImplemented;
+00174 
+00175 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(S-&gt;getStmtClass())&#32;{
+00176 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::NoStmtClass:
+00177 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00178 
+00179 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CaseStmtClass:
+00180 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CaseStmt;
+00181 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00182 
+00183 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DefaultStmtClass:
+00184 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_DefaultStmt;
+00185 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00186 
+00187 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::IfStmtClass:
+00188 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_IfStmt;
+00189 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00190 
+00191 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SwitchStmtClass:
+00192 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_SwitchStmt;
+00193 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00194 
+00195 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::WhileStmtClass:
+00196 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_WhileStmt;
+00197 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00198 
+00199 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DoStmtClass:
+00200 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_DoStmt;
+00201 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00202 
+00203 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ForStmtClass:
+00204 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ForStmt;
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00206 
+00207 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::GotoStmtClass:
+00208 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_GotoStmt;
+00209 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00210 
+00211 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::IndirectGotoStmtClass:
+00212 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_IndirectGotoStmt;
+00213 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00214 
+00215 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ContinueStmtClass:
+00216 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ContinueStmt;
+00217 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00218 
+00219 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::BreakStmtClass:
+00220 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_BreakStmt;
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00222 
+00223 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ReturnStmtClass:
+00224 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ReturnStmt;
+00225 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00226 
+00227 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::GCCAsmStmtClass:
+00228 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_GCCAsmStmt;
+00229 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00230 
+00231 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MSAsmStmtClass:
+00232 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_MSAsmStmt;
+00233 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00234 
+00235 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAtTryStmtClass:
+00236 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAtTryStmt;
+00237 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00238 
+00239 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAtCatchStmtClass:
+00240 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAtCatchStmt;
+00241 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00242 
+00243 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAtFinallyStmtClass:
+00244 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAtFinallyStmt;
+00245 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00246 
+00247 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAtThrowStmtClass:
+00248 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAtThrowStmt;
+00249 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00250 
+00251 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAtSynchronizedStmtClass:
+00252 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAtSynchronizedStmt;
+00253 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00254 
+00255 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAutoreleasePoolStmtClass:
+00256 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAutoreleasePoolStmt;
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00258 
+00259 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCForCollectionStmtClass:
+00260 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCForCollectionStmt;
+00261 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00262 
+00263 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXCatchStmtClass:
+00264 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXCatchStmt;
+00265 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00266 
+00267 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXTryStmtClass:
+00268 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXTryStmt;
+00269 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00270 
+00271 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXForRangeStmtClass:
+00272 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXForRangeStmt;
+00273 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00274 
+00275 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SEHTryStmtClass:
+00276 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_SEHTryStmt;
+00277 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00278 
+00279 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SEHExceptStmtClass:
+00280 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_SEHExceptStmt;
+00281 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00282 
+00283 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SEHFinallyStmtClass:
+00284 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_SEHFinallyStmt;
+00285 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00286 
+00287 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SEHLeaveStmtClass:
+00288 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_SEHLeaveStmt;
+00289 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00290 
+00291 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CoroutineBodyStmtClass:
+00292 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CoreturnStmtClass:
+00293 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedStmt;
+00294 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00295 
+00296 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ArrayTypeTraitExprClass:
+00297 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::AsTypeExprClass:
+00298 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::AtomicExprClass:
+00299 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::BinaryConditionalOperatorClass:
+00300 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::TypeTraitExprClass:
+00301 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CoawaitExprClass:
+00302 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ConceptSpecializationExprClass:
+00303 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::RequiresExprClass:
+00304 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DependentCoawaitExprClass:
+00305 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CoyieldExprClass:
+00306 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXBindTemporaryExprClass:
+00307 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXDefaultArgExprClass:
+00308 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXDefaultInitExprClass:
+00309 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXFoldExprClass:
+00310 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXRewrittenBinaryOperatorClass:
+00311 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXStdInitializerListExprClass:
+00312 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXScalarValueInitExprClass:
+00313 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXUuidofExprClass:
+00314 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ChooseExprClass:
+00315 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DesignatedInitExprClass:
+00316 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DesignatedInitUpdateExprClass:
+00317 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ArrayInitLoopExprClass:
+00318 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ArrayInitIndexExprClass:
+00319 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ExprWithCleanupsClass:
+00320 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ExpressionTraitExprClass:
+00321 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ExtVectorElementExprClass:
+00322 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ImplicitCastExprClass:
+00323 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ImplicitValueInitExprClass:
+00324 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::NoInitExprClass:
+00325 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MaterializeTemporaryExprClass:
+00326 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCIndirectCopyRestoreExprClass:
+00327 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OffsetOfExprClass:
+00328 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ParenListExprClass:
+00329 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::PredefinedExprClass:
+00330 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ShuffleVectorExprClass:
+00331 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SourceLocExprClass:
+00332 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ConvertVectorExprClass:
+00333 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::VAArgExprClass:
+00334 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCArrayLiteralClass:
+00335 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCDictionaryLiteralClass:
+00336 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCBoxedExprClass:
+00337 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCSubscriptRefExprClass:
+00338 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::RecoveryExprClass:
+00339 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SYCLUniqueStableNameExprClass:
+00340 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedExpr;
+00341 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00342 
+00343 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OpaqueValueExprClass:
+00344 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Expr&#32;*Src&#32;=&#32;cast&lt;OpaqueValueExpr&gt;(S)-&gt;getSourceExpr())
+00345 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(Src,&#32;Parent,&#32;TU,&#32;RegionOfInterest);
+00346 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedExpr;
+00347 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00348 
+00349 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::PseudoObjectExprClass:
+00350 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(cast&lt;PseudoObjectExpr&gt;(S)-&gt;getSyntacticForm(),&#32;Parent,
+00351 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU,&#32;RegionOfInterest);
+00352 
+00353 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CompoundStmtClass:
+00354 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CompoundStmt;
+00355 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00356 
+00357 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::NullStmtClass:
+00358 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_NullStmt;
+00359 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00360 
+00361 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::LabelStmtClass:
+00362 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_LabelStmt;
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00364 
+00365 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::AttributedStmtClass:
+00366 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedStmt;
+00367 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00368 
+00369 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DeclStmtClass:
+00370 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_DeclStmt;
+00371 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00372 
+00373 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CapturedStmtClass:
+00374 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedStmt;
+00375 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00376 
+00377 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::IntegerLiteralClass:
+00378 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_IntegerLiteral;
+00379 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00380 
+00381 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::FixedPointLiteralClass:
+00382 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_FixedPointLiteral;
+00383 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00384 
+00385 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::FloatingLiteralClass:
+00386 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_FloatingLiteral;
+00387 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00388 
+00389 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ImaginaryLiteralClass:
+00390 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ImaginaryLiteral;
+00391 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00392 
+00393 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::StringLiteralClass:
+00394 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_StringLiteral;
+00395 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00396 
+00397 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CharacterLiteralClass:
+00398 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CharacterLiteral;
+00399 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00400 
+00401 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ConstantExprClass:
+00402 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(cast&lt;ConstantExpr&gt;(S)-&gt;getSubExpr(),&#32;Parent,&#32;TU,
+00403 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RegionOfInterest);
+00404 
+00405 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ParenExprClass:
+00406 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ParenExpr;
+00407 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00408 
+00409 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::UnaryOperatorClass:
+00410 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnaryOperator;
+00411 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00412 
+00413 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::UnaryExprOrTypeTraitExprClass:
+00414 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXNoexceptExprClass:
+00415 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnaryExpr;
+00416 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00417 
+00418 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MSPropertySubscriptExprClass:
+00419 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ArraySubscriptExprClass:
+00420 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ArraySubscriptExpr;
+00421 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00422 
+00423 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MatrixSubscriptExprClass:
+00424 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;TODO:&#32;add&#32;support&#32;for&#32;MatrixSubscriptExpr.</emphasis>
+00425 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedExpr;
+00426 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00427 
+00428 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPArraySectionExprClass:
+00429 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPArraySectionExpr;
+00430 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00431 
+00432 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPArrayShapingExprClass:
+00433 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPArrayShapingExpr;
+00434 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00435 
+00436 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPIteratorExprClass:
+00437 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPIteratorExpr;
+00438 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00439 
+00440 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::BinaryOperatorClass:
+00441 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_BinaryOperator;
+00442 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00443 
+00444 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CompoundAssignOperatorClass:
+00445 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CompoundAssignOperator;
+00446 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00447 
+00448 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ConditionalOperatorClass:
+00449 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ConditionalOperator;
+00450 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00451 
+00452 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CStyleCastExprClass:
+00453 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CStyleCastExpr;
+00454 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00455 
+00456 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CompoundLiteralExprClass:
+00457 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CompoundLiteralExpr;
+00458 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00459 
+00460 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::InitListExprClass:
+00461 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_InitListExpr;
+00462 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00463 
+00464 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::AddrLabelExprClass:
+00465 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_AddrLabelExpr;
+00466 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00467 
+00468 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::StmtExprClass:
+00469 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_StmtExpr;
+00470 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00471 
+00472 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::GenericSelectionExprClass:
+00473 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_GenericSelectionExpr;
+00474 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00475 
+00476 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::GNUNullExprClass:
+00477 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_GNUNullExpr;
+00478 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00479 
+00480 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXStaticCastExprClass:
+00481 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXStaticCastExpr;
+00482 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00483 
+00484 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXDynamicCastExprClass:
+00485 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXDynamicCastExpr;
+00486 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00487 
+00488 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXReinterpretCastExprClass:
+00489 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXReinterpretCastExpr;
+00490 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00491 
+00492 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXConstCastExprClass:
+00493 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXConstCastExpr;
+00494 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00495 
+00496 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXFunctionalCastExprClass:
+00497 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXFunctionalCastExpr;
+00498 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00499 
+00500 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXAddrspaceCastExprClass:
+00501 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXAddrspaceCastExpr;
+00502 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00503 
+00504 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXTypeidExprClass:
+00505 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXTypeidExpr;
+00506 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00507 
+00508 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXBoolLiteralExprClass:
+00509 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXBoolLiteralExpr;
+00510 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00511 
+00512 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXNullPtrLiteralExprClass:
+00513 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXNullPtrLiteralExpr;
+00514 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00515 
+00516 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXThisExprClass:
+00517 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXThisExpr;
+00518 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00519 
+00520 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXThrowExprClass:
+00521 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXThrowExpr;
+00522 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00523 
+00524 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXNewExprClass:
+00525 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXNewExpr;
+00526 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00527 
+00528 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXDeleteExprClass:
+00529 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CXXDeleteExpr;
+00530 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00531 
+00532 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCStringLiteralClass:
+00533 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCStringLiteral;
+00534 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00535 
+00536 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCEncodeExprClass:
+00537 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCEncodeExpr;
+00538 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00539 
+00540 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCSelectorExprClass:
+00541 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCSelectorExpr;
+00542 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00543 
+00544 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCProtocolExprClass:
+00545 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCProtocolExpr;
+00546 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00547 
+00548 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCBoolLiteralExprClass:
+00549 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCBoolLiteralExpr;
+00550 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00551 
+00552 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCAvailabilityCheckExprClass:
+00553 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCAvailabilityCheckExpr;
+00554 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00555 
+00556 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCBridgedCastExprClass:
+00557 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCBridgedCastExpr;
+00558 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00559 
+00560 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::BlockExprClass:
+00561 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_BlockExpr;
+00562 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00563 
+00564 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::PackExpansionExprClass:
+00565 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_PackExpansionExpr;
+00566 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00567 
+00568 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SizeOfPackExprClass:
+00569 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_SizeOfPackExpr;
+00570 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00571 
+00572 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DeclRefExprClass:
+00573 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ImplicitParamDecl&#32;*IPD&#32;=&#32;dyn_cast_or_null&lt;ImplicitParamDecl&gt;(
+00574 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cast&lt;DeclRefExpr&gt;(S)-&gt;getDecl()))&#32;{
+00575 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*MD&#32;=
+00576 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast&lt;ObjCMethodDecl&gt;(IPD-&gt;getDeclContext()))&#32;{
+00577 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MD-&gt;getSelfDecl()&#32;==&#32;IPD)&#32;{
+00578 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCSelfExpr;
+00579 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00580 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00581 &#32;&#32;&#32;&#32;&#32;&#32;}
+00582 &#32;&#32;&#32;&#32;}
+00583 
+00584 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_DeclRefExpr;
+00585 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00586 
+00587 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::DependentScopeDeclRefExprClass:
+00588 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SubstNonTypeTemplateParmExprClass:
+00589 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::SubstNonTypeTemplateParmPackExprClass:
+00590 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::FunctionParmPackExprClass:
+00591 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::UnresolvedLookupExprClass:
+00592 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::TypoExprClass:&#32;<emphasis role="comment">//&#32;A&#32;typo&#32;could&#32;actually&#32;be&#32;a&#32;DeclRef&#32;or&#32;a&#32;MemberRef</emphasis>
+00593 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_DeclRefExpr;
+00594 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00595 
+00596 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXDependentScopeMemberExprClass:
+00597 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXPseudoDestructorExprClass:
+00598 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MemberExprClass:
+00599 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MSPropertyRefExprClass:
+00600 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCIsaExprClass:
+00601 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCIvarRefExprClass:
+00602 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCPropertyRefExprClass:
+00603 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::UnresolvedMemberExprClass:
+00604 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_MemberRefExpr;
+00605 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00606 
+00607 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CallExprClass:
+00608 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXOperatorCallExprClass:
+00609 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXMemberCallExprClass:
+00610 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CUDAKernelCallExprClass:
+00611 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXConstructExprClass:
+00612 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXInheritedCtorInitExprClass:
+00613 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXTemporaryObjectExprClass:
+00614 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::CXXUnresolvedConstructExprClass:
+00615 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::UserDefinedLiteralClass:
+00616 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_CallExpr;
+00617 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00618 
+00619 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::LambdaExprClass:
+00620 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_LambdaExpr;
+00621 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00622 
+00623 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::ObjCMessageExprClass:&#32;{
+00624 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_ObjCMessageExpr;
+00625 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;SelectorIdIndex&#32;=&#32;-1;
+00626 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;cursor&#32;points&#32;to&#32;a&#32;selector&#32;id.</emphasis>
+00627 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RegionOfInterest.isValid()&#32;&amp;&amp;
+00628 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RegionOfInterest.getBegin()&#32;==&#32;RegionOfInterest.getEnd())&#32;{
+00629 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;SourceLocation,&#32;16&gt;&#32;SelLocs;
+00630 &#32;&#32;&#32;&#32;&#32;&#32;cast&lt;ObjCMessageExpr&gt;(S)-&gt;getSelectorLocs(SelLocs);
+00631 &#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;SourceLocation&gt;::iterator&#32;I&#32;=
+00632 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::find(SelLocs,&#32;RegionOfInterest.getBegin());
+00633 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;!=&#32;SelLocs.end())
+00634 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SelectorIdIndex&#32;=&#32;I&#32;-&#32;SelLocs.begin();
+00635 &#32;&#32;&#32;&#32;}
+00636 &#32;&#32;&#32;&#32;CXCursor&#32;C&#32;=&#32;{K,&#32;0,&#32;{Parent,&#32;S,&#32;TU}};
+00637 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3fd86e25b3fca940466669d13b0ea93e">getSelectorIdentifierCursor</link>(SelectorIdIndex,&#32;C);
+00638 &#32;&#32;}
+00639 
+00640 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::MSDependentExistsStmtClass:
+00641 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_UnexposedStmt;
+00642 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00643 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPCanonicalLoopClass:
+00644 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPCanonicalLoop;
+00645 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00646 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelDirectiveClass:
+00647 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelDirective;
+00648 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00649 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPSimdDirectiveClass:
+00650 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPSimdDirective;
+00651 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00652 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTileDirectiveClass:
+00653 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTileDirective;
+00654 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00655 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPUnrollDirectiveClass:
+00656 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPUnrollDirective;
+00657 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00658 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPForDirectiveClass:
+00659 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPForDirective;
+00660 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00661 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPForSimdDirectiveClass:
+00662 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPForSimdDirective;
+00663 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00664 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPSectionsDirectiveClass:
+00665 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPSectionsDirective;
+00666 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00667 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPSectionDirectiveClass:
+00668 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPSectionDirective;
+00669 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00670 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPSingleDirectiveClass:
+00671 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPSingleDirective;
+00672 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00673 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPMasterDirectiveClass:
+00674 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPMasterDirective;
+00675 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00676 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPCriticalDirectiveClass:
+00677 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPCriticalDirective;
+00678 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00679 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelForDirectiveClass:
+00680 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelForDirective;
+00681 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00682 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelForSimdDirectiveClass:
+00683 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelForSimdDirective;
+00684 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00685 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelMasterDirectiveClass:
+00686 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelMasterDirective;
+00687 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00688 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelSectionsDirectiveClass:
+00689 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelSectionsDirective;
+00690 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00691 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTaskDirectiveClass:
+00692 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTaskDirective;
+00693 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00694 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTaskyieldDirectiveClass:
+00695 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTaskyieldDirective;
+00696 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00697 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPBarrierDirectiveClass:
+00698 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPBarrierDirective;
+00699 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00700 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTaskwaitDirectiveClass:
+00701 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTaskwaitDirective;
+00702 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00703 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTaskgroupDirectiveClass:
+00704 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTaskgroupDirective;
+00705 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00706 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPFlushDirectiveClass:
+00707 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPFlushDirective;
+00708 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00709 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPDepobjDirectiveClass:
+00710 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPDepobjDirective;
+00711 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00712 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPScanDirectiveClass:
+00713 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPScanDirective;
+00714 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00715 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPOrderedDirectiveClass:
+00716 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPOrderedDirective;
+00717 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00718 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPAtomicDirectiveClass:
+00719 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPAtomicDirective;
+00720 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00721 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetDirectiveClass:
+00722 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetDirective;
+00723 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00724 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetDataDirectiveClass:
+00725 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetDataDirective;
+00726 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00727 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetEnterDataDirectiveClass:
+00728 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetEnterDataDirective;
+00729 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00730 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetExitDataDirectiveClass:
+00731 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetExitDataDirective;
+00732 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00733 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetParallelDirectiveClass:
+00734 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetParallelDirective;
+00735 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00736 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetParallelForDirectiveClass:
+00737 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetParallelForDirective;
+00738 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00739 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetUpdateDirectiveClass:
+00740 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetUpdateDirective;
+00741 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00742 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTeamsDirectiveClass:
+00743 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTeamsDirective;
+00744 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00745 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPCancellationPointDirectiveClass:
+00746 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPCancellationPointDirective;
+00747 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00748 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPCancelDirectiveClass:
+00749 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPCancelDirective;
+00750 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00751 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTaskLoopDirectiveClass:
+00752 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTaskLoopDirective;
+00753 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00754 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTaskLoopSimdDirectiveClass:
+00755 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTaskLoopSimdDirective;
+00756 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00757 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPMasterTaskLoopDirectiveClass:
+00758 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPMasterTaskLoopDirective;
+00759 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00760 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPMasterTaskLoopSimdDirectiveClass:
+00761 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPMasterTaskLoopSimdDirective;
+00762 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00763 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelMasterTaskLoopDirectiveClass:
+00764 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelMasterTaskLoopDirective;
+00765 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00766 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPParallelMasterTaskLoopSimdDirectiveClass:
+00767 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPParallelMasterTaskLoopSimdDirective;
+00768 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00769 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPDistributeDirectiveClass:
+00770 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPDistributeDirective;
+00771 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00772 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPDistributeParallelForDirectiveClass:
+00773 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPDistributeParallelForDirective;
+00774 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00775 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPDistributeParallelForSimdDirectiveClass:
+00776 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPDistributeParallelForSimdDirective;
+00777 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00778 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPDistributeSimdDirectiveClass:
+00779 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPDistributeSimdDirective;
+00780 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00781 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetParallelForSimdDirectiveClass:
+00782 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetParallelForSimdDirective;
+00783 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00784 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetSimdDirectiveClass:
+00785 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetSimdDirective;
+00786 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00787 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTeamsDistributeDirectiveClass:
+00788 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTeamsDistributeDirective;
+00789 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00790 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTeamsDistributeSimdDirectiveClass:
+00791 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTeamsDistributeSimdDirective;
+00792 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00793 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTeamsDistributeParallelForSimdDirectiveClass:
+00794 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTeamsDistributeParallelForSimdDirective;
+00795 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00796 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTeamsDistributeParallelForDirectiveClass:
+00797 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTeamsDistributeParallelForDirective;
+00798 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00799 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetTeamsDirectiveClass:
+00800 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetTeamsDirective;
+00801 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00802 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetTeamsDistributeDirectiveClass:
+00803 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetTeamsDistributeDirective;
+00804 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00805 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetTeamsDistributeParallelForDirectiveClass:
+00806 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetTeamsDistributeParallelForDirective;
+00807 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00808 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetTeamsDistributeParallelForSimdDirectiveClass:
+00809 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetTeamsDistributeParallelForSimdDirective;
+00810 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00811 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPTargetTeamsDistributeSimdDirectiveClass:
+00812 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPTargetTeamsDistributeSimdDirective;
+00813 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00814 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPInteropDirectiveClass:
+00815 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPInteropDirective;
+00816 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00817 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPDispatchDirectiveClass:
+00818 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPDispatchDirective;
+00819 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00820 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::OMPMaskedDirectiveClass:
+00821 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_OMPMaskedDirective;
+00822 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00823 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Stmt::BuiltinBitCastExprClass:
+00824 &#32;&#32;&#32;&#32;K&#32;=&#32;CXCursor_BuiltinBitCastExpr;
+00825 &#32;&#32;}
+00826 
+00827 &#32;&#32;CXCursor&#32;C&#32;=&#32;{K,&#32;0,&#32;{Parent,&#32;S,&#32;TU}};
+00828 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00829 }
+00830 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00831"/><link linkend="_namespaceclang_1_1cxcursor_1a81d6b09cb8995b57d394a8372437902a">00831</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a81d6b09cb8995b57d394a8372437902a">cxcursor::MakeCursorObjCSuperClassRef</link>(ObjCInterfaceDecl&#32;*Super,
+00832 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00833 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00834 &#32;&#32;assert(Super&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00835 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00836 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_ObjCSuperClassRef,&#32;0,&#32;{Super,&#32;RawLoc,&#32;TU}};
+00837 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00838 }
+00839 
+00840 std::pair&lt;const&#32;ObjCInterfaceDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00841"/><link linkend="_namespaceclang_1_1cxcursor_1a071683bc881399c3bcadba5a4da408b2">00841</link> <link linkend="_namespaceclang_1_1cxcursor_1a071683bc881399c3bcadba5a4da408b2">cxcursor::getCursorObjCSuperClassRef</link>(CXCursor&#32;C)&#32;{
+00842 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_ObjCSuperClassRef);
+00843 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>ObjCInterfaceDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00844 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00845 }
+00846 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00847"/><link linkend="_namespaceclang_1_1cxcursor_1ac238ecc9f974783b9d0c2129f5aa675f">00847</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac238ecc9f974783b9d0c2129f5aa675f">cxcursor::MakeCursorObjCProtocolRef</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*Proto,
+00848 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00849 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00850 &#32;&#32;assert(Proto&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00851 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00852 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_ObjCProtocolRef,&#32;0,&#32;{Proto,&#32;RawLoc,&#32;TU}};
+00853 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00854 }
+00855 
+00856 std::pair&lt;const&#32;ObjCProtocolDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00857"/><link linkend="_namespaceclang_1_1cxcursor_1a1675d17bfec653da314fa2beff772829">00857</link> <link linkend="_namespaceclang_1_1cxcursor_1a1675d17bfec653da314fa2beff772829">cxcursor::getCursorObjCProtocolRef</link>(CXCursor&#32;C)&#32;{
+00858 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_ObjCProtocolRef);
+00859 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>ObjCProtocolDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00860 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00861 }
+00862 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00863"/><link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">00863</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">cxcursor::MakeCursorObjCClassRef</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*Class,
+00864 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00865 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00866 &#32;&#32;<emphasis role="comment">//&#32;&apos;Class&apos;&#32;can&#32;be&#32;null&#32;for&#32;invalid&#32;code.</emphasis>
+00867 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Class)
+00868 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">MakeCXCursorInvalid</link>(CXCursor_InvalidCode);
+00869 &#32;&#32;assert(TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00870 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00871 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_ObjCClassRef,&#32;0,&#32;{Class,&#32;RawLoc,&#32;TU}};
+00872 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00873 }
+00874 
+00875 std::pair&lt;const&#32;ObjCInterfaceDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00876"/><link linkend="_namespaceclang_1_1cxcursor_1ad21fba4a3d5f6bdc63a19303b1cb42a3">00876</link> <link linkend="_namespaceclang_1_1cxcursor_1ad21fba4a3d5f6bdc63a19303b1cb42a3">cxcursor::getCursorObjCClassRef</link>(CXCursor&#32;C)&#32;{
+00877 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_ObjCClassRef);
+00878 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>ObjCInterfaceDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00879 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00880 }
+00881 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00882"/><link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">00882</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">cxcursor::MakeCursorTypeRef</link>(<emphasis role="keyword">const</emphasis>&#32;TypeDecl&#32;*Type,&#32;SourceLocation&#32;Loc,
+00883 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00884 &#32;&#32;assert(Type&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00885 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00886 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_TypeRef,&#32;0,&#32;{Type,&#32;RawLoc,&#32;TU}};
+00887 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00888 }
+00889 
+00890 std::pair&lt;const&#32;TypeDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00891"/><link linkend="_namespaceclang_1_1cxcursor_1ab0284c10c2cfeb2ffe43b99ec3e9dd9f">00891</link> <link linkend="_namespaceclang_1_1cxcursor_1ab0284c10c2cfeb2ffe43b99ec3e9dd9f">cxcursor::getCursorTypeRef</link>(CXCursor&#32;C)&#32;{
+00892 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_TypeRef);
+00893 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>TypeDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00894 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00895 }
+00896 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00897"/><link linkend="_namespaceclang_1_1cxcursor_1ac63e4fd5fdbaf88d0632a7682afbf744">00897</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac63e4fd5fdbaf88d0632a7682afbf744">cxcursor::MakeCursorTemplateRef</link>(<emphasis role="keyword">const</emphasis>&#32;TemplateDecl&#32;*Template,
+00898 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00899 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00900 &#32;&#32;assert(Template&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00901 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00902 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_TemplateRef,&#32;0,&#32;{Template,&#32;RawLoc,&#32;TU}};
+00903 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00904 }
+00905 
+00906 std::pair&lt;const&#32;TemplateDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00907"/><link linkend="_namespaceclang_1_1cxcursor_1aacf77fc4aabf02cfa865e6fe19e55d08">00907</link> <link linkend="_namespaceclang_1_1cxcursor_1aacf77fc4aabf02cfa865e6fe19e55d08">cxcursor::getCursorTemplateRef</link>(CXCursor&#32;C)&#32;{
+00908 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_TemplateRef);
+00909 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>TemplateDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00910 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00911 }
+00912 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00913"/><link linkend="_namespaceclang_1_1cxcursor_1a6eadc019bbae1f61434528c197111b0e">00913</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eadc019bbae1f61434528c197111b0e">cxcursor::MakeCursorNamespaceRef</link>(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*NS,
+00914 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00915 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00916 
+00917 &#32;&#32;assert(NS&#32;&amp;&amp;&#32;(isa&lt;NamespaceDecl&gt;(NS)&#32;||&#32;isa&lt;NamespaceAliasDecl&gt;(NS))&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;
+00918 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00919 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00920 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_NamespaceRef,&#32;0,&#32;{NS,&#32;RawLoc,&#32;TU}};
+00921 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00922 }
+00923 
+00924 std::pair&lt;const&#32;NamedDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00925"/><link linkend="_namespaceclang_1_1cxcursor_1ac87835a4525ca9f54e4666e7b76ec6f6">00925</link> <link linkend="_namespaceclang_1_1cxcursor_1ac87835a4525ca9f54e4666e7b76ec6f6">cxcursor::getCursorNamespaceRef</link>(CXCursor&#32;C)&#32;{
+00926 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_NamespaceRef);
+00927 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>NamedDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00928 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00929 }
+00930 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00931"/><link linkend="_namespaceclang_1_1cxcursor_1abb9724d664f29289d46fb5b34eaf94e9">00931</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1abb9724d664f29289d46fb5b34eaf94e9">cxcursor::MakeCursorVariableRef</link>(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*Var,&#32;SourceLocation&#32;Loc,
+00932 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00933 
+00934 &#32;&#32;assert(Var&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00935 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00936 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_VariableRef,&#32;0,&#32;{Var,&#32;RawLoc,&#32;TU}};
+00937 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00938 }
+00939 
+00940 std::pair&lt;const&#32;VarDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00941"/><link linkend="_namespaceclang_1_1cxcursor_1a53fa4c4c92a2fbaded59ad51eeed6e47">00941</link> <link linkend="_namespaceclang_1_1cxcursor_1a53fa4c4c92a2fbaded59ad51eeed6e47">cxcursor::getCursorVariableRef</link>(CXCursor&#32;C)&#32;{
+00942 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_VariableRef);
+00943 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>VarDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00944 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00945 }
+00946 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00947"/><link linkend="_namespaceclang_1_1cxcursor_1ad70c49c226f87377bc26fba7a4dbe973">00947</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ad70c49c226f87377bc26fba7a4dbe973">cxcursor::MakeCursorMemberRef</link>(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*Field,
+00948 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00949 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00950 
+00951 &#32;&#32;assert(Field&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+00952 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+00953 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_MemberRef,&#32;0,&#32;{Field,&#32;RawLoc,&#32;TU}};
+00954 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00955 }
+00956 
+00957 std::pair&lt;const&#32;FieldDecl&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00958"/><link linkend="_namespaceclang_1_1cxcursor_1af3f3d2390bed39285f0b3313c1fab84b">00958</link> <link linkend="_namespaceclang_1_1cxcursor_1af3f3d2390bed39285f0b3313c1fab84b">cxcursor::getCursorMemberRef</link>(CXCursor&#32;C)&#32;{
+00959 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_MemberRef);
+00960 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>FieldDecl&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+00961 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00962 }
+00963 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00964"/><link linkend="_namespaceclang_1_1cxcursor_1a13176d36398baf45f34e16a34ec04793">00964</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a13176d36398baf45f34e16a34ec04793">cxcursor::MakeCursorCXXBaseSpecifier</link>(<emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;*B,
+00965 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00966 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_CXXBaseSpecifier,&#32;0,&#32;{B,&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;TU}};
+00967 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00968 }
+00969 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00970"/><link linkend="_namespaceclang_1_1cxcursor_1a05b387c1d9aeb75b3de539f8622e0964">00970</link> <emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a05b387c1d9aeb75b3de539f8622e0964">cxcursor::getCursorCXXBaseSpecifier</link>(CXCursor&#32;C)&#32;{
+00971 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_CXXBaseSpecifier);
+00972 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>CXXBaseSpecifier&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]);
+00973 }
+00974 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00975"/><link linkend="_namespaceclang_1_1cxcursor_1a1fb1c1775cb1f7e194f860c8e5903a71">00975</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1fb1c1775cb1f7e194f860c8e5903a71">cxcursor::MakePreprocessingDirectiveCursor</link>(SourceRange&#32;Range,
+00976 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00977 &#32;&#32;CXCursor&#32;C&#32;=&#32;{
+00978 &#32;&#32;&#32;&#32;&#32;&#32;CXCursor_PreprocessingDirective,
+00979 &#32;&#32;&#32;&#32;&#32;&#32;0,
+00980 &#32;&#32;&#32;&#32;&#32;&#32;{Range.getBegin().getPtrEncoding(),&#32;Range.getEnd().getPtrEncoding(),&#32;TU}};
+00981 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00982 }
+00983 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00984"/><link linkend="_namespaceclang_1_1cxcursor_1ad23bd48471b18d4d196d9777f3943e25">00984</link> SourceRange&#32;<link linkend="_namespaceclang_1_1cxcursor_1ad23bd48471b18d4d196d9777f3943e25">cxcursor::getCursorPreprocessingDirective</link>(CXCursor&#32;C)&#32;{
+00985 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_PreprocessingDirective);
+00986 &#32;&#32;SourceRange&#32;Range(SourceLocation::getFromPtrEncoding(C.data[0]),
+00987 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+00988 &#32;&#32;ASTUnit&#32;*TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(C);
+00989 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TU-&gt;mapRangeFromPreamble(Range);
+00990 }
+00991 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00992"/><link linkend="_namespaceclang_1_1cxcursor_1a62e05b7f28b894bf90226918a8f3386a">00992</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a62e05b7f28b894bf90226918a8f3386a">cxcursor::MakeMacroDefinitionCursor</link>(<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*MI,
+00993 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00994 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_MacroDefinition,&#32;0,&#32;{MI,&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;TU}};
+00995 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00996 }
+00997 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l00998"/><link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">00998</link> <emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">cxcursor::getCursorMacroDefinition</link>(CXCursor&#32;C)&#32;{
+00999 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_MacroDefinition);
+01000 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>MacroDefinitionRecord&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]);
+01001 }
+01002 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01003"/><link linkend="_namespaceclang_1_1cxcursor_1a64450be5a9ef97c872d47219caaccfce">01003</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a64450be5a9ef97c872d47219caaccfce">cxcursor::MakeMacroExpansionCursor</link>(MacroExpansion&#32;*MI,
+01004 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01005 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_MacroExpansion,&#32;0,&#32;{MI,&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;TU}};
+01006 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01007 }
+01008 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01009"/><link linkend="_namespaceclang_1_1cxcursor_1a2f0963c1339f8f17a78824250aee3918">01009</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a64450be5a9ef97c872d47219caaccfce">cxcursor::MakeMacroExpansionCursor</link>(MacroDefinitionRecord&#32;*MI,
+01010 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+01011 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01012 &#32;&#32;assert(Loc.isValid());
+01013 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_MacroExpansion,&#32;0,&#32;{MI,&#32;Loc.getPtrEncoding(),&#32;TU}};
+01014 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01015 }
+01016 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01017"/><link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1aab31344cd77f9da9c4ea0fc96017270e">01017</link> <emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*<link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1aab31344cd77f9da9c4ea0fc96017270e">cxcursor::MacroExpansionCursor::getName</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01018 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isPseudo())
+01019 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getAsMacroDefinition()-&gt;getName();
+01020 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getAsMacroExpansion()-&gt;getName();
+01021 }
+01022 <emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01023"/><link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a489d2d3b3d09eeef19d31d051001d8e0">01023</link> <link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a489d2d3b3d09eeef19d31d051001d8e0">cxcursor::MacroExpansionCursor::getDefinition</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01024 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isPseudo())
+01025 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getAsMacroDefinition();
+01026 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getAsMacroExpansion()-&gt;getDefinition();
+01027 }
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01028"/><link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a7f3033c8d9ba9947b24ba0f3d0056f21">01028</link> SourceRange&#32;<link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a7f3033c8d9ba9947b24ba0f3d0056f21">cxcursor::MacroExpansionCursor::getSourceRange</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01029 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isPseudo())
+01030 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getPseudoLoc();
+01031 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getAsMacroExpansion()-&gt;getSourceRange();
+01032 }
+01033 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01034"/><link linkend="_namespaceclang_1_1cxcursor_1acc1961183c2fb603b894a7f8621b16bb">01034</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1acc1961183c2fb603b894a7f8621b16bb">cxcursor::MakeInclusionDirectiveCursor</link>(InclusionDirective&#32;*ID,
+01035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01036 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_InclusionDirective,&#32;0,&#32;{ID,&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;TU}};
+01037 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01038 }
+01039 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01040"/><link linkend="_namespaceclang_1_1cxcursor_1a3894d584fef6edb8ba4333fc240315ac">01040</link> <emphasis role="keyword">const</emphasis>&#32;InclusionDirective&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a3894d584fef6edb8ba4333fc240315ac">cxcursor::getCursorInclusionDirective</link>(CXCursor&#32;C)&#32;{
+01041 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_InclusionDirective);
+01042 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>InclusionDirective&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]);
+01043 }
+01044 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01045"/><link linkend="_namespaceclang_1_1cxcursor_1a2e83069419ec783a32e4ee2b67d5144a">01045</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a2e83069419ec783a32e4ee2b67d5144a">cxcursor::MakeCursorLabelRef</link>(LabelStmt&#32;*Label,&#32;SourceLocation&#32;Loc,
+01046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01047 
+01048 &#32;&#32;assert(Label&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+01049 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+01050 &#32;&#32;CXCursor&#32;C&#32;=&#32;{CXCursor_LabelRef,&#32;0,&#32;{Label,&#32;RawLoc,&#32;TU}};
+01051 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01052 }
+01053 
+01054 std::pair&lt;const&#32;LabelStmt&#32;*,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01055"/><link linkend="_namespaceclang_1_1cxcursor_1a642e34370b829d06752d76d13c6a58dd">01055</link> <link linkend="_namespaceclang_1_1cxcursor_1a642e34370b829d06752d76d13c6a58dd">cxcursor::getCursorLabelRef</link>(CXCursor&#32;C)&#32;{
+01056 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_LabelRef);
+01057 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>LabelStmt&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]),
+01058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+01059 }
+01060 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01061"/><link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">01061</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">cxcursor::MakeCursorOverloadedDeclRef</link>(<emphasis role="keyword">const</emphasis>&#32;OverloadExpr&#32;*E,
+01062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01063 &#32;&#32;assert(E&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+01064 &#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a944e67de567f6905f10876d7585ac43b">OverloadedDeclRefStorage</link>&#32;Storage(E);
+01065 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;E-&gt;getNameLoc().getPtrEncoding();
+01066 &#32;&#32;CXCursor&#32;C&#32;=&#32;{
+01067 &#32;&#32;&#32;&#32;&#32;&#32;CXCursor_OverloadedDeclRef,&#32;0,&#32;{Storage.getOpaqueValue(),&#32;RawLoc,&#32;TU}};
+01068 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01069 }
+01070 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01071"/><link linkend="_namespaceclang_1_1cxcursor_1ad20f1744eb56e19aad0226a6cd6a0814">01071</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">cxcursor::MakeCursorOverloadedDeclRef</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,
+01072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+01073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01074 &#32;&#32;assert(D&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+01075 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+01076 &#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a944e67de567f6905f10876d7585ac43b">OverloadedDeclRefStorage</link>&#32;Storage(D);
+01077 &#32;&#32;CXCursor&#32;C&#32;=&#32;{
+01078 &#32;&#32;&#32;&#32;&#32;&#32;CXCursor_OverloadedDeclRef,&#32;0,&#32;{Storage.getOpaqueValue(),&#32;RawLoc,&#32;TU}};
+01079 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01080 }
+01081 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01082"/><link linkend="_namespaceclang_1_1cxcursor_1aa16bf67907c5d2ea8d38dbf9c25115f3">01082</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">cxcursor::MakeCursorOverloadedDeclRef</link>(TemplateName&#32;Name,
+01083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+01084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+01085 &#32;&#32;assert(Name.getAsOverloadedTemplate()&#32;&amp;&amp;&#32;TU&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;arguments!&quot;</emphasis>);
+01086 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*RawLoc&#32;=&#32;Loc.getPtrEncoding();
+01087 &#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a944e67de567f6905f10876d7585ac43b">OverloadedDeclRefStorage</link>&#32;Storage(Name.getAsOverloadedTemplate());
+01088 &#32;&#32;CXCursor&#32;C&#32;=&#32;{
+01089 &#32;&#32;&#32;&#32;&#32;&#32;CXCursor_OverloadedDeclRef,&#32;0,&#32;{Storage.getOpaqueValue(),&#32;RawLoc,&#32;TU}};
+01090 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+01091 }
+01092 
+01093 std::pair&lt;cxcursor::OverloadedDeclRefStorage,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01094"/><link linkend="_namespaceclang_1_1cxcursor_1a4b41e93d6de24aed1376ec7f789efa2a">01094</link> <link linkend="_namespaceclang_1_1cxcursor_1a4b41e93d6de24aed1376ec7f789efa2a">cxcursor::getCursorOverloadedDeclRef</link>(CXCursor&#32;C)&#32;{
+01095 &#32;&#32;assert(C.kind&#32;==&#32;CXCursor_OverloadedDeclRef);
+01096 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(OverloadedDeclRefStorage::getFromOpaqueValue(
+01097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0])),
+01098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromPtrEncoding(C.data[1]));
+01099 }
+01100 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01101"/><link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">01101</link> <emphasis role="keyword">const</emphasis>&#32;Decl&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(CXCursor&#32;Cursor)&#32;{
+01102 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>Decl&#32;*<emphasis role="keyword">&gt;</emphasis>(Cursor.data[0]);
+01103 }
+01104 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01105"/><link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">01105</link> <emphasis role="keyword">const</emphasis>&#32;Expr&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">cxcursor::getCursorExpr</link>(CXCursor&#32;Cursor)&#32;{
+01106 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;dyn_cast_or_null&lt;Expr&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a2d5cb233204f81be58bd21deb628c7ad">getCursorStmt</link>(Cursor));
+01107 }
+01108 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01109"/><link linkend="_namespaceclang_1_1cxcursor_1a2d5cb233204f81be58bd21deb628c7ad">01109</link> <emphasis role="keyword">const</emphasis>&#32;Stmt&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a2d5cb233204f81be58bd21deb628c7ad">cxcursor::getCursorStmt</link>(CXCursor&#32;Cursor)&#32;{
+01110 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Cursor.kind&#32;==&#32;CXCursor_ObjCSuperClassRef&#32;||
+01111 &#32;&#32;&#32;&#32;&#32;&#32;Cursor.kind&#32;==&#32;CXCursor_ObjCProtocolRef&#32;||
+01112 &#32;&#32;&#32;&#32;&#32;&#32;Cursor.kind&#32;==&#32;CXCursor_ObjCClassRef)
+01113 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01114 
+01115 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>Stmt&#32;*<emphasis role="keyword">&gt;</emphasis>(Cursor.data[1]);
+01116 }
+01117 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01118"/><link linkend="_namespaceclang_1_1cxcursor_1afdc6aa952869e16b4981b07f05adff7f">01118</link> <emphasis role="keyword">const</emphasis>&#32;Attr&#32;*<link linkend="_namespaceclang_1_1cxcursor_1afdc6aa952869e16b4981b07f05adff7f">cxcursor::getCursorAttr</link>(CXCursor&#32;Cursor)&#32;{
+01119 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>Attr&#32;*<emphasis role="keyword">&gt;</emphasis>(Cursor.data[1]);
+01120 }
+01121 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01122"/><link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">01122</link> ASTContext&#32;&amp;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(CXCursor&#32;Cursor)&#32;{
+01123 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(Cursor)-&gt;getASTContext();
+01124 }
+01125 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01126"/><link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">01126</link> ASTUnit&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">cxcursor::getCursorASTUnit</link>(CXCursor&#32;Cursor)&#32;{
+01127 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(Cursor);
+01128 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU)
+01129 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01130 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cxtu::getASTUnit(TU);
+01131 }
+01132 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01133"/><link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">01133</link> CXTranslationUnit&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(CXCursor&#32;Cursor)&#32;{
+01134 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXTranslationUnit<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(Cursor.data[2]));
+01135 }
+01136 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01137"/><link linkend="_namespaceclang_1_1cxcursor_1ada86f0e873b92af5429ba6da7c7cd56f">01137</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ada86f0e873b92af5429ba6da7c7cd56f">cxcursor::getOverriddenCursors</link>(CXCursor&#32;cursor,
+01138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;CXCursor&gt;&#32;&amp;overridden)&#32;{
+01139 &#32;&#32;assert(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(cursor.kind));
+01140 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D&#32;=&#32;dyn_cast_or_null&lt;NamedDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(cursor));
+01141 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+01142 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01143 
+01144 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(cursor);
+01145 &#32;&#32;SmallVector&lt;const&#32;NamedDecl&#32;*,&#32;8&gt;&#32;OverDecls;
+01146 &#32;&#32;D-&gt;getASTContext().getOverriddenMethods(D,&#32;OverDecls);
+01147 
+01148 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(SmallVectorImpl&lt;const&#32;NamedDecl&#32;*&gt;::iterator&#32;I&#32;=&#32;OverDecls.begin(),
+01149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;E&#32;=&#32;OverDecls.end();
+01150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+01151 &#32;&#32;&#32;&#32;overridden.push_back(<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(*I,&#32;TU));
+01152 &#32;&#32;}
+01153 }
+01154 
+01155 std::pair&lt;int,&#32;SourceLocation&gt;
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01156"/><link linkend="_namespaceclang_1_1cxcursor_1ac0203107f2338d86b2c77680155c3bf5">01156</link> <link linkend="_namespaceclang_1_1cxcursor_1ac0203107f2338d86b2c77680155c3bf5">cxcursor::getSelectorIdentifierIndexAndLoc</link>(CXCursor&#32;cursor)&#32;{
+01157 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_ObjCMessageExpr)&#32;{
+01158 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.xdata&#32;!=&#32;-1)
+01159 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(cursor.xdata,
+01160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cast&lt;ObjCMessageExpr&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(cursor))
+01161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;-&gt;getSelectorLoc(cursor.xdata));
+01162 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_ObjCClassMethodDecl&#32;||
+01163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;==&#32;CXCursor_ObjCInstanceMethodDecl)&#32;{
+01164 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.xdata&#32;!=&#32;-1)
+01165 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(cursor.xdata,
+01166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cast&lt;ObjCMethodDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(cursor))
+01167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;-&gt;getSelectorLoc(cursor.xdata));
+01168 &#32;&#32;}
+01169 
+01170 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_pair(-1,&#32;SourceLocation());
+01171 }
+01172 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01173"/><link linkend="_namespaceclang_1_1cxcursor_1a3fd86e25b3fca940466669d13b0ea93e">01173</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3fd86e25b3fca940466669d13b0ea93e">cxcursor::getSelectorIdentifierCursor</link>(<emphasis role="keywordtype">int</emphasis>&#32;SelIdx,&#32;CXCursor&#32;cursor)&#32;{
+01174 &#32;&#32;CXCursor&#32;newCursor&#32;=&#32;cursor;
+01175 
+01176 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_ObjCMessageExpr)&#32;{
+01177 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SelIdx&#32;==&#32;-1&#32;||
+01178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>(SelIdx)&#32;&gt;=
+01179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cast&lt;ObjCMessageExpr&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(cursor))-&gt;getNumSelectorLocs())
+01180 &#32;&#32;&#32;&#32;&#32;&#32;newCursor.xdata&#32;=&#32;-1;
+01181 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+01182 &#32;&#32;&#32;&#32;&#32;&#32;newCursor.xdata&#32;=&#32;SelIdx;
+01183 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_ObjCClassMethodDecl&#32;||
+01184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;==&#32;CXCursor_ObjCInstanceMethodDecl)&#32;{
+01185 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SelIdx&#32;==&#32;-1&#32;||
+01186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>(SelIdx)&#32;&gt;=
+01187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cast&lt;ObjCMethodDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(cursor))-&gt;getNumSelectorLocs())
+01188 &#32;&#32;&#32;&#32;&#32;&#32;newCursor.xdata&#32;=&#32;-1;
+01189 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+01190 &#32;&#32;&#32;&#32;&#32;&#32;newCursor.xdata&#32;=&#32;SelIdx;
+01191 &#32;&#32;}
+01192 
+01193 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;newCursor;
+01194 }
+01195 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01196"/><link linkend="_namespaceclang_1_1cxcursor_1aa5198a2a166b25337d2c20917d3d28ce">01196</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa5198a2a166b25337d2c20917d3d28ce">cxcursor::getTypeRefCursor</link>(CXCursor&#32;cursor)&#32;{
+01197 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;!=&#32;CXCursor_CallExpr)
+01198 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cursor;
+01199 
+01200 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.xdata&#32;==&#32;0)
+01201 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cursor;
+01202 
+01203 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(cursor);
+01204 &#32;&#32;TypeSourceInfo&#32;*Type&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01205 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXUnresolvedConstructExpr&#32;*UnCtor&#32;=
+01206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast&lt;CXXUnresolvedConstructExpr&gt;(E))&#32;{
+01207 &#32;&#32;&#32;&#32;Type&#32;=&#32;UnCtor-&gt;getTypeSourceInfo();
+01208 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXTemporaryObjectExpr&#32;*Tmp&#32;=
+01209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast&lt;CXXTemporaryObjectExpr&gt;(E))&#32;{
+01210 &#32;&#32;&#32;&#32;Type&#32;=&#32;Tmp-&gt;getTypeSourceInfo();
+01211 &#32;&#32;}
+01212 
+01213 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Type)
+01214 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cursor;
+01215 
+01216 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(cursor);
+01217 &#32;&#32;QualType&#32;Ty&#32;=&#32;Type-&gt;getType();
+01218 &#32;&#32;TypeLoc&#32;TL&#32;=&#32;Type-&gt;getTypeLoc();
+01219 &#32;&#32;SourceLocation&#32;Loc&#32;=&#32;TL.getBeginLoc();
+01220 
+01221 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ElaboratedType&#32;*ElabT&#32;=&#32;Ty-&gt;getAs&lt;ElaboratedType&gt;())&#32;{
+01222 &#32;&#32;&#32;&#32;Ty&#32;=&#32;ElabT-&gt;getNamedType();
+01223 &#32;&#32;&#32;&#32;ElaboratedTypeLoc&#32;ElabTL&#32;=&#32;TL.castAs&lt;ElaboratedTypeLoc&gt;();
+01224 &#32;&#32;&#32;&#32;Loc&#32;=&#32;ElabTL.getNamedTypeLoc().getBeginLoc();
+01225 &#32;&#32;}
+01226 
+01227 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TypedefType&#32;*Typedef&#32;=&#32;Ty-&gt;getAs&lt;TypedefType&gt;())
+01228 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">MakeCursorTypeRef</link>(Typedef-&gt;getDecl(),&#32;Loc,&#32;TU);
+01229 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TagType&#32;*Tag&#32;=&#32;Ty-&gt;getAs&lt;TagType&gt;())
+01230 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">MakeCursorTypeRef</link>(Tag-&gt;getDecl(),&#32;Loc,&#32;TU);
+01231 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TemplateTypeParmType&#32;*TemplP&#32;=&#32;Ty-&gt;getAs&lt;TemplateTypeParmType&gt;())
+01232 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">MakeCursorTypeRef</link>(TemplP-&gt;getDecl(),&#32;Loc,&#32;TU);
+01233 
+01234 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cursor;
+01235 }
+01236 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01237"/><link linkend="_namespaceclang_1_1cxcursor_1a6eba9b639ae06e944e28d8a44767cf72">01237</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eba9b639ae06e944e28d8a44767cf72">cxcursor::operator==</link>(CXCursor&#32;X,&#32;CXCursor&#32;Y)&#32;{
+01238 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;X.kind&#32;==&#32;Y.kind&#32;&amp;&amp;&#32;X.data[0]&#32;==&#32;Y.data[0]&#32;&amp;&amp;&#32;X.data[1]&#32;==&#32;Y.data[1]&#32;&amp;&amp;
+01239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;X.data[2]&#32;==&#32;Y.data[2];
+01240 }
+01241 
+01242 <emphasis role="comment">//&#32;FIXME:&#32;Remove&#32;once&#32;we&#32;can&#32;model&#32;DeclGroups&#32;and&#32;their&#32;appropriate&#32;ranges</emphasis>
+01243 <emphasis role="comment">//&#32;properly&#32;in&#32;the&#32;ASTs.</emphasis>
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01244"/><link linkend="_namespaceclang_1_1cxcursor_1a1ae32d54126c07eca2ab10d9ce40af7c">01244</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1ae32d54126c07eca2ab10d9ce40af7c">cxcursor::isFirstInDeclGroup</link>(CXCursor&#32;C)&#32;{
+01245 &#32;&#32;assert(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind));
+01246 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;((uintptr_t)(C.data[1]))&#32;!=&#32;0;
+01247 }
+01248 
+01249 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+01250 <emphasis role="comment">//&#32;libclang&#32;CXCursor&#32;APIs</emphasis>
+01251 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+01252 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01253"/><link linkend="__c_x_cursor_8cpp_1af734553e3bac74a4a1f6f7450513cf0f">01253</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1af734553e3bac74a4a1f6f7450513cf0f">clang_Cursor_isNull</link>(CXCursor&#32;cursor)&#32;{
+01254 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1a96d5f0059613428736715de616ed38f9">clang_equalCursors</link>(cursor,&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>());
+01255 }
+01256 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01257"/><link linkend="__c_x_cursor_8cpp_1ace7e0a4fcee3aa54c74aa75615cef62a">01257</link> CXTranslationUnit&#32;<link linkend="__c_x_cursor_8cpp_1ace7e0a4fcee3aa54c74aa75615cef62a">clang_Cursor_getTranslationUnit</link>(CXCursor&#32;cursor)&#32;{
+01258 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(cursor);
+01259 }
+01260 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01261"/><link linkend="__c_x_cursor_8cpp_1a22f41fe117dda1a72b55c84e1ae64c6b">01261</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a22f41fe117dda1a72b55c84e1ae64c6b">clang_Cursor_getNumArguments</link>(CXCursor&#32;C)&#32;{
+01262 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+01263 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01264 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*MD&#32;=&#32;dyn_cast_or_null&lt;ObjCMethodDecl&gt;(D))
+01265 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;MD-&gt;param_size();
+01266 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FunctionDecl&gt;(D))
+01267 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;param_size();
+01268 &#32;&#32;}
+01269 
+01270 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))&#32;{
+01271 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">cxcursor::getCursorExpr</link>(C);
+01272 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))&#32;{
+01273 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CE-&gt;getNumArgs();
+01274 &#32;&#32;&#32;&#32;}
+01275 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXConstructExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CXXConstructExpr&gt;(E))&#32;{
+01276 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CE-&gt;getNumArgs();
+01277 &#32;&#32;&#32;&#32;}
+01278 &#32;&#32;}
+01279 
+01280 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01281 }
+01282 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01283"/><link linkend="__c_x_cursor_8cpp_1a776c46967cf1110bc067e119e8034434">01283</link> CXCursor&#32;<link linkend="__c_x_cursor_8cpp_1a776c46967cf1110bc067e119e8034434">clang_Cursor_getArgument</link>(CXCursor&#32;C,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i)&#32;{
+01284 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+01285 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01286 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*MD&#32;=&#32;dyn_cast_or_null&lt;ObjCMethodDecl&gt;(D))&#32;{
+01287 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;MD-&gt;param_size())
+01288 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(MD-&gt;parameters()[i],
+01289 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01290 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FunctionDecl&gt;(D))&#32;{
+01291 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;FD-&gt;param_size())
+01292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(FD-&gt;parameters()[i],
+01293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01294 &#32;&#32;&#32;&#32;}
+01295 &#32;&#32;}
+01296 
+01297 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))&#32;{
+01298 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">cxcursor::getCursorExpr</link>(C);
+01299 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))&#32;{
+01300 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;CE-&gt;getNumArgs())&#32;{
+01301 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(CE-&gt;getArg(i),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C),
+01302 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01303 &#32;&#32;&#32;&#32;&#32;&#32;}
+01304 &#32;&#32;&#32;&#32;}
+01305 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXConstructExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CXXConstructExpr&gt;(E))&#32;{
+01306 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;CE-&gt;getNumArgs())&#32;{
+01307 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(CE-&gt;getArg(i),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C),
+01308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01309 &#32;&#32;&#32;&#32;&#32;&#32;}
+01310 &#32;&#32;&#32;&#32;}
+01311 &#32;&#32;}
+01312 
+01313 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+01314 }
+01315 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01316"/><link linkend="__c_x_cursor_8cpp_1accb5e7f9bb249d933b1b77fdc53fc5da">01316</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1accb5e7f9bb249d933b1b77fdc53fc5da">clang_Cursor_getNumTemplateArguments</link>(CXCursor&#32;C)&#32;{
+01317 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(C)&#32;!=&#32;CXCursor_FunctionDecl)&#32;{
+01318 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01319 &#32;&#32;}
+01320 
+01321 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=
+01322 &#32;&#32;&#32;&#32;&#32;&#32;llvm::dyn_cast_or_null&lt;clang::FunctionDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C));
+01323 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FD)&#32;{
+01324 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01325 &#32;&#32;}
+01326 
+01327 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateSpecializationInfo&#32;*SpecInfo&#32;=
+01328 &#32;&#32;&#32;&#32;&#32;&#32;FD-&gt;getTemplateSpecializationInfo();
+01329 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!SpecInfo)&#32;{
+01330 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01331 &#32;&#32;}
+01332 
+01333 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SpecInfo-&gt;TemplateArguments-&gt;size();
+01334 }
+01335 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01336"/><link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0">01336</link> <emphasis role="keyword">enum</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0">CXGetTemplateArgumentStatus</link>&#32;{
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01338"/><link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">01338</link> &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>&#32;=&#32;0,
+01339 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01341"/><link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0aaf8ad5bd5667e021565b6cc938736ce8">01341</link> &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0aaf8ad5bd5667e021565b6cc938736ce8">CXGetTemplateArgumentStatus_CursorNotFunctionDecl</link>&#32;=&#32;-1,
+01342 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01344"/><link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0ae5ffd24518659004ac765426aa814f21">01344</link> &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0ae5ffd24518659004ac765426aa814f21">CXGetTemplateArgumentStatus_BadFunctionDeclCast</link>&#32;=&#32;-2,
+01345 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01347"/><link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a9598d9e5fbd7b5ef5a1984cb91ae3167">01347</link> &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a9598d9e5fbd7b5ef5a1984cb91ae3167">CXGetTemplateArgumentStatus_NullTemplSpecInfo</link>&#32;=&#32;-3,
+01348 
+01350 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a98e1ed6cbe9728b3356a34a075eeef3c">CXGetTemplateArgumentStatus_InvalidIndex</link>&#32;=&#32;-4
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01351"/><link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a98e1ed6cbe9728b3356a34a075eeef3c">01351</link> };
+01352 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01353"/><link linkend="__c_x_cursor_8cpp_1ab1c5cb44256e5b1861c54b4a2cb48574">01353</link> <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;clang_Cursor_getTemplateArgument(CXCursor&#32;C,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I,
+01354 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TemplateArgument&#32;*TA)&#32;{
+01355 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(C)&#32;!=&#32;CXCursor_FunctionDecl)&#32;{
+01356 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0aaf8ad5bd5667e021565b6cc938736ce8">CXGetTemplateArgumentStatus_CursorNotFunctionDecl</link>;
+01357 &#32;&#32;}
+01358 
+01359 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=
+01360 &#32;&#32;&#32;&#32;&#32;&#32;llvm::dyn_cast_or_null&lt;clang::FunctionDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C));
+01361 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FD)&#32;{
+01362 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0ae5ffd24518659004ac765426aa814f21">CXGetTemplateArgumentStatus_BadFunctionDeclCast</link>;
+01363 &#32;&#32;}
+01364 
+01365 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateSpecializationInfo&#32;*SpecInfo&#32;=
+01366 &#32;&#32;&#32;&#32;&#32;&#32;FD-&gt;getTemplateSpecializationInfo();
+01367 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!SpecInfo)&#32;{
+01368 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a9598d9e5fbd7b5ef5a1984cb91ae3167">CXGetTemplateArgumentStatus_NullTemplSpecInfo</link>;
+01369 &#32;&#32;}
+01370 
+01371 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;&gt;=&#32;SpecInfo-&gt;TemplateArguments-&gt;size())&#32;{
+01372 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a98e1ed6cbe9728b3356a34a075eeef3c">CXGetTemplateArgumentStatus_InvalidIndex</link>;
+01373 &#32;&#32;}
+01374 
+01375 &#32;&#32;*TA&#32;=&#32;SpecInfo-&gt;TemplateArguments-&gt;get(I);
+01376 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01377 }
+01378 
+01379 <emphasis role="keyword">enum</emphasis>&#32;CXTemplateArgumentKind&#32;<link linkend="__c_x_cursor_8cpp_1ab1c5cb44256e5b1861c54b4a2cb48574">clang_Cursor_getTemplateArgumentKind</link>(CXCursor&#32;C,
+01380 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)&#32;{
+01381 &#32;&#32;TemplateArgument&#32;TA;
+01382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA))&#32;{
+01383 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Invalid;
+01384 &#32;&#32;}
+01385 
+01386 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TA.getKind())&#32;{
+01387 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Null:
+01388 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Null;
+01389 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Type:
+01390 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Type;
+01391 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Declaration:
+01392 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Declaration;
+01393 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::NullPtr:
+01394 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_NullPtr;
+01395 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Integral:
+01396 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Integral;
+01397 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Template:
+01398 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Template;
+01399 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::TemplateExpansion:
+01400 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_TemplateExpansion;
+01401 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Expression:
+01402 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Expression;
+01403 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Pack:
+01404 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Pack;
+01405 &#32;&#32;}
+01406 
+01407 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Invalid;
+01408 }
+01409 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01410"/><link linkend="__c_x_cursor_8cpp_1a96e7b0702b7bd3ea7cbbb081b3c52268">01410</link> CXType&#32;<link linkend="__c_x_cursor_8cpp_1a96e7b0702b7bd3ea7cbbb081b3c52268">clang_Cursor_getTemplateArgumentType</link>(CXCursor&#32;C,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)&#32;{
+01411 &#32;&#32;TemplateArgument&#32;TA;
+01412 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA)&#32;!=
+01413 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>)&#32;{
+01414 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(QualType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+01415 &#32;&#32;}
+01416 
+01417 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TA.getKind()&#32;!=&#32;TemplateArgument::Type)&#32;{
+01418 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(QualType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+01419 &#32;&#32;}
+01420 
+01421 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(TA.getAsType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+01422 }
+01423 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01424"/><link linkend="__c_x_cursor_8cpp_1a49f91eaf8d2c14fe0541f9b8d2fbd3c2">01424</link> <emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a49f91eaf8d2c14fe0541f9b8d2fbd3c2">clang_Cursor_getTemplateArgumentValue</link>(CXCursor&#32;C,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)&#32;{
+01425 &#32;&#32;TemplateArgument&#32;TA;
+01426 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA)&#32;!=
+01427 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>)&#32;{
+01428 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;retrieve&#32;TemplateArgument&quot;</emphasis>);
+01429 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01430 &#32;&#32;}
+01431 
+01432 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TA.getKind()&#32;!=&#32;TemplateArgument::Integral)&#32;{
+01433 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Passed&#32;template&#32;argument&#32;is&#32;not&#32;Integral&quot;</emphasis>);
+01434 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01435 &#32;&#32;}
+01436 
+01437 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TA.getAsIntegral().getSExtValue();
+01438 }
+01439 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01440"/><link linkend="__c_x_cursor_8cpp_1a12157e0c0c40c3fe78744f272a80c3bc">01440</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a12157e0c0c40c3fe78744f272a80c3bc">clang_Cursor_getTemplateArgumentUnsignedValue</link>(CXCursor&#32;C,
+01441 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)&#32;{
+01442 &#32;&#32;TemplateArgument&#32;TA;
+01443 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA)&#32;!=
+01444 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>)&#32;{
+01445 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;retrieve&#32;TemplateArgument&quot;</emphasis>);
+01446 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01447 &#32;&#32;}
+01448 
+01449 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TA.getKind()&#32;!=&#32;TemplateArgument::Integral)&#32;{
+01450 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Passed&#32;template&#32;argument&#32;is&#32;not&#32;Integral&quot;</emphasis>);
+01451 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01452 &#32;&#32;}
+01453 
+01454 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TA.getAsIntegral().getZExtValue();
+01455 }
+01456 
+01457 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+01458 <emphasis role="comment">//&#32;CXCursorSet.</emphasis>
+01459 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+01460 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01461"/><link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">01461</link> <emphasis role="keyword">typedef</emphasis>&#32;llvm::DenseMap&lt;CXCursor,&#32;unsigned&gt;&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>;
+01462 
+01463 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXCursorSet&#32;packCXCursorSet(<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*setImpl)&#32;{
+01464 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(CXCursorSet)setImpl;
+01465 }
+01466 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*unpackCXCursorSet(CXCursorSet&#32;set)&#32;{
+01467 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*)set;
+01468 }
+01469 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>&#32;{
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01470"/><link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4">01470</link> <emphasis role="keyword">template</emphasis>&#32;&lt;&gt;&#32;<emphasis role="keyword">struct&#32;</emphasis>DenseMapInfo&lt;CXCursor&gt;&#32;{
+01471 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01472"/><link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1ae48727721c545bb832a0ed3b858aa661">01472</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXCursor&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1ae48727721c545bb832a0ed3b858aa661">getEmptyKey</link>()&#32;{
+01473 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">MakeCXCursorInvalid</link>(CXCursor_InvalidFile);
+01474 &#32;&#32;}
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01475"/><link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1a0c7cf1c10e1dd75e251f5de8bfb3aa08">01475</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXCursor&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1a0c7cf1c10e1dd75e251f5de8bfb3aa08">getTombstoneKey</link>()&#32;{
+01476 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+01477 &#32;&#32;}
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01478"/><link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1aff04fa3c092289662c9316db68d7f598">01478</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1aff04fa3c092289662c9316db68d7f598">getHashValue</link>(<emphasis role="keyword">const</emphasis>&#32;CXCursor&#32;&amp;cursor)&#32;{
+01479 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::DenseMapInfo&lt;std::pair&lt;const&#32;void&#32;*,&#32;const&#32;void&#32;*&gt;&gt;::
+01480 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getHashValue(std::make_pair(cursor.data[0],&#32;cursor.data[1]));
+01481 &#32;&#32;}
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01482"/><link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1a7a58b4df9804158fa0ccf7f728698b17">01482</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4_1a7a58b4df9804158fa0ccf7f728698b17">isEqual</link>(<emphasis role="keyword">const</emphasis>&#32;CXCursor&#32;&amp;x,&#32;<emphasis role="keyword">const</emphasis>&#32;CXCursor&#32;&amp;y)&#32;{
+01483 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;x.kind&#32;==&#32;y.kind&#32;&amp;&amp;&#32;x.data[0]&#32;==&#32;y.data[0]&#32;&amp;&amp;&#32;x.data[1]&#32;==&#32;y.data[1];
+01484 &#32;&#32;}
+01485 };
+01486 }&#32;<emphasis role="comment">//&#32;namespace&#32;llvm</emphasis>
+01487 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01488"/><link linkend="__c_x_cursor_8cpp_1aaa8c6ee0c13438ebab6fc782fc4e2eba">01488</link> CXCursorSet&#32;<link linkend="__c_x_cursor_8cpp_1aaa8c6ee0c13438ebab6fc782fc4e2eba">clang_createCXCursorSet</link>()&#32;{
+01489 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;packCXCursorSet(<emphasis role="keyword">new</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>());
+01490 }
+01491 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01492"/><link linkend="__c_x_cursor_8cpp_1a4a09bda865be0ddaa715ee6b208354f8">01492</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a4a09bda865be0ddaa715ee6b208354f8">clang_disposeCXCursorSet</link>(CXCursorSet&#32;set)&#32;{
+01493 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;unpackCXCursorSet(set);
+01494 }
+01495 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01496"/><link linkend="__c_x_cursor_8cpp_1a7bd87b9de64dde3a368215a0448f9cae">01496</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a7bd87b9de64dde3a368215a0448f9cae">clang_CXCursorSet_contains</link>(CXCursorSet&#32;set,&#32;CXCursor&#32;cursor)&#32;{
+01497 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*setImpl&#32;=&#32;unpackCXCursorSet(set);
+01498 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!setImpl)
+01499 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01500 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;setImpl-&gt;find(cursor)&#32;!=&#32;setImpl-&gt;end();
+01501 }
+01502 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01503"/><link linkend="__c_x_cursor_8cpp_1aaa9a7e6d3b6d7e1925055e67cae6eabf">01503</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1aaa9a7e6d3b6d7e1925055e67cae6eabf">clang_CXCursorSet_insert</link>(CXCursorSet&#32;set,&#32;CXCursor&#32;cursor)&#32;{
+01504 &#32;&#32;<emphasis role="comment">//&#32;Do&#32;not&#32;insert&#32;invalid&#32;cursors&#32;into&#32;the&#32;set.</emphasis>
+01505 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;&gt;=&#32;CXCursor_FirstInvalid&#32;&amp;&amp;
+01506 &#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;&lt;=&#32;CXCursor_LastInvalid)
+01507 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+01508 
+01509 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*setImpl&#32;=&#32;unpackCXCursorSet(set);
+01510 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!setImpl)
+01511 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+01512 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;&amp;entry&#32;=&#32;(*setImpl)[cursor];
+01513 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;flag&#32;=&#32;entry&#32;==&#32;0&#32;?&#32;1&#32;:&#32;0;
+01514 &#32;&#32;entry&#32;=&#32;1;
+01515 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;flag;
+01516 }
+01517 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01518"/><link linkend="__c_x_cursor_8cpp_1ac65a717dd583769c4bc5dccb4625a496">01518</link> CXCompletionString&#32;<link linkend="__c_x_cursor_8cpp_1ac65a717dd583769c4bc5dccb4625a496">clang_getCursorCompletionString</link>(CXCursor&#32;cursor)&#32;{
+01519 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;kind&#32;=&#32;<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(cursor);
+01520 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(kind))&#32;{
+01521 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*decl&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(cursor);
+01522 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*namedDecl&#32;=&#32;dyn_cast_or_null&lt;NamedDecl&gt;(decl))&#32;{
+01523 &#32;&#32;&#32;&#32;&#32;&#32;ASTUnit&#32;*unit&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(cursor);
+01524 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionResult&#32;Result(namedDecl,&#32;CCP_Declaration);
+01525 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionString&#32;*String&#32;=&#32;Result.CreateCodeCompletionString(
+01526 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getASTContext(),&#32;unit-&gt;getPreprocessor(),
+01527 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionContext::CCC_Other,
+01528 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo().getAllocator(),
+01529 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo(),&#32;<emphasis role="keyword">true</emphasis>);
+01530 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;String;
+01531 &#32;&#32;&#32;&#32;}
+01532 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(kind&#32;==&#32;CXCursor_MacroDefinition)&#32;{
+01533 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*definition&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">getCursorMacroDefinition</link>(cursor);
+01534 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Macro&#32;=&#32;definition-&gt;getName();
+01535 &#32;&#32;&#32;&#32;ASTUnit&#32;*unit&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(cursor);
+01536 &#32;&#32;&#32;&#32;CodeCompletionResult&#32;Result(
+01537 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Macro,
+01538 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getPreprocessor().getMacroDefinition(Macro).getMacroInfo());
+01539 &#32;&#32;&#32;&#32;CodeCompletionString&#32;*String&#32;=&#32;Result.CreateCodeCompletionString(
+01540 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getASTContext(),&#32;unit-&gt;getPreprocessor(),
+01541 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionContext::CCC_Other,
+01542 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo().getAllocator(),
+01543 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo(),&#32;<emphasis role="keyword">false</emphasis>);
+01544 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;String;
+01545 &#32;&#32;}
+01546 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01547 }
+01548 
+01549 <emphasis role="keyword">namespace&#32;</emphasis>{
+01550 <emphasis role="keyword">struct&#32;</emphasis>OverridenCursorsPool&#32;{
+01551 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;SmallVector&lt;CXCursor,&#32;2&gt;&#32;CursorVec;
+01552 &#32;&#32;std::vector&lt;CursorVec&#32;*&gt;&#32;AllCursors;
+01553 &#32;&#32;std::vector&lt;CursorVec&#32;*&gt;&#32;AvailableCursors;
+01554 
+01555 &#32;&#32;~OverridenCursorsPool()&#32;{
+01556 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(std::vector&lt;CursorVec&#32;*&gt;::iterator&#32;I&#32;=&#32;AllCursors.begin(),
+01557 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;E&#32;=&#32;AllCursors.end();
+01558 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+01559 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;*I;
+01560 &#32;&#32;&#32;&#32;}
+01561 &#32;&#32;}
+01562 };
+01563 }&#32;<emphasis role="comment">//&#32;namespace</emphasis>
+01564 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01565"/><link linkend="_namespaceclang_1_1cxcursor_1af71b6ad00df82de093f378557ee93240">01565</link> <emphasis role="keywordtype">void</emphasis>&#32;*<link linkend="_namespaceclang_1_1cxcursor_1af71b6ad00df82de093f378557ee93240">cxcursor::createOverridenCXCursorsPool</link>()&#32;{
+01566 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;OverridenCursorsPool();
+01567 }
+01568 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01569"/><link linkend="_namespaceclang_1_1cxcursor_1a3e9eef17e1ba69991801fcfcfc8a0d9e">01569</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3e9eef17e1ba69991801fcfcfc8a0d9e">cxcursor::disposeOverridenCXCursorsPool</link>(<emphasis role="keywordtype">void</emphasis>&#32;*pool)&#32;{
+01570 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool&#32;*<emphasis role="keyword">&gt;</emphasis>(pool);
+01571 }
+01572 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01573"/><link linkend="__c_x_cursor_8cpp_1a04940185910bcfa9b6d008b3fb5aba1c">01573</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a04940185910bcfa9b6d008b3fb5aba1c">clang_getOverriddenCursors</link>(CXCursor&#32;cursor,&#32;CXCursor&#32;**overridden,
+01574 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*num_overridden)&#32;{
+01575 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(overridden)
+01576 &#32;&#32;&#32;&#32;*overridden&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01577 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_overridden)
+01578 &#32;&#32;&#32;&#32;*num_overridden&#32;=&#32;0;
+01579 
+01580 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(cursor);
+01581 
+01582 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!overridden&#32;||&#32;!num_overridden&#32;||&#32;!TU)
+01583 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01584 
+01585 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(cursor.kind))
+01586 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01587 
+01588 &#32;&#32;OverridenCursorsPool&#32;&amp;pool&#32;=
+01589 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool&#32;*<emphasis role="keyword">&gt;</emphasis>(TU-&gt;OverridenCursorsPool);
+01590 
+01591 &#32;&#32;OverridenCursorsPool::CursorVec&#32;*Vec&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01592 
+01593 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!pool.AvailableCursors.empty())&#32;{
+01594 &#32;&#32;&#32;&#32;Vec&#32;=&#32;pool.AvailableCursors.back();
+01595 &#32;&#32;&#32;&#32;pool.AvailableCursors.pop_back();
+01596 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01597 &#32;&#32;&#32;&#32;Vec&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;OverridenCursorsPool::CursorVec();
+01598 &#32;&#32;&#32;&#32;pool.AllCursors.push_back(Vec);
+01599 &#32;&#32;}
+01600 
+01601 &#32;&#32;<emphasis role="comment">//&#32;Clear&#32;out&#32;the&#32;vector,&#32;but&#32;don&apos;t&#32;free&#32;the&#32;memory&#32;contents.&#32;&#32;This</emphasis>
+01602 &#32;&#32;<emphasis role="comment">//&#32;reduces&#32;malloc()&#32;traffic.</emphasis>
+01603 &#32;&#32;Vec-&gt;clear();
+01604 
+01605 &#32;&#32;<emphasis role="comment">//&#32;Use&#32;the&#32;first&#32;entry&#32;to&#32;contain&#32;a&#32;back&#32;reference&#32;to&#32;the&#32;vector.</emphasis>
+01606 &#32;&#32;<emphasis role="comment">//&#32;This&#32;is&#32;a&#32;complete&#32;hack.</emphasis>
+01607 &#32;&#32;CXCursor&#32;backRefCursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">MakeCXCursorInvalid</link>(CXCursor_InvalidFile,&#32;TU);
+01608 &#32;&#32;backRefCursor.data[0]&#32;=&#32;Vec;
+01609 &#32;&#32;assert(<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(backRefCursor)&#32;==&#32;TU);
+01610 &#32;&#32;Vec-&gt;push_back(backRefCursor);
+01611 
+01612 &#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;overridden&#32;cursors.</emphasis>
+01613 &#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ada86f0e873b92af5429ba6da7c7cd56f">cxcursor::getOverriddenCursors</link>(cursor,&#32;*Vec);
+01614 
+01615 &#32;&#32;<emphasis role="comment">//&#32;Did&#32;we&#32;get&#32;any&#32;overridden&#32;cursors?&#32;&#32;If&#32;not,&#32;return&#32;Vec&#32;to&#32;the&#32;pool</emphasis>
+01616 &#32;&#32;<emphasis role="comment">//&#32;of&#32;available&#32;cursor&#32;vectors.</emphasis>
+01617 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Vec-&gt;size()&#32;==&#32;1)&#32;{
+01618 &#32;&#32;&#32;&#32;pool.AvailableCursors.push_back(Vec);
+01619 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01620 &#32;&#32;}
+01621 
+01622 &#32;&#32;<emphasis role="comment">//&#32;Now&#32;tell&#32;the&#32;caller&#32;about&#32;the&#32;overridden&#32;cursors.</emphasis>
+01623 &#32;&#32;assert(Vec-&gt;size()&#32;&gt;&#32;1);
+01624 &#32;&#32;*overridden&#32;=&#32;&amp;((*Vec)[1]);
+01625 &#32;&#32;*num_overridden&#32;=&#32;Vec-&gt;size()&#32;-&#32;1;
+01626 }
+01627 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01628"/><link linkend="__c_x_cursor_8cpp_1a2135ed9fac6fe68a043d59e466ee9842">01628</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a2135ed9fac6fe68a043d59e466ee9842">clang_disposeOverriddenCursors</link>(CXCursor&#32;*overridden)&#32;{
+01629 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!overridden)
+01630 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01631 
+01632 &#32;&#32;<emphasis role="comment">//&#32;Use&#32;pointer&#32;arithmetic&#32;to&#32;get&#32;back&#32;the&#32;first&#32;faux&#32;entry</emphasis>
+01633 &#32;&#32;<emphasis role="comment">//&#32;which&#32;has&#32;a&#32;back-reference&#32;to&#32;the&#32;TU&#32;and&#32;the&#32;vector.</emphasis>
+01634 &#32;&#32;--overridden;
+01635 &#32;&#32;OverridenCursorsPool::CursorVec&#32;*Vec&#32;=
+01636 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool::CursorVec&#32;*<emphasis role="keyword">&gt;</emphasis>(
+01637 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(overridden-&gt;data[0]));
+01638 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(*overridden);
+01639 
+01640 &#32;&#32;assert(Vec&#32;&amp;&amp;&#32;TU);
+01641 
+01642 &#32;&#32;OverridenCursorsPool&#32;&amp;pool&#32;=
+01643 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool&#32;*<emphasis role="keyword">&gt;</emphasis>(TU-&gt;OverridenCursorsPool);
+01644 
+01645 &#32;&#32;pool.AvailableCursors.push_back(Vec);
+01646 }
+01647 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01648"/><link linkend="__c_x_cursor_8cpp_1a124276f443ec62421673da6692b3dbda">01648</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1a124276f443ec62421673da6692b3dbda">clang_Cursor_isDynamicCall</link>(CXCursor&#32;C)&#32;{
+01649 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01650 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))
+01651 &#32;&#32;&#32;&#32;E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(C);
+01652 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!E)
+01653 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01654 
+01655 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMessageExpr&#32;*MsgE&#32;=&#32;dyn_cast&lt;ObjCMessageExpr&gt;(E))&#32;{
+01656 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MsgE-&gt;getReceiverKind()&#32;!=&#32;ObjCMessageExpr::Instance)
+01657 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01658 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*RecE&#32;=&#32;dyn_cast&lt;ObjCMessageExpr&gt;(
+01659 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MsgE-&gt;getInstanceReceiver()-&gt;IgnoreParenCasts()))&#32;{
+01660 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RecE-&gt;getMethodFamily()&#32;==&#32;OMF_alloc)
+01661 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01662 &#32;&#32;&#32;&#32;}
+01663 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01664 &#32;&#32;}
+01665 
+01666 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*PropRefE&#32;=&#32;dyn_cast&lt;ObjCPropertyRefExpr&gt;(E))&#32;{
+01667 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!PropRefE-&gt;isSuperReceiver();
+01668 &#32;&#32;}
+01669 
+01670 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MemberExpr&#32;*ME&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01671 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;MemberExpr&gt;(E))
+01672 &#32;&#32;&#32;&#32;ME&#32;=&#32;cast&lt;MemberExpr&gt;(E);
+01673 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))
+01674 &#32;&#32;&#32;&#32;ME&#32;=&#32;dyn_cast_or_null&lt;MemberExpr&gt;(CE-&gt;getCallee());
+01675 
+01676 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ME)&#32;{
+01677 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXMethodDecl&#32;*MD&#32;=
+01678 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast_or_null&lt;CXXMethodDecl&gt;(ME-&gt;getMemberDecl()))
+01679 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;MD-&gt;isVirtual()&#32;&amp;&amp;
+01680 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ME-&gt;performsVirtualDispatch(
+01681 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(C).getLangOpts());
+01682 &#32;&#32;}
+01683 
+01684 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01685 }
+01686 
+<anchor xml:id="__c_x_cursor_8cpp_source_1l01687"/><link linkend="__c_x_cursor_8cpp_1ad857136af3443094d221eb72518d969a">01687</link> CXType&#32;<link linkend="__c_x_cursor_8cpp_1ad857136af3443094d221eb72518d969a">clang_Cursor_getReceiverType</link>(CXCursor&#32;C)&#32;{
+01688 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+01689 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01690 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))
+01691 &#32;&#32;&#32;&#32;E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(C);
+01692 
+01693 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMessageExpr&#32;*MsgE&#32;=&#32;dyn_cast_or_null&lt;ObjCMessageExpr&gt;(E))
+01694 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(MsgE-&gt;getReceiverType(),&#32;TU);
+01695 
+01696 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*PropRefE&#32;=&#32;dyn_cast&lt;ObjCPropertyRefExpr&gt;(E))&#32;{
+01697 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(
+01698 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PropRefE-&gt;getReceiverType(<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(C)),&#32;TU);
+01699 &#32;&#32;}
+01700 
+01701 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MemberExpr&#32;*ME&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01702 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;MemberExpr&gt;(E))
+01703 &#32;&#32;&#32;&#32;ME&#32;=&#32;cast&lt;MemberExpr&gt;(E);
+01704 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))
+01705 &#32;&#32;&#32;&#32;ME&#32;=&#32;dyn_cast_or_null&lt;MemberExpr&gt;(CE-&gt;getCallee());
+01706 
+01707 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ME)&#32;{
+01708 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(dyn_cast_or_null&lt;CXXMethodDecl&gt;(ME-&gt;getMemberDecl()))&#32;{
+01709 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;receiverTy&#32;=&#32;ME-&gt;getBase()-&gt;IgnoreImpCasts()-&gt;getType();
+01710 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(receiverTy,&#32;TU);
+01711 &#32;&#32;&#32;&#32;}
+01712 &#32;&#32;}
+01713 
+01714 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(QualType(),&#32;TU);
+01715 }
+</programlisting></section>

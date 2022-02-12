@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_indexer_8h_source" xml:lang="en-US">
+<title>CIndexer.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexer.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CIndexer.h&#32;-&#32;Clang-C&#32;Source&#32;Indexing&#32;Library&#32;-------------*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;CIndexer,&#32;a&#32;subclass&#32;of&#32;Indexer&#32;that&#32;provides&#32;extra</emphasis>
+00010 <emphasis role="comment">//&#32;functionality&#32;needed&#32;by&#32;the&#32;CIndex&#32;library.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CINDEXER_H</emphasis>
+00015 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CINDEXER_H</emphasis>
+00016 
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/PCHContainerOperations.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/STLExtras.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&lt;utility&gt;</emphasis>
+00021 
+00022 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>&#32;{
+00023 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>CrashRecoveryContext;
+00024 }
+00025 
+00026 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00027 <emphasis role="keyword">class&#32;</emphasis>ASTUnit;
+00028 <emphasis role="keyword">class&#32;</emphasis>MacroInfo;
+00029 <emphasis role="keyword">class&#32;</emphasis>MacroDefinitionRecord;
+00030 <emphasis role="keyword">class&#32;</emphasis>SourceLocation;
+00031 <emphasis role="keyword">class&#32;</emphasis>Token;
+00032 <emphasis role="keyword">class&#32;</emphasis>IdentifierInfo;
+00033 
+<anchor xml:id="__c_indexer_8h_source_1l00034"/><link linkend="_classclang_1_1_c_indexer">00034</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;{
+00035 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;OnlyLocalDecls;
+00036 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;DisplayDiagnostics;
+00037 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Options;&#32;<emphasis role="comment">//&#32;CXGlobalOptFlags.</emphasis>
+00038 
+00039 &#32;&#32;std::string&#32;ResourcesPath;
+00040 &#32;&#32;std::shared_ptr&lt;PCHContainerOperations&gt;&#32;PCHContainerOps;
+00041 
+00042 &#32;&#32;std::string&#32;ToolchainPath;
+00043 
+00044 &#32;&#32;std::string&#32;InvocationEmissionPath;
+00045 
+00046 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__c_indexer_8h_source_1l00047"/><link linkend="_classclang_1_1_c_indexer_1aa4aea5ffd63f3a891381e37dd5bf3b66">00047</link> &#32;&#32;<link linkend="_classclang_1_1_c_indexer_1aa4aea5ffd63f3a891381e37dd5bf3b66">CIndexer</link>(std::shared_ptr&lt;PCHContainerOperations&gt;&#32;PCHContainerOps&#32;=
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_shared&lt;PCHContainerOperations&gt;())
+00049 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;OnlyLocalDecls(false),&#32;DisplayDiagnostics(false),
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Options(CXGlobalOpt_None),&#32;PCHContainerOps(std::move(PCHContainerOps))&#32;{
+00051 &#32;&#32;}
+00052 
+<anchor xml:id="__c_indexer_8h_source_1l00056"/><link linkend="_classclang_1_1_c_indexer_1ab98bc58a97c08a74688c5201ee108e99">00056</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1ab98bc58a97c08a74688c5201ee108e99">getOnlyLocalDecls</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;OnlyLocalDecls;&#32;}
+<anchor xml:id="__c_indexer_8h_source_1l00057"/><link linkend="_classclang_1_1_c_indexer_1a591845d07c3aae50c8801150e077b826">00057</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1a591845d07c3aae50c8801150e077b826">setOnlyLocalDecls</link>(<emphasis role="keywordtype">bool</emphasis>&#32;Local&#32;=&#32;<emphasis role="keyword">true</emphasis>)&#32;{&#32;OnlyLocalDecls&#32;=&#32;Local;&#32;}
+00058 &#32;&#32;
+<anchor xml:id="__c_indexer_8h_source_1l00059"/><link linkend="_classclang_1_1_c_indexer_1ae579d1e9618455a663f4e882eaa86234">00059</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1ae579d1e9618455a663f4e882eaa86234">getDisplayDiagnostics</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;DisplayDiagnostics;&#32;}
+<anchor xml:id="__c_indexer_8h_source_1l00060"/><link linkend="_classclang_1_1_c_indexer_1ab2bceec4f09f9b42169a17e6de7a49ce">00060</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1ab2bceec4f09f9b42169a17e6de7a49ce">setDisplayDiagnostics</link>(<emphasis role="keywordtype">bool</emphasis>&#32;Display&#32;=&#32;<emphasis role="keyword">true</emphasis>)&#32;{
+00061 &#32;&#32;&#32;&#32;DisplayDiagnostics&#32;=&#32;Display;
+00062 &#32;&#32;}
+00063 
+<anchor xml:id="__c_indexer_8h_source_1l00064"/><link linkend="_classclang_1_1_c_indexer_1aca55b1e223fa5e22564d21c796f83b53">00064</link> &#32;&#32;std::shared_ptr&lt;PCHContainerOperations&gt;&#32;<link linkend="_classclang_1_1_c_indexer_1aca55b1e223fa5e22564d21c796f83b53">getPCHContainerOperations</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PCHContainerOps;
+00066 &#32;&#32;}
+00067 
+<anchor xml:id="__c_indexer_8h_source_1l00068"/><link linkend="_classclang_1_1_c_indexer_1a4c543585b07f085ac744c5d16ead7b2c">00068</link> &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1a4c543585b07f085ac744c5d16ead7b2c">getCXGlobalOptFlags</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Options;&#32;}
+<anchor xml:id="__c_indexer_8h_source_1l00069"/><link linkend="_classclang_1_1_c_indexer_1a082ac8e1740ef35ea17cba6ca71e9063">00069</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1a082ac8e1740ef35ea17cba6ca71e9063">setCXGlobalOptFlags</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_namespaceoptions">options</link>)&#32;{&#32;Options&#32;=&#32;<link linkend="_namespaceoptions">options</link>;&#32;}
+00070 
+<anchor xml:id="__c_indexer_8h_source_1l00071"/><link linkend="_classclang_1_1_c_indexer_1a226e7b660fe75abfc7e93f72021a8db3">00071</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1a226e7b660fe75abfc7e93f72021a8db3">isOptEnabled</link>(CXGlobalOptFlags&#32;opt)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Options&#32;&amp;&#32;opt;
+00073 &#32;&#32;}
+00074 
+00076 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;<link linkend="_classclang_1_1_c_indexer_1a4b292906114303ecabb75bec7ff17a92">getClangResourcesPath</link>();
+00077 
+00078 &#32;&#32;StringRef&#32;<link linkend="_classclang_1_1_c_indexer_1a542a2e3cb09f282f8d456b32770fd4b2">getClangToolchainPath</link>();
+00079 
+<anchor xml:id="__c_indexer_8h_source_1l00080"/><link linkend="_classclang_1_1_c_indexer_1a5f4654eaf78e262e4a98fe95276f75d5">00080</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1_c_indexer_1a5f4654eaf78e262e4a98fe95276f75d5">setInvocationEmissionPath</link>(StringRef&#32;Str)&#32;{
+00081 &#32;&#32;&#32;&#32;InvocationEmissionPath&#32;=&#32;std::string(Str);
+00082 &#32;&#32;}
+00083 
+<anchor xml:id="__c_indexer_8h_source_1l00084"/><link linkend="_classclang_1_1_c_indexer_1a4d18c0143db01294d2152486ba7ca3c4">00084</link> &#32;&#32;StringRef&#32;<link linkend="_classclang_1_1_c_indexer_1a4d18c0143db01294d2152486ba7ca3c4">getInvocationEmissionPath</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;InvocationEmissionPath;&#32;}
+00085 };
+00086 
+<anchor xml:id="__c_indexer_8h_source_1l00089"/><link linkend="_classclang_1_1_libclang_invocation_reporter">00089</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1_libclang_invocation_reporter">LibclangInvocationReporter</link>&#32;{
+00090 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__c_indexer_8h_source_1l00091"/><link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53">00091</link> &#32;&#32;<emphasis role="keyword">enum&#32;class</emphasis>&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53">OperationKind</link>&#32;{&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53ae6f6b50529513b200513042d023bebd9">ParseOperation</link>,&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53a9e4073b2ce3ca4aa47e086ff9479e19d">CompletionOperation</link>&#32;};
+00092 
+00093 &#32;&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1a2cdb530eb76516c96b5923dad2e243af">LibclangInvocationReporter</link>(<link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;&amp;Idx,&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53">OperationKind</link>&#32;Op,
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ParseOptions,
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Args,
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::ArrayRef&lt;std::string&gt;&#32;InvocationArgs,
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::ArrayRef&lt;CXUnsavedFile&gt;&#32;UnsavedFiles);
+00098 &#32;&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1a3fafbe06dce2b7afdfbc83303b5723f2">~LibclangInvocationReporter</link>();
+00099 
+00100 <emphasis role="keyword">private</emphasis>:
+00101 &#32;&#32;std::string&#32;File;
+00102 };
+00103 
+00105 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_namespaceclang_1a784fd2a03784a2dbb08d1841240adb88">GetSafetyThreadStackSize</link>();
+00106 
+00109 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1a074a6c2b8523d8b50f446a28e8e0f5c4">SetSafetyThreadStackSize</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;Value);
+00110 
+00115 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(llvm::CrashRecoveryContext&#32;&amp;CRC,&#32;llvm::function_ref&lt;<emphasis role="keywordtype">void</emphasis>()&gt;&#32;Fn,
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Size&#32;=&#32;0);
+00117 
+00120 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1ab1c32e4de49bdf7a50374807a6d2701c">setThreadBackgroundPriority</link>();
+00121 
+00123 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1aa969857ada50e5f302f7127c78a63018">PrintLibclangResourceUsage</link>(CXTranslationUnit&#32;TU);
+00124 
+<anchor xml:id="__c_indexer_8h_source_1l00125"/><link linkend="_namespaceclang_1_1cxindex">00125</link> &#32;&#32;<emphasis role="keyword">namespace&#32;</emphasis>cxindex&#32;{
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1_1cxindex_1a134d158252a9bfcc3db346dd2e65f09f">printDiagsToStderr</link>(ASTUnit&#32;*Unit);
+00127 
+00130 &#32;&#32;&#32;&#32;MacroInfo&#32;*<link linkend="_namespaceclang_1_1cxindex_1af7ce142e794a78913423f48c9d01c78d">getMacroInfo</link>(<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;&amp;II,
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;MacroDefLoc,&#32;CXTranslationUnit&#32;TU);
+00132 
+00134 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroInfo&#32;*<link linkend="_namespaceclang_1_1cxindex_1af7ce142e794a78913423f48c9d01c78d">getMacroInfo</link>(<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*MacroDef,
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00136 
+00140 &#32;&#32;&#32;&#32;MacroDefinitionRecord&#32;*<link linkend="_namespaceclang_1_1cxindex_1ac81be1c63a9bbf2e05be99daa2b11750">checkForMacroInMacroDefinition</link>(<emphasis role="keyword">const</emphasis>&#32;MacroInfo&#32;*MI,
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00143 
+00147 &#32;&#32;&#32;&#32;MacroDefinitionRecord&#32;*<link linkend="_namespaceclang_1_1cxindex_1ac81be1c63a9bbf2e05be99daa2b11750">checkForMacroInMacroDefinition</link>(<emphasis role="keyword">const</emphasis>&#32;MacroInfo&#32;*MI,
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Token&#32;&amp;Tok,
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00150 &#32;&#32;&#32;&#32;}
+00151 &#32;&#32;&#32;&#32;}
+00152 
+00153 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

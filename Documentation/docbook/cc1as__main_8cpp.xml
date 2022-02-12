@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_cc1as__main_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/driver/cc1as_main.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/driver/cc1as_main.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Basic/Diagnostic.h&quot;
+#include &quot;clang/Basic/DiagnosticOptions.h&quot;
+#include &quot;clang/Driver/DriverDiagnostic.h&quot;
+#include &quot;clang/Driver/Options.h&quot;
+#include &quot;clang/Frontend/FrontendDiagnostic.h&quot;
+#include &quot;clang/Frontend/TextDiagnosticPrinter.h&quot;
+#include &quot;clang/Frontend/Utils.h&quot;
+#include &quot;llvm/ADT/STLExtras.h&quot;
+#include &quot;llvm/ADT/StringSwitch.h&quot;
+#include &quot;llvm/ADT/Triple.h&quot;
+#include &quot;llvm/IR/DataLayout.h&quot;
+#include &quot;llvm/MC/MCAsmBackend.h&quot;
+#include &quot;llvm/MC/MCAsmInfo.h&quot;
+#include &quot;llvm/MC/MCCodeEmitter.h&quot;
+#include &quot;llvm/MC/MCContext.h&quot;
+#include &quot;llvm/MC/MCInstrInfo.h&quot;
+#include &quot;llvm/MC/MCObjectFileInfo.h&quot;
+#include &quot;llvm/MC/MCObjectWriter.h&quot;
+#include &quot;llvm/MC/MCParser/MCAsmParser.h&quot;
+#include &quot;llvm/MC/MCParser/MCTargetAsmParser.h&quot;
+#include &quot;llvm/MC/MCRegisterInfo.h&quot;
+#include &quot;llvm/MC/MCSectionMachO.h&quot;
+#include &quot;llvm/MC/MCStreamer.h&quot;
+#include &quot;llvm/MC/MCSubtargetInfo.h&quot;
+#include &quot;llvm/MC/MCTargetOptions.h&quot;
+#include &quot;llvm/Option/Arg.h&quot;
+#include &quot;llvm/Option/ArgList.h&quot;
+#include &quot;llvm/Option/OptTable.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/ErrorHandling.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/FormattedStream.h&quot;
+#include &quot;llvm/Support/Host.h&quot;
+#include &quot;llvm/Support/MemoryBuffer.h&quot;
+#include &quot;llvm/Support/Path.h&quot;
+#include &quot;llvm/Support/Process.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/SourceMgr.h&quot;
+#include &quot;llvm/Support/TargetRegistry.h&quot;
+#include &quot;llvm/Support/TargetSelect.h&quot;
+#include &quot;llvm/Support/Timer.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+#include &lt;memory&gt;
+#include &lt;system_error&gt;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="_cc1as__main_8cpp_1ac7d9c4a59e9773f938ddff75f14b90a6">cc1as_main</link> (ArrayRef&lt; const char * &gt; Argv, const char *Argv0, void *MainAddr)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_cc1as__main_8cpp_1ac7d9c4a59e9773f938ddff75f14b90a6"/>    <section>
+    <title>cc1as_main()</title>
+<indexterm><primary>cc1as_main</primary><secondary>cc1as_main.cpp</secondary></indexterm>
+<indexterm><primary>cc1as_main.cpp</primary><secondary>cc1as_main</secondary></indexterm>
+<para><computeroutput>int cc1as_main (ArrayRef&lt; const char * &gt; Argv, const char * Argv0, void * MainAddr)</computeroutput></para><para>
+Definition at line <link linkend="_cc1as__main_8cpp_source_1l00563">563</link> of file <link linkend="_cc1as__main_8cpp_source">cc1as_main.cpp</link>.</para>
+<programlisting>00563 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00564 &#32;&#32;<emphasis role="comment">//&#32;Initialize&#32;targets&#32;and&#32;assembly&#32;printers/parsers.</emphasis>
+00565 &#32;&#32;InitializeAllTargetInfos();
+00566 &#32;&#32;InitializeAllTargetMCs();
+00567 &#32;&#32;InitializeAllAsmParsers();
+00568 
+00569 &#32;&#32;<emphasis role="comment">//&#32;Construct&#32;our&#32;diagnostic&#32;client.</emphasis>
+00570 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions();
+00571 &#32;&#32;TextDiagnosticPrinter&#32;*DiagClient
+00572 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;TextDiagnosticPrinter(errs(),&#32;&amp;*DiagOpts);
+00573 &#32;&#32;DiagClient-&gt;setPrefix(<emphasis role="stringliteral">&quot;clang&#32;-cc1as&quot;</emphasis>);
+00574 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagID(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00575 &#32;&#32;DiagnosticsEngine&#32;Diags(DiagID,&#32;&amp;*DiagOpts,&#32;DiagClient);
+00576 
+00577 &#32;&#32;<emphasis role="comment">//&#32;Set&#32;an&#32;error&#32;handler,&#32;so&#32;that&#32;any&#32;LLVM&#32;backend&#32;diagnostics&#32;go&#32;through&#32;our</emphasis>
+00578 &#32;&#32;<emphasis role="comment">//&#32;error&#32;handler.</emphasis>
+00579 &#32;&#32;ScopedFatalErrorHandler&#32;FatalErrorHandler
+00580 &#32;&#32;&#32;&#32;(LLVMErrorHandler,&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>*<emphasis role="keyword">&gt;</emphasis>(&amp;Diags));
+00581 
+00582 &#32;&#32;<emphasis role="comment">//&#32;Parse&#32;the&#32;arguments.</emphasis>
+00583 &#32;&#32;AssemblerInvocation&#32;Asm;
+00584 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AssemblerInvocation::CreateFromArgs(Asm,&#32;Argv,&#32;Diags))
+00585 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00586 
+00587 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Asm.ShowHelp)&#32;{
+00588 &#32;&#32;&#32;&#32;getDriverOptTable().printHelp(
+00589 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::outs(),&#32;<emphasis role="stringliteral">&quot;clang&#32;-cc1as&#32;[options]&#32;file...&quot;</emphasis>,
+00590 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Clang&#32;Integrated&#32;Assembler&quot;</emphasis>,
+00591 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*Include=*/</emphasis>driver::options::CC1AsOption,&#32;<emphasis role="comment">/*Exclude=*/</emphasis>0,
+00592 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*ShowAllAliases=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00593 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00594 &#32;&#32;}
+00595 
+00596 &#32;&#32;<emphasis role="comment">//&#32;Honor&#32;-version.</emphasis>
+00597 &#32;&#32;<emphasis role="comment">//</emphasis>
+00598 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Use&#32;a&#32;better&#32;-version&#32;message?</emphasis>
+00599 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Asm.ShowVersion)&#32;{
+00600 &#32;&#32;&#32;&#32;llvm::cl::PrintVersionMessage();
+00601 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00602 &#32;&#32;}
+00603 
+00604 &#32;&#32;<emphasis role="comment">//&#32;Honor&#32;-mllvm.</emphasis>
+00605 &#32;&#32;<emphasis role="comment">//</emphasis>
+00606 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Remove&#32;this,&#32;one&#32;day.</emphasis>
+00607 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Asm.LLVMArgs.empty())&#32;{
+00608 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;NumArgs&#32;=&#32;Asm.LLVMArgs.size();
+00609 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Args&#32;=&#32;std::make_unique&lt;const&#32;char*[]&gt;(NumArgs&#32;+&#32;2);
+00610 &#32;&#32;&#32;&#32;Args[0]&#32;=&#32;<emphasis role="stringliteral">&quot;clang&#32;(LLVM&#32;option&#32;parsing)&quot;</emphasis>;
+00611 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;NumArgs;&#32;++i)
+00612 &#32;&#32;&#32;&#32;&#32;&#32;Args[i&#32;+&#32;1]&#32;=&#32;Asm.LLVMArgs[i].c_str();
+00613 &#32;&#32;&#32;&#32;Args[NumArgs&#32;+&#32;1]&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00614 &#32;&#32;&#32;&#32;llvm::cl::ParseCommandLineOptions(NumArgs&#32;+&#32;1,&#32;Args.get());
+00615 &#32;&#32;}
+00616 
+00617 &#32;&#32;<emphasis role="comment">//&#32;Execute&#32;the&#32;invocation,&#32;unless&#32;there&#32;were&#32;parsing&#32;errors.</emphasis>
+00618 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Failed&#32;=&#32;Diags.hasErrorOccurred()&#32;||&#32;ExecuteAssembler(Asm,&#32;Diags);
+00619 
+00620 &#32;&#32;<emphasis role="comment">//&#32;If&#32;any&#32;timers&#32;were&#32;active&#32;but&#32;haven&apos;t&#32;been&#32;destroyed&#32;yet,&#32;print&#32;their</emphasis>
+00621 &#32;&#32;<emphasis role="comment">//&#32;results&#32;now.</emphasis>
+00622 &#32;&#32;TimerGroup::printAll(errs());
+00623 &#32;&#32;TimerGroup::clearAll();
+00624 
+00625 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!!Failed;
+00626 }
+</programlisting></section>
+</section>
+</section>

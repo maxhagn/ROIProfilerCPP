@@ -1,0 +1,165 @@
+\hypertarget{namespacestartfile}{}\doxysection{startfile Namespace Reference}
+\label{namespacestartfile}\index{startfile@{startfile}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classstartfile_1_1_base_controller}{Base\+Controller}}
+\item 
+class \mbox{\hyperlink{classstartfile_1_1_controller}{Controller}}
+\item 
+class \mbox{\hyperlink{classstartfile_1_1_start}{Start}}
+\item 
+class \mbox{\hyperlink{classstartfile_1_1_kfm_client}{Kfm\+Client}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespacestartfile_afa337d13522bb3e9c4a8d12190480c18}{detect\+\_\+desktop\+\_\+environment}} ()
+\item 
+def \mbox{\hyperlink{namespacestartfile_a5cedadc2bd383955c01a824f59e9ae59}{register\+\_\+\+X\+\_\+controllers}} ()
+\item 
+def \mbox{\hyperlink{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}{get}} ()
+\item 
+def \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}} (filename)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespacestartfile_afa337d13522bb3e9c4a8d12190480c18}\label{namespacestartfile_afa337d13522bb3e9c4a8d12190480c18}} 
+\index{startfile@{startfile}!detect\_desktop\_environment@{detect\_desktop\_environment}}
+\index{detect\_desktop\_environment@{detect\_desktop\_environment}!startfile@{startfile}}
+\doxysubsubsection{\texorpdfstring{detect\_desktop\_environment()}{detect\_desktop\_environment()}}
+{\footnotesize\ttfamily def startfile.\+detect\+\_\+desktop\+\_\+environment (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Checks for known desktop environments
+
+Return the desktop environments name, lowercase (kde, gnome, xfce)
+or "generic"\end{DoxyVerb}
+ 
+
+Definition at line 148 of file startfile.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{148     \textcolor{keyword}{def }\mbox{\hyperlink{namespacestartfile_afa337d13522bb3e9c4a8d12190480c18}{detect\_desktop\_environment}}():}
+\DoxyCodeLine{149         \textcolor{stringliteral}{'''Checks for known desktop environments}}
+\DoxyCodeLine{150 \textcolor{stringliteral}{}}
+\DoxyCodeLine{151 \textcolor{stringliteral}{        Return the desktop environments name, lowercase (kde, gnome, xfce)}}
+\DoxyCodeLine{152 \textcolor{stringliteral}{        or "{}generic"{}}}
+\DoxyCodeLine{153 \textcolor{stringliteral}{}}
+\DoxyCodeLine{154 \textcolor{stringliteral}{        '''}}
+\DoxyCodeLine{155 }
+\DoxyCodeLine{156         desktop\_environment = \textcolor{stringliteral}{'generic'}}
+\DoxyCodeLine{157 }
+\DoxyCodeLine{158         \textcolor{keywordflow}{if} os.environ.get(\textcolor{stringliteral}{'KDE\_FULL\_SESSION'}) == \textcolor{stringliteral}{'true'}:}
+\DoxyCodeLine{159             desktop\_environment = \textcolor{stringliteral}{'kde'}}
+\DoxyCodeLine{160         \textcolor{keywordflow}{elif} os.environ.get(\textcolor{stringliteral}{'GNOME\_DESKTOP\_SESSION\_ID'}):}
+\DoxyCodeLine{161             desktop\_environment = \textcolor{stringliteral}{'gnome'}}
+\DoxyCodeLine{162         \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{163             \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{164                 info = getoutput(\textcolor{stringliteral}{'xprop -\/root \_DT\_SAVE\_MODE'})}
+\DoxyCodeLine{165                 \textcolor{keywordflow}{if} \textcolor{stringliteral}{' = "{}xfce4"{}'} \textcolor{keywordflow}{in} info:}
+\DoxyCodeLine{166                     desktop\_environment = \textcolor{stringliteral}{'xfce'}}
+\DoxyCodeLine{167             \textcolor{keywordflow}{except} (OSError, RuntimeError):}
+\DoxyCodeLine{168                 \textcolor{keywordflow}{pass}}
+\DoxyCodeLine{169 }
+\DoxyCodeLine{170         \textcolor{keywordflow}{return} desktop\_environment}
+\DoxyCodeLine{171 }
+\DoxyCodeLine{172 }
+
+\end{DoxyCode}
+
+
+Referenced by get().
+
+\mbox{\Hypertarget{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}\label{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}} 
+\index{startfile@{startfile}!get@{get}}
+\index{get@{get}!startfile@{startfile}}
+\doxysubsubsection{\texorpdfstring{get()}{get()}}
+{\footnotesize\ttfamily def startfile.\+get (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 181 of file startfile.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{181     \textcolor{keyword}{def }\mbox{\hyperlink{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}{get}}():}
+\DoxyCodeLine{182         controllers\_map = \{}
+\DoxyCodeLine{183             \textcolor{stringliteral}{'gnome'}: \textcolor{stringliteral}{'gnome-\/open'},}
+\DoxyCodeLine{184             \textcolor{stringliteral}{'kde'}: \textcolor{stringliteral}{'kde-\/open'},}
+\DoxyCodeLine{185             \textcolor{stringliteral}{'xfce'}: \textcolor{stringliteral}{'exo-\/open'},}
+\DoxyCodeLine{186         \}}
+\DoxyCodeLine{187 }
+\DoxyCodeLine{188         desktop\_environment = \mbox{\hyperlink{namespacestartfile_afa337d13522bb3e9c4a8d12190480c18}{detect\_desktop\_environment}}()}
+\DoxyCodeLine{189 }
+\DoxyCodeLine{190         \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{191             controller\_name = controllers\_map[desktop\_environment]}
+\DoxyCodeLine{192             \textcolor{keywordflow}{return} \_controllers[controller\_name].open}
+\DoxyCodeLine{193 }
+\DoxyCodeLine{194         \textcolor{keywordflow}{except} KeyError:}
+\DoxyCodeLine{195             \textcolor{keywordflow}{if} \textcolor{stringliteral}{'xdg-\/open'} \textcolor{keywordflow}{in} \_controllers:}
+\DoxyCodeLine{196                 \textcolor{keywordflow}{return} \_controllers[\textcolor{stringliteral}{'xdg-\/open'}].open}
+\DoxyCodeLine{197             \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{198                 \textcolor{keywordflow}{return} webbrowser.open}
+\DoxyCodeLine{199 }
+\DoxyCodeLine{200 }
+
+\end{DoxyCode}
+
+
+References detect\+\_\+desktop\+\_\+environment(), and register\+\_\+\+X\+\_\+controllers().
+
+
+
+Referenced by clang\+::cxcursor\+::\+Cursor\+Visitor.\+Run\+Visitor\+Work\+List(), and Scan\+View.\+Scan\+View\+Request\+Handler.\+submit\+\_\+bug().
+
+\mbox{\Hypertarget{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}\label{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}} 
+\index{startfile@{startfile}!open@{open}}
+\index{open@{open}!startfile@{startfile}}
+\doxysubsubsection{\texorpdfstring{open()}{open()}}
+{\footnotesize\ttfamily def startfile.\+open (\begin{DoxyParamCaption}\item[{}]{filename }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Open a file or a URL in the registered default application.\end{DoxyVerb}
+ 
+
+Definition at line 206 of file startfile.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{206 \textcolor{keyword}{def }\mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(filename):}
+\DoxyCodeLine{207     \textcolor{stringliteral}{'''Open a file or a URL in the registered default application.'''}}
+\DoxyCodeLine{208 }
+\DoxyCodeLine{209     \textcolor{keywordflow}{return} \_open(filename)}
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+report.\+assemble\+\_\+cover(), tests.\+functional.\+cases.\+test\+\_\+exec\+\_\+anatomy.\+Exec\+Anatomy\+Test.\+assert\+Equal\+Json(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cdb.\+Title\+Test.\+assert\+Title\+Equal(), Reporter.\+Email\+Reporter.\+attach\+File(), libscanbuild.\+report.\+bug\+\_\+report(), libscanbuild.\+report.\+bug\+\_\+summary(), libscanbuild.\+intercept.\+capture(), libscanbuild.\+report.\+commonprefix\+\_\+from(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+count\+\_\+entries(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Resume\+Feature\+Test.\+count\+\_\+entries(), libscanbuild.\+report.\+crash\+\_\+report(), tests.\+functional.\+cases.\+create\+\_\+empty\+\_\+file(), Scan\+View.\+Scan\+View\+Request\+Handler.\+load\+\_\+crashes(), Scan\+View.\+Scan\+View\+Request\+Handler.\+load\+\_\+report(), clang-\/format-\/diff.\+main(), clang-\/format.\+main(), libscanbuild.\+analyze.\+merge\+\_\+ctu\+\_\+extdef\+\_\+maps(), libscanbuild.\+report.\+merge\+\_\+sarif\+\_\+files(), libscanbuild.\+report.\+parse\+\_\+bug\+\_\+html(), libscanbuild.\+report.\+parse\+\_\+bug\+\_\+plist(), libscanbuild.\+report.\+parse\+\_\+crash(), libscanbuild.\+intercept.\+parse\+\_\+exec\+\_\+trace(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cdb.\+prepare\+\_\+cdb(), libscanbuild.\+analyze.\+report\+\_\+failure(), tests.\+unit.\+test\+\_\+analyze.\+Run\+Analyzer\+Test.\+run\+\_\+analyzer(), libscanbuild.\+analyze.\+run\+\_\+analyzer\+\_\+parallel(), tests.\+unit.\+test\+\_\+report.\+run\+\_\+bug\+\_\+parse(), tests.\+unit.\+test\+\_\+report.\+run\+\_\+crash\+\_\+parse(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Result\+Formating\+Test.\+run\+\_\+intercept(), Scan\+View.\+Scan\+View\+Server.\+save\+\_\+config(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+open\+\_\+report(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+patched\+\_\+file(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+path(), tests.\+unit.\+test\+\_\+clang.\+Clang\+Get\+Arguments\+Test.\+test\+\_\+get\+\_\+clang\+\_\+arguments(), tests.\+unit.\+test\+\_\+report.\+Merge\+Sarif\+Test.\+test\+\_\+merge\+\_\+updates\+\_\+embedded\+\_\+link(), tests.\+unit.\+test\+\_\+report.\+Merge\+Sarif\+Test.\+test\+\_\+merging\+\_\+sarif(), tests.\+unit.\+test\+\_\+report.\+Merge\+Sarif\+Test.\+test\+\_\+overflow\+\_\+run\+\_\+count(), tests.\+unit.\+test\+\_\+report.\+Parse\+File\+Test.\+test\+\_\+parse\+\_\+real\+\_\+crash(), tests.\+unit.\+test\+\_\+analyze.\+Report\+Failure\+Test.\+test\+\_\+report\+\_\+failure\+\_\+create\+\_\+files(), tests.\+unit.\+test\+\_\+intercept.\+Intercept\+Util\+Test.\+test\+\_\+sip(), libear.\+Configure.\+write\+\_\+by\+\_\+template(), and libscanbuild.\+intercept.\+write\+\_\+exec\+\_\+trace().
+
+\mbox{\Hypertarget{namespacestartfile_a5cedadc2bd383955c01a824f59e9ae59}\label{namespacestartfile_a5cedadc2bd383955c01a824f59e9ae59}} 
+\index{startfile@{startfile}!register\_X\_controllers@{register\_X\_controllers}}
+\index{register\_X\_controllers@{register\_X\_controllers}!startfile@{startfile}}
+\doxysubsubsection{\texorpdfstring{register\_X\_controllers()}{register\_X\_controllers()}}
+{\footnotesize\ttfamily def startfile.\+register\+\_\+\+X\+\_\+controllers (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 173 of file startfile.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{173     \textcolor{keyword}{def }\mbox{\hyperlink{namespacestartfile_a5cedadc2bd383955c01a824f59e9ae59}{register\_X\_controllers}}():}
+\DoxyCodeLine{174         \textcolor{keywordflow}{if} \_iscommand(\textcolor{stringliteral}{'kfmclient'}):}
+\DoxyCodeLine{175             \_controllers[\textcolor{stringliteral}{'kde-\/open'}] = KfmClient()}
+\DoxyCodeLine{176 }
+\DoxyCodeLine{177         \textcolor{keywordflow}{for} command \textcolor{keywordflow}{in} (\textcolor{stringliteral}{'gnome-\/open'}, \textcolor{stringliteral}{'exo-\/open'}, \textcolor{stringliteral}{'xdg-\/open'}):}
+\DoxyCodeLine{178             \textcolor{keywordflow}{if} \_iscommand(command):}
+\DoxyCodeLine{179                 \_controllers[command] = Controller(command)}
+\DoxyCodeLine{180 }
+
+\end{DoxyCode}
+
+
+Referenced by get().
+

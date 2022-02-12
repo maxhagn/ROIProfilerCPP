@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__reporter_8py_source" xml:lang="en-US">
+<title>Reporter.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-view/share/Reporter.py</primary></indexterm>
+<programlisting><anchor xml:id="__reporter_8py_source_1l00001"/><link linkend="_namespace_reporter">00001</link> <emphasis role="comment">#!/usr/bin/env&#32;python</emphasis>
+00002 <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00003 
+00004 <emphasis role="stringliteral">&quot;&quot;&quot;Methods&#32;for&#32;reporting&#32;bugs.&quot;&quot;&quot;</emphasis>
+00005 
+00006 <emphasis role="keyword">import</emphasis>&#32;subprocess,&#32;sys,&#32;os
+00007 
+00008 __all__&#32;=&#32;[<emphasis role="stringliteral">&apos;ReportFailure&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;BugReport&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;getReporters&apos;</emphasis>]
+00009 
+00010 <emphasis role="comment">#</emphasis>
+00011 
+<anchor xml:id="__reporter_8py_source_1l00012"/><link linkend="_class_reporter_1_1_report_failure">00012</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_report_failure">ReportFailure</link>(Exception):
+00013 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;Generic&#32;exception&#32;for&#32;failures&#32;in&#32;bug&#32;reporting.&quot;&quot;&quot;</emphasis>
+<anchor xml:id="__reporter_8py_source_1l00014"/><link linkend="_class_reporter_1_1_report_failure_1adb5084cacfc445d39b05aadaf2192a70">00014</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_report_failure_1adb5084cacfc445d39b05aadaf2192a70">__init__</link>(self,&#32;value):&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+<anchor xml:id="__reporter_8py_source_1l00015"/><link linkend="_class_reporter_1_1_report_failure_1a74e6b1eaaaaf652f298f44404f264051">00015</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_report_failure_1a74e6b1eaaaaf652f298f44404f264051">value</link>value&#32;=&#32;value
+00016 
+00017 <emphasis role="comment">#&#32;Collect&#32;information&#32;about&#32;a&#32;bug.</emphasis>
+00018 
+<anchor xml:id="__reporter_8py_source_1l00019"/><link linkend="_class_reporter_1_1_bug_report">00019</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_bug_report">BugReport</link>(object):
+<anchor xml:id="__reporter_8py_source_1l00020"/><link linkend="_class_reporter_1_1_bug_report_1ab7907dc9496ceddf623bd6b032f25a07">00020</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_bug_report_1ab7907dc9496ceddf623bd6b032f25a07">__init__</link>(self,&#32;title,&#32;description,&#32;files):
+<anchor xml:id="__reporter_8py_source_1l00021"/><link linkend="_class_reporter_1_1_bug_report_1ae637028406349383cc9dd2c7261aa3fa">00021</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_bug_report_1ae637028406349383cc9dd2c7261aa3fa">title</link>title&#32;=&#32;title
+<anchor xml:id="__reporter_8py_source_1l00022"/><link linkend="_class_reporter_1_1_bug_report_1a4f0e0afcb2e2806628f5350b419ff58e">00022</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_bug_report_1a4f0e0afcb2e2806628f5350b419ff58e">description</link>description&#32;=&#32;description
+<anchor xml:id="__reporter_8py_source_1l00023"/><link linkend="_class_reporter_1_1_bug_report_1a268a882653ae8e5d0d59cdbfcf84ad97">00023</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_bug_report_1a268a882653ae8e5d0d59cdbfcf84ad97">files</link>files&#32;=&#32;files
+00024 
+00025 <emphasis role="comment">#&#32;Reporter&#32;interfaces.</emphasis>
+00026 
+00027 <emphasis role="keyword">import</emphasis>&#32;os
+00028 
+00029 <emphasis role="keyword">import</emphasis>&#32;email,&#32;mimetypes,&#32;smtplib
+00030 <emphasis role="keyword">from</emphasis>&#32;email&#32;<emphasis role="keyword">import</emphasis>&#32;encoders
+00031 <emphasis role="keyword">from</emphasis>&#32;email.message&#32;<emphasis role="keyword">import</emphasis>&#32;Message
+00032 <emphasis role="keyword">from</emphasis>&#32;email.mime.base&#32;<emphasis role="keyword">import</emphasis>&#32;MIMEBase
+00033 <emphasis role="keyword">from</emphasis>&#32;email.mime.multipart&#32;<emphasis role="keyword">import</emphasis>&#32;MIMEMultipart
+00034 <emphasis role="keyword">from</emphasis>&#32;email.mime.text&#32;<emphasis role="keyword">import</emphasis>&#32;MIMEText
+00035 
+00036 <emphasis role="comment">#===------------------------------------------------------------------------===#</emphasis>
+00037 <emphasis role="comment">#&#32;ReporterParameter</emphasis>
+00038 <emphasis role="comment">#===------------------------------------------------------------------------===#</emphasis>
+00039 
+<anchor xml:id="__reporter_8py_source_1l00040"/><link linkend="_class_reporter_1_1_reporter_parameter">00040</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_reporter_parameter">ReporterParameter</link>(object):
+<anchor xml:id="__reporter_8py_source_1l00041"/><link linkend="_class_reporter_1_1_reporter_parameter_1a0fc1f84a762f982bf5a3449b4840672d">00041</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_reporter_parameter_1a0fc1f84a762f982bf5a3449b4840672d">__init__</link>(self,&#32;n):
+<anchor xml:id="__reporter_8py_source_1l00042"/><link linkend="_class_reporter_1_1_reporter_parameter_1aefff62b68c868617406b95ddf49346fa">00042</link> &#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_reporter_parameter_1aefff62b68c868617406b95ddf49346fa">name</link>name&#32;=&#32;n
+<anchor xml:id="__reporter_8py_source_1l00043"/><link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">00043</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">getName</link>(self):
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_class_reporter_1_1_reporter_parameter_1aefff62b68c868617406b95ddf49346fa">name</link>name
+<anchor xml:id="__reporter_8py_source_1l00045"/><link linkend="_class_reporter_1_1_reporter_parameter_1abd396ba43bfd090a55876318a2b3b894">00045</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_reporter_parameter_1abd396ba43bfd090a55876318a2b3b894">getValue</link>(self,r,bugtype,getConfigOption):
+00046 &#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getConfigOption(r.getName(),self.<link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">getName</link>getName())
+<anchor xml:id="__reporter_8py_source_1l00047"/><link linkend="_class_reporter_1_1_reporter_parameter_1a937c2fd70185d4b52b5ab58f1a855d12">00047</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_reporter_parameter_1a937c2fd70185d4b52b5ab58f1a855d12">saveConfigValue</link>(self):
+00048 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">True</emphasis>
+00049 
+<anchor xml:id="__reporter_8py_source_1l00050"/><link linkend="_class_reporter_1_1_text_parameter">00050</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_text_parameter">TextParameter</link>&#32;(<link linkend="_class_reporter_1_1_reporter_parameter">ReporterParameter</link>):
+<anchor xml:id="__reporter_8py_source_1l00051"/><link linkend="_class_reporter_1_1_text_parameter_1aac852e1310b51a8da6f4550ed9b1d6c9">00051</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_text_parameter_1aac852e1310b51a8da6f4550ed9b1d6c9">getHTML</link>(self,r,bugtype,getConfigOption):
+00052 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00053 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00054 <emphasis role="stringliteral">&lt;td&#32;class=&quot;form_clabel&quot;&gt;%s:&lt;/td&gt;</emphasis>
+00055 <emphasis role="stringliteral">&lt;td&#32;class=&quot;form_value&quot;&gt;&lt;input&#32;type=&quot;text&quot;&#32;name=&quot;%s_%s&quot;&#32;value=&quot;%s&quot;&gt;&lt;/td&gt;</emphasis>
+00056 <emphasis role="stringliteral">&lt;/tr&gt;&quot;&quot;&quot;</emphasis>%(self.<link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">getName</link>getName(),r.getName(),self.<link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">getName</link>getName(),self.<link linkend="_class_reporter_1_1_reporter_parameter_1abd396ba43bfd090a55876318a2b3b894">getValue</link>getValue(r,bugtype,getConfigOption))
+00057 
+<anchor xml:id="__reporter_8py_source_1l00058"/><link linkend="_class_reporter_1_1_selection_parameter">00058</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_selection_parameter">SelectionParameter</link>&#32;(<link linkend="_class_reporter_1_1_reporter_parameter">ReporterParameter</link>):
+<anchor xml:id="__reporter_8py_source_1l00059"/><link linkend="_class_reporter_1_1_selection_parameter_1aa2bf8ff4873d121cd0c55a16952eb996">00059</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_selection_parameter_1aa2bf8ff4873d121cd0c55a16952eb996">__init__</link>(self,&#32;n,&#32;values):
+00060 &#32;&#32;&#32;&#32;ReporterParameter.__init__(self,n)
+<anchor xml:id="__reporter_8py_source_1l00061"/><link linkend="_class_reporter_1_1_selection_parameter_1a0c6bec691630c06a09557847418366b5">00061</link> &#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_selection_parameter_1a0c6bec691630c06a09557847418366b5">values</link>values&#32;=&#32;values
+00062 &#32;&#32;&#32;&#32;
+<anchor xml:id="__reporter_8py_source_1l00063"/><link linkend="_class_reporter_1_1_selection_parameter_1a7236d758ebadee9df79e992dc00bad48">00063</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_selection_parameter_1a7236d758ebadee9df79e992dc00bad48">getHTML</link>(self,r,bugtype,getConfigOption):
+00064 &#32;&#32;&#32;&#32;default&#32;=&#32;self.<link linkend="_class_reporter_1_1_reporter_parameter_1abd396ba43bfd090a55876318a2b3b894">getValue</link>getValue(r,bugtype,getConfigOption)
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00066 <emphasis role="stringliteral">&lt;tr&gt;</emphasis>
+00067 <emphasis role="stringliteral">&lt;td&#32;class=&quot;form_clabel&quot;&gt;%s:&lt;/td&gt;&lt;td&#32;class=&quot;form_value&quot;&gt;&lt;select&#32;name=&quot;%s_%s&quot;&gt;</emphasis>
+00068 <emphasis role="stringliteral">%s</emphasis>
+00069 <emphasis role="stringliteral">&lt;/select&gt;&lt;/td&gt;&quot;&quot;&quot;</emphasis>%(self.<link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">getName</link>getName(),r.getName(),self.<link linkend="_class_reporter_1_1_reporter_parameter_1a4148fb6be12a5c2b0ad34153bd6b5266">getName</link>getName(),<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join([<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00070 <emphasis role="stringliteral">&lt;option&#32;value=&quot;%s&quot;%s&gt;%s&lt;/option&gt;&quot;&quot;&quot;</emphasis>%(o[0],
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;o[0]&#32;==&#32;default&#32;<emphasis role="keywordflow">and</emphasis>&#32;<emphasis role="stringliteral">&apos;&#32;selected=&quot;selected&quot;&apos;</emphasis>&#32;<emphasis role="keywordflow">or</emphasis>&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>,
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;o[1])&#32;<emphasis role="keywordflow">for</emphasis>&#32;o&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_class_reporter_1_1_selection_parameter_1a0c6bec691630c06a09557847418366b5">values</link>values]))
+00073 
+00074 <emphasis role="comment">#===------------------------------------------------------------------------===#</emphasis>
+00075 <emphasis role="comment">#&#32;Reporters</emphasis>
+00076 <emphasis role="comment">#===------------------------------------------------------------------------===#</emphasis>
+00077 
+<anchor xml:id="__reporter_8py_source_1l00078"/><link linkend="_class_reporter_1_1_email_reporter">00078</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_email_reporter">EmailReporter</link>(object):
+<anchor xml:id="__reporter_8py_source_1l00079"/><link linkend="_class_reporter_1_1_email_reporter_1ab1313296199a21db32716abd36f74345">00079</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_email_reporter_1ab1313296199a21db32716abd36f74345">getName</link>(self):
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;Email&apos;</emphasis>
+00081 
+<anchor xml:id="__reporter_8py_source_1l00082"/><link linkend="_class_reporter_1_1_email_reporter_1a1f9cdf4c54b4308a553628033912cf56">00082</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_email_reporter_1a1f9cdf4c54b4308a553628033912cf56">getParameters</link>(self):
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[<link linkend="_class_reporter_1_1_text_parameter">TextParameter</link>(x)&#32;<emphasis role="keywordflow">for</emphasis>&#32;x&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;To&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;From&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;SMTP&#32;Server&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;SMTP&#32;Port&apos;</emphasis>]]
+00084 
+00085 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Lifted&#32;from&#32;python&#32;email&#32;module&#32;examples.</emphasis>
+<anchor xml:id="__reporter_8py_source_1l00086"/><link linkend="_class_reporter_1_1_email_reporter_1a9193d5c1612d210ee42b4db2787b68aa">00086</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_email_reporter_1a9193d5c1612d210ee42b4db2787b68aa">attachFile</link>(self,&#32;outer,&#32;path):
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Guess&#32;the&#32;content&#32;type&#32;based&#32;on&#32;the&#32;file&apos;s&#32;extension.&#32;&#32;Encoding</emphasis>
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;will&#32;be&#32;ignored,&#32;although&#32;we&#32;should&#32;check&#32;for&#32;simple&#32;things&#32;like</emphasis>
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;gzip&apos;d&#32;or&#32;compressed&#32;files.</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ctype,&#32;encoding&#32;=&#32;mimetypes.guess_type(path)
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;ctype&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">or</emphasis>&#32;encoding&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;No&#32;guess&#32;could&#32;be&#32;made,&#32;or&#32;the&#32;file&#32;is&#32;encoded&#32;(compressed),&#32;so</emphasis>
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;use&#32;a&#32;generic&#32;bag-of-bits&#32;type.</emphasis>
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ctype&#32;=&#32;<emphasis role="stringliteral">&apos;application/octet-stream&apos;</emphasis>
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;maintype,&#32;subtype&#32;=&#32;ctype.split(<emphasis role="stringliteral">&apos;/&apos;</emphasis>,&#32;1)
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;maintype&#32;==&#32;<emphasis role="stringliteral">&apos;text&apos;</emphasis>:
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path)
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Note:&#32;we&#32;should&#32;handle&#32;calculating&#32;the&#32;charset</emphasis>
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg&#32;=&#32;MIMEText(fp.read(),&#32;_subtype=subtype)
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp.close()
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path,&#32;<emphasis role="stringliteral">&apos;rb&apos;</emphasis>)
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg&#32;=&#32;MIMEBase(maintype,&#32;subtype)
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.set_payload(fp.read())
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp.close()
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Encode&#32;the&#32;payload&#32;using&#32;Base64</emphasis>
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;encoders.encode_base64(msg)
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Set&#32;the&#32;filename&#32;parameter</emphasis>
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.add_header(<emphasis role="stringliteral">&apos;Content-Disposition&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;attachment&apos;</emphasis>,&#32;filename=os.path.basename(path))
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outer.attach(msg)
+00111 
+<anchor xml:id="__reporter_8py_source_1l00112"/><link linkend="_class_reporter_1_1_email_reporter_1a22246ff1d9cc2d82ecd63b453392de76">00112</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_email_reporter_1a22246ff1d9cc2d82ecd63b453392de76">fileReport</link>(self,&#32;report,&#32;parameters):
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;mainMsg&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00114 <emphasis role="stringliteral">BUG&#32;REPORT</emphasis>
+00115 <emphasis role="stringliteral">---</emphasis>
+00116 <emphasis role="stringliteral">Title:&#32;%s</emphasis>
+00117 <emphasis role="stringliteral">Description:&#32;%s</emphasis>
+00118 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>%(report.title,&#32;report.description)
+00119 
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;parameters.get(<emphasis role="stringliteral">&apos;To&apos;</emphasis>):
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;<link linkend="_class_reporter_1_1_report_failure">ReportFailure</link>(<emphasis role="stringliteral">&apos;No&#32;&quot;To&quot;&#32;address&#32;specified.&apos;</emphasis>)
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;parameters.get(<emphasis role="stringliteral">&apos;From&apos;</emphasis>):
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;<link linkend="_class_reporter_1_1_report_failure">ReportFailure</link>(<emphasis role="stringliteral">&apos;No&#32;&quot;From&quot;&#32;address&#32;specified.&apos;</emphasis>)
+00124 
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg&#32;=&#32;MIMEMultipart()
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg[<emphasis role="stringliteral">&apos;Subject&apos;</emphasis>]&#32;=&#32;<emphasis role="stringliteral">&apos;BUG&#32;REPORT:&#32;%s&apos;</emphasis>%(report.title)
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;FIXME:&#32;Get&#32;config&#32;parameters</emphasis>
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg[<emphasis role="stringliteral">&apos;To&apos;</emphasis>]&#32;=&#32;parameters.get(<emphasis role="stringliteral">&apos;To&apos;</emphasis>)
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg[<emphasis role="stringliteral">&apos;From&apos;</emphasis>]&#32;=&#32;parameters.get(<emphasis role="stringliteral">&apos;From&apos;</emphasis>)
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.preamble&#32;=&#32;mainMsg
+00131 
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.attach(MIMEText(mainMsg,&#32;_subtype=<emphasis role="stringliteral">&apos;text/plain&apos;</emphasis>))
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;file&#32;<emphasis role="keywordflow">in</emphasis>&#32;report.files:
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_class_reporter_1_1_email_reporter_1a9193d5c1612d210ee42b4db2787b68aa">attachFile</link>attachFile(msg,&#32;file)
+00135 
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s&#32;=&#32;smtplib.SMTP(host=parameters.get(<emphasis role="stringliteral">&apos;SMTP&#32;Server&apos;</emphasis>),
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;port=parameters.get(<emphasis role="stringliteral">&apos;SMTP&#32;Port&apos;</emphasis>))
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s.sendmail(msg[<emphasis role="stringliteral">&apos;From&apos;</emphasis>],&#32;msg[<emphasis role="stringliteral">&apos;To&apos;</emphasis>],&#32;msg.as_string())
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s.close()
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;<link linkend="_class_reporter_1_1_report_failure">ReportFailure</link>(<emphasis role="stringliteral">&apos;Unable&#32;to&#32;send&#32;message&#32;via&#32;SMTP.&apos;</emphasis>)
+00143 
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Message&#32;sent!&quot;</emphasis>
+00145 
+<anchor xml:id="__reporter_8py_source_1l00146"/><link linkend="_class_reporter_1_1_bugzilla_reporter">00146</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_bugzilla_reporter">BugzillaReporter</link>(object):
+<anchor xml:id="__reporter_8py_source_1l00147"/><link linkend="_class_reporter_1_1_bugzilla_reporter_1a3af7573c607eaf3843d60ddb688f11a8">00147</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_bugzilla_reporter_1a3af7573c607eaf3843d60ddb688f11a8">getName</link>(self):
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;Bugzilla&apos;</emphasis>
+00149 &#32;&#32;&#32;&#32;
+<anchor xml:id="__reporter_8py_source_1l00150"/><link linkend="_class_reporter_1_1_bugzilla_reporter_1a9beccd7e0bd33623fc3f966a0fe7e3b4">00150</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_bugzilla_reporter_1a9beccd7e0bd33623fc3f966a0fe7e3b4">getParameters</link>(self):
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[<link linkend="_class_reporter_1_1_text_parameter">TextParameter</link>(x)&#32;<emphasis role="keywordflow">for</emphasis>&#32;x&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;URL&apos;</emphasis>,<emphasis role="stringliteral">&apos;Product&apos;</emphasis>]]
+00152 
+<anchor xml:id="__reporter_8py_source_1l00153"/><link linkend="_class_reporter_1_1_bugzilla_reporter_1a1efba442beecd915454f4d0c04841f48">00153</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_bugzilla_reporter_1a1efba442beecd915454f4d0c04841f48">fileReport</link>(self,&#32;report,&#32;parameters):
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;NotImplementedError
+00155 &#32;
+00156 
+<anchor xml:id="__reporter_8py_source_1l00157"/><link linkend="_class_reporter_1_1_radar_classification_parameter">00157</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_reporter_1_1_radar_classification_parameter">RadarClassificationParameter</link>(<link linkend="_class_reporter_1_1_selection_parameter">SelectionParameter</link>):
+<anchor xml:id="__reporter_8py_source_1l00158"/><link linkend="_class_reporter_1_1_radar_classification_parameter_1a0d0bda2146065d473d455a2d0ece8d2d">00158</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_radar_classification_parameter_1a0d0bda2146065d473d455a2d0ece8d2d">__init__</link>(self):
+00159 &#32;&#32;&#32;&#32;SelectionParameter.__init__(self,<emphasis role="stringliteral">&quot;Classification&quot;</emphasis>,
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[[<emphasis role="stringliteral">&apos;1&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;Security&apos;</emphasis>],&#32;[<emphasis role="stringliteral">&apos;2&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;Crash/Hang/Data&#32;Loss&apos;</emphasis>],
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="stringliteral">&apos;3&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;Performance&apos;</emphasis>],&#32;[<emphasis role="stringliteral">&apos;4&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;UI/Usability&apos;</emphasis>],&#32;
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="stringliteral">&apos;6&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;Serious&#32;Bug&apos;</emphasis>],&#32;[<emphasis role="stringliteral">&apos;7&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;Other&apos;</emphasis>]])
+00163 
+<anchor xml:id="__reporter_8py_source_1l00164"/><link linkend="_class_reporter_1_1_radar_classification_parameter_1af03d1c9c236dd12a0a49061d0fc3ecd3">00164</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_radar_classification_parameter_1af03d1c9c236dd12a0a49061d0fc3ecd3">saveConfigValue</link>(self):
+00165 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00166 &#32;&#32;&#32;&#32;
+<anchor xml:id="__reporter_8py_source_1l00167"/><link linkend="_class_reporter_1_1_radar_classification_parameter_1afa5538ef6d0f71f17ab931ff3c6a15a9">00167</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_class_reporter_1_1_radar_classification_parameter_1afa5538ef6d0f71f17ab931ff3c6a15a9">getValue</link>(self,r,bugtype,getConfigOption):
+00168 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;bugtype.find(<emphasis role="stringliteral">&quot;leak&quot;</emphasis>)&#32;!=&#32;-1:
+00169 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;3&apos;</emphasis>
+00170 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;bugtype.find(<emphasis role="stringliteral">&quot;dereference&quot;</emphasis>)&#32;!=&#32;-1:
+00171 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;2&apos;</emphasis>
+00172 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;bugtype.find(<emphasis role="stringliteral">&quot;missing&#32;ivar&#32;release&quot;</emphasis>)&#32;!=&#32;-1:
+00173 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;3&apos;</emphasis>
+00174 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00175 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;7&apos;</emphasis>
+00176 
+00177 
+00178 
+<anchor xml:id="__reporter_8py_source_1l00179"/><link linkend="_namespace_reporter_1a7d107236b793eae14407e638cfb86fba">00179</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespace_reporter_1a7d107236b793eae14407e638cfb86fba">getReporters</link>():
+00180 &#32;&#32;&#32;&#32;reporters&#32;=&#32;[]
+00181 &#32;&#32;&#32;&#32;reporters.append(<link linkend="_class_reporter_1_1_email_reporter">EmailReporter</link>())
+00182 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reporters
+00183 
+</programlisting></section>

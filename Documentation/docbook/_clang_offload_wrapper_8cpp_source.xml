@@ -1,0 +1,338 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_offload_wrapper_8cpp_source" xml:lang="en-US">
+<title>ClangOffloadWrapper.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-offload-wrapper/ClangOffloadWrapper.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;clang-offload-wrapper/ClangOffloadWrapper.cpp&#32;-----------*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00015 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00016 
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Version.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/ArrayRef.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/Triple.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Bitcode/BitcodeWriter.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/Constants.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/GlobalVariable.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/IRBuilder.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/LLVMContext.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/Module.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Errc.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Error.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorOr.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ToolOutputFile.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/WithColor.h&quot;</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00036 <emphasis role="preprocessor">#include&#32;&quot;llvm/Transforms/Utils/ModuleUtils.h&quot;</emphasis>
+00037 <emphasis role="preprocessor">#include&#32;&lt;cassert&gt;</emphasis>
+00038 <emphasis role="preprocessor">#include&#32;&lt;cstdint&gt;</emphasis>
+00039 
+00040 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00041 
+00042 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Help(<emphasis role="stringliteral">&quot;h&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Alias&#32;for&#32;-help&quot;</emphasis>),&#32;cl::Hidden);
+00043 
+00044 <emphasis role="comment">//&#32;Mark&#32;all&#32;our&#32;options&#32;with&#32;this&#32;category,&#32;everything&#32;else&#32;(except&#32;for&#32;-version</emphasis>
+00045 <emphasis role="comment">//&#32;and&#32;-help)&#32;will&#32;be&#32;hidden.</emphasis>
+00046 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory
+00047 &#32;&#32;&#32;&#32;ClangOffloadWrapperCategory(<emphasis role="stringliteral">&quot;clang-offload-wrapper&#32;options&quot;</emphasis>);
+00048 
+00049 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;Output(<emphasis role="stringliteral">&quot;o&quot;</emphasis>,&#32;cl::Required,
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Output&#32;filename&quot;</emphasis>),
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::value_desc(<emphasis role="stringliteral">&quot;filename&quot;</emphasis>),
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangOffloadWrapperCategory));
+00053 
+00054 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;&#32;Inputs(cl::Positional,&#32;cl::OneOrMore,
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;&lt;input&#32;files&gt;&quot;</emphasis>),
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangOffloadWrapperCategory));
+00057 
+00058 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00059 &#32;&#32;&#32;&#32;Target(<emphasis role="stringliteral">&quot;target&quot;</emphasis>,&#32;cl::Required,
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Target&#32;triple&#32;for&#32;the&#32;output&#32;module&quot;</emphasis>),
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::value_desc(<emphasis role="stringliteral">&quot;triple&quot;</emphasis>),&#32;cl::cat(ClangOffloadWrapperCategory));
+00062 
+00063 <emphasis role="keyword">namespace&#32;</emphasis>{
+00064 
+00065 <emphasis role="keyword">class&#32;</emphasis>BinaryWrapper&#32;{
+00066 &#32;&#32;LLVMContext&#32;C;
+00067 &#32;&#32;Module&#32;M;
+00068 
+00069 &#32;&#32;StructType&#32;*EntryTy&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00070 &#32;&#32;StructType&#32;*ImageTy&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00071 &#32;&#32;StructType&#32;*DescTy&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00072 
+00073 <emphasis role="keyword">private</emphasis>:
+00074 &#32;&#32;IntegerType&#32;*getSizeTTy()&#32;{
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(M.getDataLayout().getPointerTypeSize(Type::getInt8PtrTy(C)))&#32;{
+00076 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;4u:
+00077 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Type::getInt32Ty(C);
+00078 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;8u:
+00079 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Type::getInt64Ty(C);
+00080 &#32;&#32;&#32;&#32;}
+00081 &#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;unsupported&#32;pointer&#32;type&#32;size&quot;</emphasis>);
+00082 &#32;&#32;}
+00083 
+00084 &#32;&#32;<emphasis role="comment">//&#32;struct&#32;__tgt_offload_entry&#32;{</emphasis>
+00085 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;void&#32;*addr;</emphasis>
+00086 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;char&#32;*name;</emphasis>
+00087 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;size_t&#32;size;</emphasis>
+00088 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;int32_t&#32;flags;</emphasis>
+00089 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;int32_t&#32;reserved;</emphasis>
+00090 &#32;&#32;<emphasis role="comment">//&#32;};</emphasis>
+00091 &#32;&#32;StructType&#32;*getEntryTy()&#32;{
+00092 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!EntryTy)
+00093 &#32;&#32;&#32;&#32;&#32;&#32;EntryTy&#32;=&#32;StructType::create(<emphasis role="stringliteral">&quot;__tgt_offload_entry&quot;</emphasis>,&#32;Type::getInt8PtrTy(C),
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Type::getInt8PtrTy(C),&#32;getSizeTTy(),
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Type::getInt32Ty(C),&#32;Type::getInt32Ty(C));
+00096 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EntryTy;
+00097 &#32;&#32;}
+00098 
+00099 &#32;&#32;PointerType&#32;*getEntryPtrTy()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;PointerType::getUnqual(getEntryTy());&#32;}
+00100 
+00101 &#32;&#32;<emphasis role="comment">//&#32;struct&#32;__tgt_device_image&#32;{</emphasis>
+00102 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;void&#32;*ImageStart;</emphasis>
+00103 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;void&#32;*ImageEnd;</emphasis>
+00104 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;__tgt_offload_entry&#32;*EntriesBegin;</emphasis>
+00105 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;__tgt_offload_entry&#32;*EntriesEnd;</emphasis>
+00106 &#32;&#32;<emphasis role="comment">//&#32;};</emphasis>
+00107 &#32;&#32;StructType&#32;*getDeviceImageTy()&#32;{
+00108 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ImageTy)
+00109 &#32;&#32;&#32;&#32;&#32;&#32;ImageTy&#32;=&#32;StructType::create(<emphasis role="stringliteral">&quot;__tgt_device_image&quot;</emphasis>,&#32;Type::getInt8PtrTy(C),
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Type::getInt8PtrTy(C),&#32;getEntryPtrTy(),
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getEntryPtrTy());
+00112 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ImageTy;
+00113 &#32;&#32;}
+00114 
+00115 &#32;&#32;PointerType&#32;*getDeviceImagePtrTy()&#32;{
+00116 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PointerType::getUnqual(getDeviceImageTy());
+00117 &#32;&#32;}
+00118 
+00119 &#32;&#32;<emphasis role="comment">//&#32;struct&#32;__tgt_bin_desc&#32;{</emphasis>
+00120 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;int32_t&#32;NumDeviceImages;</emphasis>
+00121 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;__tgt_device_image&#32;*DeviceImages;</emphasis>
+00122 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;__tgt_offload_entry&#32;*HostEntriesBegin;</emphasis>
+00123 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;__tgt_offload_entry&#32;*HostEntriesEnd;</emphasis>
+00124 &#32;&#32;<emphasis role="comment">//&#32;};</emphasis>
+00125 &#32;&#32;StructType&#32;*getBinDescTy()&#32;{
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DescTy)
+00127 &#32;&#32;&#32;&#32;&#32;&#32;DescTy&#32;=&#32;StructType::create(<emphasis role="stringliteral">&quot;__tgt_bin_desc&quot;</emphasis>,&#32;Type::getInt32Ty(C),
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getDeviceImagePtrTy(),&#32;getEntryPtrTy(),
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getEntryPtrTy());
+00130 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DescTy;
+00131 &#32;&#32;}
+00132 
+00133 &#32;&#32;PointerType&#32;*getBinDescPtrTy()&#32;{
+00134 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PointerType::getUnqual(getBinDescTy());
+00135 &#32;&#32;}
+00136 
+00175 &#32;&#32;GlobalVariable&#32;*createBinDesc(ArrayRef&lt;ArrayRef&lt;char&gt;&gt;&#32;Bufs)&#32;{
+00176 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Create&#32;external&#32;begin/end&#32;symbols&#32;for&#32;the&#32;offload&#32;entries&#32;table.</emphasis>
+00177 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*EntriesB&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;GlobalVariable(
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;M,&#32;getEntryTy(),&#32;<emphasis role="comment">/*isConstant*/</emphasis>&#32;<emphasis role="keyword">true</emphasis>,&#32;GlobalValue::ExternalLinkage,
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*Initializer*/</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="stringliteral">&quot;__start_omp_offloading_entries&quot;</emphasis>);
+00180 &#32;&#32;&#32;&#32;EntriesB-&gt;setVisibility(GlobalValue::HiddenVisibility);
+00181 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*EntriesE&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;GlobalVariable(
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;M,&#32;getEntryTy(),&#32;<emphasis role="comment">/*isConstant*/</emphasis>&#32;<emphasis role="keyword">true</emphasis>,&#32;GlobalValue::ExternalLinkage,
+00183 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*Initializer*/</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="stringliteral">&quot;__stop_omp_offloading_entries&quot;</emphasis>);
+00184 &#32;&#32;&#32;&#32;EntriesE-&gt;setVisibility(GlobalValue::HiddenVisibility);
+00185 
+00186 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;assume&#32;that&#32;external&#32;begin/end&#32;symbols&#32;that&#32;we&#32;have&#32;created&#32;above&#32;will</emphasis>
+00187 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;be&#32;defined&#32;by&#32;the&#32;linker.&#32;But&#32;linker&#32;will&#32;do&#32;that&#32;only&#32;if&#32;linker&#32;inputs</emphasis>
+00188 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;have&#32;section&#32;with&#32;&quot;omp_offloading_entries&quot;&#32;name&#32;which&#32;is&#32;not&#32;guaranteed.</emphasis>
+00189 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;So,&#32;we&#32;just&#32;create&#32;dummy&#32;zero&#32;sized&#32;object&#32;in&#32;the&#32;offload&#32;entries&#32;section</emphasis>
+00190 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;to&#32;force&#32;linker&#32;to&#32;define&#32;those&#32;symbols.</emphasis>
+00191 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*DummyInit&#32;=
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantAggregateZero::get</link>(<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ArrayType::get</link>(getEntryTy(),&#32;0u));
+00193 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*DummyEntry&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;GlobalVariable(
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;M,&#32;DummyInit-&gt;getType(),&#32;<emphasis role="keyword">true</emphasis>,&#32;GlobalVariable::ExternalLinkage,
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DummyInit,&#32;<emphasis role="stringliteral">&quot;__dummy.omp_offloading.entry&quot;</emphasis>);
+00196 &#32;&#32;&#32;&#32;DummyEntry-&gt;setSection(<emphasis role="stringliteral">&quot;omp_offloading_entries&quot;</emphasis>);
+00197 &#32;&#32;&#32;&#32;DummyEntry-&gt;setVisibility(GlobalValue::HiddenVisibility);
+00198 
+00199 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Zero&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantInt::get</link>(getSizeTTy(),&#32;0u);
+00200 &#32;&#32;&#32;&#32;Constant&#32;*ZeroZero[]&#32;=&#32;{Zero,&#32;Zero};
+00201 
+00202 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Create&#32;initializer&#32;for&#32;the&#32;images&#32;array.</emphasis>
+00203 &#32;&#32;&#32;&#32;SmallVector&lt;Constant&#32;*,&#32;4u&gt;&#32;ImagesInits;
+00204 &#32;&#32;&#32;&#32;ImagesInits.reserve(Bufs.size());
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ArrayRef&lt;char&gt;&#32;Buf&#32;:&#32;Bufs)&#32;{
+00206 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Data&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantDataArray::get</link>(C,&#32;Buf);
+00207 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Image&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;GlobalVariable(M,&#32;Data-&gt;getType(),&#32;<emphasis role="comment">/*isConstant*/</emphasis>&#32;<emphasis role="keyword">true</emphasis>,
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GlobalVariable::InternalLinkage,&#32;Data,
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.omp_offloading.device_image&quot;</emphasis>);
+00210 &#32;&#32;&#32;&#32;&#32;&#32;Image-&gt;setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
+00211 
+00212 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Size&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantInt::get</link>(getSizeTTy(),&#32;Buf.size());
+00213 &#32;&#32;&#32;&#32;&#32;&#32;Constant&#32;*ZeroSize[]&#32;=&#32;{Zero,&#32;Size};
+00214 
+00215 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*ImageB&#32;=&#32;ConstantExpr::getGetElementPtr(Image-&gt;getValueType(),
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Image,&#32;ZeroZero);
+00217 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*ImageE&#32;=&#32;ConstantExpr::getGetElementPtr(Image-&gt;getValueType(),
+00218 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Image,&#32;ZeroSize);
+00219 
+00220 &#32;&#32;&#32;&#32;&#32;&#32;ImagesInits.push_back(<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantStruct::get</link>(getDeviceImageTy(),&#32;ImageB,
+00221 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ImageE,&#32;EntriesB,&#32;EntriesE));
+00222 &#32;&#32;&#32;&#32;}
+00223 
+00224 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Then&#32;create&#32;images&#32;array.</emphasis>
+00225 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*ImagesData&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantArray::get</link>(
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ArrayType::get</link>(getDeviceImageTy(),&#32;ImagesInits.size()),&#32;ImagesInits);
+00227 
+00228 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Images&#32;=
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;GlobalVariable(M,&#32;ImagesData-&gt;getType(),&#32;<emphasis role="comment">/*isConstant*/</emphasis>&#32;<emphasis role="keyword">true</emphasis>,
+00230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GlobalValue::InternalLinkage,&#32;ImagesData,
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.omp_offloading.device_images&quot;</emphasis>);
+00232 &#32;&#32;&#32;&#32;Images-&gt;setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
+00233 
+00234 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*ImagesB&#32;=&#32;ConstantExpr::getGetElementPtr(Images-&gt;getValueType(),
+00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Images,&#32;ZeroZero);
+00236 
+00237 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;And&#32;finally&#32;create&#32;the&#32;binary&#32;descriptor&#32;object.</emphasis>
+00238 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*DescInit&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantStruct::get</link>(
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getBinDescTy(),
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">ConstantInt::get</link>(Type::getInt32Ty(C),&#32;ImagesInits.size()),&#32;ImagesB,
+00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;EntriesB,&#32;EntriesE);
+00242 
+00243 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;GlobalVariable(M,&#32;DescInit-&gt;getType(),&#32;<emphasis role="comment">/*isConstant*/</emphasis>&#32;<emphasis role="keyword">true</emphasis>,
+00244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GlobalValue::InternalLinkage,&#32;DescInit,
+00245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.omp_offloading.descriptor&quot;</emphasis>);
+00246 &#32;&#32;}
+00247 
+00248 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;createRegisterFunction(GlobalVariable&#32;*BinDesc)&#32;{
+00249 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*FuncTy&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">FunctionType::get</link>(Type::getVoidTy(C),&#32;<emphasis role="comment">/*isVarArg*/</emphasis>&#32;<emphasis role="keyword">false</emphasis>);
+00250 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Func&#32;=&#32;Function::Create(FuncTy,&#32;GlobalValue::InternalLinkage,
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.omp_offloading.descriptor_reg&quot;</emphasis>,&#32;&amp;M);
+00252 &#32;&#32;&#32;&#32;Func-&gt;setSection(<emphasis role="stringliteral">&quot;.text.startup&quot;</emphasis>);
+00253 
+00254 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;__tgt_register_lib&#32;function&#32;declaration.</emphasis>
+00255 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*RegFuncTy&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">FunctionType::get</link>(Type::getVoidTy(C),&#32;getBinDescPtrTy(),
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isVarArg*/</emphasis>&#32;<emphasis role="keyword">false</emphasis>);
+00257 &#32;&#32;&#32;&#32;FunctionCallee&#32;RegFuncC&#32;=
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;M.getOrInsertFunction(<emphasis role="stringliteral">&quot;__tgt_register_lib&quot;</emphasis>,&#32;RegFuncTy);
+00259 
+00260 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Construct&#32;function&#32;body</emphasis>
+00261 &#32;&#32;&#32;&#32;IRBuilder&lt;&gt;&#32;Builder(BasicBlock::Create(C,&#32;<emphasis role="stringliteral">&quot;entry&quot;</emphasis>,&#32;Func));
+00262 &#32;&#32;&#32;&#32;Builder.CreateCall(RegFuncC,&#32;BinDesc);
+00263 &#32;&#32;&#32;&#32;Builder.CreateRetVoid();
+00264 
+00265 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Add&#32;this&#32;function&#32;to&#32;constructors.</emphasis>
+00266 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Set&#32;priority&#32;to&#32;1&#32;so&#32;that&#32;__tgt_register_lib&#32;is&#32;executed&#32;AFTER</emphasis>
+00267 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;__tgt_register_requires&#32;(we&#32;want&#32;to&#32;know&#32;what&#32;requirements&#32;have&#32;been</emphasis>
+00268 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;asked&#32;for&#32;before&#32;we&#32;load&#32;a&#32;libomptarget&#32;plugin&#32;so&#32;that&#32;by&#32;the&#32;time&#32;the</emphasis>
+00269 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;plugin&#32;is&#32;loaded&#32;it&#32;can&#32;report&#32;how&#32;many&#32;devices&#32;there&#32;are&#32;which&#32;can</emphasis>
+00270 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;satisfy&#32;these&#32;requirements).</emphasis>
+00271 &#32;&#32;&#32;&#32;appendToGlobalCtors(M,&#32;Func,&#32;<emphasis role="comment">/*Priority*/</emphasis>&#32;1);
+00272 &#32;&#32;}
+00273 
+00274 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;createUnregisterFunction(GlobalVariable&#32;*BinDesc)&#32;{
+00275 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*FuncTy&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">FunctionType::get</link>(Type::getVoidTy(C),&#32;<emphasis role="comment">/*isVarArg*/</emphasis>&#32;<emphasis role="keyword">false</emphasis>);
+00276 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Func&#32;=&#32;Function::Create(FuncTy,&#32;GlobalValue::InternalLinkage,
+00277 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.omp_offloading.descriptor_unreg&quot;</emphasis>,&#32;&amp;M);
+00278 &#32;&#32;&#32;&#32;Func-&gt;setSection(<emphasis role="stringliteral">&quot;.text.startup&quot;</emphasis>);
+00279 
+00280 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;__tgt_unregister_lib&#32;function&#32;declaration.</emphasis>
+00281 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*UnRegFuncTy&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">FunctionType::get</link>(Type::getVoidTy(C),&#32;getBinDescPtrTy(),
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isVarArg*/</emphasis>&#32;<emphasis role="keyword">false</emphasis>);
+00283 &#32;&#32;&#32;&#32;FunctionCallee&#32;UnRegFuncC&#32;=
+00284 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;M.getOrInsertFunction(<emphasis role="stringliteral">&quot;__tgt_unregister_lib&quot;</emphasis>,&#32;UnRegFuncTy);
+00285 
+00286 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Construct&#32;function&#32;body</emphasis>
+00287 &#32;&#32;&#32;&#32;IRBuilder&lt;&gt;&#32;Builder(BasicBlock::Create(C,&#32;<emphasis role="stringliteral">&quot;entry&quot;</emphasis>,&#32;Func));
+00288 &#32;&#32;&#32;&#32;Builder.CreateCall(UnRegFuncC,&#32;BinDesc);
+00289 &#32;&#32;&#32;&#32;Builder.CreateRetVoid();
+00290 
+00291 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Add&#32;this&#32;function&#32;to&#32;global&#32;destructors.</emphasis>
+00292 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Match&#32;priority&#32;of&#32;__tgt_register_lib</emphasis>
+00293 &#32;&#32;&#32;&#32;appendToGlobalDtors(M,&#32;Func,&#32;<emphasis role="comment">/*Priority*/</emphasis>&#32;1);
+00294 &#32;&#32;}
+00295 
+00296 <emphasis role="keyword">public</emphasis>:
+00297 &#32;&#32;BinaryWrapper(StringRef&#32;Target)&#32;:&#32;M(<emphasis role="stringliteral">&quot;offload.wrapper.object&quot;</emphasis>,&#32;C)&#32;{
+00298 &#32;&#32;&#32;&#32;M.setTargetTriple(Target);
+00299 &#32;&#32;}
+00300 
+00301 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Module&#32;&amp;wrapBinaries(ArrayRef&lt;ArrayRef&lt;char&gt;&gt;&#32;Binaries)&#32;{
+00302 &#32;&#32;&#32;&#32;GlobalVariable&#32;*Desc&#32;=&#32;createBinDesc(Binaries);
+00303 &#32;&#32;&#32;&#32;assert(Desc&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;no&#32;binary&#32;descriptor&quot;</emphasis>);
+00304 &#32;&#32;&#32;&#32;createRegisterFunction(Desc);
+00305 &#32;&#32;&#32;&#32;createUnregisterFunction(Desc);
+00306 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;M;
+00307 &#32;&#32;}
+00308 };
+00309 
+00310 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00311 
+<anchor xml:id="__clang_offload_wrapper_8cpp_source_1l00312"/><link linkend="__clang_offload_wrapper_8cpp_1a217dbf8b442f20279ea00b898af96f52">00312</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_offload_wrapper_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00313 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0]);
+00314 
+00315 &#32;&#32;cl::HideUnrelatedOptions(ClangOffloadWrapperCategory);
+00316 &#32;&#32;cl::SetVersionPrinter([](raw_ostream&#32;&amp;OS)&#32;{
+00317 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;clang::getClangToolFullVersion(<emphasis role="stringliteral">&quot;clang-offload-wrapper&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00318 &#32;&#32;});
+00319 &#32;&#32;cl::ParseCommandLineOptions(
+00320 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,
+00321 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;A&#32;tool&#32;to&#32;create&#32;a&#32;wrapper&#32;bitcode&#32;for&#32;offload&#32;target&#32;binaries.&#32;Takes&#32;&quot;</emphasis>
+00322 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;offload\ntarget&#32;binaries&#32;as&#32;input&#32;and&#32;produces&#32;bitcode&#32;file&#32;containing&#32;&quot;</emphasis>
+00323 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;target&#32;binaries&#32;packaged\nas&#32;data&#32;and&#32;initialization&#32;code&#32;which&#32;&quot;</emphasis>
+00324 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;registers&#32;target&#32;binaries&#32;in&#32;offload&#32;runtime.\n&quot;</emphasis>);
+00325 
+00326 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Help)&#32;{
+00327 &#32;&#32;&#32;&#32;cl::PrintHelpMessage();
+00328 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00329 &#32;&#32;}
+00330 
+00331 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;reportError&#32;=&#32;[argv](Error&#32;E)&#32;{
+00332 &#32;&#32;&#32;&#32;logAllUnhandledErrors(std::move(E),&#32;WithColor::error(errs(),&#32;argv[0]));
+00333 &#32;&#32;};
+00334 
+00335 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Triple(Target).getArch()&#32;==&#32;Triple::UnknownArch)&#32;{
+00336 &#32;&#32;&#32;&#32;reportError(createStringError(
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>&#32;+&#32;Target&#32;+&#32;<emphasis role="stringliteral">&quot;&apos;:&#32;unsupported&#32;target&#32;triple&quot;</emphasis>));
+00338 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00339 &#32;&#32;}
+00340 
+00341 &#32;&#32;<emphasis role="comment">//&#32;Read&#32;device&#32;binaries.</emphasis>
+00342 &#32;&#32;SmallVector&lt;std::unique_ptr&lt;MemoryBuffer&gt;,&#32;4u&gt;&#32;Buffers;
+00343 &#32;&#32;SmallVector&lt;ArrayRef&lt;char&gt;,&#32;4u&gt;&#32;Images;
+00344 &#32;&#32;Buffers.reserve(Inputs.size());
+00345 &#32;&#32;Images.reserve(Inputs.size());
+00346 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;File&#32;:&#32;Inputs)&#32;{
+00347 &#32;&#32;&#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;BufOrErr&#32;=
+00348 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(File);
+00349 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BufOrErr)&#32;{
+00350 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createFileError(File,&#32;BufOrErr.getError()));
+00351 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00352 &#32;&#32;&#32;&#32;}
+00353 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::unique_ptr&lt;MemoryBuffer&gt;&#32;&amp;Buf&#32;=
+00354 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Buffers.emplace_back(std::move(*BufOrErr));
+00355 &#32;&#32;&#32;&#32;Images.emplace_back(Buf-&gt;getBufferStart(),&#32;Buf-&gt;getBufferSize());
+00356 &#32;&#32;}
+00357 
+00358 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;the&#32;output&#32;file&#32;to&#32;write&#32;the&#32;resulting&#32;bitcode&#32;to.</emphasis>
+00359 &#32;&#32;std::error_code&#32;EC;
+00360 &#32;&#32;ToolOutputFile&#32;Out(Output,&#32;EC,&#32;sys::fs::OF_None);
+00361 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00362 &#32;&#32;&#32;&#32;reportError(createFileError(Output,&#32;EC));
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00364 &#32;&#32;}
+00365 
+00366 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;a&#32;wrapper&#32;for&#32;device&#32;binaries&#32;and&#32;write&#32;its&#32;bitcode&#32;to&#32;the&#32;file.</emphasis>
+00367 &#32;&#32;WriteBitcodeToFile(BinaryWrapper(Target).wrapBinaries(
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;makeArrayRef(Images.data(),&#32;Images.size())),
+00369 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out.os());
+00370 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Out.os().has_error())&#32;{
+00371 &#32;&#32;&#32;&#32;reportError(createFileError(Output,&#32;Out.os().error()));
+00372 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00373 &#32;&#32;}
+00374 
+00375 &#32;&#32;<emphasis role="comment">//&#32;Success.</emphasis>
+00376 &#32;&#32;Out.keep();
+00377 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00378 }
+</programlisting></section>

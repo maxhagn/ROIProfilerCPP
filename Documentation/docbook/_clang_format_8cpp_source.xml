@@ -1,0 +1,554 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_format_8cpp_source" xml:lang="en-US">
+<title>ClangFormat.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format/ClangFormat.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;clang-format/ClangFormat.cpp&#32;-&#32;Clang&#32;format&#32;tool&#32;------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Diagnostic.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/DiagnosticOptions.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/FileManager.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceManager.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Version.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Format/Format.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Rewrite/Core/Rewriter.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/InitLLVM.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Process.h&quot;</emphasis>
+00026 
+00027 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00028 <emphasis role="keyword">using</emphasis>&#32;clang::tooling::Replacements;
+00029 
+00030 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Help(<emphasis role="stringliteral">&quot;h&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Alias&#32;for&#32;-help&quot;</emphasis>),&#32;cl::Hidden);
+00031 
+00032 <emphasis role="comment">//&#32;Mark&#32;all&#32;our&#32;options&#32;with&#32;this&#32;category,&#32;everything&#32;else&#32;(except&#32;for&#32;-version</emphasis>
+00033 <emphasis role="comment">//&#32;and&#32;-help)&#32;will&#32;be&#32;hidden.</emphasis>
+00034 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;ClangFormatCategory(<emphasis role="stringliteral">&quot;Clang-format&#32;options&quot;</emphasis>);
+00035 
+00036 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;unsigned&gt;
+00037 &#32;&#32;&#32;&#32;Offsets(<emphasis role="stringliteral">&quot;offset&quot;</emphasis>,
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Format&#32;a&#32;range&#32;starting&#32;at&#32;this&#32;byte&#32;offset.\n&quot;</emphasis>
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Multiple&#32;ranges&#32;can&#32;be&#32;formatted&#32;by&#32;specifying\n&quot;</emphasis>
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;several&#32;-offset&#32;and&#32;-length&#32;pairs.\n&quot;</emphasis>
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Can&#32;only&#32;be&#32;used&#32;with&#32;one&#32;input&#32;file.&quot;</emphasis>),
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00043 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;unsigned&gt;
+00044 &#32;&#32;&#32;&#32;Lengths(<emphasis role="stringliteral">&quot;length&quot;</emphasis>,
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Format&#32;a&#32;range&#32;of&#32;this&#32;length&#32;(in&#32;bytes).\n&quot;</emphasis>
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Multiple&#32;ranges&#32;can&#32;be&#32;formatted&#32;by&#32;specifying\n&quot;</emphasis>
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;several&#32;-offset&#32;and&#32;-length&#32;pairs.\n&quot;</emphasis>
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;When&#32;only&#32;a&#32;single&#32;-offset&#32;is&#32;specified&#32;without\n&quot;</emphasis>
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;-length,&#32;clang-format&#32;will&#32;format&#32;up&#32;to&#32;the&#32;end\n&quot;</emphasis>
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;of&#32;the&#32;file.\n&quot;</emphasis>
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Can&#32;only&#32;be&#32;used&#32;with&#32;one&#32;input&#32;file.&quot;</emphasis>),
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00053 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;
+00054 &#32;&#32;&#32;&#32;LineRanges(<emphasis role="stringliteral">&quot;lines&quot;</emphasis>,
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;&lt;start&#32;line&gt;:&lt;end&#32;line&gt;&#32;-&#32;format&#32;a&#32;range&#32;of\n&quot;</emphasis>
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;lines&#32;(both&#32;1-based).\n&quot;</emphasis>
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Multiple&#32;ranges&#32;can&#32;be&#32;formatted&#32;by&#32;specifying\n&quot;</emphasis>
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;several&#32;-lines&#32;arguments.\n&quot;</emphasis>
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Can&apos;t&#32;be&#32;used&#32;with&#32;-offset&#32;and&#32;-length.\n&quot;</emphasis>
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Can&#32;only&#32;be&#32;used&#32;with&#32;one&#32;input&#32;file.&quot;</emphasis>),
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00062 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00063 &#32;&#32;&#32;&#32;Style(<emphasis role="stringliteral">&quot;style&quot;</emphasis>,&#32;cl::desc(clang::format::StyleOptionHelpDescription),
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(clang::format::DefaultFormatStyle),
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00066 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00067 &#32;&#32;&#32;&#32;FallbackStyle(<emphasis role="stringliteral">&quot;fallback-style&quot;</emphasis>,
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;The&#32;name&#32;of&#32;the&#32;predefined&#32;style&#32;used&#32;as&#32;a\n&quot;</emphasis>
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;fallback&#32;in&#32;case&#32;clang-format&#32;is&#32;invoked&#32;with\n&quot;</emphasis>
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;-style=file,&#32;but&#32;can&#32;not&#32;find&#32;the&#32;.clang-format\n&quot;</emphasis>
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;file&#32;to&#32;use.\n&quot;</emphasis>
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Use&#32;-fallback-style=none&#32;to&#32;skip&#32;formatting.&quot;</emphasis>),
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(clang::format::DefaultFallbackStyle),
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00075 
+00076 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;AssumeFileName(
+00077 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;assume-filename&quot;</emphasis>,
+00078 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Override&#32;filename&#32;used&#32;to&#32;determine&#32;the&#32;language.\n&quot;</emphasis>
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;When&#32;reading&#32;from&#32;stdin,&#32;clang-format&#32;assumes&#32;this\n&quot;</emphasis>
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;filename&#32;to&#32;determine&#32;the&#32;language.&quot;</emphasis>),
+00081 &#32;&#32;&#32;&#32;cl::init(<emphasis role="stringliteral">&quot;&lt;stdin&gt;&quot;</emphasis>),&#32;cl::cat(ClangFormatCategory));
+00082 
+00083 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Inplace(<emphasis role="stringliteral">&quot;i&quot;</emphasis>,
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Inplace&#32;edit&#32;&lt;file&gt;s,&#32;if&#32;specified.&quot;</emphasis>),
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00086 
+00087 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;OutputXML(<emphasis role="stringliteral">&quot;output-replacements-xml&quot;</emphasis>,
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Output&#32;replacements&#32;as&#32;XML.&quot;</emphasis>),
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00090 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00091 &#32;&#32;&#32;&#32;DumpConfig(<emphasis role="stringliteral">&quot;dump-config&quot;</emphasis>,
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Dump&#32;configuration&#32;options&#32;to&#32;stdout&#32;and&#32;exit.\n&quot;</emphasis>
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Can&#32;be&#32;used&#32;with&#32;-style&#32;option.&quot;</emphasis>),
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00095 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;unsigned&gt;
+00096 &#32;&#32;&#32;&#32;Cursor(<emphasis role="stringliteral">&quot;cursor&quot;</emphasis>,
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;The&#32;position&#32;of&#32;the&#32;cursor&#32;when&#32;invoking\n&quot;</emphasis>
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;clang-format&#32;from&#32;an&#32;editor&#32;integration&quot;</emphasis>),
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(0),&#32;cl::cat(ClangFormatCategory));
+00100 
+00101 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;SortIncludes(
+00102 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;sort-includes&quot;</emphasis>,
+00103 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set,&#32;overrides&#32;the&#32;include&#32;sorting&#32;behavior&#32;determined&#32;by&#32;the&#32;&quot;</emphasis>
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;SortIncludes&#32;style&#32;flag&quot;</emphasis>),
+00105 &#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00106 
+00107 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00108 &#32;&#32;&#32;&#32;Verbose(<emphasis role="stringliteral">&quot;verbose&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set,&#32;shows&#32;the&#32;list&#32;of&#32;processed&#32;files&quot;</emphasis>),
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00110 
+00111 <emphasis role="comment">//&#32;Use&#32;--dry-run&#32;to&#32;match&#32;other&#32;LLVM&#32;tools&#32;when&#32;you&#32;mean&#32;do&#32;it&#32;but&#32;don&apos;t</emphasis>
+00112 <emphasis role="comment">//&#32;actually&#32;do&#32;it</emphasis>
+00113 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00114 &#32;&#32;&#32;&#32;DryRun(<emphasis role="stringliteral">&quot;dry-run&quot;</emphasis>,
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set,&#32;do&#32;not&#32;actually&#32;make&#32;the&#32;formatting&#32;changes&quot;</emphasis>),
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00117 
+00118 <emphasis role="comment">//&#32;Use&#32;-n&#32;as&#32;a&#32;common&#32;command&#32;as&#32;an&#32;alias&#32;for&#32;--dry-run.&#32;(git&#32;and&#32;make&#32;use&#32;-n)</emphasis>
+00119 <emphasis role="keyword">static</emphasis>&#32;cl::alias&#32;DryRunShort(<emphasis role="stringliteral">&quot;n&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Alias&#32;for&#32;--dry-run&quot;</emphasis>),
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory),&#32;cl::aliasopt(DryRun),
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::NotHidden);
+00122 
+00123 <emphasis role="comment">//&#32;Emulate&#32;being&#32;able&#32;to&#32;turn&#32;on/off&#32;the&#32;warning.</emphasis>
+00124 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00125 &#32;&#32;&#32;&#32;WarnFormat(<emphasis role="stringliteral">&quot;Wclang-format-violations&quot;</emphasis>,
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Warnings&#32;about&#32;individual&#32;formatting&#32;changes&#32;needed.&#32;&quot;</emphasis>
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Used&#32;only&#32;with&#32;--dry-run&#32;or&#32;-n&quot;</emphasis>),
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">true</emphasis>),&#32;cl::cat(ClangFormatCategory),&#32;cl::Hidden);
+00129 
+00130 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00131 &#32;&#32;&#32;&#32;NoWarnFormat(<emphasis role="stringliteral">&quot;Wno-clang-format-violations&quot;</emphasis>,
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Do&#32;not&#32;warn&#32;about&#32;individual&#32;formatting&#32;changes&#32;&quot;</emphasis>
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;needed.&#32;Used&#32;only&#32;with&#32;--dry-run&#32;or&#32;-n&quot;</emphasis>),
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangFormatCategory),&#32;cl::Hidden);
+00135 
+00136 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;unsigned&gt;&#32;ErrorLimit(
+00137 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;ferror-limit&quot;</emphasis>,
+00138 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Set&#32;the&#32;maximum&#32;number&#32;of&#32;clang-format&#32;errors&#32;to&#32;emit&#32;before&#32;&quot;</emphasis>
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;stopping&#32;(0&#32;=&#32;no&#32;limit).&#32;Used&#32;only&#32;with&#32;--dry-run&#32;or&#32;-n&quot;</emphasis>),
+00140 &#32;&#32;&#32;&#32;cl::init(0),&#32;cl::cat(ClangFormatCategory));
+00141 
+00142 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00143 &#32;&#32;&#32;&#32;WarningsAsErrors(<emphasis role="stringliteral">&quot;Werror&quot;</emphasis>,
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set,&#32;changes&#32;formatting&#32;warnings&#32;to&#32;errors&quot;</emphasis>),
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00146 
+00147 <emphasis role="keyword">namespace&#32;</emphasis>{
+00148 <emphasis role="keyword">enum&#32;class</emphasis>&#32;WNoError&#32;{&#32;Unknown&#32;};
+00149 }
+00150 
+00151 <emphasis role="keyword">static</emphasis>&#32;cl::bits&lt;WNoError&gt;&#32;WNoErrorList(
+00152 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Wno-error&quot;</emphasis>,
+00153 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set&#32;don&apos;t&#32;error&#32;out&#32;on&#32;the&#32;specified&#32;warning&#32;type.&quot;</emphasis>),
+00154 &#32;&#32;&#32;&#32;cl::values(
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clEnumValN(WNoError::Unknown,&#32;<emphasis role="stringliteral">&quot;unknown&quot;</emphasis>,
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;If&#32;set,&#32;unknown&#32;format&#32;options&#32;are&#32;only&#32;warned&#32;about.\n&quot;</emphasis>
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;This&#32;can&#32;be&#32;used&#32;to&#32;enable&#32;formatting,&#32;even&#32;if&#32;the\n&quot;</emphasis>
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;configuration&#32;contains&#32;unknown&#32;(newer)&#32;options.\n&quot;</emphasis>
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Use&#32;with&#32;caution,&#32;as&#32;this&#32;might&#32;lead&#32;to&#32;dramatically\n&quot;</emphasis>
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;differing&#32;format&#32;depending&#32;on&#32;an&#32;option&#32;being\n&quot;</emphasis>
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;supported&#32;or&#32;not.&quot;</emphasis>)),
+00162 &#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00163 
+00164 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00165 &#32;&#32;&#32;&#32;ShowColors(<emphasis role="stringliteral">&quot;fcolor-diagnostics&quot;</emphasis>,
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set,&#32;and&#32;on&#32;a&#32;color-capable&#32;terminal&#32;controls&#32;&quot;</emphasis>
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;whether&#32;or&#32;not&#32;to&#32;print&#32;diagnostics&#32;in&#32;color&quot;</emphasis>),
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">true</emphasis>),&#32;cl::cat(ClangFormatCategory),&#32;cl::Hidden);
+00169 
+00170 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00171 &#32;&#32;&#32;&#32;NoShowColors(<emphasis role="stringliteral">&quot;fno-color-diagnostics&quot;</emphasis>,
+00172 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;If&#32;set,&#32;and&#32;on&#32;a&#32;color-capable&#32;terminal&#32;controls&#32;&quot;</emphasis>
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;whether&#32;or&#32;not&#32;to&#32;print&#32;diagnostics&#32;in&#32;color&quot;</emphasis>),
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangFormatCategory),&#32;cl::Hidden);
+00175 
+00176 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;&#32;FileNames(cl::Positional,&#32;cl::desc(<emphasis role="stringliteral">&quot;[&lt;file&gt;&#32;...]&quot;</emphasis>),
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangFormatCategory));
+00178 
+<anchor xml:id="__clang_format_8cpp_source_1l00179"/><link linkend="_namespaceclang">00179</link> <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+<anchor xml:id="__clang_format_8cpp_source_1l00180"/><link linkend="_namespaceclang_1_1format">00180</link> <emphasis role="keyword">namespace&#32;</emphasis>format&#32;{
+00181 
+00182 <emphasis role="keyword">static</emphasis>&#32;FileID&#32;createInMemoryFile(StringRef&#32;FileName,&#32;MemoryBufferRef&#32;Source,
+00183 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceManager&#32;&amp;Sources,&#32;FileManager&#32;&amp;Files,
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::vfs::InMemoryFileSystem&#32;*MemFS)&#32;{
+00185 &#32;&#32;MemFS-&gt;addFileNoOwn(FileName,&#32;0,&#32;Source);
+00186 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;File&#32;=&#32;Files.getOptionalFileRef(FileName);
+00187 &#32;&#32;assert(File&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;File&#32;not&#32;added&#32;to&#32;MemFS?&quot;</emphasis>);
+00188 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Sources.createFileID(*File,&#32;SourceLocation(),&#32;SrcMgr::C_User);
+00189 }
+00190 
+00191 <emphasis role="comment">//&#32;Parses&#32;&lt;start&#32;line&gt;:&lt;end&#32;line&gt;&#32;input&#32;to&#32;a&#32;pair&#32;of&#32;line&#32;numbers.</emphasis>
+00192 <emphasis role="comment">//&#32;Returns&#32;true&#32;on&#32;error.</emphasis>
+00193 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;parseLineRange(StringRef&#32;Input,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;&amp;FromLine,
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;&amp;ToLine)&#32;{
+00195 &#32;&#32;std::pair&lt;StringRef,&#32;StringRef&gt;&#32;LineRange&#32;=&#32;Input.split(<emphasis role="charliteral">&apos;:&apos;</emphasis>);
+00196 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LineRange.first.getAsInteger(0,&#32;FromLine)&#32;||
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LineRange.second.getAsInteger(0,&#32;ToLine);
+00198 }
+00199 
+00200 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;fillRanges(MemoryBuffer&#32;*Code,
+00201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::vector&lt;tooling::Range&gt;&#32;&amp;Ranges)&#32;{
+00202 &#32;&#32;IntrusiveRefCntPtr&lt;llvm::vfs::InMemoryFileSystem&gt;&#32;InMemoryFileSystem(
+00203 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;llvm::vfs::InMemoryFileSystem);
+00204 &#32;&#32;FileManager&#32;Files(FileSystemOptions(),&#32;InMemoryFileSystem);
+00205 &#32;&#32;DiagnosticsEngine&#32;Diagnostics(
+00206 &#32;&#32;&#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs),
+00207 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions);
+00208 &#32;&#32;SourceManager&#32;Sources(Diagnostics,&#32;Files);
+00209 &#32;&#32;FileID&#32;ID&#32;=&#32;createInMemoryFile(<emphasis role="stringliteral">&quot;&lt;irrelevant&gt;&quot;</emphasis>,&#32;*Code,&#32;Sources,&#32;Files,
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InMemoryFileSystem.get());
+00211 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LineRanges.empty())&#32;{
+00212 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Offsets.empty()&#32;||&#32;!Lengths.empty())&#32;{
+00213 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;cannot&#32;use&#32;-lines&#32;with&#32;-offset/-length\n&quot;</emphasis>;
+00214 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00215 &#32;&#32;&#32;&#32;}
+00216 
+00217 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;LineRanges.size();&#32;i&#32;&lt;&#32;e;&#32;++i)&#32;{
+00218 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;FromLine,&#32;ToLine;
+00219 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parseLineRange(LineRanges[i],&#32;FromLine,&#32;ToLine))&#32;{
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;invalid&#32;&lt;start&#32;line&gt;:&lt;end&#32;line&gt;&#32;pair\n&quot;</emphasis>;
+00221 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00222 &#32;&#32;&#32;&#32;&#32;&#32;}
+00223 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FromLine&#32;&gt;&#32;ToLine)&#32;{
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;start&#32;line&#32;should&#32;be&#32;less&#32;than&#32;end&#32;line\n&quot;</emphasis>;
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00226 &#32;&#32;&#32;&#32;&#32;&#32;}
+00227 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Start&#32;=&#32;Sources.translateLineCol(ID,&#32;FromLine,&#32;1);
+00228 &#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;End&#32;=&#32;Sources.translateLineCol(ID,&#32;ToLine,&#32;UINT_MAX);
+00229 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Start.isInvalid()&#32;||&#32;End.isInvalid())
+00230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00231 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset&#32;=&#32;Sources.getFileOffset(Start);
+00232 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Length&#32;=&#32;Sources.getFileOffset(End)&#32;-&#32;Offset;
+00233 &#32;&#32;&#32;&#32;&#32;&#32;Ranges.push_back(tooling::Range(Offset,&#32;Length));
+00234 &#32;&#32;&#32;&#32;}
+00235 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00236 &#32;&#32;}
+00237 
+00238 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Offsets.empty())
+00239 &#32;&#32;&#32;&#32;Offsets.push_back(0);
+00240 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Offsets.size()&#32;!=&#32;Lengths.size()&#32;&amp;&amp;
+00241 &#32;&#32;&#32;&#32;&#32;&#32;!(Offsets.size()&#32;==&#32;1&#32;&amp;&amp;&#32;Lengths.empty()))&#32;{
+00242 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;number&#32;of&#32;-offset&#32;and&#32;-length&#32;arguments&#32;must&#32;match.\n&quot;</emphasis>;
+00243 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00244 &#32;&#32;}
+00245 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;Offsets.size();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00246 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Offsets[i]&#32;&gt;=&#32;Code-&gt;getBufferSize())&#32;{
+00247 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;offset&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Offsets[i]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;is&#32;outside&#32;the&#32;file\n&quot;</emphasis>;
+00248 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00249 &#32;&#32;&#32;&#32;}
+00250 &#32;&#32;&#32;&#32;SourceLocation&#32;Start&#32;=
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Sources.getLocForStartOfFile(ID).getLocWithOffset(Offsets[i]);
+00252 &#32;&#32;&#32;&#32;SourceLocation&#32;End;
+00253 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;Lengths.size())&#32;{
+00254 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Offsets[i]&#32;+&#32;Lengths[i]&#32;&gt;&#32;Code-&gt;getBufferSize())&#32;{
+00255 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;invalid&#32;length&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Lengths[i]
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;offset&#32;+&#32;length&#32;(&quot;</emphasis>&#32;&lt;&lt;&#32;Offsets[i]&#32;+&#32;Lengths[i]
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;)&#32;is&#32;outside&#32;the&#32;file.\n&quot;</emphasis>;
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00259 &#32;&#32;&#32;&#32;&#32;&#32;}
+00260 &#32;&#32;&#32;&#32;&#32;&#32;End&#32;=&#32;Start.getLocWithOffset(Lengths[i]);
+00261 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00262 &#32;&#32;&#32;&#32;&#32;&#32;End&#32;=&#32;Sources.getLocForEndOfFile(ID);
+00263 &#32;&#32;&#32;&#32;}
+00264 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset&#32;=&#32;Sources.getFileOffset(Start);
+00265 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Length&#32;=&#32;Sources.getFileOffset(End)&#32;-&#32;Offset;
+00266 &#32;&#32;&#32;&#32;Ranges.push_back(tooling::Range(Offset,&#32;Length));
+00267 &#32;&#32;}
+00268 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00269 }
+00270 
+00271 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;outputReplacementXML(StringRef&#32;Text)&#32;{
+00272 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;When&#32;we&#32;sort&#32;includes,&#32;we&#32;need&#32;to&#32;make&#32;sure&#32;the&#32;stream&#32;is&#32;correct</emphasis>
+00273 &#32;&#32;<emphasis role="comment">//&#32;utf-8.</emphasis>
+00274 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;From&#32;=&#32;0;
+00275 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;Index;
+00276 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;((Index&#32;=&#32;Text.find_first_of(<emphasis role="stringliteral">&quot;\n\r&lt;&amp;&quot;</emphasis>,&#32;From))&#32;!=&#32;StringRef::npos)&#32;{
+00277 &#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;Text.substr(From,&#32;Index&#32;-&#32;From);
+00278 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(Text[Index])&#32;{
+00279 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>:
+00280 &#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;#10;&quot;</emphasis>;
+00281 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00282 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;\r&apos;</emphasis>:
+00283 &#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;#13;&quot;</emphasis>;
+00284 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00285 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&lt;&apos;</emphasis>:
+00286 &#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;lt;&quot;</emphasis>;
+00287 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00288 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&amp;&apos;</emphasis>:
+00289 &#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;amp;&quot;</emphasis>;
+00290 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00291 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00292 &#32;&#32;&#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Unexpected&#32;character&#32;encountered!&quot;</emphasis>);
+00293 &#32;&#32;&#32;&#32;}
+00294 &#32;&#32;&#32;&#32;From&#32;=&#32;Index&#32;+&#32;1;
+00295 &#32;&#32;}
+00296 &#32;&#32;outs()&#32;&lt;&lt;&#32;Text.substr(From);
+00297 }
+00298 
+00299 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;outputReplacementsXML(<emphasis role="keyword">const</emphasis>&#32;Replacements&#32;&amp;Replaces)&#32;{
+00300 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;R&#32;:&#32;Replaces)&#32;{
+00301 &#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;replacement&#32;&quot;</emphasis>
+00302 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;offset=&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;R.getOffset()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;&quot;</emphasis>
+00303 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;length=&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;R.getLength()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&gt;&quot;</emphasis>;
+00304 &#32;&#32;&#32;&#32;outputReplacementXML(R.getReplacementText());
+00305 &#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/replacement&gt;\n&quot;</emphasis>;
+00306 &#32;&#32;}
+00307 }
+00308 
+00309 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>
+00310 emitReplacementWarnings(<emphasis role="keyword">const</emphasis>&#32;Replacements&#32;&amp;Replaces,&#32;StringRef&#32;AssumedFileName,
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&#32;&amp;Code)&#32;{
+00312 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Replaces.empty())
+00313 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00314 
+00315 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Errors&#32;=&#32;0;
+00316 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(WarnFormat&#32;&amp;&amp;&#32;!NoWarnFormat)&#32;{
+00317 &#32;&#32;&#32;&#32;llvm::SourceMgr&#32;Mgr;
+00318 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*StartBuf&#32;=&#32;Code-&gt;getBufferStart();
+00319 
+00320 &#32;&#32;&#32;&#32;Mgr.AddNewSourceBuffer(
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getMemBuffer(StartBuf,&#32;AssumedFileName),&#32;SMLoc());
+00322 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;R&#32;:&#32;Replaces)&#32;{
+00323 &#32;&#32;&#32;&#32;&#32;&#32;SMDiagnostic&#32;Diag&#32;=&#32;Mgr.GetMessage(
+00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SMLoc::getFromPointer(StartBuf&#32;+&#32;R.getOffset()),
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;WarningsAsErrors&#32;?&#32;SourceMgr::DiagKind::DK_Error
+00326 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;SourceMgr::DiagKind::DK_Warning,
+00327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;code&#32;should&#32;be&#32;clang-formatted&#32;[-Wclang-format-violations]&quot;</emphasis>);
+00328 
+00329 &#32;&#32;&#32;&#32;&#32;&#32;Diag.print(<emphasis role="keyword">nullptr</emphasis>,&#32;llvm::errs(),&#32;(ShowColors&#32;&amp;&amp;&#32;!NoShowColors));
+00330 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ErrorLimit&#32;&amp;&amp;&#32;++Errors&#32;&gt;=&#32;ErrorLimit)
+00331 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00332 &#32;&#32;&#32;&#32;}
+00333 &#32;&#32;}
+00334 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;WarningsAsErrors;
+00335 }
+00336 
+00337 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;outputXML(<emphasis role="keyword">const</emphasis>&#32;Replacements&#32;&amp;Replaces,
+00338 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Replacements&#32;&amp;FormatChanges,
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FormattingAttemptStatus&#32;&amp;Status,
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;cl::opt&lt;unsigned&gt;&#32;&amp;Cursor,
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;CursorPosition)&#32;{
+00342 &#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;?xml&#32;version=&apos;1.0&apos;?&gt;\n&lt;replacements&#32;&quot;</emphasis>
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;xml:space=&apos;preserve&apos;&#32;incomplete_format=&apos;&quot;</emphasis>
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;(Status.FormatComplete&#32;?&#32;<emphasis role="stringliteral">&quot;false&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;true&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+00345 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Status.FormatComplete)
+00346 &#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;line=&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Status.Line&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+00347 &#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&gt;\n&quot;</emphasis>;
+00348 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Cursor.getNumOccurrences()&#32;!=&#32;0)
+00349 &#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;cursor&gt;&quot;</emphasis>&#32;&lt;&lt;&#32;FormatChanges.getShiftedCodePosition(CursorPosition)
+00350 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/cursor&gt;\n&quot;</emphasis>;
+00351 
+00352 &#32;&#32;outputReplacementsXML(Replaces);
+00353 &#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/replacements&gt;\n&quot;</emphasis>;
+00354 }
+00355 
+00356 <emphasis role="comment">//&#32;Returns&#32;true&#32;on&#32;error.</emphasis>
+00357 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;format(StringRef&#32;FileName)&#32;{
+00358 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OutputXML&#32;&amp;&amp;&#32;Inplace&#32;&amp;&amp;&#32;FileName&#32;==&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>)&#32;{
+00359 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;cannot&#32;use&#32;-i&#32;when&#32;reading&#32;from&#32;stdin.\n&quot;</emphasis>;
+00360 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00361 &#32;&#32;}
+00362 &#32;&#32;<emphasis role="comment">//&#32;On&#32;Windows,&#32;overwriting&#32;a&#32;file&#32;with&#32;an&#32;open&#32;file&#32;mapping&#32;doesn&apos;t&#32;work,</emphasis>
+00363 &#32;&#32;<emphasis role="comment">//&#32;so&#32;read&#32;the&#32;whole&#32;file&#32;into&#32;memory&#32;when&#32;formatting&#32;in-place.</emphasis>
+00364 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;CodeOrErr&#32;=
+00365 &#32;&#32;&#32;&#32;&#32;&#32;!OutputXML&#32;&amp;&amp;&#32;Inplace&#32;?&#32;MemoryBuffer::getFileAsStream(FileName)
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;MemoryBuffer::getFileOrSTDIN(FileName);
+00367 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;CodeOrErr.getError())&#32;{
+00368 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;EC.message()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00369 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00370 &#32;&#32;}
+00371 &#32;&#32;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&#32;Code&#32;=&#32;std::move(CodeOrErr.get());
+00372 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Code-&gt;getBufferSize()&#32;==&#32;0)
+00373 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;<emphasis role="comment">//&#32;Empty&#32;files&#32;are&#32;formatted&#32;correctly.</emphasis>
+00374 
+00375 &#32;&#32;StringRef&#32;BufStr&#32;=&#32;Code-&gt;getBuffer();
+00376 
+00377 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*InvalidBOM&#32;=&#32;SrcMgr::ContentCache::getInvalidBOM(BufStr);
+00378 
+00379 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InvalidBOM)&#32;{
+00380 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;encoding&#32;with&#32;unsupported&#32;byte&#32;order&#32;mark&#32;\&quot;&quot;</emphasis>
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;InvalidBOM&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;&#32;detected&quot;</emphasis>;
+00382 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileName&#32;!=&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>)
+00383 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;in&#32;file&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;FileName&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+00384 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;.\n&quot;</emphasis>;
+00385 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00386 &#32;&#32;}
+00387 
+00388 &#32;&#32;std::vector&lt;tooling::Range&gt;&#32;Ranges;
+00389 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(fillRanges(Code.get(),&#32;Ranges))
+00390 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00391 &#32;&#32;StringRef&#32;AssumedFileName&#32;=&#32;(FileName&#32;==&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>)&#32;?&#32;AssumeFileName&#32;:&#32;FileName;
+00392 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(AssumedFileName.empty())&#32;{
+00393 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;empty&#32;filenames&#32;are&#32;not&#32;allowed\n&quot;</emphasis>;
+00394 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00395 &#32;&#32;}
+00396 
+00397 &#32;&#32;llvm::Expected&lt;FormatStyle&gt;&#32;FormatStyle&#32;=
+00398 &#32;&#32;&#32;&#32;&#32;&#32;getStyle(Style,&#32;AssumedFileName,&#32;FallbackStyle,&#32;Code-&gt;getBuffer(),
+00399 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">nullptr</emphasis>,&#32;WNoErrorList.isSet(WNoError::Unknown));
+00400 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FormatStyle)&#32;{
+00401 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(FormatStyle.takeError())&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00402 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00403 &#32;&#32;}
+00404 
+00405 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SortIncludes.getNumOccurrences()&#32;!=&#32;0)&#32;{
+00406 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SortIncludes)
+00407 &#32;&#32;&#32;&#32;&#32;&#32;FormatStyle-&gt;SortIncludes&#32;=&#32;FormatStyle::SI_CaseSensitive;
+00408 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00409 &#32;&#32;&#32;&#32;&#32;&#32;FormatStyle-&gt;SortIncludes&#32;=&#32;FormatStyle::SI_Never;
+00410 &#32;&#32;}
+00411 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;CursorPosition&#32;=&#32;Cursor;
+00412 &#32;&#32;Replacements&#32;Replaces&#32;=&#32;sortIncludes(*FormatStyle,&#32;Code-&gt;getBuffer(),&#32;Ranges,
+00413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AssumedFileName,&#32;&amp;CursorPosition);
+00414 
+00415 &#32;&#32;<emphasis role="comment">//&#32;To&#32;format&#32;JSON&#32;insert&#32;a&#32;variable&#32;to&#32;trick&#32;the&#32;code&#32;into&#32;thinking&#32;its</emphasis>
+00416 &#32;&#32;<emphasis role="comment">//&#32;JavaScript.</emphasis>
+00417 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FormatStyle-&gt;isJson())&#32;{
+00418 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Err&#32;=&#32;Replaces.add(tooling::Replacement(
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tooling::Replacement(AssumedFileName,&#32;0,&#32;0,&#32;<emphasis role="stringliteral">&quot;x&#32;=&#32;&quot;</emphasis>)));
+00420 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err)&#32;{
+00421 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Bad&#32;Json&#32;variable&#32;insertion\n&quot;</emphasis>;
+00422 &#32;&#32;&#32;&#32;}
+00423 &#32;&#32;}
+00424 
+00425 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ChangedCode&#32;=&#32;tooling::applyAllReplacements(Code-&gt;getBuffer(),&#32;Replaces);
+00426 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ChangedCode)&#32;{
+00427 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(ChangedCode.takeError())&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00428 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00429 &#32;&#32;}
+00430 &#32;&#32;<emphasis role="comment">//&#32;Get&#32;new&#32;affected&#32;ranges&#32;after&#32;sorting&#32;`#includes`.</emphasis>
+00431 &#32;&#32;Ranges&#32;=&#32;tooling::calculateRangesAfterReplacements(Replaces,&#32;Ranges);
+00432 &#32;&#32;FormattingAttemptStatus&#32;Status;
+00433 &#32;&#32;Replacements&#32;FormatChanges&#32;=
+00434 &#32;&#32;&#32;&#32;&#32;&#32;reformat(*FormatStyle,&#32;*ChangedCode,&#32;Ranges,&#32;AssumedFileName,&#32;&amp;Status);
+00435 &#32;&#32;Replaces&#32;=&#32;Replaces.merge(FormatChanges);
+00436 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputXML&#32;||&#32;DryRun)&#32;{
+00437 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DryRun)&#32;{
+00438 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;emitReplacementWarnings(Replaces,&#32;AssumedFileName,&#32;Code);
+00439 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00440 &#32;&#32;&#32;&#32;&#32;&#32;outputXML(Replaces,&#32;FormatChanges,&#32;Status,&#32;Cursor,&#32;CursorPosition);
+00441 &#32;&#32;&#32;&#32;}
+00442 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00443 &#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;llvm::vfs::InMemoryFileSystem&gt;&#32;InMemoryFileSystem(
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;llvm::vfs::InMemoryFileSystem);
+00445 &#32;&#32;&#32;&#32;FileManager&#32;Files(FileSystemOptions(),&#32;InMemoryFileSystem);
+00446 &#32;&#32;&#32;&#32;DiagnosticsEngine&#32;Diagnostics(
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs),
+00448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions);
+00449 &#32;&#32;&#32;&#32;SourceManager&#32;Sources(Diagnostics,&#32;Files);
+00450 &#32;&#32;&#32;&#32;FileID&#32;ID&#32;=&#32;createInMemoryFile(AssumedFileName,&#32;*Code,&#32;Sources,&#32;Files,
+00451 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InMemoryFileSystem.get());
+00452 &#32;&#32;&#32;&#32;Rewriter&#32;Rewrite(Sources,&#32;LangOptions());
+00453 &#32;&#32;&#32;&#32;tooling::applyAllReplacements(Replaces,&#32;Rewrite);
+00454 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Inplace)&#32;{
+00455 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Rewrite.overwriteChangedFiles())
+00456 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00457 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00458 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Cursor.getNumOccurrences()&#32;!=&#32;0)&#32;{
+00459 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;{&#32;\&quot;Cursor\&quot;:&#32;&quot;</emphasis>
+00460 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;FormatChanges.getShiftedCodePosition(CursorPosition)
+00461 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;IncompleteFormat\&quot;:&#32;&quot;</emphasis>
+00462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;(Status.FormatComplete&#32;?&#32;<emphasis role="stringliteral">&quot;false&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;true&quot;</emphasis>);
+00463 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Status.FormatComplete)
+00464 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;Line\&quot;:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Status.Line;
+00465 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;}\n&quot;</emphasis>;
+00466 &#32;&#32;&#32;&#32;&#32;&#32;}
+00467 &#32;&#32;&#32;&#32;&#32;&#32;Rewrite.getEditBuffer(ID).write(outs());
+00468 &#32;&#32;&#32;&#32;}
+00469 &#32;&#32;}
+00470 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00471 }
+00472 
+00473 }&#32;<emphasis role="comment">//&#32;namespace&#32;format</emphasis>
+00474 }&#32;<emphasis role="comment">//&#32;namespace&#32;clang</emphasis>
+00475 
+00476 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;PrintVersion(raw_ostream&#32;&amp;OS)&#32;{
+00477 &#32;&#32;OS&#32;&lt;&lt;&#32;clang::getClangToolFullVersion(<emphasis role="stringliteral">&quot;clang-format&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00478 }
+00479 
+00480 <emphasis role="comment">//&#32;Dump&#32;the&#32;configuration.</emphasis>
+00481 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;dumpConfig()&#32;{
+00482 &#32;&#32;StringRef&#32;FileName;
+00483 &#32;&#32;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&#32;Code;
+00484 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileNames.empty())&#32;{
+00485 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;can&apos;t&#32;read&#32;the&#32;code&#32;to&#32;detect&#32;the&#32;language&#32;if&#32;there&apos;s&#32;no</emphasis>
+00486 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;file&#32;name,&#32;so&#32;leave&#32;Code&#32;empty&#32;here.</emphasis>
+00487 &#32;&#32;&#32;&#32;FileName&#32;=&#32;AssumeFileName;
+00488 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00489 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;in&#32;the&#32;code&#32;in&#32;case&#32;the&#32;filename&#32;alone&#32;isn&apos;t&#32;enough&#32;to</emphasis>
+00490 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;detect&#32;the&#32;language.</emphasis>
+00491 &#32;&#32;&#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;CodeOrErr&#32;=
+00492 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(FileNames[0]);
+00493 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;CodeOrErr.getError())&#32;{
+00494 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;EC.message()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00495 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00496 &#32;&#32;&#32;&#32;}
+00497 &#32;&#32;&#32;&#32;FileName&#32;=&#32;(FileNames[0]&#32;==&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>)&#32;?&#32;AssumeFileName&#32;:&#32;FileNames[0];
+00498 &#32;&#32;&#32;&#32;Code&#32;=&#32;std::move(CodeOrErr.get());
+00499 &#32;&#32;}
+00500 &#32;&#32;llvm::Expected&lt;clang::format::FormatStyle&gt;&#32;FormatStyle&#32;=
+00501 &#32;&#32;&#32;&#32;&#32;&#32;clang::format::getStyle(Style,&#32;FileName,&#32;FallbackStyle,
+00502 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Code&#32;?&#32;Code-&gt;getBuffer()&#32;:&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>);
+00503 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FormatStyle)&#32;{
+00504 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(FormatStyle.takeError())&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00505 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00506 &#32;&#32;}
+00507 &#32;&#32;std::string&#32;Config&#32;=&#32;clang::format::configurationAsText(*FormatStyle);
+00508 &#32;&#32;outs()&#32;&lt;&lt;&#32;Config&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00509 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00510 }
+00511 
+<anchor xml:id="__clang_format_8cpp_source_1l00512"/><link linkend="__clang_format_8cpp_1a217dbf8b442f20279ea00b898af96f52">00512</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_format_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00513 &#32;&#32;llvm::InitLLVM&#32;X(argc,&#32;argv);
+00514 
+00515 &#32;&#32;cl::HideUnrelatedOptions(ClangFormatCategory);
+00516 
+00517 &#32;&#32;cl::SetVersionPrinter(PrintVersion);
+00518 &#32;&#32;cl::ParseCommandLineOptions(
+00519 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,
+00520 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;A&#32;tool&#32;to&#32;format&#32;C/C++/Java/JavaScript/JSON/Objective-C/Protobuf/C#&#32;&quot;</emphasis>
+00521 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;code.\n\n&quot;</emphasis>
+00522 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;If&#32;no&#32;arguments&#32;are&#32;specified,&#32;it&#32;formats&#32;the&#32;code&#32;from&#32;standard&#32;input\n&quot;</emphasis>
+00523 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;and&#32;writes&#32;the&#32;result&#32;to&#32;the&#32;standard&#32;output.\n&quot;</emphasis>
+00524 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;If&#32;&lt;file&gt;s&#32;are&#32;given,&#32;it&#32;reformats&#32;the&#32;files.&#32;If&#32;-i&#32;is&#32;specified\n&quot;</emphasis>
+00525 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;together&#32;with&#32;&lt;file&gt;s,&#32;the&#32;files&#32;are&#32;edited&#32;in-place.&#32;Otherwise,&#32;the\n&quot;</emphasis>
+00526 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;result&#32;is&#32;written&#32;to&#32;the&#32;standard&#32;output.\n&quot;</emphasis>);
+00527 
+00528 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Help)&#32;{
+00529 &#32;&#32;&#32;&#32;cl::PrintHelpMessage();
+00530 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00531 &#32;&#32;}
+00532 
+00533 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DumpConfig)&#32;{
+00534 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;dumpConfig();
+00535 &#32;&#32;}
+00536 
+00537 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Error&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00538 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileNames.empty())&#32;{
+00539 &#32;&#32;&#32;&#32;Error&#32;=&#32;clang::format::format(<emphasis role="stringliteral">&quot;-&quot;</emphasis>);
+00540 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error&#32;?&#32;1&#32;:&#32;0;
+00541 &#32;&#32;}
+00542 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileNames.size()&#32;!=&#32;1&#32;&amp;&amp;
+00543 &#32;&#32;&#32;&#32;&#32;&#32;(!Offsets.empty()&#32;||&#32;!Lengths.empty()&#32;||&#32;!LineRanges.empty()))&#32;{
+00544 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-offset,&#32;-length&#32;and&#32;-lines&#32;can&#32;only&#32;be&#32;used&#32;for&#32;&quot;</emphasis>
+00545 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;single&#32;file.\n&quot;</emphasis>;
+00546 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00547 &#32;&#32;}
+00548 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;FileName&#32;:&#32;FileNames)&#32;{
+00549 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Verbose)
+00550 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Formatting&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;FileName&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00551 &#32;&#32;&#32;&#32;Error&#32;|=&#32;clang::format::format(FileName);
+00552 &#32;&#32;}
+00553 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error&#32;?&#32;1&#32;:&#32;0;
+00554 }
+</programlisting></section>

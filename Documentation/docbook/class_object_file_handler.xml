@@ -1,0 +1,351 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_class_object_file_handler" xml:lang="en-US">
+<title>ObjectFileHandler Class Reference</title>
+<indexterm><primary>ObjectFileHandler</primary></indexterm>
+<para>Inheritance diagram for ObjectFileHandler:    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="class_object_file_handler.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para><link linkend="_class_object_file_handler_1a6d8bdf5bea2b4d5e6ab08a698406758d">ObjectFileHandler</link> (std::unique_ptr&lt; ObjectFile &gt; ObjIn)</para>
+</listitem>
+            <listitem><para><link linkend="_class_object_file_handler_1aa32a0f47a2433eccee0d8812a4ddd31c">~ObjectFileHandler</link> () final</para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1a721cdcac5b3554e5685c96f4788bc655">ReadHeader</link> (MemoryBuffer &amp;Input) final</para>
+</listitem>
+            <listitem><para>Expected&lt; Optional&lt; StringRef &gt; &gt; <link linkend="_class_object_file_handler_1ab8cb60c1eecea680fcdb327779cf66c3">ReadBundleStart</link> (MemoryBuffer &amp;Input) final</para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1ada66ffa9cbb4567b92dc3b371ea01481">ReadBundleEnd</link> (MemoryBuffer &amp;Input) final</para>
+
+<para>Read the marker that closes the current bundle. </para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1a8cf5a7c710bc3c27212d1976c80a8258">ReadBundle</link> (raw_ostream &amp;OS, MemoryBuffer &amp;Input) final</para>
+
+<para>Read the current bundle and write the result into the stream <emphasis>OS</emphasis>. </para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1a6bad7c10b02f3f50d099204afbc663a0">WriteHeader</link> (raw_fd_ostream &amp;OS, ArrayRef&lt; std::unique_ptr&lt; MemoryBuffer &gt;&gt; Inputs) final</para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1a959f87929ecfa735f661b55a38695eda">WriteBundleStart</link> (raw_fd_ostream &amp;OS, StringRef TargetTriple) final</para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1aa0f573b07d6599ba4c403dfd4b43471a">WriteBundleEnd</link> (raw_fd_ostream &amp;OS, StringRef TargetTriple) final</para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_object_file_handler_1ae617802036593fc283753c6ddf0ea221">WriteBundle</link> (raw_fd_ostream &amp;OS, MemoryBuffer &amp;Input) final</para>
+
+<para>Write the bundle from <emphasis>Input</emphasis> into <emphasis>OS</emphasis>. </para>
+</listitem>
+            <listitem><para>virtual Error <link linkend="_class_file_handler_1a70cbb9c0347d248c018e52993a13255b">listBundleIDs</link> (MemoryBuffer &amp;Input)</para>
+
+<para>List bundle IDs in <emphasis>Input</emphasis>. </para>
+</listitem>
+            <listitem><para>Error <link linkend="_class_file_handler_1a70ed8dd129df99dcd5d5e42fffd7b125">forEachBundle</link> (MemoryBuffer &amp;Input, std::function&lt; Error(const <link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link> &amp;)&gt; Func)</para>
+
+<para>For each bundle in <emphasis>Input</emphasis>, do <emphasis>Func</emphasis>. </para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Protected Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>virtual Error <link linkend="_class_file_handler_1af0a452c5014ddb59b9558614d21daaed">listBundleIDsCallback</link> (MemoryBuffer &amp;Input, const <link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link> &amp;Info)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+
+<para>Handler for object files. The bundles are organized by sections with a designated name.</para>
+
+<para>To unbundle, we just copy the contents of the designated section. </para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00515">515</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+</section>
+<section>
+<title>Constructor &amp; Destructor Documentation</title>
+<anchor xml:id="_class_object_file_handler_1a6d8bdf5bea2b4d5e6ab08a698406758d"/>    <section>
+    <title>ObjectFileHandler()</title>
+<indexterm><primary>ObjectFileHandler</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<para><computeroutput>ObjectFileHandler::ObjectFileHandler (std::unique_ptr&lt; ObjectFile &gt; ObjIn)<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00550">550</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00551 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;<link linkend="_class_file_handler_1a0d1ac8e9911e19255e8b2d99c2d93f43">FileHandler</link>(),&#32;Obj(std::move(ObjIn)),
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CurrentSection(Obj-&gt;section_begin()),
+00553 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NextSection(Obj-&gt;section_begin())&#32;{}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1aa32a0f47a2433eccee0d8812a4ddd31c"/>    <section>
+    <title>~ObjectFileHandler()</title>
+<indexterm><primary>~ObjectFileHandler</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>~ObjectFileHandler</secondary></indexterm>
+<para><computeroutput>ObjectFileHandler::~ObjectFileHandler ( )<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00555">555</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00555 {}
+</programlisting></section>
+</section>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_class_file_handler_1a70ed8dd129df99dcd5d5e42fffd7b125"/>    <section>
+    <title>forEachBundle()</title>
+<indexterm><primary>forEachBundle</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>forEachBundle</secondary></indexterm>
+<para><computeroutput>Error FileHandler::forEachBundle (MemoryBuffer &amp; Input, std::function&lt; Error(const <link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link> &amp;)&gt; Func)<computeroutput>[inline]</computeroutput>, <computeroutput>[inherited]</computeroutput></computeroutput></para><para>
+
+<para>For each bundle in <emphasis>Input</emphasis>, do <emphasis>Func</emphasis>. </para>
+</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00234">234</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00236 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">true</emphasis>)&#32;{
+00237 &#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;CurTripleOrErr&#32;=&#32;<link linkend="_class_file_handler_1a5b31037af59fa8c77b8287d8ae9d84c4">ReadBundleStart</link>(Input);
+00238 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CurTripleOrErr)
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CurTripleOrErr.takeError();
+00240 
+00241 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;No&#32;more&#32;bundles.</emphasis>
+00242 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!*CurTripleOrErr)
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00244 
+00245 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;CurTriple&#32;=&#32;**CurTripleOrErr;
+00246 &#32;&#32;&#32;&#32;&#32;&#32;assert(!CurTriple.empty());
+00247 
+00248 &#32;&#32;&#32;&#32;&#32;&#32;BundleInfo&#32;Info{CurTriple};
+00249 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;Func(Info))
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00251 &#32;&#32;&#32;&#32;}
+00252 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00253 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_file_handler_1a70cbb9c0347d248c018e52993a13255b"/>    <section>
+    <title>listBundleIDs()</title>
+<indexterm><primary>listBundleIDs</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>listBundleIDs</secondary></indexterm>
+<para><computeroutput>virtual Error FileHandler::listBundleIDs (MemoryBuffer &amp; Input)<computeroutput>[inline]</computeroutput>, <computeroutput>[virtual]</computeroutput>, <computeroutput>[inherited]</computeroutput></computeroutput></para><para>
+
+<para>List bundle IDs in <emphasis>Input</emphasis>. </para>
+</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00220">220</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;<link linkend="_class_file_handler_1a0b973008bf7d7a53bc33d0f75b0dadef">ReadHeader</link>(Input))
+00222 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00223 
+00224 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_class_file_handler_1a70ed8dd129df99dcd5d5e42fffd7b125">forEachBundle</link>(Input,&#32;[&amp;](<emphasis role="keyword">const</emphasis>&#32;BundleInfo&#32;&amp;Info)&#32;-&gt;&#32;Error&#32;{
+00225 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;Info.BundleID&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00226 &#32;&#32;&#32;&#32;&#32;&#32;Error&#32;Err&#32;=&#32;<link linkend="_class_file_handler_1af0a452c5014ddb59b9558614d21daaed">listBundleIDsCallback</link>(Input,&#32;Info);
+00227 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err)
+00228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00229 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00230 &#32;&#32;&#32;&#32;});
+00231 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_file_handler_1af0a452c5014ddb59b9558614d21daaed"/>    <section>
+    <title>listBundleIDsCallback()</title>
+<indexterm><primary>listBundleIDsCallback</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>listBundleIDsCallback</secondary></indexterm>
+<para><computeroutput>virtual Error FileHandler::listBundleIDsCallback (MemoryBuffer &amp; Input, const <link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link> &amp; Info)<computeroutput>[inline]</computeroutput>, <computeroutput>[protected]</computeroutput>, <computeroutput>[virtual]</computeroutput>, <computeroutput>[inherited]</computeroutput></computeroutput></para><para>
+Reimplemented in <link linkend="_class_text_file_handler_1a87e2401d42b38125b706e0827723d5ec">TextFileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00256">256</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00259 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1a8cf5a7c710bc3c27212d1976c80a8258"/>    <section>
+    <title>ReadBundle()</title>
+<indexterm><primary>ReadBundle</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>ReadBundle</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::ReadBundle (raw_ostream &amp; OS, MemoryBuffer &amp; Input)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para><para>
+
+<para>Read the current bundle and write the result into the stream <emphasis>OS</emphasis>. </para>
+</para>
+<para>
+Implements <link linkend="_class_file_handler_1a6e4e497d5160eff3cab43dfdfd7e2a13">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00578">578</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00578 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00579 &#32;&#32;&#32;&#32;Expected&lt;StringRef&gt;&#32;ContentOrErr&#32;=&#32;CurrentSection-&gt;getContents();
+00580 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ContentOrErr)
+00581 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ContentOrErr.takeError();
+00582 &#32;&#32;&#32;&#32;StringRef&#32;Content&#32;=&#32;*ContentOrErr;
+00583 
+00584 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Copy&#32;fat&#32;object&#32;contents&#32;to&#32;the&#32;output&#32;when&#32;extracting&#32;host&#32;bundle.</emphasis>
+00585 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Content.size()&#32;==&#32;1u&#32;&amp;&amp;&#32;Content.front()&#32;==&#32;0)
+00586 &#32;&#32;&#32;&#32;&#32;&#32;Content&#32;=&#32;StringRef(Input.getBufferStart(),&#32;Input.getBufferSize());
+00587 
+00588 &#32;&#32;&#32;&#32;OS.write(Content.data(),&#32;Content.size());
+00589 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00590 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1ada66ffa9cbb4567b92dc3b371ea01481"/>    <section>
+    <title>ReadBundleEnd()</title>
+<indexterm><primary>ReadBundleEnd</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>ReadBundleEnd</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::ReadBundleEnd (MemoryBuffer &amp; Input)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para><para>
+
+<para>Read the marker that closes the current bundle. </para>
+</para>
+<para>
+Implements <link linkend="_class_file_handler_1a0dc30eeb824c348cc6f9bba853c93c41">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00576">576</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00576 {&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1ab8cb60c1eecea680fcdb327779cf66c3"/>    <section>
+    <title>ReadBundleStart()</title>
+<indexterm><primary>ReadBundleStart</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>ReadBundleStart</secondary></indexterm>
+<para><computeroutput>Expected&lt;Optional&lt;StringRef&gt; &gt; ObjectFileHandler::ReadBundleStart (MemoryBuffer &amp; Input)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para>
+<para>Read the marker of the next bundled to be read in the file. The bundle name is returned if there is one in the file, or <computeroutput>None</computeroutput> if there are no more bundles to be read. </para>
+<para>
+Implements <link linkend="_class_file_handler_1a5b31037af59fa8c77b8287d8ae9d84c4">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00559">559</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00559 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00560 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(NextSection&#32;!=&#32;Obj-&gt;section_end())&#32;{
+00561 &#32;&#32;&#32;&#32;&#32;&#32;CurrentSection&#32;=&#32;NextSection;
+00562 &#32;&#32;&#32;&#32;&#32;&#32;++NextSection;
+00563 
+00564 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;the&#32;current&#32;section&#32;name&#32;starts&#32;with&#32;the&#32;reserved&#32;prefix.&#32;If</emphasis>
+00565 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;so,&#32;return&#32;the&#32;triple.</emphasis>
+00566 &#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;TripleOrErr&#32;=
+00567 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IsOffloadSection(*CurrentSection);
+00568 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TripleOrErr)
+00569 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TripleOrErr.takeError();
+00570 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(*TripleOrErr)
+00571 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;**TripleOrErr;
+00572 &#32;&#32;&#32;&#32;}
+00573 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00574 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1a721cdcac5b3554e5685c96f4788bc655"/>    <section>
+    <title>ReadHeader()</title>
+<indexterm><primary>ReadHeader</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>ReadHeader</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::ReadHeader (MemoryBuffer &amp; Input)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para>
+<para>Update the file handler with information from the header of the bundled file. </para>
+<para>
+Implements <link linkend="_class_file_handler_1a0b973008bf7d7a53bc33d0f75b0dadef">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00557">557</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00557 {&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1ae617802036593fc283753c6ddf0ea221"/>    <section>
+    <title>WriteBundle()</title>
+<indexterm><primary>WriteBundle</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>WriteBundle</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::WriteBundle (raw_fd_ostream &amp; OS, MemoryBuffer &amp; Input)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para><para>
+
+<para>Write the bundle from <emphasis>Input</emphasis> into <emphasis>OS</emphasis>. </para>
+</para>
+<para>
+Implements <link linkend="_class_file_handler_1aa308cfef5f3c06d3c15478097799e0e5">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00671">671</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00671 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00672 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00673 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1aa0f573b07d6599ba4c403dfd4b43471a"/>    <section>
+    <title>WriteBundleEnd()</title>
+<indexterm><primary>WriteBundleEnd</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>WriteBundleEnd</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::WriteBundleEnd (raw_fd_ostream &amp; OS, StringRef TargetTriple)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para>
+<para>Write the marker that closes a bundle for the triple <emphasis>TargetTriple</emphasis> to <emphasis>OS</emphasis>. </para>
+<para>
+Implements <link linkend="_class_file_handler_1a716f51f009426d516f30cd7527f25681">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00606">606</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00606 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00607 &#32;&#32;&#32;&#32;assert(NumberOfProcessedInputs&#32;&lt;=&#32;NumberOfInputs&#32;&amp;&amp;
+00608 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Processing&#32;more&#32;inputs&#32;that&#32;actually&#32;exist!&quot;</emphasis>);
+00609 &#32;&#32;&#32;&#32;assert(HostInputIndex&#32;!=&#32;~0u&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Host&#32;input&#32;index&#32;not&#32;defined.&quot;</emphasis>);
+00610 
+00611 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;this&#32;is&#32;not&#32;the&#32;last&#32;output,&#32;we&#32;don&apos;t&#32;have&#32;to&#32;do&#32;anything.</emphasis>
+00612 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NumberOfProcessedInputs&#32;!=&#32;NumberOfInputs)
+00613 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00614 
+00615 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;will&#32;use&#32;llvm-objcopy&#32;to&#32;add&#32;target&#32;objects&#32;sections&#32;to&#32;the&#32;output</emphasis>
+00616 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;fat&#32;object.&#32;These&#32;sections&#32;should&#32;have&#32;&apos;exclude&apos;&#32;flag&#32;set&#32;which&#32;tells</emphasis>
+00617 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;link&#32;editor&#32;to&#32;remove&#32;them&#32;from&#32;linker&#32;inputs&#32;when&#32;linking&#32;executable&#32;or</emphasis>
+00618 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;shared&#32;library.</emphasis>
+00619 
+00620 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Find&#32;llvm-objcopy&#32;in&#32;order&#32;to&#32;create&#32;the&#32;bundle&#32;binary.</emphasis>
+00621 &#32;&#32;&#32;&#32;ErrorOr&lt;std::string&gt;&#32;Objcopy&#32;=&#32;sys::findProgramByName(
+00622 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;llvm-objcopy&quot;</emphasis>,&#32;sys::path::parent_path(BundlerExecutable));
+00623 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Objcopy)
+00624 &#32;&#32;&#32;&#32;&#32;&#32;Objcopy&#32;=&#32;sys::findProgramByName(<emphasis role="stringliteral">&quot;llvm-objcopy&quot;</emphasis>);
+00625 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Objcopy)
+00626 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(Objcopy.getError(),
+00627 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;unable&#32;to&#32;find&#32;&apos;llvm-objcopy&apos;&#32;in&#32;path&quot;</emphasis>);
+00628 
+00629 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;write&#32;to&#32;the&#32;output&#32;file&#32;directly.&#32;So,&#32;we&#32;close&#32;it&#32;and&#32;use&#32;the&#32;name</emphasis>
+00630 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;to&#32;pass&#32;down&#32;to&#32;llvm-objcopy.</emphasis>
+00631 &#32;&#32;&#32;&#32;OS.close();
+00632 
+00633 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Temporary&#32;files&#32;that&#32;need&#32;to&#32;be&#32;removed.</emphasis>
+00634 &#32;&#32;&#32;&#32;TempFileHandlerRAII&#32;TempFiles;
+00635 
+00636 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Compose&#32;llvm-objcopy&#32;command&#32;line&#32;for&#32;add&#32;target&#32;objects&apos;&#32;sections&#32;with</emphasis>
+00637 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;appropriate&#32;flags.</emphasis>
+00638 &#32;&#32;&#32;&#32;BumpPtrAllocator&#32;Alloc;
+00639 &#32;&#32;&#32;&#32;StringSaver&#32;SS{Alloc};
+00640 &#32;&#32;&#32;&#32;SmallVector&lt;StringRef,&#32;8u&gt;&#32;ObjcopyArgs{<emphasis role="stringliteral">&quot;llvm-objcopy&quot;</emphasis>};
+00641 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;&lt;&#32;NumberOfInputs;&#32;++I)&#32;{
+00642 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;InputFile&#32;=&#32;InputFileNames[I];
+00643 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;==&#32;HostInputIndex)&#32;{
+00644 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Special&#32;handling&#32;for&#32;the&#32;host&#32;bundle.&#32;We&#32;do&#32;not&#32;need&#32;to&#32;add&#32;a</emphasis>
+00645 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;standard&#32;bundle&#32;for&#32;the&#32;host&#32;object&#32;since&#32;we&#32;are&#32;going&#32;to&#32;use&#32;fat</emphasis>
+00646 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;object&#32;as&#32;a&#32;host&#32;object.&#32;Therefore&#32;use&#32;dummy&#32;contents&#32;(one&#32;zero&#32;byte)</emphasis>
+00647 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;when&#32;creating&#32;section&#32;for&#32;the&#32;host&#32;bundle.</emphasis>
+00648 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;StringRef&gt;&#32;TempFileOrErr&#32;=&#32;TempFiles.Create(ArrayRef&lt;char&gt;(0));
+00649 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TempFileOrErr)
+00650 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TempFileOrErr.takeError();
+00651 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InputFile&#32;=&#32;*TempFileOrErr;
+00652 &#32;&#32;&#32;&#32;&#32;&#32;}
+00653 
+00654 &#32;&#32;&#32;&#32;&#32;&#32;ObjcopyArgs.push_back(SS.save(Twine(<emphasis role="stringliteral">&quot;--add-section=&quot;</emphasis>)&#32;+
+00655 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>&#32;+&#32;TargetNames[I]&#32;+
+00656 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;=&quot;</emphasis>&#32;+&#32;InputFile));
+00657 &#32;&#32;&#32;&#32;&#32;&#32;ObjcopyArgs.push_back(SS.save(Twine(<emphasis role="stringliteral">&quot;--set-section-flags=&quot;</emphasis>)&#32;+
+00658 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>&#32;+&#32;TargetNames[I]&#32;+
+00659 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;=readonly,exclude&quot;</emphasis>));
+00660 &#32;&#32;&#32;&#32;}
+00661 &#32;&#32;&#32;&#32;ObjcopyArgs.push_back(<emphasis role="stringliteral">&quot;--&quot;</emphasis>);
+00662 &#32;&#32;&#32;&#32;ObjcopyArgs.push_back(InputFileNames[HostInputIndex]);
+00663 &#32;&#32;&#32;&#32;ObjcopyArgs.push_back(OutputFileNames.front());
+00664 
+00665 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;executeObjcopy(*Objcopy,&#32;ObjcopyArgs))
+00666 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00667 
+00668 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00669 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1a959f87929ecfa735f661b55a38695eda"/>    <section>
+    <title>WriteBundleStart()</title>
+<indexterm><primary>WriteBundleStart</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>WriteBundleStart</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::WriteBundleStart (raw_fd_ostream &amp; OS, StringRef TargetTriple)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para>
+<para>Write the marker that initiates a bundle for the triple <emphasis>TargetTriple</emphasis> to <emphasis>OS</emphasis>. </para>
+<para>
+Implements <link linkend="_class_file_handler_1a023196b877e9ab83859f7194e9b38d9e">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00601">601</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00601 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00602 &#32;&#32;&#32;&#32;++NumberOfProcessedInputs;
+00603 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00604 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_object_file_handler_1a6bad7c10b02f3f50d099204afbc663a0"/>    <section>
+    <title>WriteHeader()</title>
+<indexterm><primary>WriteHeader</primary><secondary>ObjectFileHandler</secondary></indexterm>
+<indexterm><primary>ObjectFileHandler</primary><secondary>WriteHeader</secondary></indexterm>
+<para><computeroutput>Error ObjectFileHandler::WriteHeader (raw_fd_ostream &amp; OS, ArrayRef&lt; std::unique_ptr&lt; MemoryBuffer &gt;&gt; Inputs)<computeroutput>[inline]</computeroutput>, <computeroutput>[final]</computeroutput>, <computeroutput>[virtual]</computeroutput></computeroutput></para>
+<para>Write the header of the bundled file to <emphasis>OS</emphasis> based on the information gathered from <emphasis>Inputs</emphasis>. </para>
+<para>
+Implements <link linkend="_class_file_handler_1ab587b57538b319ab796b4f9ac060db56">FileHandler</link>.</para>
+<para>
+Definition at line <link linkend="__clang_offload_bundler_8cpp_source_1l00592">592</link> of file <link linkend="__clang_offload_bundler_8cpp_source">ClangOffloadBundler.cpp</link>.</para>
+<programlisting>00593 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00594 &#32;&#32;&#32;&#32;assert(HostInputIndex&#32;!=&#32;~0u&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Host&#32;input&#32;index&#32;not&#32;defined.&quot;</emphasis>);
+00595 
+00596 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Record&#32;number&#32;of&#32;inputs.</emphasis>
+00597 &#32;&#32;&#32;&#32;NumberOfInputs&#32;=&#32;Inputs.size();
+00598 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00599 &#32;&#32;}
+</programlisting></section>
+<para>
+The documentation for this class was generated from the following file:</para>
+/Users/maximilian/clang-llvm/clang/tools/clang-offload-bundler/<link linkend="__clang_offload_bundler_8cpp">ClangOffloadBundler.cpp</link></section>
+</section>

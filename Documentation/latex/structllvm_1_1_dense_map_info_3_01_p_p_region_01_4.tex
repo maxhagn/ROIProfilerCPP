@@ -1,0 +1,102 @@
+\hypertarget{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4}{}\doxysection{llvm\+::Dense\+Map\+Info$<$ PPRegion $>$ Struct Reference}
+\label{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4}\index{llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static PPRegion \mbox{\hyperlink{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_a59e01592dab2974dbe839250e40acb10}{get\+Empty\+Key}} ()
+\item 
+static PPRegion \mbox{\hyperlink{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_a280238137b9390b521bf3b9d3533239a}{get\+Tombstone\+Key}} ()
+\item 
+static unsigned \mbox{\hyperlink{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_ab73c971555be6ed3fe4ea62629918237}{get\+Hash\+Value}} (const PPRegion \&S)
+\item 
+static bool \mbox{\hyperlink{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_af9ef901ef9da9d111a578801be3f34a1}{is\+Equal}} (const PPRegion \&LHS, const PPRegion \&RHS)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 96 of file Indexing.\+cpp.
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_a59e01592dab2974dbe839250e40acb10}\label{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_a59e01592dab2974dbe839250e40acb10}} 
+\index{llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}!getEmptyKey@{getEmptyKey}}
+\index{getEmptyKey@{getEmptyKey}!llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}}
+\doxysubsubsection{\texorpdfstring{getEmptyKey()}{getEmptyKey()}}
+{\footnotesize\ttfamily static PPRegion llvm\+::\+Dense\+Map\+Info$<$ PPRegion $>$\+::get\+Empty\+Key (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Definition at line 97 of file Indexing.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{97                                          \{}
+\DoxyCodeLine{98       \textcolor{keywordflow}{return} PPRegion(llvm::sys::fs::UniqueID(0, 0), \textcolor{keywordtype}{unsigned}(-\/1), 0);}
+\DoxyCodeLine{99     \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_ab73c971555be6ed3fe4ea62629918237}\label{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_ab73c971555be6ed3fe4ea62629918237}} 
+\index{llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}!getHashValue@{getHashValue}}
+\index{getHashValue@{getHashValue}!llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}}
+\doxysubsubsection{\texorpdfstring{getHashValue()}{getHashValue()}}
+{\footnotesize\ttfamily static unsigned llvm\+::\+Dense\+Map\+Info$<$ PPRegion $>$\+::get\+Hash\+Value (\begin{DoxyParamCaption}\item[{const PPRegion \&}]{S }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Definition at line 104 of file Indexing.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{104                                                     \{}
+\DoxyCodeLine{105       llvm::FoldingSetNodeID ID;}
+\DoxyCodeLine{106       \textcolor{keyword}{const} llvm::sys::fs::UniqueID \&UniqueID = S.getUniqueID();}
+\DoxyCodeLine{107       ID.AddInteger(UniqueID.getFile());}
+\DoxyCodeLine{108       ID.AddInteger(UniqueID.getDevice());}
+\DoxyCodeLine{109       ID.AddInteger(S.getOffset());}
+\DoxyCodeLine{110       ID.AddInteger(S.getModTime());}
+\DoxyCodeLine{111       \textcolor{keywordflow}{return} ID.ComputeHash();}
+\DoxyCodeLine{112     \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_a280238137b9390b521bf3b9d3533239a}\label{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_a280238137b9390b521bf3b9d3533239a}} 
+\index{llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}!getTombstoneKey@{getTombstoneKey}}
+\index{getTombstoneKey@{getTombstoneKey}!llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}}
+\doxysubsubsection{\texorpdfstring{getTombstoneKey()}{getTombstoneKey()}}
+{\footnotesize\ttfamily static PPRegion llvm\+::\+Dense\+Map\+Info$<$ PPRegion $>$\+::get\+Tombstone\+Key (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Definition at line 100 of file Indexing.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{100                                              \{}
+\DoxyCodeLine{101       \textcolor{keywordflow}{return} PPRegion(llvm::sys::fs::UniqueID(0, 0), \textcolor{keywordtype}{unsigned}(-\/2), 0);}
+\DoxyCodeLine{102     \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_af9ef901ef9da9d111a578801be3f34a1}\label{structllvm_1_1_dense_map_info_3_01_p_p_region_01_4_af9ef901ef9da9d111a578801be3f34a1}} 
+\index{llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}!isEqual@{isEqual}}
+\index{isEqual@{isEqual}!llvm::DenseMapInfo$<$ PPRegion $>$@{llvm::DenseMapInfo$<$ PPRegion $>$}}
+\doxysubsubsection{\texorpdfstring{isEqual()}{isEqual()}}
+{\footnotesize\ttfamily static bool llvm\+::\+Dense\+Map\+Info$<$ PPRegion $>$\+::is\+Equal (\begin{DoxyParamCaption}\item[{const PPRegion \&}]{LHS,  }\item[{const PPRegion \&}]{RHS }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Definition at line 114 of file Indexing.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{114                                                                   \{}
+\DoxyCodeLine{115       \textcolor{keywordflow}{return} LHS == RHS;}
+\DoxyCodeLine{116     \}}
+
+\end{DoxyCode}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_indexing_8cpp}{Indexing.\+cpp}}\end{DoxyCompactItemize}

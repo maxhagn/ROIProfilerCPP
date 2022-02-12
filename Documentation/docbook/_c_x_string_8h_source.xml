@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_string_8h_source" xml:lang="en-US">
+<title>CXString.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXString.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXString.h&#32;-&#32;Routines&#32;for&#32;manipulating&#32;CXStrings&#32;-------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXStrings.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXSTRING_H</emphasis>
+00014 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXSTRING_H</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringRef.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Compiler.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&lt;vector&gt;</emphasis>
+00023 
+00024 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00025 <emphasis role="keyword">namespace&#32;</emphasis>cxstring&#32;{
+00026 
+00027 <emphasis role="keyword">struct&#32;</emphasis>CXStringBuf;
+00028 
+00030 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">createEmpty</link>();
+00031 
+00035 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">createNull</link>();
+00036 
+00041 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">createRef</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*String);
+00042 
+00047 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">createDup</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*String);
+00048 
+00053 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">createRef</link>(StringRef&#32;String);
+00054 
+00059 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">createDup</link>(StringRef&#32;String);
+00060 
+00061 <emphasis role="comment">//&#32;Usually&#32;std::string&#32;is&#32;intended&#32;to&#32;be&#32;used&#32;as&#32;backing&#32;storage&#32;for&#32;CXString.</emphasis>
+00062 <emphasis role="comment">//&#32;In&#32;this&#32;case,&#32;call&#32;\c&#32;createRef(String.c_str()).</emphasis>
+00063 <emphasis role="comment">//</emphasis>
+00064 <emphasis role="comment">//&#32;If&#32;you&#32;need&#32;to&#32;make&#32;a&#32;copy,&#32;call&#32;\c&#32;createDup(StringRef(String)).</emphasis>
+<anchor xml:id="__c_x_string_8h_source_1l00065"/><link linkend="_namespaceclang_1_1cxstring_1abc51fd7a522d9e5b5ca2c0d364d60c61">00065</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">createRef</link>(std::string&#32;String)&#32;=&#32;<emphasis role="keyword">delete</emphasis>;
+00066 
+00068 CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a4ea867311d5651a36d2dfa1f1258638c">createCXString</link>(<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;*buf);
+00069 
+00070 CXStringSet&#32;*<link linkend="_namespaceclang_1_1cxstring_1a0ebb0924de5a075db7ae5d7937df8056">createSet</link>(<emphasis role="keyword">const</emphasis>&#32;std::vector&lt;std::string&gt;&#32;&amp;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>);
+00071 
+<anchor xml:id="__c_x_string_8h_source_1l00073"/><link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool">00073</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool">CXStringPool</link>&#32;{
+00074 <emphasis role="keyword">public</emphasis>:
+00075 &#32;&#32;<link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1a7c918ea91ae7883d4b56563c84260553">~CXStringPool</link>();
+00076 
+00077 &#32;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;*<link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1a283bd45dc821db389405ee85514ae8e5">getCXStringBuf</link>(CXTranslationUnit&#32;TU);
+00078 
+00079 <emphasis role="keyword">private</emphasis>:
+00080 &#32;&#32;std::vector&lt;CXStringBuf&#32;*&gt;&#32;Pool;
+00081 
+<anchor xml:id="__c_x_string_8h_source_1l00082"/><link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1ab905909ab6df34271840b9a9881f0ca7">00082</link> &#32;&#32;<emphasis role="keyword">friend</emphasis>&#32;<emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>;
+00083 };
+00084 
+<anchor xml:id="__c_x_string_8h_source_1l00085"/><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">00085</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;{
+<anchor xml:id="__c_x_string_8h_source_1l00086"/><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">00086</link> &#32;&#32;SmallString&lt;128&gt;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">Data</link>;
+<anchor xml:id="__c_x_string_8h_source_1l00087"/><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1ad0f8e5ef3ebae1214ae0ecd42032f9b2">00087</link> &#32;&#32;CXTranslationUnit&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1ad0f8e5ef3ebae1214ae0ecd42032f9b2">TU</link>;
+00088 
+<anchor xml:id="__c_x_string_8h_source_1l00089"/><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a1beb91baad687a2885cff592699665e7">00089</link> &#32;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a1beb91baad687a2885cff592699665e7">CXStringBuf</link>(CXTranslationUnit&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1ad0f8e5ef3ebae1214ae0ecd42032f9b2">TU</link>)&#32;:&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1ad0f8e5ef3ebae1214ae0ecd42032f9b2">TU</link>(<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1ad0f8e5ef3ebae1214ae0ecd42032f9b2">TU</link>)&#32;{}
+00090 
+00092 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1add7775f4003b4bfbb5c470976ef73485">dispose</link>();
+00093 };
+00094 
+00095 CXStringBuf&#32;*<link linkend="_namespaceclang_1_1cxstring_1ad1ccb52527d7a42e4ad5c3e1f6af9907">getCXStringBuf</link>(CXTranslationUnit&#32;TU);
+00096 
+00098 <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a23337a6942da94448da8b249362d626e">isManagedByPool</link>(CXString&#32;str);
+00099 
+00100 }
+00101 
+00102 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;StringRef&#32;getContents(<emphasis role="keyword">const</emphasis>&#32;CXUnsavedFile&#32;&amp;UF)&#32;{
+00103 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;StringRef(UF.Contents,&#32;UF.Length);
+00104 }
+00105 }
+00106 
+00107 <emphasis role="preprocessor">#endif</emphasis>
+00108 
+</programlisting></section>

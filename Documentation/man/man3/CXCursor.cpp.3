@@ -1,0 +1,667 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CXCursor.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CXCursor.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'CXType\&.h'\fP
+.br
+\fC#include 'clang\-c/Index\&.h'\fP
+.br
+\fC#include 'clang/AST/Attr\&.h'\fP
+.br
+\fC#include 'clang/AST/Decl\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclCXX\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclObjC\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclTemplate\&.h'\fP
+.br
+\fC#include 'clang/AST/Expr\&.h'\fP
+.br
+\fC#include 'clang/AST/ExprCXX\&.h'\fP
+.br
+\fC#include 'clang/AST/ExprObjC\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorHandling\&.h'\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBllvm::DenseMapInfo< CXCursor >\fP"
+.br
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBllvm\fP"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef llvm::DenseMap< CXCursor, unsigned > \fBCXCursorSet_Impl\fP"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBCXGetTemplateArgumentStatus\fP { \fBCXGetTemplateArgumentStatus_Success\fP = 0, \fBCXGetTemplateArgumentStatus_CursorNotFunctionDecl\fP = -1, \fBCXGetTemplateArgumentStatus_BadFunctionDeclCast\fP = -2, \fBCXGetTemplateArgumentStatus_NullTemplSpecInfo\fP = -3, \fBCXGetTemplateArgumentStatus_InvalidIndex\fP = -4 }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBclang_Cursor_isNull\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXTranslationUnit \fBclang_Cursor_getTranslationUnit\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "int \fBclang_Cursor_getNumArguments\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_Cursor_getArgument\fP (CXCursor C, unsigned i)"
+.br
+.ti -1c
+.RI "int \fBclang_Cursor_getNumTemplateArguments\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "enum CXTemplateArgumentKind \fBclang_Cursor_getTemplateArgumentKind\fP (CXCursor C, unsigned I)"
+.br
+.ti -1c
+.RI "CXType \fBclang_Cursor_getTemplateArgumentType\fP (CXCursor C, unsigned I)"
+.br
+.ti -1c
+.RI "long long \fBclang_Cursor_getTemplateArgumentValue\fP (CXCursor C, unsigned I)"
+.br
+.ti -1c
+.RI "unsigned long long \fBclang_Cursor_getTemplateArgumentUnsignedValue\fP (CXCursor C, unsigned I)"
+.br
+.ti -1c
+.RI "CXCursorSet \fBclang_createCXCursorSet\fP ()"
+.br
+.ti -1c
+.RI "void \fBclang_disposeCXCursorSet\fP (CXCursorSet set)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXCursorSet_contains\fP (CXCursorSet set, CXCursor cursor)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXCursorSet_insert\fP (CXCursorSet set, CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXCompletionString \fBclang_getCursorCompletionString\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "void \fBclang_getOverriddenCursors\fP (CXCursor cursor, CXCursor **overridden, unsigned *num_overridden)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeOverriddenCursors\fP (CXCursor *overridden)"
+.br
+.ti -1c
+.RI "int \fBclang_Cursor_isDynamicCall\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXType \fBclang_Cursor_getReceiverType\fP (CXCursor C)"
+.br
+.in -1c
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef llvm::DenseMap<CXCursor, unsigned> \fBCXCursorSet_Impl\fP"
+
+.PP
+Definition at line 1461 of file CXCursor\&.cpp\&.
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBCXGetTemplateArgumentStatus\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fICXGetTemplateArgumentStatus_Success \fP\fP
+The operation completed successfully 
+.TP
+\fB\fICXGetTemplateArgumentStatus_CursorNotFunctionDecl \fP\fP
+The specified cursor did not represent a FunctionDecl\&. 
+.TP
+\fB\fICXGetTemplateArgumentStatus_BadFunctionDeclCast \fP\fP
+The specified cursor was not castable to a FunctionDecl\&. 
+.TP
+\fB\fICXGetTemplateArgumentStatus_NullTemplSpecInfo \fP\fP
+A NULL FunctionTemplateSpecializationInfo was retrieved\&. 
+.TP
+\fB\fICXGetTemplateArgumentStatus_InvalidIndex \fP\fP
+An invalid (OOB) argument index was specified 
+.PP
+Definition at line 1336 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1336                                  {
+1338   CXGetTemplateArgumentStatus_Success = 0,
+1339 
+1341   CXGetTemplateArgumentStatus_CursorNotFunctionDecl = -1,
+1342 
+1344   CXGetTemplateArgumentStatus_BadFunctionDeclCast = -2,
+1345 
+1347   CXGetTemplateArgumentStatus_NullTemplSpecInfo = -3,
+1348 
+1350   CXGetTemplateArgumentStatus_InvalidIndex = -4
+1351 };
+.fi
+.SH "Function Documentation"
+.PP 
+.SS "CXCursorSet clang_createCXCursorSet ()"
+
+.PP
+Definition at line 1488 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1488                                       {
+1489   return packCXCursorSet(new CXCursorSet_Impl());
+1490 }
+.fi
+.SS "CXCursor clang_Cursor_getArgument (CXCursor C, unsigned i)"
+
+.PP
+Definition at line 1283 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1283                                                           {
+1284   if (clang_isDeclaration(C\&.kind)) {
+1285     const Decl *D = cxcursor::getCursorDecl(C);
+1286     if (const ObjCMethodDecl *MD = dyn_cast_or_null<ObjCMethodDecl>(D)) {
+1287       if (i < MD->param_size())
+1288         return cxcursor::MakeCXCursor(MD->parameters()[i],
+1289                                       cxcursor::getCursorTU(C));
+1290     } else if (const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D)) {
+1291       if (i < FD->param_size())
+1292         return cxcursor::MakeCXCursor(FD->parameters()[i],
+1293                                       cxcursor::getCursorTU(C));
+1294     }
+1295   }
+1296 
+1297   if (clang_isExpression(C\&.kind)) {
+1298     const Expr *E = cxcursor::getCursorExpr(C);
+1299     if (const CallExpr *CE = dyn_cast<CallExpr>(E)) {
+1300       if (i < CE->getNumArgs()) {
+1301         return cxcursor::MakeCXCursor(CE->getArg(i), getCursorDecl(C),
+1302                                       cxcursor::getCursorTU(C));
+1303       }
+1304     }
+1305     if (const CXXConstructExpr *CE = dyn_cast<CXXConstructExpr>(E)) {
+1306       if (i < CE->getNumArgs()) {
+1307         return cxcursor::MakeCXCursor(CE->getArg(i), getCursorDecl(C),
+1308                                       cxcursor::getCursorTU(C));
+1309       }
+1310     }
+1311   }
+1312 
+1313   return clang_getNullCursor();
+1314 }
+.fi
+.PP
+References clang_getNullCursor(), clang_isDeclaration(), clang_isExpression(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorExpr(), clang::cxcursor::getCursorTU(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "int clang_Cursor_getNumArguments (CXCursor C)"
+
+.PP
+Definition at line 1261 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1261                                              {
+1262   if (clang_isDeclaration(C\&.kind)) {
+1263     const Decl *D = cxcursor::getCursorDecl(C);
+1264     if (const ObjCMethodDecl *MD = dyn_cast_or_null<ObjCMethodDecl>(D))
+1265       return MD->param_size();
+1266     if (const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D))
+1267       return FD->param_size();
+1268   }
+1269 
+1270   if (clang_isExpression(C\&.kind)) {
+1271     const Expr *E = cxcursor::getCursorExpr(C);
+1272     if (const CallExpr *CE = dyn_cast<CallExpr>(E)) {
+1273       return CE->getNumArgs();
+1274     }
+1275     if (const CXXConstructExpr *CE = dyn_cast<CXXConstructExpr>(E)) {
+1276       return CE->getNumArgs();
+1277     }
+1278   }
+1279 
+1280   return -1;
+1281 }
+.fi
+.PP
+References clang_isDeclaration(), clang_isExpression(), clang::cxcursor::getCursorDecl(), and clang::cxcursor::getCursorExpr()\&.
+.SS "int clang_Cursor_getNumTemplateArguments (CXCursor C)"
+
+.PP
+Definition at line 1316 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1316                                                      {
+1317   if (clang_getCursorKind(C) != CXCursor_FunctionDecl) {
+1318     return -1;
+1319   }
+1320 
+1321   const FunctionDecl *FD =
+1322       llvm::dyn_cast_or_null<clang::FunctionDecl>(getCursorDecl(C));
+1323   if (!FD) {
+1324     return -1;
+1325   }
+1326 
+1327   const FunctionTemplateSpecializationInfo *SpecInfo =
+1328       FD->getTemplateSpecializationInfo();
+1329   if (!SpecInfo) {
+1330     return -1;
+1331   }
+1332 
+1333   return SpecInfo->TemplateArguments->size();
+1334 }
+.fi
+.PP
+References clang_getCursorKind(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXType clang_Cursor_getReceiverType (CXCursor C)"
+
+.PP
+Definition at line 1687 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1687                                                 {
+1688   CXTranslationUnit TU = cxcursor::getCursorTU(C);
+1689   const Expr *E = nullptr;
+1690   if (clang_isExpression(C\&.kind))
+1691     E = getCursorExpr(C);
+1692 
+1693   if (const ObjCMessageExpr *MsgE = dyn_cast_or_null<ObjCMessageExpr>(E))
+1694     return cxtype::MakeCXType(MsgE->getReceiverType(), TU);
+1695 
+1696   if (auto *PropRefE = dyn_cast<ObjCPropertyRefExpr>(E)) {
+1697     return cxtype::MakeCXType(
+1698         PropRefE->getReceiverType(cxcursor::getCursorContext(C)), TU);
+1699   }
+1700 
+1701   const MemberExpr *ME = nullptr;
+1702   if (isa<MemberExpr>(E))
+1703     ME = cast<MemberExpr>(E);
+1704   else if (const CallExpr *CE = dyn_cast<CallExpr>(E))
+1705     ME = dyn_cast_or_null<MemberExpr>(CE->getCallee());
+1706 
+1707   if (ME) {
+1708     if (dyn_cast_or_null<CXXMethodDecl>(ME->getMemberDecl())) {
+1709       auto receiverTy = ME->getBase()->IgnoreImpCasts()->getType();
+1710       return cxtype::MakeCXType(receiverTy, TU);
+1711     }
+1712   }
+1713 
+1714   return cxtype::MakeCXType(QualType(), TU);
+1715 }
+.fi
+.PP
+References clang_isExpression(), clang::cxcursor::getCursorContext(), clang::cxcursor::getCursorExpr(), clang::cxcursor::getCursorTU(), and clang::cxtype::MakeCXType()\&.
+.SS "enum CXTemplateArgumentKind clang_Cursor_getTemplateArgumentKind (CXCursor C, unsigned I)"
+
+.PP
+Definition at line 1353 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1380                                                                              {
+1381   TemplateArgument TA;
+1382   if (clang_Cursor_getTemplateArgument(C, I, &TA)) {
+1383     return CXTemplateArgumentKind_Invalid;
+1384   }
+1385 
+1386   switch (TA\&.getKind()) {
+1387   case TemplateArgument::Null:
+1388     return CXTemplateArgumentKind_Null;
+1389   case TemplateArgument::Type:
+1390     return CXTemplateArgumentKind_Type;
+1391   case TemplateArgument::Declaration:
+1392     return CXTemplateArgumentKind_Declaration;
+1393   case TemplateArgument::NullPtr:
+1394     return CXTemplateArgumentKind_NullPtr;
+1395   case TemplateArgument::Integral:
+1396     return CXTemplateArgumentKind_Integral;
+1397   case TemplateArgument::Template:
+1398     return CXTemplateArgumentKind_Template;
+1399   case TemplateArgument::TemplateExpansion:
+1400     return CXTemplateArgumentKind_TemplateExpansion;
+1401   case TemplateArgument::Expression:
+1402     return CXTemplateArgumentKind_Expression;
+1403   case TemplateArgument::Pack:
+1404     return CXTemplateArgumentKind_Pack;
+1405   }
+1406 
+1407   return CXTemplateArgumentKind_Invalid;
+1408 }
+.fi
+.SS "CXType clang_Cursor_getTemplateArgumentType (CXCursor C, unsigned I)"
+
+.PP
+Definition at line 1410 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1410                                                                     {
+1411   TemplateArgument TA;
+1412   if (clang_Cursor_getTemplateArgument(C, I, &TA) !=
+1413       CXGetTemplateArgumentStatus_Success) {
+1414     return cxtype::MakeCXType(QualType(), getCursorTU(C));
+1415   }
+1416 
+1417   if (TA\&.getKind() != TemplateArgument::Type) {
+1418     return cxtype::MakeCXType(QualType(), getCursorTU(C));
+1419   }
+1420 
+1421   return cxtype::MakeCXType(TA\&.getAsType(), getCursorTU(C));
+1422 }
+.fi
+.SS "unsigned long long clang_Cursor_getTemplateArgumentUnsignedValue (CXCursor C, unsigned I)"
+
+.PP
+Definition at line 1440 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1441                                                                              {
+1442   TemplateArgument TA;
+1443   if (clang_Cursor_getTemplateArgument(C, I, &TA) !=
+1444       CXGetTemplateArgumentStatus_Success) {
+1445     assert(0 && "Unable to retrieve TemplateArgument");
+1446     return 0;
+1447   }
+1448 
+1449   if (TA\&.getKind() != TemplateArgument::Integral) {
+1450     assert(0 && "Passed template argument is not Integral");
+1451     return 0;
+1452   }
+1453 
+1454   return TA\&.getAsIntegral()\&.getZExtValue();
+1455 }
+.fi
+.SS "long long clang_Cursor_getTemplateArgumentValue (CXCursor C, unsigned I)"
+
+.PP
+Definition at line 1424 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1424                                                                         {
+1425   TemplateArgument TA;
+1426   if (clang_Cursor_getTemplateArgument(C, I, &TA) !=
+1427       CXGetTemplateArgumentStatus_Success) {
+1428     assert(0 && "Unable to retrieve TemplateArgument");
+1429     return 0;
+1430   }
+1431 
+1432   if (TA\&.getKind() != TemplateArgument::Integral) {
+1433     assert(0 && "Passed template argument is not Integral");
+1434     return 0;
+1435   }
+1436 
+1437   return TA\&.getAsIntegral()\&.getSExtValue();
+1438 }
+.fi
+.SS "CXTranslationUnit clang_Cursor_getTranslationUnit (CXCursor cursor)"
+
+.PP
+Definition at line 1257 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1257                                                                    {
+1258   return getCursorTU(cursor);
+1259 }
+.fi
+.PP
+References clang::cxcursor::getCursorTU()\&.
+.SS "int clang_Cursor_isDynamicCall (CXCursor C)"
+
+.PP
+Definition at line 1648 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1648                                            {
+1649   const Expr *E = nullptr;
+1650   if (clang_isExpression(C\&.kind))
+1651     E = getCursorExpr(C);
+1652   if (!E)
+1653     return 0;
+1654 
+1655   if (const ObjCMessageExpr *MsgE = dyn_cast<ObjCMessageExpr>(E)) {
+1656     if (MsgE->getReceiverKind() != ObjCMessageExpr::Instance)
+1657       return false;
+1658     if (auto *RecE = dyn_cast<ObjCMessageExpr>(
+1659             MsgE->getInstanceReceiver()->IgnoreParenCasts())) {
+1660       if (RecE->getMethodFamily() == OMF_alloc)
+1661         return false;
+1662     }
+1663     return true;
+1664   }
+1665 
+1666   if (auto *PropRefE = dyn_cast<ObjCPropertyRefExpr>(E)) {
+1667     return !PropRefE->isSuperReceiver();
+1668   }
+1669 
+1670   const MemberExpr *ME = nullptr;
+1671   if (isa<MemberExpr>(E))
+1672     ME = cast<MemberExpr>(E);
+1673   else if (const CallExpr *CE = dyn_cast<CallExpr>(E))
+1674     ME = dyn_cast_or_null<MemberExpr>(CE->getCallee());
+1675 
+1676   if (ME) {
+1677     if (const CXXMethodDecl *MD =
+1678             dyn_cast_or_null<CXXMethodDecl>(ME->getMemberDecl()))
+1679       return MD->isVirtual() &&
+1680              ME->performsVirtualDispatch(
+1681                  cxcursor::getCursorContext(C)\&.getLangOpts());
+1682   }
+1683 
+1684   return 0;
+1685 }
+.fi
+.PP
+References clang_isExpression(), clang::cxcursor::getCursorContext(), and clang::cxcursor::getCursorExpr()\&.
+.SS "int clang_Cursor_isNull (CXCursor cursor)"
+
+.PP
+Definition at line 1253 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1253                                          {
+1254   return clang_equalCursors(cursor, clang_getNullCursor());
+1255 }
+.fi
+.PP
+References clang_equalCursors(), and clang_getNullCursor()\&.
+.PP
+Referenced by clang_Cursor_getSpellingNameRange(), clang_findReferencesInFile(), clang_getCursorPrettyPrinted(), and clang_getCursorPrintingPolicy()\&.
+.SS "unsigned clang_CXCursorSet_contains (CXCursorSet set, CXCursor cursor)"
+
+.PP
+Definition at line 1496 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1496                                                                       {
+1497   CXCursorSet_Impl *setImpl = unpackCXCursorSet(set);
+1498   if (!setImpl)
+1499     return 0;
+1500   return setImpl->find(cursor) != setImpl->end();
+1501 }
+.fi
+.SS "unsigned clang_CXCursorSet_insert (CXCursorSet set, CXCursor cursor)"
+
+.PP
+Definition at line 1503 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1503                                                                     {
+1504   // Do not insert invalid cursors into the set\&.
+1505   if (cursor\&.kind >= CXCursor_FirstInvalid &&
+1506       cursor\&.kind <= CXCursor_LastInvalid)
+1507     return 1;
+1508 
+1509   CXCursorSet_Impl *setImpl = unpackCXCursorSet(set);
+1510   if (!setImpl)
+1511     return 1;
+1512   unsigned &entry = (*setImpl)[cursor];
+1513   unsigned flag = entry == 0 ? 1 : 0;
+1514   entry = 1;
+1515   return flag;
+1516 }
+.fi
+.SS "void clang_disposeCXCursorSet (CXCursorSet set)"
+
+.PP
+Definition at line 1492 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1492                                                {
+1493   delete unpackCXCursorSet(set);
+1494 }
+.fi
+.SS "void clang_disposeOverriddenCursors (CXCursor * overridden)"
+
+.PP
+Definition at line 1628 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1628                                                           {
+1629   if (!overridden)
+1630     return;
+1631 
+1632   // Use pointer arithmetic to get back the first faux entry
+1633   // which has a back-reference to the TU and the vector\&.
+1634   --overridden;
+1635   OverridenCursorsPool::CursorVec *Vec =
+1636       static_cast<OverridenCursorsPool::CursorVec *>(
+1637           const_cast<void *>(overridden->data[0]));
+1638   CXTranslationUnit TU = getCursorTU(*overridden);
+1639 
+1640   assert(Vec && TU);
+1641 
+1642   OverridenCursorsPool &pool =
+1643       *static_cast<OverridenCursorsPool *>(TU->OverridenCursorsPool);
+1644 
+1645   pool\&.AvailableCursors\&.push_back(Vec);
+1646 }
+.fi
+.PP
+References clang::cxcursor::getCursorTU()\&.
+.SS "CXCompletionString clang_getCursorCompletionString (CXCursor cursor)"
+
+.PP
+Definition at line 1518 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1518                                                                     {
+1519   enum CXCursorKind kind = clang_getCursorKind(cursor);
+1520   if (clang_isDeclaration(kind)) {
+1521     const Decl *decl = getCursorDecl(cursor);
+1522     if (const NamedDecl *namedDecl = dyn_cast_or_null<NamedDecl>(decl)) {
+1523       ASTUnit *unit = getCursorASTUnit(cursor);
+1524       CodeCompletionResult Result(namedDecl, CCP_Declaration);
+1525       CodeCompletionString *String = Result\&.CreateCodeCompletionString(
+1526           unit->getASTContext(), unit->getPreprocessor(),
+1527           CodeCompletionContext::CCC_Other,
+1528           unit->getCodeCompletionTUInfo()\&.getAllocator(),
+1529           unit->getCodeCompletionTUInfo(), true);
+1530       return String;
+1531     }
+1532   } else if (kind == CXCursor_MacroDefinition) {
+1533     const MacroDefinitionRecord *definition = getCursorMacroDefinition(cursor);
+1534     const IdentifierInfo *Macro = definition->getName();
+1535     ASTUnit *unit = getCursorASTUnit(cursor);
+1536     CodeCompletionResult Result(
+1537         Macro,
+1538         unit->getPreprocessor()\&.getMacroDefinition(Macro)\&.getMacroInfo());
+1539     CodeCompletionString *String = Result\&.CreateCodeCompletionString(
+1540         unit->getASTContext(), unit->getPreprocessor(),
+1541         CodeCompletionContext::CCC_Other,
+1542         unit->getCodeCompletionTUInfo()\&.getAllocator(),
+1543         unit->getCodeCompletionTUInfo(), false);
+1544     return String;
+1545   }
+1546   return nullptr;
+1547 }
+.fi
+.PP
+References clang_getCursorKind(), clang_isDeclaration(), clang::cxcursor::getCursorASTUnit(), clang::cxcursor::getCursorDecl(), and clang::cxcursor::getCursorMacroDefinition()\&.
+.SS "void clang_getOverriddenCursors (CXCursor cursor, CXCursor ** overridden, unsigned * num_overridden)"
+
+.PP
+Definition at line 1573 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1574                                                           {
+1575   if (overridden)
+1576     *overridden = nullptr;
+1577   if (num_overridden)
+1578     *num_overridden = 0;
+1579 
+1580   CXTranslationUnit TU = cxcursor::getCursorTU(cursor);
+1581 
+1582   if (!overridden || !num_overridden || !TU)
+1583     return;
+1584 
+1585   if (!clang_isDeclaration(cursor\&.kind))
+1586     return;
+1587 
+1588   OverridenCursorsPool &pool =
+1589       *static_cast<OverridenCursorsPool *>(TU->OverridenCursorsPool);
+1590 
+1591   OverridenCursorsPool::CursorVec *Vec = nullptr;
+1592 
+1593   if (!pool\&.AvailableCursors\&.empty()) {
+1594     Vec = pool\&.AvailableCursors\&.back();
+1595     pool\&.AvailableCursors\&.pop_back();
+1596   } else {
+1597     Vec = new OverridenCursorsPool::CursorVec();
+1598     pool\&.AllCursors\&.push_back(Vec);
+1599   }
+1600 
+1601   // Clear out the vector, but don't free the memory contents\&.  This
+1602   // reduces malloc() traffic\&.
+1603   Vec->clear();
+1604 
+1605   // Use the first entry to contain a back reference to the vector\&.
+1606   // This is a complete hack\&.
+1607   CXCursor backRefCursor = MakeCXCursorInvalid(CXCursor_InvalidFile, TU);
+1608   backRefCursor\&.data[0] = Vec;
+1609   assert(cxcursor::getCursorTU(backRefCursor) == TU);
+1610   Vec->push_back(backRefCursor);
+1611 
+1612   // Get the overridden cursors\&.
+1613   cxcursor::getOverriddenCursors(cursor, *Vec);
+1614 
+1615   // Did we get any overridden cursors?  If not, return Vec to the pool
+1616   // of available cursor vectors\&.
+1617   if (Vec->size() == 1) {
+1618     pool\&.AvailableCursors\&.push_back(Vec);
+1619     return;
+1620   }
+1621 
+1622   // Now tell the caller about the overridden cursors\&.
+1623   assert(Vec->size() > 1);
+1624   *overridden = &((*Vec)[1]);
+1625   *num_overridden = Vec->size() - 1;
+1626 }
+.fi
+.PP
+References clang_isDeclaration(), clang::cxcursor::getCursorTU(), clang::cxcursor::getOverriddenCursors(), and clang::cxcursor::MakeCXCursorInvalid()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

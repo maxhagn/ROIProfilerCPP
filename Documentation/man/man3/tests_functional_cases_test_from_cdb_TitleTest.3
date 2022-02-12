@@ -1,0 +1,92 @@
+.TH "tests.functional.cases.test_from_cdb.TitleTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_from_cdb.TitleTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBassertTitleEqual\fP (self, directory, expected)"
+.br
+.ti -1c
+.RI "def \fBtest_default_title_in_report\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_given_title_in_report\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 181 of file test_from_cdb\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.assertTitleEqual ( self,  directory,  expected)"
+
+.PP
+Definition at line 182 of file test_from_cdb\&.py\&.
+.PP
+.nf
+182     def assertTitleEqual(self, directory, expected):
+183         import re
+184         patterns = [
+185             re\&.compile(r'<title>(?P<page>\&.*)</title>'),
+186             re\&.compile(r'<h1>(?P<head>\&.*)</h1>')
+187         ]
+188         result = dict()
+189 
+190         index = os\&.path\&.join(directory, 'index\&.html')
+191         with open(index, 'r') as handler:
+192             for line in handler\&.readlines():
+193                 for regex in patterns:
+194                     match = regex\&.match(line\&.strip())
+195                     if match:
+196                         result\&.update(match\&.groupdict())
+197                         break
+198         self\&.assertEqual(result['page'], result['head'])
+199         self\&.assertEqual(result['page'], expected)
+200 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_default_title_in_report(), and tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_given_title_in_report()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_default_title_in_report ( self)"
+
+.PP
+Definition at line 201 of file test_from_cdb\&.py\&.
+.PP
+.nf
+201     def test_default_title_in_report(self):
+202         with libear\&.TemporaryDirectory() as tmpdir:
+203             cdb = prepare_cdb('broken', tmpdir)
+204             exit_code, reportdir = run_analyzer(tmpdir, cdb, [])
+205             self\&.assertTitleEqual(reportdir, 'src - analyzer results')
+206 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.assertTitleEqual(), tests\&.functional\&.cases\&.test_from_cdb\&.prepare_cdb(), tests\&.functional\&.cases\&.test_from_cdb\&.run_analyzer(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_given_title_in_report ( self)"
+
+.PP
+Definition at line 207 of file test_from_cdb\&.py\&.
+.PP
+.nf
+207     def test_given_title_in_report(self):
+208         with libear\&.TemporaryDirectory() as tmpdir:
+209             cdb = prepare_cdb('broken', tmpdir)
+210             exit_code, reportdir = run_analyzer(
+211                 tmpdir, cdb, ['--html-title', 'this is the title'])
+212             self\&.assertTitleEqual(reportdir, 'this is the title')
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.assertTitleEqual(), tests\&.functional\&.cases\&.test_from_cdb\&.prepare_cdb(), tests\&.functional\&.cases\&.test_from_cdb\&.run_analyzer(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

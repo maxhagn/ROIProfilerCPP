@@ -1,0 +1,225 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-scan-deps/ClangScanDeps.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-scan-deps/ClangScanDeps.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CommonOptionsParser\&.h'\fP
+.br
+\fC#include 'clang/Tooling/DependencyScanning/DependencyScanningService\&.h'\fP
+.br
+\fC#include 'clang/Tooling/DependencyScanning/DependencyScanningTool\&.h'\fP
+.br
+\fC#include 'clang/Tooling/DependencyScanning/DependencyScanningWorker\&.h'\fP
+.br
+\fC#include 'clang/Tooling/JSONCompilationDatabase\&.h'\fP
+.br
+\fC#include 'llvm/ADT/STLExtras\&.h'\fP
+.br
+\fC#include 'llvm/ADT/Twine\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileUtilities\&.h'\fP
+.br
+\fC#include 'llvm/Support/InitLLVM\&.h'\fP
+.br
+\fC#include 'llvm/Support/JSON\&.h'\fP
+.br
+\fC#include 'llvm/Support/Program\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/ThreadPool\&.h'\fP
+.br
+\fC#include 'llvm/Support/Threading\&.h'\fP
+.br
+\fC#include <mutex>\fP
+.br
+\fC#include <thread>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBSingleCommandCompilationDatabase\fP"
+.br
+.ti -1c
+.RI "class \fBFullDeps\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 435 of file ClangScanDeps\&.cpp\&.
+.PP
+.nf
+435                                       {
+436   llvm::InitLLVM X(argc, argv);
+437   llvm::cl::HideUnrelatedOptions(DependencyScannerCategory);
+438   if (!llvm::cl::ParseCommandLineOptions(argc, argv))
+439     return 1;
+440 
+441   std::string ErrorMessage;
+442   std::unique_ptr<tooling::JSONCompilationDatabase> Compilations =
+443       tooling::JSONCompilationDatabase::loadFromFile(
+444           CompilationDB, ErrorMessage,
+445           tooling::JSONCommandLineSyntax::AutoDetect);
+446   if (!Compilations) {
+447     llvm::errs() << "error: " << ErrorMessage << "\n";
+448     return 1;
+449   }
+450 
+451   llvm::cl::PrintOptionValues();
+452 
+453   // The command options are rewritten to run Clang in preprocessor only mode\&.
+454   auto AdjustingCompilations =
+455       std::make_unique<tooling::ArgumentsAdjustingCompilations>(
+456           std::move(Compilations));
+457   ResourceDirectoryCache ResourceDirCache;
+458 
+459   AdjustingCompilations->appendArgumentsAdjuster(
+460       [&ResourceDirCache](const tooling::CommandLineArguments &Args,
+461                           StringRef FileName) {
+462         std::string LastO = "";
+463         bool HasResourceDir = false;
+464         bool ClangCLMode = false;
+465         auto FlagsEnd = llvm::find(Args, "--");
+466         if (FlagsEnd != Args\&.begin()) {
+467           ClangCLMode =
+468               llvm::sys::path::stem(Args[0])\&.contains_insensitive("clang-cl") ||
+469               llvm::is_contained(Args, "--driver-mode=cl");
+470 
+471           // Reverse scan, starting at the end or at the element before "--"\&.
+472           auto R = llvm::make_reverse_iterator(FlagsEnd);
+473           for (auto I = R, E = Args\&.rend(); I != E; ++I) {
+474             StringRef Arg = *I;
+475             if (ClangCLMode) {
+476               // Ignore arguments that are preceded by "-Xclang"\&.
+477               if ((I + 1) != E && I[1] == "-Xclang")
+478                 continue;
+479               if (LastO\&.empty()) {
+480                 // With clang-cl, the output obj file can be specified with
+481                 // "/opath", "/o path", "/Fopath", and the dash counterparts\&.
+482                 // Also, clang-cl adds "\&.obj" extension if none is found\&.
+483                 if ((Arg == "-o" || Arg == "/o") && I != R)
+484                   LastO = I[-1]; // Next argument (reverse iterator)
+485                 else if (Arg\&.startswith("/Fo") || Arg\&.startswith("-Fo"))
+486                   LastO = Arg\&.drop_front(3)\&.str();
+487                 else if (Arg\&.startswith("/o") || Arg\&.startswith("-o"))
+488                   LastO = Arg\&.drop_front(2)\&.str();
+489 
+490                 if (!LastO\&.empty() && !llvm::sys::path::has_extension(LastO))
+491                   LastO\&.append("\&.obj");
+492               }
+493             }
+494             if (Arg == "-resource-dir")
+495               HasResourceDir = true;
+496           }
+497         }
+498         tooling::CommandLineArguments AdjustedArgs(Args\&.begin(), FlagsEnd);
+499         // The clang-cl driver passes "-o -" to the frontend\&. Inject the real
+500         // file here to ensure "-MT" can be deduced if need be\&.
+501         if (ClangCLMode && !LastO\&.empty()) {
+502           AdjustedArgs\&.push_back("/clang:-o");
+503           AdjustedArgs\&.push_back("/clang:" + LastO);
+504         }
+505 
+506         if (!HasResourceDir) {
+507           StringRef ResourceDir =
+508               ResourceDirCache\&.findResourceDir(Args, ClangCLMode);
+509           if (!ResourceDir\&.empty()) {
+510             AdjustedArgs\&.push_back("-resource-dir");
+511             AdjustedArgs\&.push_back(std::string(ResourceDir));
+512           }
+513         }
+514         AdjustedArgs\&.insert(AdjustedArgs\&.end(), FlagsEnd, Args\&.end());
+515         return AdjustedArgs;
+516       });
+517 
+518   SharedStream Errs(llvm::errs());
+519   // Print out the dependency results to STDOUT by default\&.
+520   SharedStream DependencyOS(llvm::outs());
+521 
+522   DependencyScanningService Service(ScanMode, Format, ReuseFileManager,
+523                                     SkipExcludedPPRanges);
+524   llvm::ThreadPool Pool(llvm::hardware_concurrency(NumThreads));
+525   std::vector<std::unique_ptr<DependencyScanningTool>> WorkerTools;
+526   for (unsigned I = 0; I < Pool\&.getThreadCount(); ++I)
+527     WorkerTools\&.push_back(std::make_unique<DependencyScanningTool>(Service));
+528 
+529   std::vector<SingleCommandCompilationDatabase> Inputs;
+530   for (tooling::CompileCommand Cmd :
+531        AdjustingCompilations->getAllCompileCommands())
+532     Inputs\&.emplace_back(Cmd);
+533 
+534   std::atomic<bool> HadErrors(false);
+535   FullDeps FD;
+536   std::mutex Lock;
+537   size_t Index = 0;
+538 
+539   if (Verbose) {
+540     llvm::outs() << "Running clang-scan-deps on " << Inputs\&.size()
+541                  << " files using " << Pool\&.getThreadCount() << " workers\n";
+542   }
+543   for (unsigned I = 0; I < Pool\&.getThreadCount(); ++I) {
+544     Pool\&.async([I, &Lock, &Index, &Inputs, &HadErrors, &FD, &WorkerTools,
+545                 &DependencyOS, &Errs]() {
+546       llvm::StringSet<> AlreadySeenModules;
+547       while (true) {
+548         const SingleCommandCompilationDatabase *Input;
+549         std::string Filename;
+550         std::string CWD;
+551         size_t LocalIndex;
+552         // Take the next input\&.
+553         {
+554           std::unique_lock<std::mutex> LockGuard(Lock);
+555           if (Index >= Inputs\&.size())
+556             return;
+557           LocalIndex = Index;
+558           Input = &Inputs[Index++];
+559           tooling::CompileCommand Cmd = Input->getAllCompileCommands()[0];
+560           Filename = std::move(Cmd\&.Filename);
+561           CWD = std::move(Cmd\&.Directory);
+562         }
+563         // Run the tool on it\&.
+564         if (Format == ScanningOutputFormat::Make) {
+565           auto MaybeFile = WorkerTools[I]->getDependencyFile(*Input, CWD);
+566           if (handleMakeDependencyToolResult(Filename, MaybeFile, DependencyOS,
+567                                              Errs))
+568             HadErrors = true;
+569         } else {
+570           auto MaybeFullDeps = WorkerTools[I]->getFullDependencies(
+571               *Input, CWD, AlreadySeenModules);
+572           if (handleFullDependencyToolResult(Filename, MaybeFullDeps, FD,
+573                                              LocalIndex, DependencyOS, Errs))
+574             HadErrors = true;
+575         }
+576       }
+577     });
+578   }
+579   Pool\&.wait();
+580 
+581   if (Format == ScanningOutputFormat::Full)
+582     FD\&.printFullOutput(llvm::outs());
+583 
+584   return HadErrors;
+585 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

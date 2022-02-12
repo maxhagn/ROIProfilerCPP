@@ -1,0 +1,200 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_scan_deps_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-scan-deps/ClangScanDeps.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-scan-deps/ClangScanDeps.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Tooling/CommonOptionsParser.h&quot;
+#include &quot;clang/Tooling/DependencyScanning/DependencyScanningService.h&quot;
+#include &quot;clang/Tooling/DependencyScanning/DependencyScanningTool.h&quot;
+#include &quot;clang/Tooling/DependencyScanning/DependencyScanningWorker.h&quot;
+#include &quot;clang/Tooling/JSONCompilationDatabase.h&quot;
+#include &quot;llvm/ADT/STLExtras.h&quot;
+#include &quot;llvm/ADT/Twine.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/FileUtilities.h&quot;
+#include &quot;llvm/Support/InitLLVM.h&quot;
+#include &quot;llvm/Support/JSON.h&quot;
+#include &quot;llvm/Support/Program.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/ThreadPool.h&quot;
+#include &quot;llvm/Support/Threading.h&quot;
+#include &lt;mutex&gt;
+#include &lt;thread&gt;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>class <link linkend="_class_single_command_compilation_database">SingleCommandCompilationDatabase</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_class_full_deps">FullDeps</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_scan_deps_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_scan_deps_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangScanDeps.cpp</secondary></indexterm>
+<indexterm><primary>ClangScanDeps.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_scan_deps_8cpp_source_1l00435">435</link> of file <link linkend="__clang_scan_deps_8cpp_source">ClangScanDeps.cpp</link>.</para>
+<programlisting>00435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00436 &#32;&#32;llvm::InitLLVM&#32;X(argc,&#32;argv);
+00437 &#32;&#32;llvm::cl::HideUnrelatedOptions(DependencyScannerCategory);
+00438 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!llvm::cl::ParseCommandLineOptions(argc,&#32;argv))
+00439 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00440 
+00441 &#32;&#32;std::string&#32;ErrorMessage;
+00442 &#32;&#32;std::unique_ptr&lt;tooling::JSONCompilationDatabase&gt;&#32;Compilations&#32;=
+00443 &#32;&#32;&#32;&#32;&#32;&#32;tooling::JSONCompilationDatabase::loadFromFile(
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CompilationDB,&#32;ErrorMessage,
+00445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tooling::JSONCommandLineSyntax::AutoDetect);
+00446 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Compilations)&#32;{
+00447 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;ErrorMessage&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00448 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00449 &#32;&#32;}
+00450 
+00451 &#32;&#32;llvm::cl::PrintOptionValues();
+00452 
+00453 &#32;&#32;<emphasis role="comment">//&#32;The&#32;command&#32;options&#32;are&#32;rewritten&#32;to&#32;run&#32;Clang&#32;in&#32;preprocessor&#32;only&#32;mode.</emphasis>
+00454 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;AdjustingCompilations&#32;=
+00455 &#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;tooling::ArgumentsAdjustingCompilations&gt;(
+00456 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::move(Compilations));
+00457 &#32;&#32;ResourceDirectoryCache&#32;ResourceDirCache;
+00458 
+00459 &#32;&#32;AdjustingCompilations-&gt;appendArgumentsAdjuster(
+00460 &#32;&#32;&#32;&#32;&#32;&#32;[&amp;ResourceDirCache](<emphasis role="keyword">const</emphasis>&#32;tooling::CommandLineArguments&#32;&amp;Args,
+00461 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;FileName)&#32;{
+00462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;LastO&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00463 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HasResourceDir&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00464 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ClangCLMode&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00465 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;FlagsEnd&#32;=&#32;llvm::find(Args,&#32;<emphasis role="stringliteral">&quot;--&quot;</emphasis>);
+00466 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FlagsEnd&#32;!=&#32;Args.begin())&#32;{
+00467 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ClangCLMode&#32;=
+00468 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::path::stem(Args[0]).contains_insensitive(<emphasis role="stringliteral">&quot;clang-cl&quot;</emphasis>)&#32;||
+00469 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::is_contained(Args,&#32;<emphasis role="stringliteral">&quot;--driver-mode=cl&quot;</emphasis>);
+00470 
+00471 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Reverse&#32;scan,&#32;starting&#32;at&#32;the&#32;end&#32;or&#32;at&#32;the&#32;element&#32;before&#32;&quot;--&quot;.</emphasis>
+00472 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;R&#32;=&#32;llvm::make_reverse_iterator(FlagsEnd);
+00473 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;I&#32;=&#32;R,&#32;E&#32;=&#32;Args.rend();&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00474 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;Arg&#32;=&#32;*I;
+00475 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ClangCLMode)&#32;{
+00476 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Ignore&#32;arguments&#32;that&#32;are&#32;preceded&#32;by&#32;&quot;-Xclang&quot;.</emphasis>
+00477 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((I&#32;+&#32;1)&#32;!=&#32;E&#32;&amp;&amp;&#32;I[1]&#32;==&#32;<emphasis role="stringliteral">&quot;-Xclang&quot;</emphasis>)
+00478 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00479 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(LastO.empty())&#32;{
+00480 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;With&#32;clang-cl,&#32;the&#32;output&#32;obj&#32;file&#32;can&#32;be&#32;specified&#32;with</emphasis>
+00481 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&quot;/opath&quot;,&#32;&quot;/o&#32;path&quot;,&#32;&quot;/Fopath&quot;,&#32;and&#32;the&#32;dash&#32;counterparts.</emphasis>
+00482 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Also,&#32;clang-cl&#32;adds&#32;&quot;.obj&quot;&#32;extension&#32;if&#32;none&#32;is&#32;found.</emphasis>
+00483 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((Arg&#32;==&#32;<emphasis role="stringliteral">&quot;-o&quot;</emphasis>&#32;||&#32;Arg&#32;==&#32;<emphasis role="stringliteral">&quot;/o&quot;</emphasis>)&#32;&amp;&amp;&#32;I&#32;!=&#32;R)
+00484 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LastO&#32;=&#32;I[-1];&#32;<emphasis role="comment">//&#32;Next&#32;argument&#32;(reverse&#32;iterator)</emphasis>
+00485 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Arg.startswith(<emphasis role="stringliteral">&quot;/Fo&quot;</emphasis>)&#32;||&#32;Arg.startswith(<emphasis role="stringliteral">&quot;-Fo&quot;</emphasis>))
+00486 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LastO&#32;=&#32;Arg.drop_front(3).str();
+00487 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Arg.startswith(<emphasis role="stringliteral">&quot;/o&quot;</emphasis>)&#32;||&#32;Arg.startswith(<emphasis role="stringliteral">&quot;-o&quot;</emphasis>))
+00488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LastO&#32;=&#32;Arg.drop_front(2).str();
+00489 
+00490 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LastO.empty()&#32;&amp;&amp;&#32;!llvm::sys::path::has_extension(LastO))
+00491 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LastO.append(<emphasis role="stringliteral">&quot;.obj&quot;</emphasis>);
+00492 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00493 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00494 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Arg&#32;==&#32;<emphasis role="stringliteral">&quot;-resource-dir&quot;</emphasis>)
+00495 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HasResourceDir&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00496 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00497 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00498 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tooling::CommandLineArguments&#32;AdjustedArgs(Args.begin(),&#32;FlagsEnd);
+00499 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;clang-cl&#32;driver&#32;passes&#32;&quot;-o&#32;-&quot;&#32;to&#32;the&#32;frontend.&#32;Inject&#32;the&#32;real</emphasis>
+00500 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;file&#32;here&#32;to&#32;ensure&#32;&quot;-MT&quot;&#32;can&#32;be&#32;deduced&#32;if&#32;need&#32;be.</emphasis>
+00501 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ClangCLMode&#32;&amp;&amp;&#32;!LastO.empty())&#32;{
+00502 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AdjustedArgs.push_back(<emphasis role="stringliteral">&quot;/clang:-o&quot;</emphasis>);
+00503 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AdjustedArgs.push_back(<emphasis role="stringliteral">&quot;/clang:&quot;</emphasis>&#32;+&#32;LastO);
+00504 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00505 
+00506 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HasResourceDir)&#32;{
+00507 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;ResourceDir&#32;=
+00508 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ResourceDirCache.findResourceDir(Args,&#32;ClangCLMode);
+00509 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ResourceDir.empty())&#32;{
+00510 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AdjustedArgs.push_back(<emphasis role="stringliteral">&quot;-resource-dir&quot;</emphasis>);
+00511 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AdjustedArgs.push_back(std::string(ResourceDir));
+00512 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00514 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AdjustedArgs.insert(AdjustedArgs.end(),&#32;FlagsEnd,&#32;Args.end());
+00515 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;AdjustedArgs;
+00516 &#32;&#32;&#32;&#32;&#32;&#32;});
+00517 
+00518 &#32;&#32;SharedStream&#32;Errs(llvm::errs());
+00519 &#32;&#32;<emphasis role="comment">//&#32;Print&#32;out&#32;the&#32;dependency&#32;results&#32;to&#32;STDOUT&#32;by&#32;default.</emphasis>
+00520 &#32;&#32;SharedStream&#32;DependencyOS(llvm::outs());
+00521 
+00522 &#32;&#32;DependencyScanningService&#32;Service(ScanMode,&#32;Format,&#32;ReuseFileManager,
+00523 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SkipExcludedPPRanges);
+00524 &#32;&#32;llvm::ThreadPool&#32;Pool(llvm::hardware_concurrency(NumThreads));
+00525 &#32;&#32;std::vector&lt;std::unique_ptr&lt;DependencyScanningTool&gt;&gt;&#32;WorkerTools;
+00526 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;&lt;&#32;Pool.getThreadCount();&#32;++I)
+00527 &#32;&#32;&#32;&#32;WorkerTools.push_back(std::make_unique&lt;DependencyScanningTool&gt;(Service));
+00528 
+00529 &#32;&#32;std::vector&lt;SingleCommandCompilationDatabase&gt;&#32;Inputs;
+00530 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(tooling::CompileCommand&#32;Cmd&#32;:
+00531 &#32;&#32;&#32;&#32;&#32;&#32;&#32;AdjustingCompilations-&gt;getAllCompileCommands())
+00532 &#32;&#32;&#32;&#32;Inputs.emplace_back(Cmd);
+00533 
+00534 &#32;&#32;std::atomic&lt;bool&gt;&#32;HadErrors(<emphasis role="keyword">false</emphasis>);
+00535 &#32;&#32;<link linkend="_class_full_deps">FullDeps</link>&#32;FD;
+00536 &#32;&#32;std::mutex&#32;Lock;
+00537 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;Index&#32;=&#32;0;
+00538 
+00539 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Verbose)&#32;{
+00540 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Running&#32;clang-scan-deps&#32;on&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Inputs.size()
+00541 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;files&#32;using&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Pool.getThreadCount()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;workers\n&quot;</emphasis>;
+00542 &#32;&#32;}
+00543 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;&lt;&#32;Pool.getThreadCount();&#32;++I)&#32;{
+00544 &#32;&#32;&#32;&#32;Pool.async([I,&#32;&amp;Lock,&#32;&amp;Index,&#32;&amp;Inputs,&#32;&amp;HadErrors,&#32;&amp;FD,&#32;&amp;WorkerTools,
+00545 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;DependencyOS,&#32;&amp;Errs]()&#32;{
+00546 &#32;&#32;&#32;&#32;&#32;&#32;llvm::StringSet&lt;&gt;&#32;AlreadySeenModules;
+00547 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">true</emphasis>)&#32;{
+00548 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_class_single_command_compilation_database">SingleCommandCompilationDatabase</link>&#32;*Input;
+00549 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;Filename;
+00550 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;CWD;
+00551 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;LocalIndex;
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Take&#32;the&#32;next&#32;input.</emphasis>
+00553 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00554 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::unique_lock&lt;std::mutex&gt;&#32;LockGuard(Lock);
+00555 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Index&#32;&gt;=&#32;Inputs.size())
+00556 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00557 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LocalIndex&#32;=&#32;Index;
+00558 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Input&#32;=&#32;&amp;Inputs[Index++];
+00559 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tooling::CompileCommand&#32;Cmd&#32;=&#32;Input-&gt;<link linkend="_class_single_command_compilation_database_1a50bfa7b1b199d95741fa4c6515e773df">getAllCompileCommands</link>()[0];
+00560 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Filename&#32;=&#32;std::move(Cmd.Filename);
+00561 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CWD&#32;=&#32;std::move(Cmd.Directory);
+00562 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00563 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Run&#32;the&#32;tool&#32;on&#32;it.</emphasis>
+00564 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Format&#32;==&#32;ScanningOutputFormat::Make)&#32;{
+00565 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;MaybeFile&#32;=&#32;WorkerTools[I]-&gt;getDependencyFile(*Input,&#32;CWD);
+00566 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(handleMakeDependencyToolResult(Filename,&#32;MaybeFile,&#32;DependencyOS,
+00567 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Errs))
+00568 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HadErrors&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00569 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00570 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;MaybeFullDeps&#32;=&#32;WorkerTools[I]-&gt;getFullDependencies(
+00571 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*Input,&#32;CWD,&#32;AlreadySeenModules);
+00572 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(handleFullDependencyToolResult(Filename,&#32;MaybeFullDeps,&#32;FD,
+00573 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LocalIndex,&#32;DependencyOS,&#32;Errs))
+00574 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HadErrors&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00575 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00576 &#32;&#32;&#32;&#32;&#32;&#32;}
+00577 &#32;&#32;&#32;&#32;});
+00578 &#32;&#32;}
+00579 &#32;&#32;Pool.wait();
+00580 
+00581 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Format&#32;==&#32;ScanningOutputFormat::Full)
+00582 &#32;&#32;&#32;&#32;FD.<link linkend="_class_full_deps_1a3a42a88ad1367c97148feb477792e39d">printFullOutput</link>(llvm::outs());
+00583 
+00584 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;HadErrors;
+00585 }
+</programlisting></section>
+</section>
+</section>

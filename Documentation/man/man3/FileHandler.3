@@ -1,0 +1,198 @@
+.TH "FileHandler" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+FileHandler \- Generic file handler interface\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherited by \fBBinaryFileHandler\fP, \fBObjectFileHandler\fP, and \fBTextFileHandler\fP\&.
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBBundleInfo\fP"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBFileHandler\fP ()"
+.br
+.ti -1c
+.RI "virtual \fB~FileHandler\fP ()"
+.br
+.ti -1c
+.RI "virtual Error \fBReadHeader\fP (MemoryBuffer &Input)=0"
+.br
+.ti -1c
+.RI "virtual Expected< Optional< StringRef > > \fBReadBundleStart\fP (MemoryBuffer &Input)=0"
+.br
+.ti -1c
+.RI "virtual Error \fBReadBundleEnd\fP (MemoryBuffer &Input)=0"
+.br
+.RI "Read the marker that closes the current bundle\&. "
+.ti -1c
+.RI "virtual Error \fBReadBundle\fP (raw_ostream &OS, MemoryBuffer &Input)=0"
+.br
+.RI "Read the current bundle and write the result into the stream \fIOS\fP\&. "
+.ti -1c
+.RI "virtual Error \fBWriteHeader\fP (raw_fd_ostream &OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs)=0"
+.br
+.ti -1c
+.RI "virtual Error \fBWriteBundleStart\fP (raw_fd_ostream &OS, StringRef TargetTriple)=0"
+.br
+.ti -1c
+.RI "virtual Error \fBWriteBundleEnd\fP (raw_fd_ostream &OS, StringRef TargetTriple)=0"
+.br
+.ti -1c
+.RI "virtual Error \fBWriteBundle\fP (raw_fd_ostream &OS, MemoryBuffer &Input)=0"
+.br
+.RI "Write the bundle from \fIInput\fP into \fIOS\fP\&. "
+.ti -1c
+.RI "virtual Error \fBlistBundleIDs\fP (MemoryBuffer &Input)"
+.br
+.RI "List bundle IDs in \fIInput\fP\&. "
+.ti -1c
+.RI "Error \fBforEachBundle\fP (MemoryBuffer &Input, std::function< Error(const \fBBundleInfo\fP &)> Func)"
+.br
+.RI "For each bundle in \fIInput\fP, do \fIFunc\fP\&. "
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "virtual Error \fBlistBundleIDsCallback\fP (MemoryBuffer &Input, const \fBBundleInfo\fP &Info)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Generic file handler interface\&. 
+.PP
+Definition at line 176 of file ClangOffloadBundler\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "FileHandler::FileHandler ()\fC [inline]\fP"
+
+.PP
+Definition at line 182 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+182 {}
+.fi
+.SS "virtual FileHandler::~FileHandler ()\fC [inline]\fP, \fC [virtual]\fP"
+
+.PP
+Definition at line 184 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+184 {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "Error FileHandler::forEachBundle (MemoryBuffer & Input, std::function< Error(const \fBBundleInfo\fP &)> Func)\fC [inline]\fP"
+
+.PP
+For each bundle in \fIInput\fP, do \fIFunc\fP\&. 
+.PP
+Definition at line 234 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+235                                                                    {
+236     while (true) {
+237       Expected<Optional<StringRef>> CurTripleOrErr = ReadBundleStart(Input);
+238       if (!CurTripleOrErr)
+239         return CurTripleOrErr\&.takeError();
+240 
+241       // No more bundles\&.
+242       if (!*CurTripleOrErr)
+243         break;
+244 
+245       StringRef CurTriple = **CurTripleOrErr;
+246       assert(!CurTriple\&.empty());
+247 
+248       BundleInfo Info{CurTriple};
+249       if (Error Err = Func(Info))
+250         return Err;
+251     }
+252     return Error::success();
+253   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDs (MemoryBuffer & Input)\fC [inline]\fP, \fC [virtual]\fP"
+
+.PP
+List bundle IDs in \fIInput\fP\&. 
+.PP
+Definition at line 220 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+220                                                    {
+221     if (Error Err = ReadHeader(Input))
+222       return Err;
+223 
+224     return forEachBundle(Input, [&](const BundleInfo &Info) -> Error {
+225       llvm::outs() << Info\&.BundleID << '\n';
+226       Error Err = listBundleIDsCallback(Input, Info);
+227       if (Err)
+228         return Err;
+229       return Error::success();
+230     });
+231   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDsCallback (MemoryBuffer & Input, const \fBBundleInfo\fP & Info)\fC [inline]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+
+.PP
+Reimplemented in \fBTextFileHandler\fP\&.
+.PP
+Definition at line 256 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+257                                                               {
+258     return Error::success();
+259   }
+.fi
+.SS "virtual Error FileHandler::ReadBundle (raw_ostream & OS, MemoryBuffer & Input)\fC [pure virtual]\fP"
+
+.PP
+Read the current bundle and write the result into the stream \fIOS\fP\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Error FileHandler::ReadBundleEnd (MemoryBuffer & Input)\fC [pure virtual]\fP"
+
+.PP
+Read the marker that closes the current bundle\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Expected<Optional<StringRef> > FileHandler::ReadBundleStart (MemoryBuffer & Input)\fC [pure virtual]\fP"
+Read the marker of the next bundled to be read in the file\&. The bundle name is returned if there is one in the file, or \fCNone\fP if there are no more bundles to be read\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Error FileHandler::ReadHeader (MemoryBuffer & Input)\fC [pure virtual]\fP"
+Update the file handler with information from the header of the bundled file\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Error FileHandler::WriteBundle (raw_fd_ostream & OS, MemoryBuffer & Input)\fC [pure virtual]\fP"
+
+.PP
+Write the bundle from \fIInput\fP into \fIOS\fP\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Error FileHandler::WriteBundleEnd (raw_fd_ostream & OS, StringRef TargetTriple)\fC [pure virtual]\fP"
+Write the marker that closes a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Error FileHandler::WriteBundleStart (raw_fd_ostream & OS, StringRef TargetTriple)\fC [pure virtual]\fP"
+Write the marker that initiates a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+.SS "virtual Error FileHandler::WriteHeader (raw_fd_ostream & OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs)\fC [pure virtual]\fP"
+Write the header of the bundled file to \fIOS\fP based on the information gathered from \fIInputs\fP\&. 
+.PP
+Implemented in \fBTextFileHandler\fP, \fBObjectFileHandler\fP, and \fBBinaryFileHandler\fP\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

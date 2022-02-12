@@ -1,0 +1,66 @@
+.TH "clang-format-sublime.ClangFormatCommand" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang-format-sublime.ClangFormatCommand
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits sublime_plugin\&.TextCommand\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun\fP (self, edit)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 29 of file clang\-format\-sublime\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def clang\-format\-sublime\&.ClangFormatCommand\&.run ( self,  edit)"
+
+.PP
+Definition at line 30 of file clang\-format\-sublime\&.py\&.
+.PP
+.nf
+30   def run(self, edit):
+31     encoding = self\&.view\&.encoding()
+32     if encoding == 'Undefined':
+33       encoding = 'utf-8'
+34     regions = []
+35     command = [binary]
+36     if style:
+37       command\&.extend(['-style', style])
+38     for region in self\&.view\&.sel():
+39       regions\&.append(region)
+40       region_offset = min(region\&.a, region\&.b)
+41       region_length = abs(region\&.b - region\&.a)
+42       command\&.extend(['-offset', str(region_offset),
+43                       '-length', str(region_length),
+44                       '-assume-filename', str(self\&.view\&.file_name())])
+45     old_viewport_position = self\&.view\&.viewport_position()
+46     buf = self\&.view\&.substr(sublime\&.Region(0, self\&.view\&.size()))
+47     p = subprocess\&.Popen(command, stdout=subprocess\&.PIPE,
+48                          stderr=subprocess\&.PIPE, stdin=subprocess\&.PIPE)
+49     output, error = p\&.communicate(buf\&.encode(encoding))
+50     if error:
+51       print(error)
+52     self\&.view\&.replace(
+53         edit, sublime\&.Region(0, self\&.view\&.size()),
+54         output\&.decode(encoding))
+55     self\&.view\&.sel()\&.clear()
+56     for region in regions:
+57       self\&.view\&.sel()\&.add(region)
+58     # FIXME: Without the 10ms delay, the viewport sometimes jumps\&.
+59     sublime\&.set_timeout(lambda: self\&.view\&.set_viewport_position(
+60       old_viewport_position, False), 10)
+.fi
+.PP
+References print()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

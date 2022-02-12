@@ -1,0 +1,80 @@
+.TH "llvm::DenseMapInfo< PPRegion >" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+llvm::DenseMapInfo< PPRegion >
+.SH SYNOPSIS
+.br
+.PP
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static PPRegion \fBgetEmptyKey\fP ()"
+.br
+.ti -1c
+.RI "static PPRegion \fBgetTombstoneKey\fP ()"
+.br
+.ti -1c
+.RI "static unsigned \fBgetHashValue\fP (const PPRegion &S)"
+.br
+.ti -1c
+.RI "static bool \fBisEqual\fP (const PPRegion &LHS, const PPRegion &RHS)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 96 of file Indexing\&.cpp\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "static PPRegion llvm::DenseMapInfo< PPRegion >::getEmptyKey ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 97 of file Indexing\&.cpp\&.
+.PP
+.nf
+97                                          {
+98       return PPRegion(llvm::sys::fs::UniqueID(0, 0), unsigned(-1), 0);
+99     }
+.fi
+.SS "static unsigned llvm::DenseMapInfo< PPRegion >::getHashValue (const PPRegion & S)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 104 of file Indexing\&.cpp\&.
+.PP
+.nf
+104                                                     {
+105       llvm::FoldingSetNodeID ID;
+106       const llvm::sys::fs::UniqueID &UniqueID = S\&.getUniqueID();
+107       ID\&.AddInteger(UniqueID\&.getFile());
+108       ID\&.AddInteger(UniqueID\&.getDevice());
+109       ID\&.AddInteger(S\&.getOffset());
+110       ID\&.AddInteger(S\&.getModTime());
+111       return ID\&.ComputeHash();
+112     }
+.fi
+.SS "static PPRegion llvm::DenseMapInfo< PPRegion >::getTombstoneKey ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 100 of file Indexing\&.cpp\&.
+.PP
+.nf
+100                                              {
+101       return PPRegion(llvm::sys::fs::UniqueID(0, 0), unsigned(-2), 0);
+102     }
+.fi
+.SS "static bool llvm::DenseMapInfo< PPRegion >::isEqual (const PPRegion & LHS, const PPRegion & RHS)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 114 of file Indexing\&.cpp\&.
+.PP
+.nf
+114                                                                   {
+115       return LHS == RHS;
+116     }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

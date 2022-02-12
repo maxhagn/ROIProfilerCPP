@@ -1,0 +1,114 @@
+.TH "tests.unit.test_analyze.MergeCtuMapTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_analyze.MergeCtuMapTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_no_map_gives_empty\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_multiple_maps_merged\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_not_unique_func_left_out\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_duplicates_are_kept\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_space_handled_in_source\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 363 of file test_analyze\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_analyze\&.MergeCtuMapTest\&.test_duplicates_are_kept ( self)"
+
+.PP
+Definition at line 389 of file test_analyze\&.py\&.
+.PP
+.nf
+389     def test_duplicates_are_kept(self):
+390         concat_map = ['c:@F@fun1#I# ast/fun1\&.c\&.ast',
+391                       'c:@F@fun2#I# ast/fun2\&.c\&.ast',
+392                       'c:@F@fun1#I# ast/fun1\&.c\&.ast']
+393         pairs = sut\&.create_global_ctu_extdef_map(concat_map)
+394         self\&.assertTrue(('c:@F@fun1#I#', 'ast/fun1\&.c\&.ast') in pairs)
+395         self\&.assertTrue(('c:@F@fun2#I#', 'ast/fun2\&.c\&.ast') in pairs)
+396         self\&.assertEqual(2, len(pairs))
+397 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.MergeCtuMapTest\&.test_multiple_maps_merged ( self)"
+
+.PP
+Definition at line 369 of file test_analyze\&.py\&.
+.PP
+.nf
+369     def test_multiple_maps_merged(self):
+370         concat_map = ['c:@F@fun1#I# ast/fun1\&.c\&.ast',
+371                       'c:@F@fun2#I# ast/fun2\&.c\&.ast',
+372                       'c:@F@fun3#I# ast/fun3\&.c\&.ast']
+373         pairs = sut\&.create_global_ctu_extdef_map(concat_map)
+374         self\&.assertTrue(('c:@F@fun1#I#', 'ast/fun1\&.c\&.ast') in pairs)
+375         self\&.assertTrue(('c:@F@fun2#I#', 'ast/fun2\&.c\&.ast') in pairs)
+376         self\&.assertTrue(('c:@F@fun3#I#', 'ast/fun3\&.c\&.ast') in pairs)
+377         self\&.assertEqual(3, len(pairs))
+378 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.MergeCtuMapTest\&.test_no_map_gives_empty ( self)"
+
+.PP
+Definition at line 365 of file test_analyze\&.py\&.
+.PP
+.nf
+365     def test_no_map_gives_empty(self):
+366         pairs = sut\&.create_global_ctu_extdef_map([])
+367         self\&.assertFalse(pairs)
+368 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.MergeCtuMapTest\&.test_not_unique_func_left_out ( self)"
+
+.PP
+Definition at line 379 of file test_analyze\&.py\&.
+.PP
+.nf
+379     def test_not_unique_func_left_out(self):
+380         concat_map = ['c:@F@fun1#I# ast/fun1\&.c\&.ast',
+381                       'c:@F@fun2#I# ast/fun2\&.c\&.ast',
+382                       'c:@F@fun1#I# ast/fun7\&.c\&.ast']
+383         pairs = sut\&.create_global_ctu_extdef_map(concat_map)
+384         self\&.assertFalse(('c:@F@fun1#I#', 'ast/fun1\&.c\&.ast') in pairs)
+385         self\&.assertFalse(('c:@F@fun1#I#', 'ast/fun7\&.c\&.ast') in pairs)
+386         self\&.assertTrue(('c:@F@fun2#I#', 'ast/fun2\&.c\&.ast') in pairs)
+387         self\&.assertEqual(1, len(pairs))
+388 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.MergeCtuMapTest\&.test_space_handled_in_source ( self)"
+
+.PP
+Definition at line 398 of file test_analyze\&.py\&.
+.PP
+.nf
+398     def test_space_handled_in_source(self):
+399         concat_map = ['c:@F@fun1#I# ast/f un\&.c\&.ast']
+400         pairs = sut\&.create_global_ctu_extdef_map(concat_map)
+401         self\&.assertTrue(('c:@F@fun1#I#', 'ast/f un\&.c\&.ast') in pairs)
+402         self\&.assertEqual(1, len(pairs))
+403 
+404 
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__a_p_i_notes_test_8cpp_source" xml:lang="en-US">
+<title>APINotesTest.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/apinotes-test/APINotesTest.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;APINotesTest.cpp&#32;-&#32;API&#32;Notes&#32;Testing&#32;Tool&#32;------------------&#32;C++&#32;--===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;clang/APINotes/APINotesYAMLCompiler.h&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ToolOutputFile.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/WithColor.h&quot;</emphasis>
+00016 
+00017 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::list&lt;std::string&gt;&#32;APINotes(llvm::cl::Positional,
+00018 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;[&lt;apinotes&gt;&#32;...]&quot;</emphasis>),
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::Required);
+00020 
+00021 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;std::string&gt;
+00022 &#32;&#32;&#32;&#32;OutputFileName(<emphasis role="stringliteral">&quot;o&quot;</emphasis>,&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;output&#32;filename&quot;</emphasis>),
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::value_desc(<emphasis role="stringliteral">&quot;filename&quot;</emphasis>),&#32;llvm::cl::init(<emphasis role="stringliteral">&quot;-&quot;</emphasis>));
+00024 
+<anchor xml:id="__a_p_i_notes_test_8cpp_source_1l00025"/><link linkend="__a_p_i_notes_test_8cpp_1a217dbf8b442f20279ea00b898af96f52">00025</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__a_p_i_notes_test_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00026 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;DisableCrashReporting&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00027 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0],&#32;DisableCrashReporting);
+00028 &#32;&#32;llvm::cl::ParseCommandLineOptions(argc,&#32;argv);
+00029 
+00030 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Error&#32;=&#32;[](<emphasis role="keyword">const</emphasis>&#32;llvm::Twine&#32;&amp;Msg)&#32;{
+00031 &#32;&#32;&#32;&#32;llvm::WithColor::error(llvm::errs(),&#32;<emphasis role="stringliteral">&quot;apinotes-test&quot;</emphasis>)&#32;&lt;&lt;&#32;Msg&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00032 &#32;&#32;};
+00033 
+00034 &#32;&#32;std::error_code&#32;EC;
+00035 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Out&#32;=&#32;std::make_unique&lt;llvm::ToolOutputFile&gt;(OutputFileName,&#32;EC,
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::fs::OF_None);
+00037 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00038 &#32;&#32;&#32;&#32;Error(<emphasis role="stringliteral">&quot;failed&#32;to&#32;open&#32;&apos;&quot;</emphasis>&#32;+&#32;OutputFileName&#32;+&#32;<emphasis role="stringliteral">&quot;&apos;:&#32;&quot;</emphasis>&#32;+&#32;EC.message());
+00039 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_FAILURE;
+00040 &#32;&#32;}
+00041 
+00042 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;Notes&#32;:&#32;APINotes)&#32;{
+00043 &#32;&#32;&#32;&#32;llvm::ErrorOr&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt;&#32;NotesOrError&#32;=
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFileOrSTDIN(Notes);
+00045 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;NotesOrError.getError())&#32;{
+00046 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;EC.message()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00047 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_FAILURE;
+00048 &#32;&#32;&#32;&#32;}
+00049 
+00050 &#32;&#32;&#32;&#32;clang::api_notes::parseAndDumpAPINotes((*NotesOrError)-&gt;getBuffer(),
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out-&gt;os());
+00052 &#32;&#32;}
+00053 
+00054 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_SUCCESS;
+00055 }
+</programlisting></section>

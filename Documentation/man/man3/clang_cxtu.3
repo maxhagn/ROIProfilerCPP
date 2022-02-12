@@ -1,0 +1,79 @@
+.TH "clang::cxtu" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxtu
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBCXTUOwner\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCXTranslationUnitImpl\fP * \fBMakeCXTranslationUnit\fP (\fBCIndexer\fP *CIdx, std::unique_ptr< ASTUnit > AU)"
+.br
+.ti -1c
+.RI "bool \fBisASTReadError\fP (ASTUnit *AU)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "bool clang::cxtu::isASTReadError (ASTUnit * AU)"
+
+.PP
+\fBReturns\fP
+.RS 4
+true if the ASTUnit has a diagnostic about the AST file being corrupted\&. 
+.RE
+.PP
+
+.PP
+Definition at line 90 of file CIndex\&.cpp\&.
+.PP
+.nf
+90                                      {
+91   for (ASTUnit::stored_diag_iterator D = AU->stored_diag_begin(),
+92                                      DEnd = AU->stored_diag_end();
+93        D != DEnd; ++D) {
+94     if (D->getLevel() >= DiagnosticsEngine::Error &&
+95         DiagnosticIDs::getCategoryNumberForDiag(D->getID()) ==
+96             diag::DiagCat_AST_Deserialization_Issue)
+97       return true;
+98   }
+99   return false;
+100 }
+.fi
+.SS "CXTranslationUnit clang::cxtu::MakeCXTranslationUnit (\fBCIndexer\fP * CIdx, std::unique_ptr< ASTUnit > AU)"
+
+.PP
+Definition at line 73 of file CIndex\&.cpp\&.
+.PP
+.nf
+74                                                                          {
+75   if (!AU)
+76     return nullptr;
+77   assert(CIdx);
+78   CXTranslationUnit D = new CXTranslationUnitImpl();
+79   D->CIdx = CIdx;
+80   D->TheASTUnit = AU\&.release();
+81   D->StringPool = new cxstring::CXStringPool();
+82   D->Diagnostics = nullptr;
+83   D->OverridenCursorsPool = createOverridenCXCursorsPool();
+84   D->CommentToXML = nullptr;
+85   D->ParsingOptions = 0;
+86   D->Arguments = {};
+87   return D;
+88 }
+.fi
+.PP
+References clang::cxcursor::createOverridenCXCursorsPool()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

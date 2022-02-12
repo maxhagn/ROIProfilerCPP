@@ -1,0 +1,191 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_string_8cpp_source" xml:lang="en-US">
+<title>CXString.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXString.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXString.cpp&#32;-&#32;Routines&#32;for&#32;manipulating&#32;CXStrings&#32;-----------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXStrings.&#32;It&#32;should&#32;be&#32;the</emphasis>
+00010 <emphasis role="comment">//&#32;only&#32;file&#32;that&#32;has&#32;internal&#32;knowledge&#32;of&#32;the&#32;encoding&#32;of&#32;the&#32;data&#32;in</emphasis>
+00011 <emphasis role="comment">//&#32;CXStrings.</emphasis>
+00012 <emphasis role="comment">//</emphasis>
+00013 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00020 
+00021 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00022 
+<anchor xml:id="__c_x_string_8cpp_source_1l00024"/><link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbe">00024</link> <emphasis role="keyword">enum</emphasis>&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbe">CXStringFlag</link>&#32;{
+<anchor xml:id="__c_x_string_8cpp_source_1l00026"/><link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">00026</link> &#32;&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">CXS_Unmanaged</link>,
+00027 
+<anchor xml:id="__c_x_string_8cpp_source_1l00029"/><link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeae75b2f550ab333f9545a54e835053de1">00029</link> &#32;&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeae75b2f550ab333f9545a54e835053de1">CXS_Malloc</link>,
+00030 
+00033 &#32;&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeac341fab4481fed30e1d8bdb6f9ad7a64">CXS_StringBuf</link>
+<anchor xml:id="__c_x_string_8cpp_source_1l00034"/><link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeac341fab4481fed30e1d8bdb6f9ad7a64">00034</link> };
+00035 
+00036 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+<anchor xml:id="__c_x_string_8cpp_source_1l00037"/><link linkend="_namespaceclang_1_1cxstring">00037</link> <emphasis role="keyword">namespace&#32;</emphasis>cxstring&#32;{
+00038 
+00039 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00040 <emphasis role="comment">//&#32;Basic&#32;generation&#32;of&#32;CXStrings.</emphasis>
+00041 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00042 
+<anchor xml:id="__c_x_string_8cpp_source_1l00043"/><link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">00043</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">createEmpty</link>()&#32;{
+00044 &#32;&#32;CXString&#32;Str;
+00045 &#32;&#32;Str.data&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00046 &#32;&#32;Str.private_flags&#32;=&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">CXS_Unmanaged</link>;
+00047 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Str;
+00048 }
+00049 
+<anchor xml:id="__c_x_string_8cpp_source_1l00050"/><link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">00050</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">createNull</link>()&#32;{
+00051 &#32;&#32;CXString&#32;Str;
+00052 &#32;&#32;Str.data&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00053 &#32;&#32;Str.private_flags&#32;=&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">CXS_Unmanaged</link>;
+00054 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Str;
+00055 }
+00056 
+<anchor xml:id="__c_x_string_8cpp_source_1l00057"/><link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">00057</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">createRef</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*String)&#32;{
+00058 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(String&#32;&amp;&amp;&#32;String[0]&#32;==&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>)
+00059 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">createEmpty</link>();
+00060 
+00061 &#32;&#32;CXString&#32;Str;
+00062 &#32;&#32;Str.data&#32;=&#32;String;
+00063 &#32;&#32;Str.private_flags&#32;=&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">CXS_Unmanaged</link>;
+00064 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Str;
+00065 }
+00066 
+<anchor xml:id="__c_x_string_8cpp_source_1l00067"/><link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">00067</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">createDup</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*String)&#32;{
+00068 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!String)
+00069 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">createNull</link>();
+00070 
+00071 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(String[0]&#32;==&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>)
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">createEmpty</link>();
+00073 
+00074 &#32;&#32;CXString&#32;Str;
+00075 &#32;&#32;Str.data&#32;=&#32;strdup(String);
+00076 &#32;&#32;Str.private_flags&#32;=&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeae75b2f550ab333f9545a54e835053de1">CXS_Malloc</link>;
+00077 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Str;
+00078 }
+00079 
+<anchor xml:id="__c_x_string_8cpp_source_1l00080"/><link linkend="_namespaceclang_1_1cxstring_1ae7319593ba701fd2e736767deae5ef5f">00080</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">createRef</link>(StringRef&#32;String)&#32;{
+00081 &#32;&#32;<emphasis role="comment">//&#32;If&#32;the&#32;string&#32;is&#32;not&#32;nul-terminated,&#32;we&#32;have&#32;to&#32;make&#32;a&#32;copy.</emphasis>
+00082 
+00083 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;This&#32;is&#32;doing&#32;a&#32;one&#32;past&#32;end&#32;read,&#32;and&#32;should&#32;be&#32;removed!&#32;For&#32;memory</emphasis>
+00084 &#32;&#32;<emphasis role="comment">//&#32;we&#32;don&apos;t&#32;manage,&#32;the&#32;API&#32;string&#32;can&#32;become&#32;unterminated&#32;at&#32;any&#32;time&#32;outside</emphasis>
+00085 &#32;&#32;<emphasis role="comment">//&#32;our&#32;control.</emphasis>
+00086 
+00087 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!String.empty()&#32;&amp;&amp;&#32;String.data()[String.size()]&#32;!=&#32;0)
+00088 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">createDup</link>(String);
+00089 
+00090 &#32;&#32;CXString&#32;Result;
+00091 &#32;&#32;Result.data&#32;=&#32;String.data();
+00092 &#32;&#32;Result.private_flags&#32;=&#32;(unsigned)&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">CXS_Unmanaged</link>;
+00093 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00094 }
+00095 
+<anchor xml:id="__c_x_string_8cpp_source_1l00096"/><link linkend="_namespaceclang_1_1cxstring_1a62e4008f6bfd5c212aada470275c24b1">00096</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">createDup</link>(StringRef&#32;String)&#32;{
+00097 &#32;&#32;CXString&#32;Result;
+00098 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Spelling&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(llvm::safe_malloc(String.size()&#32;+&#32;1));
+00099 &#32;&#32;memmove(Spelling,&#32;String.data(),&#32;String.size());
+00100 &#32;&#32;Spelling[String.size()]&#32;=&#32;0;
+00101 &#32;&#32;Result.data&#32;=&#32;Spelling;
+00102 &#32;&#32;Result.private_flags&#32;=&#32;(unsigned)&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeae75b2f550ab333f9545a54e835053de1">CXS_Malloc</link>;
+00103 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00104 }
+00105 
+<anchor xml:id="__c_x_string_8cpp_source_1l00106"/><link linkend="_namespaceclang_1_1cxstring_1a4ea867311d5651a36d2dfa1f1258638c">00106</link> CXString&#32;<link linkend="_namespaceclang_1_1cxstring_1a4ea867311d5651a36d2dfa1f1258638c">createCXString</link>(<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;*buf)&#32;{
+00107 &#32;&#32;CXString&#32;Str;
+00108 &#32;&#32;Str.data&#32;=&#32;buf;
+00109 &#32;&#32;Str.private_flags&#32;=&#32;(unsigned)&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeac341fab4481fed30e1d8bdb6f9ad7a64">CXS_StringBuf</link>;
+00110 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Str;
+00111 }
+00112 
+<anchor xml:id="__c_x_string_8cpp_source_1l00113"/><link linkend="_namespaceclang_1_1cxstring_1a0ebb0924de5a075db7ae5d7937df8056">00113</link> CXStringSet&#32;*<link linkend="_namespaceclang_1_1cxstring_1a0ebb0924de5a075db7ae5d7937df8056">createSet</link>(<emphasis role="keyword">const</emphasis>&#32;std::vector&lt;std::string&gt;&#32;&amp;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>)&#32;{
+00114 &#32;&#32;CXStringSet&#32;*Set&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;CXStringSet;
+00115 &#32;&#32;Set-&gt;Count&#32;=&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>.size();
+00116 &#32;&#32;Set-&gt;Strings&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;CXString[Set-&gt;Count];
+00117 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;SI&#32;=&#32;0,&#32;SE&#32;=&#32;Set-&gt;Count;&#32;SI&#32;&lt;&#32;SE;&#32;++SI)
+00118 &#32;&#32;&#32;&#32;Set-&gt;Strings[SI]&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">createDup</link>(<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>[SI]);
+00119 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Set;
+00120 }
+00121 
+00122 
+00123 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00124 <emphasis role="comment">//&#32;String&#32;pools.</emphasis>
+00125 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00126 
+<anchor xml:id="__c_x_string_8cpp_source_1l00127"/><link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1a7c918ea91ae7883d4b56563c84260553">00127</link> <link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1a7c918ea91ae7883d4b56563c84260553">CXStringPool::~CXStringPool</link>()&#32;{
+00128 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(std::vector&lt;CXStringBuf&#32;*&gt;::iterator&#32;I&#32;=&#32;Pool.begin(),&#32;E&#32;=&#32;Pool.end();
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00130 &#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;*I;
+00131 &#32;&#32;}
+00132 }
+00133 
+<anchor xml:id="__c_x_string_8cpp_source_1l00134"/><link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1a283bd45dc821db389405ee85514ae8e5">00134</link> <link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;*<link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1a283bd45dc821db389405ee85514ae8e5">CXStringPool::getCXStringBuf</link>(CXTranslationUnit&#32;TU)&#32;{
+00135 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Pool.empty())
+00136 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool_1ab905909ab6df34271840b9a9881f0ca7">CXStringBuf</link>(TU);
+00137 
+00138 &#32;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;*Buf&#32;=&#32;Pool.back();
+00139 &#32;&#32;Buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">Data</link>.clear();
+00140 &#32;&#32;Pool.pop_back();
+00141 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Buf;
+00142 }
+00143 
+<anchor xml:id="__c_x_string_8cpp_source_1l00144"/><link linkend="_namespaceclang_1_1cxstring_1ad1ccb52527d7a42e4ad5c3e1f6af9907">00144</link> <link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">CXStringBuf</link>&#32;*<link linkend="_namespaceclang_1_1cxstring_1ad1ccb52527d7a42e4ad5c3e1f6af9907">getCXStringBuf</link>(CXTranslationUnit&#32;TU)&#32;{
+00145 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TU-&gt;StringPool-&gt;getCXStringBuf(TU);
+00146 }
+00147 
+<anchor xml:id="__c_x_string_8cpp_source_1l00148"/><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1add7775f4003b4bfbb5c470976ef73485">00148</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1add7775f4003b4bfbb5c470976ef73485">CXStringBuf::dispose</link>()&#32;{
+00149 &#32;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1ad0f8e5ef3ebae1214ae0ecd42032f9b2">TU</link>-&gt;StringPool-&gt;Pool.push_back(<emphasis role="keyword">this</emphasis>);
+00150 }
+00151 
+<anchor xml:id="__c_x_string_8cpp_source_1l00152"/><link linkend="_namespaceclang_1_1cxstring_1a23337a6942da94448da8b249362d626e">00152</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a23337a6942da94448da8b249362d626e">isManagedByPool</link>(CXString&#32;str)&#32;{
+00153 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;((<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbe">CXStringFlag</link>)&#32;str.private_flags)&#32;==&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeac341fab4481fed30e1d8bdb6f9ad7a64">CXS_StringBuf</link>;
+00154 }
+00155 
+00156 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;cxstring</emphasis>
+00157 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;clang</emphasis>
+00158 
+00159 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00160 <emphasis role="comment">//&#32;libClang&#32;public&#32;APIs.</emphasis>
+00161 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00162 
+<anchor xml:id="__c_x_string_8cpp_source_1l00163"/><link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">00163</link> <emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(CXString&#32;<emphasis role="keywordtype">string</emphasis>)&#32;{
+00164 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keywordtype">string</emphasis>.private_flags&#32;==&#32;(<emphasis role="keywordtype">unsigned</emphasis>)&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeac341fab4481fed30e1d8bdb6f9ad7a64">CXS_StringBuf</link>)&#32;{
+00165 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">cxstring::CXStringBuf</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keywordtype">string</emphasis>.data)-&gt;Data.data();
+00166 &#32;&#32;}
+00167 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keywordtype">string</emphasis>.data);
+00168 }
+00169 
+<anchor xml:id="__c_x_string_8cpp_source_1l00170"/><link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">00170</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(CXString&#32;<emphasis role="keywordtype">string</emphasis>)&#32;{
+00171 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbe">CXStringFlag</link>)&#32;<emphasis role="keywordtype">string</emphasis>.private_flags)&#32;{
+00172 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbead25153f33f1e6cfab882b9feb6790073">CXS_Unmanaged</link>:
+00173 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00174 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeae75b2f550ab333f9545a54e835053de1">CXS_Malloc</link>:
+00175 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keywordtype">string</emphasis>.data)
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;free(<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keywordtype">string</emphasis>.data));
+00177 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00178 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<link linkend="__c_x_string_8cpp_1ab8841ac79b6d3e2432ef36b111ccbdbeac341fab4481fed30e1d8bdb6f9ad7a64">CXS_StringBuf</link>:
+00179 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">cxstring::CXStringBuf</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keywordtype">string</emphasis>.data))-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1add7775f4003b4bfbb5c470976ef73485">dispose</link>();
+00181 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00182 &#32;&#32;}
+00183 }
+00184 
+<anchor xml:id="__c_x_string_8cpp_source_1l00185"/><link linkend="__c_x_string_8cpp_1aa942422cf97595a7f683a4ad4cf89782">00185</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_x_string_8cpp_1aa942422cf97595a7f683a4ad4cf89782">clang_disposeStringSet</link>(CXStringSet&#32;*set)&#32;{
+00186 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;SI&#32;=&#32;0,&#32;SE&#32;=&#32;set-&gt;Count;&#32;SI&#32;&lt;&#32;SE;&#32;++SI)
+00187 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(set-&gt;Strings[SI]);
+00188 &#32;&#32;<emphasis role="keyword">delete</emphasis>[]&#32;set-&gt;Strings;
+00189 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;set;
+00190 }
+00191 
+</programlisting></section>

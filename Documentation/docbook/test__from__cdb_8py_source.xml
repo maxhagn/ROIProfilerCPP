@@ -1,0 +1,217 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_test__from__cdb_8py_source" xml:lang="en-US">
+<title>test_from_cdb.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/functional/cases/test_from_cdb.py</primary></indexterm>
+<programlisting><anchor xml:id="_test__from__cdb_8py_source_1l00001"/><link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 
+00006 <emphasis role="keyword">import</emphasis>&#32;libear
+00007 <emphasis role="keyword">from</emphasis>&#32;.&#32;<emphasis role="keyword">import</emphasis>&#32;call_and_report
+00008 <emphasis role="keyword">import</emphasis>&#32;unittest
+00009 
+00010 <emphasis role="keyword">import</emphasis>&#32;os.path
+00011 <emphasis role="keyword">import</emphasis>&#32;string
+00012 <emphasis role="keyword">import</emphasis>&#32;glob
+00013 
+00014 
+<anchor xml:id="_test__from__cdb_8py_source_1l00015"/><link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">00015</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(name,&#32;target_dir):
+00016 &#32;&#32;&#32;&#32;target_file&#32;=&#32;<emphasis role="stringliteral">&apos;build_{0}.json&apos;</emphasis>.format(name)
+00017 &#32;&#32;&#32;&#32;this_dir,&#32;_&#32;=&#32;os.path.split(__file__)
+00018 &#32;&#32;&#32;&#32;path&#32;=&#32;os.path.abspath(os.path.join(this_dir,&#32;<emphasis role="stringliteral">&apos;..&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;src&apos;</emphasis>))
+00019 &#32;&#32;&#32;&#32;source_dir&#32;=&#32;os.path.join(path,&#32;<emphasis role="stringliteral">&apos;compilation_database&apos;</emphasis>)
+00020 &#32;&#32;&#32;&#32;source_file&#32;=&#32;os.path.join(source_dir,&#32;target_file&#32;+&#32;<emphasis role="stringliteral">&apos;.in&apos;</emphasis>)
+00021 &#32;&#32;&#32;&#32;target_file&#32;=&#32;os.path.join(target_dir,&#32;<emphasis role="stringliteral">&apos;compile_commands.json&apos;</emphasis>)
+00022 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(source_file,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;in_handle:
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(target_file,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;out_handle:
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;in_handle:
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;temp&#32;=&#32;string.Template(line)
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;out_handle.write(temp.substitute(path=path))
+00027 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;target_file
+00028 
+00029 
+<anchor xml:id="_test__from__cdb_8py_source_1l00030"/><link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">00030</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(directory,&#32;cdb,&#32;args):
+00031 &#32;&#32;&#32;&#32;cmd&#32;=&#32;[<emphasis role="stringliteral">&apos;analyze-build&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;--cdb&apos;</emphasis>,&#32;cdb,&#32;<emphasis role="stringliteral">&apos;--output&apos;</emphasis>,&#32;directory]&#32;\
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;+&#32;args
+00033 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1a024c367354bf63e4c7f8d4bccec8e2f9">call_and_report</link>(cmd,&#32;[])
+00034 
+00035 
+<anchor xml:id="_test__from__cdb_8py_source_1l00036"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test">00036</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test">OutputDirectoryTest</link>(unittest.TestCase):
+<anchor xml:id="_test__from__cdb_8py_source_1l00037"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test_1a9dae0e678424e14d47051542e6b7faac">00037</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test_1a9dae0e678424e14d47051542e6b7faac">test_regular_keeps_report_dir</link>(self):
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(os.path.isdir(reportdir))
+00042 
+<anchor xml:id="_test__from__cdb_8py_source_1l00043"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test_1aa70154b219b45474f4f2a8b21eba604d">00043</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test_1aa70154b219b45474f4f2a8b21eba604d">test_clear_deletes_report_dir</link>(self):
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;clean&apos;</emphasis>,&#32;tmpdir)
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(os.path.isdir(reportdir))
+00048 
+<anchor xml:id="_test__from__cdb_8py_source_1l00049"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test_1ab163649713244ac5b5e09edad321aea1">00049</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_directory_test_1ab163649713244ac5b5e09edad321aea1">test_clear_keeps_report_dir_when_asked</link>(self):
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;clean&apos;</emphasis>,&#32;tmpdir)
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--keep-empty&apos;</emphasis>])
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(os.path.isdir(reportdir))
+00054 
+00055 
+<anchor xml:id="_test__from__cdb_8py_source_1l00056"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test">00056</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test">ExitCodeTest</link>(unittest.TestCase):
+<anchor xml:id="_test__from__cdb_8py_source_1l00057"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a2dff7a3aa7d954f1132890e872acbef3">00057</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a2dff7a3aa7d954f1132890e872acbef3">test_regular_does_not_set_exit_code</link>(self):
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;__&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(exit_code)
+00062 
+<anchor xml:id="_test__from__cdb_8py_source_1l00063"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1af4dd1ad28d7cbdf469f5d9362c2bbc16">00063</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1af4dd1ad28d7cbdf469f5d9362c2bbc16">test_clear_does_not_set_exit_code</link>(self):
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;clean&apos;</emphasis>,&#32;tmpdir)
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;__&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(exit_code)
+00068 
+<anchor xml:id="_test__from__cdb_8py_source_1l00069"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a6a8ea5edfb846af5043ee3e35a6f797a">00069</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a6a8ea5edfb846af5043ee3e35a6f797a">test_regular_sets_exit_code_if_asked</link>(self):
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;__&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--status-bugs&apos;</emphasis>])
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(exit_code)
+00074 
+<anchor xml:id="_test__from__cdb_8py_source_1l00075"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a1633256d009b14db67ee1e8ea861bcb7">00075</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a1633256d009b14db67ee1e8ea861bcb7">test_clear_does_not_set_exit_code_if_asked</link>(self):
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;clean&apos;</emphasis>,&#32;tmpdir)
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;__&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--status-bugs&apos;</emphasis>])
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(exit_code)
+00080 
+<anchor xml:id="_test__from__cdb_8py_source_1l00081"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a2edd3f5fc49b81ea255453c270548e7c">00081</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a2edd3f5fc49b81ea255453c270548e7c">test_regular_sets_exit_code_if_asked_from_plist</link>(self):
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;__&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--status-bugs&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;--plist&apos;</emphasis>])
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(exit_code)
+00087 
+<anchor xml:id="_test__from__cdb_8py_source_1l00088"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a045e3cc0a24b2311721f07469df045ff">00088</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_exit_code_test_1a045e3cc0a24b2311721f07469df045ff">test_clear_does_not_set_exit_code_if_asked_from_plist</link>(self):
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;clean&apos;</emphasis>,&#32;tmpdir)
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;__&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--status-bugs&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;--plist&apos;</emphasis>])
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(exit_code)
+00094 
+00095 
+<anchor xml:id="_test__from__cdb_8py_source_1l00096"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test">00096</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test">OutputFormatTest</link>(unittest.TestCase):
+00097 &#32;&#32;&#32;&#32;<emphasis role="preprocessor">@staticmethod</emphasis>
+<anchor xml:id="_test__from__cdb_8py_source_1l00098"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">00098</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">get_html_count</link>(directory):
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;len(glob.glob(os.path.join(directory,&#32;<emphasis role="stringliteral">&apos;report-*.html&apos;</emphasis>)))
+00100 
+00101 &#32;&#32;&#32;&#32;<emphasis role="preprocessor">@staticmethod</emphasis>
+<anchor xml:id="_test__from__cdb_8py_source_1l00102"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">00102</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">get_plist_count</link>(directory):
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;len(glob.glob(os.path.join(directory,&#32;<emphasis role="stringliteral">&apos;report-*.plist&apos;</emphasis>)))
+00104 
+00105 &#32;&#32;&#32;&#32;<emphasis role="preprocessor">@staticmethod</emphasis>
+<anchor xml:id="_test__from__cdb_8py_source_1l00106"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">00106</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">get_sarif_count</link>(directory):
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;len(glob.glob(os.path.join(directory,&#32;<emphasis role="stringliteral">&apos;result-*.sarif&apos;</emphasis>)))
+00108 
+<anchor xml:id="_test__from__cdb_8py_source_1l00109"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab4db56bb2f0ce4c19549d1904cdf6d13">00109</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab4db56bb2f0ce4c19549d1904cdf6d13">test_default_only_creates_html_report</link>(self):
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)))
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">get_html_count</link>get_html_count(reportdir),&#32;2)
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">get_plist_count</link>get_plist_count(reportdir),&#32;0)
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">get_sarif_count</link>get_sarif_count(reportdir),&#32;0)
+00118 
+<anchor xml:id="_test__from__cdb_8py_source_1l00119"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a4764004ae95428a61795301679d8810b">00119</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a4764004ae95428a61795301679d8810b">test_plist_and_html_creates_html_and_plist_reports</link>(self):
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--plist-html&apos;</emphasis>])
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)))
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">get_html_count</link>get_html_count(reportdir),&#32;2)
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">get_plist_count</link>get_plist_count(reportdir),&#32;5)
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">get_sarif_count</link>get_sarif_count(reportdir),&#32;0)
+00128 
+<anchor xml:id="_test__from__cdb_8py_source_1l00129"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a162ac412f222980629346f4a99ee485f">00129</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a162ac412f222980629346f4a99ee485f">test_plist_only_creates_plist_report</link>(self):
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--plist&apos;</emphasis>])
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)))
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">get_html_count</link>get_html_count(reportdir),&#32;0)
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">get_plist_count</link>get_plist_count(reportdir),&#32;5)
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">get_sarif_count</link>get_sarif_count(reportdir),&#32;0)
+00138 
+<anchor xml:id="_test__from__cdb_8py_source_1l00139"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab458be5ff8a552adf3d671b0523124e7">00139</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab458be5ff8a552adf3d671b0523124e7">test_sarif_only_creates_sarif_result</link>(self):
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--sarif&apos;</emphasis>])
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)))
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;results-merged.sarif&apos;</emphasis>)))
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">get_html_count</link>get_html_count(reportdir),&#32;0)
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">get_plist_count</link>get_plist_count(reportdir),&#32;0)
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">get_sarif_count</link>get_sarif_count(reportdir),&#32;5)
+00150 
+<anchor xml:id="_test__from__cdb_8py_source_1l00151"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ae4fa8995d03eccbabf862afb3e1f13c9">00151</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ae4fa8995d03eccbabf862afb3e1f13c9">test_sarif_and_html_creates_sarif_and_html_reports</link>(self):
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;regular&apos;</emphasis>,&#32;tmpdir)
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--sarif-html&apos;</emphasis>])
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)))
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.exists(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;results-merged.sarif&apos;</emphasis>)))
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1ab1bace51fd954eddcf95bdedec005030">get_html_count</link>get_html_count(reportdir),&#32;2)
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a967ddb44f1f2d0be185aa78195afdafe">get_plist_count</link>get_plist_count(reportdir),&#32;0)
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_output_format_test_1a54a6369652b402c388f916f7b2eb95eb">get_sarif_count</link>get_sarif_count(reportdir),&#32;5)
+00162 
+00163 
+<anchor xml:id="_test__from__cdb_8py_source_1l00164"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_failure_report_test">00164</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_failure_report_test">FailureReportTest</link>(unittest.TestCase):
+<anchor xml:id="_test__from__cdb_8py_source_1l00165"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_failure_report_test_1ae4d5f193ed89025b5a4a994a2d2a3ddf">00165</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_failure_report_test_1ae4d5f193ed89025b5a4a994a2d2a3ddf">test_broken_creates_failure_reports</link>(self):
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;broken&apos;</emphasis>,&#32;tmpdir)
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.isdir(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;failures&apos;</emphasis>)))
+00171 
+<anchor xml:id="_test__from__cdb_8py_source_1l00172"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_failure_report_test_1a101b386442a3e5a64a9dace8e503b394">00172</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_failure_report_test_1a101b386442a3e5a64a9dace8e503b394">test_broken_does_not_creates_failure_reports</link>(self):
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;broken&apos;</emphasis>,&#32;tmpdir)
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--no-failure-reports&apos;</emphasis>])
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.isdir(os.path.join(reportdir,&#32;<emphasis role="stringliteral">&apos;failures&apos;</emphasis>)))
+00179 
+00180 
+<anchor xml:id="_test__from__cdb_8py_source_1l00181"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test">00181</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test">TitleTest</link>(unittest.TestCase):
+<anchor xml:id="_test__from__cdb_8py_source_1l00182"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1ac1014f77829a2021c417e45acb18fdf2">00182</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1ac1014f77829a2021c417e45acb18fdf2">assertTitleEqual</link>(self,&#32;directory,&#32;expected):
+00183 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;re
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;patterns&#32;=&#32;[
+00185 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;title&gt;(?P&lt;page&gt;.*)&lt;/title&gt;&apos;</emphasis>),
+00186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;h1&gt;(?P&lt;head&gt;.*)&lt;/h1&gt;&apos;</emphasis>)
+00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;]
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;dict()
+00189 
+00190 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;index&#32;=&#32;os.path.join(directory,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>)
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(index,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handler:
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;handler.readlines():
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;regex&#32;<emphasis role="keywordflow">in</emphasis>&#32;patterns:
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;match&#32;=&#32;regex.match(line.strip())
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;match:
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result.update(match.groupdict())
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(result[<emphasis role="stringliteral">&apos;page&apos;</emphasis>],&#32;result[<emphasis role="stringliteral">&apos;head&apos;</emphasis>])
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(result[<emphasis role="stringliteral">&apos;page&apos;</emphasis>],&#32;expected)
+00200 
+<anchor xml:id="_test__from__cdb_8py_source_1l00201"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1a6e864dc57f1ae015482d8e23005e7f7f">00201</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1a6e864dc57f1ae015482d8e23005e7f7f">test_default_title_in_report</link>(self):
+00202 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00203 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;broken&apos;</emphasis>,&#32;tmpdir)
+00204 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(tmpdir,&#32;cdb,&#32;[])
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1ac1014f77829a2021c417e45acb18fdf2">assertTitleEqual</link>assertTitleEqual(reportdir,&#32;<emphasis role="stringliteral">&apos;src&#32;-&#32;analyzer&#32;results&apos;</emphasis>)
+00206 
+<anchor xml:id="_test__from__cdb_8py_source_1l00207"/><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1a32f1680d7e809a5e594de8a38ee2fff4">00207</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1a32f1680d7e809a5e594de8a38ee2fff4">test_given_title_in_report</link>(self):
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cdb&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a77349878c4b5639d79669f2526f3c78f">prepare_cdb</link>(<emphasis role="stringliteral">&apos;broken&apos;</emphasis>,&#32;tmpdir)
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;reportdir&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb_1a8a6bd5e616e5a098453d7b1c39dc8d95">run_analyzer</link>(
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;tmpdir,&#32;cdb,&#32;[<emphasis role="stringliteral">&apos;--html-title&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;this&#32;is&#32;the&#32;title&apos;</emphasis>])
+00212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classtests_1_1functional_1_1cases_1_1test__from__cdb_1_1_title_test_1ac1014f77829a2021c417e45acb18fdf2">assertTitleEqual</link>assertTitleEqual(reportdir,&#32;<emphasis role="stringliteral">&apos;this&#32;is&#32;the&#32;title&apos;</emphasis>)
+</programlisting></section>

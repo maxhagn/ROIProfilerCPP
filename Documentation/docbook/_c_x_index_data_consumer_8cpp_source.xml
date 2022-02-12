@@ -1,0 +1,1317 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_index_data_consumer_8cpp_source" xml:lang="en-US">
+<title>CXIndexDataConsumer.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXIndexDataConsumer.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXIndexDataConsumer.cpp&#32;-&#32;Index&#32;data&#32;consumer&#32;for&#32;libclang----------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_index_data_consumer_8h">CXIndexDataConsumer.h</link>&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_index_diagnostic_8h">CIndexDiagnostic.h</link>&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Attr.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclCXX.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclTemplate.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclVisitor.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00017 
+00018 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00019 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1index">clang::index</link>;
+00020 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxindex;
+00021 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00022 
+00023 <emphasis role="keyword">namespace&#32;</emphasis>{
+00024 <emphasis role="keyword">class&#32;</emphasis>IndexingDeclVisitor&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ConstDeclVisitor&lt;IndexingDeclVisitor,&#32;bool&gt;&#32;{
+00025 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer;
+00026 &#32;&#32;SourceLocation&#32;DeclLoc;
+00027 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*LexicalDC;
+00028 
+00029 <emphasis role="keyword">public</emphasis>:
+00030 &#32;&#32;IndexingDeclVisitor(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;dataConsumer,&#32;SourceLocation&#32;Loc,
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*lexicalDC)
+00032 &#32;&#32;&#32;&#32;:&#32;DataConsumer(dataConsumer),&#32;DeclLoc(Loc),&#32;LexicalDC(lexicalDC)&#32;{&#32;}
+00033 
+00034 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitFunctionDecl(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*D)&#32;{
+00035 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aea220dde32945d87ccb22ec24e237765">handleFunction</link>(D);
+00036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00037 &#32;&#32;}
+00038 
+00039 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitVarDecl(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*D)&#32;{
+00040 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ad0117660a1e29cae3cfd1c2d6050b189">handleVar</link>(D);
+00041 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00042 &#32;&#32;}
+00043 
+00044 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitFieldDecl(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*D)&#32;{
+00045 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1adb81ff6898a8c7d84f1e00e28bc51d0f">handleField</link>(D);
+00046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00047 &#32;&#32;}
+00048 
+00049 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitMSPropertyDecl(<emphasis role="keyword">const</emphasis>&#32;MSPropertyDecl&#32;*D)&#32;{
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00051 &#32;&#32;}
+00052 
+00053 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitEnumConstantDecl(<emphasis role="keyword">const</emphasis>&#32;EnumConstantDecl&#32;*D)&#32;{
+00054 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa1a4eeb2b5c25fb04e2e13cb52916f35">handleEnumerator</link>(D);
+00055 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00056 &#32;&#32;}
+00057 
+00058 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitTypedefNameDecl(<emphasis role="keyword">const</emphasis>&#32;TypedefNameDecl&#32;*D)&#32;{
+00059 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a0e826e01744c0b02fa8be496457105be">handleTypedefName</link>(D);
+00060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00061 &#32;&#32;}
+00062 
+00063 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitTagDecl(<emphasis role="keyword">const</emphasis>&#32;TagDecl&#32;*D)&#32;{
+00064 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8c8934e7ebac3bffc5fe3c8d90bb4853">handleTagDecl</link>(D);
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00066 &#32;&#32;}
+00067 
+00068 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCInterfaceDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*D)&#32;{
+00069 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5fe0ba54fa05604e9a5148384940779c">handleObjCInterface</link>(D);
+00070 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00071 &#32;&#32;}
+00072 
+00073 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCProtocolDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*D)&#32;{
+00074 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abda4f96d641a3bffe1dfd23402154681">handleObjCProtocol</link>(D);
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00076 &#32;&#32;}
+00077 
+00078 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCImplementationDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCImplementationDecl&#32;*D)&#32;{
+00079 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2e1baec864df9b4f431c88d005b1964">handleObjCImplementation</link>(D);
+00080 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00081 &#32;&#32;}
+00082 
+00083 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCCategoryDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryDecl&#32;*D)&#32;{
+00084 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1af6f8ba6a1c6db0fbf5b3b7c36ce42935">handleObjCCategory</link>(D);
+00085 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00086 &#32;&#32;}
+00087 
+00088 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCCategoryImplDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryImplDecl&#32;*D)&#32;{
+00089 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a384418d47049c76926499092ea8c6184">handleObjCCategoryImpl</link>(D);
+00090 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00091 &#32;&#32;}
+00092 
+00093 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCMethodDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*D)&#32;{
+00094 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ObjCImplDecl&gt;(LexicalDC)&#32;&amp;&amp;&#32;!D-&gt;isThisDeclarationADefinition())
+00095 &#32;&#32;&#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac7f28ce4d8aa569c11fcb9aba670ba2f">handleSynthesizedObjCMethod</link>(D,&#32;DeclLoc,&#32;LexicalDC);
+00096 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ae332e3b4ea50f3d47053f858f37e4217">handleObjCMethod</link>(D,&#32;DeclLoc);
+00098 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00099 &#32;&#32;}
+00100 
+00101 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCPropertyDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyDecl&#32;*D)&#32;{
+00102 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2c613e39c59a85bf307057d61b5877b">handleObjCProperty</link>(D);
+00103 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00104 &#32;&#32;}
+00105 
+00106 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitObjCPropertyImplDecl(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyImplDecl&#32;*D)&#32;{
+00107 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab19b2040c03666b12d9d756b822e5237">handleSynthesizedObjCProperty</link>(D);
+00108 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00109 &#32;&#32;}
+00110 
+00111 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitNamespaceDecl(<emphasis role="keyword">const</emphasis>&#32;NamespaceDecl&#32;*D)&#32;{
+00112 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7d653def424f7886d3d9240e6c8b02af">handleNamespace</link>(D);
+00113 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00114 &#32;&#32;}
+00115 
+00116 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitUsingDecl(<emphasis role="keyword">const</emphasis>&#32;UsingDecl&#32;*D)&#32;{
+00117 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00118 &#32;&#32;}
+00119 
+00120 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitUsingDirectiveDecl(<emphasis role="keyword">const</emphasis>&#32;UsingDirectiveDecl&#32;*D)&#32;{
+00121 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00122 &#32;&#32;}
+00123 
+00124 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitClassTemplateDecl(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateDecl&#32;*D)&#32;{
+00125 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5a41d4d26d98678a051873f0bd45607e">handleClassTemplate</link>(D);
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00127 &#32;&#32;}
+00128 
+00129 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitClassTemplateSpecializationDecl(<emphasis role="keyword">const</emphasis>
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ClassTemplateSpecializationDecl&#32;*D)&#32;{
+00131 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8c8934e7ebac3bffc5fe3c8d90bb4853">handleTagDecl</link>(D);
+00132 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00133 &#32;&#32;}
+00134 
+00135 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitFunctionTemplateDecl(<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateDecl&#32;*D)&#32;{
+00136 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3532519c64698588555b48efd372812f">handleFunctionTemplate</link>(D);
+00137 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00138 &#32;&#32;}
+00139 
+00140 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitTypeAliasTemplateDecl(<emphasis role="keyword">const</emphasis>&#32;TypeAliasTemplateDecl&#32;*D)&#32;{
+00141 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a51308071d5e3e1eb995b0e3447024810">handleTypeAliasTemplate</link>(D);
+00142 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00143 &#32;&#32;}
+00144 
+00145 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;VisitImportDecl(<emphasis role="keyword">const</emphasis>&#32;ImportDecl&#32;*D)&#32;{
+00146 &#32;&#32;&#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b3231674a4065575b31c62792f59f17">importedModule</link>(D);
+00147 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00148 &#32;&#32;}
+00149 };
+00150 
+00151 CXSymbolRole&#32;getSymbolRole(SymbolRoleSet&#32;Role)&#32;{
+00152 &#32;&#32;<emphasis role="comment">//&#32;CXSymbolRole&#32;mirrors&#32;low&#32;9&#32;bits&#32;of&#32;clang::index::SymbolRole.</emphasis>
+00153 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXSymbolRole(<emphasis role="keyword">static_cast&lt;</emphasis>uint32_t<emphasis role="keyword">&gt;</emphasis>(Role)&#32;&amp;&#32;((1&#32;&lt;&lt;&#32;9)&#32;-&#32;1));
+00154 }
+00155 }
+00156 
+00157 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::handleDeclOccurrence(
+00158 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;SymbolRoleSet&#32;Roles,&#32;ArrayRef&lt;SymbolRelation&gt;&#32;Relations,
+00159 &#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;ASTNodeInfo&#32;ASTNode)&#32;{
+00160 &#32;&#32;Loc&#32;=&#32;getASTContext().getSourceManager().getFileLoc(Loc);
+00161 
+00162 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Roles&#32;&amp;&#32;(<emphasis role="keywordtype">unsigned</emphasis>)SymbolRole::Reference)&#32;{
+00163 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*ND&#32;=&#32;dyn_cast&lt;NamedDecl&gt;(D);
+00164 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ND)
+00165 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00166 
+00167 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*ObjCID&#32;=&#32;dyn_cast_or_null&lt;ObjCInterfaceDecl&gt;(ASTNode.OrigD))&#32;{
+00168 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ObjCID-&gt;isThisDeclarationADefinition()&#32;&amp;&amp;
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ObjCID-&gt;getLocation()&#32;==&#32;Loc)&#32;{
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;libclang&#32;API&#32;treats&#32;this&#32;as&#32;ObjCClassRef&#32;declaration.</emphasis>
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IndexingDeclVisitor(*<emphasis role="keyword">this</emphasis>,&#32;Loc,&#32;<emphasis role="keyword">nullptr</emphasis>).Visit(ObjCID);
+00172 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00173 &#32;&#32;&#32;&#32;&#32;&#32;}
+00174 &#32;&#32;&#32;&#32;}
+00175 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*ObjCPD&#32;=&#32;dyn_cast_or_null&lt;ObjCProtocolDecl&gt;(ASTNode.OrigD))&#32;{
+00176 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ObjCPD-&gt;isThisDeclarationADefinition()&#32;&amp;&amp;
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ObjCPD-&gt;getLocation()&#32;==&#32;Loc)&#32;{
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;libclang&#32;API&#32;treats&#32;this&#32;as&#32;ObjCProtocolRef&#32;declaration.</emphasis>
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IndexingDeclVisitor(*<emphasis role="keyword">this</emphasis>,&#32;Loc,&#32;<emphasis role="keyword">nullptr</emphasis>).Visit(ObjCPD);
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00181 &#32;&#32;&#32;&#32;&#32;&#32;}
+00182 &#32;&#32;&#32;&#32;}
+00183 
+00184 &#32;&#32;&#32;&#32;CXIdxEntityRefKind&#32;Kind&#32;=&#32;CXIdxEntityRef_Direct;
+00185 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Roles&#32;&amp;&#32;(<emphasis role="keywordtype">unsigned</emphasis>)SymbolRole::Implicit)&#32;{
+00186 &#32;&#32;&#32;&#32;&#32;&#32;Kind&#32;=&#32;CXIdxEntityRef_Implicit;
+00187 &#32;&#32;&#32;&#32;}
+00188 &#32;&#32;&#32;&#32;CXSymbolRole&#32;CXRole&#32;=&#32;getSymbolRole(Roles);
+00189 
+00190 &#32;&#32;&#32;&#32;CXCursor&#32;Cursor;
+00191 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTNode.OrigE)&#32;{
+00192 &#32;&#32;&#32;&#32;&#32;&#32;Cursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(ASTNode.OrigE,
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cast&lt;Decl&gt;(ASTNode.ContainerDC),
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getCXTU());
+00195 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00196 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTNode.OrigD)&#32;{
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*OrigND&#32;=&#32;dyn_cast&lt;NamedDecl&gt;(ASTNode.OrigD))
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Cursor&#32;=&#32;getRefCursor(OrigND,&#32;Loc);
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Cursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(ASTNode.OrigD,&#32;CXTU);
+00201 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00202 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Cursor&#32;=&#32;getRefCursor(ND,&#32;Loc);
+00203 &#32;&#32;&#32;&#32;&#32;&#32;}
+00204 &#32;&#32;&#32;&#32;}
+00205 &#32;&#32;&#32;&#32;handleReference(ND,&#32;Loc,&#32;Cursor,
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast_or_null&lt;NamedDecl&gt;(ASTNode.Parent),
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ASTNode.ContainerDC,&#32;ASTNode.OrigE,&#32;Kind,&#32;CXRole);
+00208 
+00209 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00210 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*LexicalDC&#32;=&#32;ASTNode.ContainerDC;
+00211 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LexicalDC)&#32;{
+00212 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;SymRel&#32;:&#32;Relations)&#32;{
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SymRel.Roles&#32;&amp;&#32;(<emphasis role="keywordtype">unsigned</emphasis>)SymbolRole::RelationChildOf)
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LexicalDC&#32;=&#32;dyn_cast&lt;DeclContext&gt;(SymRel.RelatedSymbol);
+00215 &#32;&#32;&#32;&#32;&#32;&#32;}
+00216 &#32;&#32;&#32;&#32;}
+00217 &#32;&#32;&#32;&#32;IndexingDeclVisitor(*<emphasis role="keyword">this</emphasis>,&#32;Loc,&#32;LexicalDC).Visit(ASTNode.OrigD);
+00218 &#32;&#32;}
+00219 
+00220 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!shouldAbort();
+00221 }
+00222 
+00223 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::handleModuleOccurrence(<emphasis role="keyword">const</emphasis>&#32;ImportDecl&#32;*ImportD,
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Module&#32;*Mod,
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SymbolRoleSet&#32;Roles,
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)&#32;{
+00227 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Roles&#32;&amp;&#32;(SymbolRoleSet)SymbolRole::Declaration)
+00228 &#32;&#32;&#32;&#32;IndexingDeclVisitor(*<emphasis role="keyword">this</emphasis>,&#32;SourceLocation(),&#32;<emphasis role="keyword">nullptr</emphasis>).Visit(ImportD);
+00229 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!shouldAbort();
+00230 }
+00231 
+00232 <emphasis role="keywordtype">void</emphasis>&#32;CXIndexDataConsumer::finish()&#32;{
+00233 &#32;&#32;indexDiagnostics();
+00234 }
+00235 
+00236 
+00237 CXIndexDataConsumer::ObjCProtocolListInfo::ObjCProtocolListInfo(
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolList&#32;&amp;ProtList,
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx,
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;&amp;SA)&#32;{
+00241 &#32;&#32;ObjCInterfaceDecl::protocol_loc_iterator&#32;LI&#32;=&#32;ProtList.loc_begin();
+00242 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ObjCInterfaceDecl::protocol_iterator
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;ProtList.begin(),&#32;E&#32;=&#32;ProtList.end();&#32;I&#32;!=&#32;E;&#32;++I,&#32;++LI)&#32;{
+00244 &#32;&#32;&#32;&#32;SourceLocation&#32;Loc&#32;=&#32;*LI;
+00245 &#32;&#32;&#32;&#32;ObjCProtocolDecl&#32;*PD&#32;=&#32;*I;
+00246 &#32;&#32;&#32;&#32;ProtEntities.push_back(<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>());
+00247 &#32;&#32;&#32;&#32;IdxCtx.getEntityInfo(PD,&#32;ProtEntities.back(),&#32;SA);
+00248 &#32;&#32;&#32;&#32;CXIdxObjCProtocolRefInfo&#32;ProtInfo&#32;=&#32;{&#32;<emphasis role="keyword">nullptr</emphasis>,
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac238ecc9f974783b9d0c2129f5aa675f">MakeCursorObjCProtocolRef</link>(PD,&#32;Loc,&#32;IdxCtx.CXTU),
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.getIndexLoc(Loc)&#32;};
+00251 &#32;&#32;&#32;&#32;ProtInfos.push_back(ProtInfo);
+00252 
+00253 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IdxCtx.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())
+00254 &#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.markEntityOccurrenceInFile(PD,&#32;Loc);
+00255 &#32;&#32;}
+00256 
+00257 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;ProtInfos.size();&#32;i&#32;!=&#32;e;&#32;++i)
+00258 &#32;&#32;&#32;&#32;ProtInfos[i].protocol&#32;=&#32;&amp;ProtEntities[i];
+00259 
+00260 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;ProtInfos.size();&#32;i&#32;!=&#32;e;&#32;++i)
+00261 &#32;&#32;&#32;&#32;Prots.push_back(&amp;ProtInfos[i]);
+00262 }
+00263 
+00264 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00265"/><link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1accc279c723c1d9ffc90947395d280026">00265</link> IBOutletCollectionInfo::IBOutletCollectionInfo(
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;&amp;other)
+00267 &#32;&#32;:&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_IBOutletCollection,&#32;other.cursor,&#32;other.loc,&#32;other.A)&#32;{
+00268 
+00269 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.attrInfo&#32;=&#32;<emphasis role="keyword">this</emphasis>;
+00270 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classCursor&#32;=&#32;other.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classCursor;
+00271 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classLoc&#32;=&#32;other.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classLoc;
+00272 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(other.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass)&#32;{
+00273 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>&#32;=&#32;other.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>;
+00274 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;&amp;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>;
+00275 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>
+00276 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00277 }
+00278 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00279"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1ab4c0f6e62031bbf3926f5b95e316c081">00279</link> AttrListInfo::AttrListInfo(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx)
+00280 &#32;&#32;:&#32;SA(IdxCtx),&#32;ref_cnt(0)&#32;{
+00281 
+00282 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D-&gt;hasAttrs())
+00283 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00284 
+00285 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*A&#32;:&#32;D-&gt;attrs())&#32;{
+00286 &#32;&#32;&#32;&#32;CXCursor&#32;C&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(A,&#32;D,&#32;IdxCtx.CXTU);
+00287 &#32;&#32;&#32;&#32;CXIdxLoc&#32;Loc&#32;=&#32;&#32;IdxCtx.getIndexLoc(A-&gt;getLocation());
+00288 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C.kind)&#32;{
+00289 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00290 &#32;&#32;&#32;&#32;&#32;&#32;Attrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_Unexposed,&#32;C,&#32;Loc,&#32;A));
+00291 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00292 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_IBActionAttr:
+00293 &#32;&#32;&#32;&#32;&#32;&#32;Attrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_IBAction,&#32;C,&#32;Loc,&#32;A));
+00294 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00295 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_IBOutletAttr:
+00296 &#32;&#32;&#32;&#32;&#32;&#32;Attrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>(CXIdxAttr_IBOutlet,&#32;C,&#32;Loc,&#32;A));
+00297 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00298 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_IBOutletCollectionAttr:
+00299 &#32;&#32;&#32;&#32;&#32;&#32;IBCollAttrs.push_back(<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>(C,&#32;Loc,&#32;A));
+00300 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00301 &#32;&#32;&#32;&#32;}
+00302 &#32;&#32;}
+00303 
+00304 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;IBCollAttrs.size();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00305 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;&amp;IBInfo&#32;=&#32;IBCollAttrs[i];
+00306 &#32;&#32;&#32;&#32;CXAttrs.push_back(&amp;IBInfo);
+00307 
+00308 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IBOutletCollectionAttr&#32;*
+00309 &#32;&#32;&#32;&#32;&#32;&#32;IBAttr&#32;=&#32;cast&lt;IBOutletCollectionAttr&gt;(IBInfo.<link linkend="_structclang_1_1cxindex_1_1_attr_info_1a083736b6f1e2d4a9f31fd9cb3c8d1efe">A</link>);
+00310 &#32;&#32;&#32;&#32;SourceLocation&#32;InterfaceLocStart&#32;=
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBAttr-&gt;getInterfaceLoc()-&gt;getTypeLoc().getBeginLoc();
+00312 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.attrInfo&#32;=&#32;&amp;IBInfo;
+00313 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classLoc&#32;=&#32;IdxCtx.getIndexLoc(InterfaceLocStart);
+00314 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00315 &#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classCursor&#32;=&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00316 &#32;&#32;&#32;&#32;QualType&#32;Ty&#32;=&#32;IBAttr-&gt;getInterface();
+00317 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*ObjectTy&#32;=&#32;Ty-&gt;getAs&lt;ObjCObjectType&gt;())&#32;{
+00318 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*InterD&#32;=&#32;ObjectTy-&gt;getInterface())&#32;{
+00319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.getEntityInfo(InterD,&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>,&#32;SA);
+00320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.objcClass&#32;=&#32;&amp;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a4dacc334bcc735f19aac3080586d01db">ClassInfo</link>;
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBInfo.<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info_1a70d1f687d8212ff1c0af51125c22a5b6">IBCollInfo</link>.classCursor&#32;=
+00322 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(InterD,&#32;InterfaceLocStart,&#32;IdxCtx.CXTU);
+00323 &#32;&#32;&#32;&#32;&#32;&#32;}
+00324 &#32;&#32;&#32;&#32;}
+00325 &#32;&#32;}
+00326 
+00327 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;Attrs.size();&#32;i&#32;!=&#32;e;&#32;++i)
+00328 &#32;&#32;&#32;&#32;CXAttrs.push_back(&amp;Attrs[i]);
+00329 }
+00330 
+00331 IntrusiveRefCntPtr&lt;AttrListInfo&gt;
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00332"/><link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a3376ff1780ab325a8d140c6f063a1f5b">00332</link> <link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a3376ff1780ab325a8d140c6f063a1f5b">AttrListInfo::create</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx)&#32;{
+00333 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(IdxCtx);
+00334 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&#32;*attrs&#32;=&#32;SA.<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a71642187ca6f26d231a5426b5a4aa254">allocate</link>&lt;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>&gt;();
+00335 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;(attrs)&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info">AttrListInfo</link>(D,&#32;IdxCtx);
+00336 }
+00337 
+00338 CXIndexDataConsumer::CXXBasesListInfo::CXXBasesListInfo(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*D,
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;IdxCtx,
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;&amp;SA)&#32;{
+00341 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Base&#32;:&#32;D-&gt;bases())&#32;{
+00342 &#32;&#32;&#32;&#32;BaseEntities.push_back(<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>());
+00343 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*BaseD&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00344 &#32;&#32;&#32;&#32;QualType&#32;T&#32;=&#32;Base.getType();
+00345 &#32;&#32;&#32;&#32;SourceLocation&#32;Loc&#32;=&#32;getBaseLoc(Base);
+00346 
+00347 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TypedefType&#32;*TDT&#32;=&#32;T-&gt;getAs&lt;TypedefType&gt;())&#32;{
+00348 &#32;&#32;&#32;&#32;&#32;&#32;BaseD&#32;=&#32;TDT-&gt;getDecl();
+00349 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TemplateSpecializationType&#32;*
+00350 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TST&#32;=&#32;T-&gt;getAs&lt;TemplateSpecializationType&gt;())&#32;{
+00351 &#32;&#32;&#32;&#32;&#32;&#32;BaseD&#32;=&#32;TST-&gt;getTemplateName().getAsTemplateDecl();
+00352 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;RecordType&#32;*RT&#32;=&#32;T-&gt;getAs&lt;RecordType&gt;())&#32;{
+00353 &#32;&#32;&#32;&#32;&#32;&#32;BaseD&#32;=&#32;RT-&gt;getDecl();
+00354 &#32;&#32;&#32;&#32;}
+00355 
+00356 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(BaseD)
+00357 &#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.getEntityInfo(BaseD,&#32;BaseEntities.back(),&#32;SA);
+00358 &#32;&#32;&#32;&#32;CXIdxBaseClassInfo&#32;BaseInfo&#32;=&#32;{&#32;<emphasis role="keyword">nullptr</emphasis>,
+00359 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a13176d36398baf45f34e16a34ec04793">MakeCursorCXXBaseSpecifier</link>(&amp;Base,&#32;IdxCtx.CXTU),
+00360 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IdxCtx.getIndexLoc(Loc)&#32;};
+00361 &#32;&#32;&#32;&#32;BaseInfos.push_back(BaseInfo);
+00362 &#32;&#32;}
+00363 
+00364 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;BaseInfos.size();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00365 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(BaseEntities[i].name&#32;&amp;&amp;&#32;BaseEntities[i].USR)
+00366 &#32;&#32;&#32;&#32;&#32;&#32;BaseInfos[i].base&#32;=&#32;&amp;BaseEntities[i];
+00367 &#32;&#32;}
+00368 
+00369 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;BaseInfos.size();&#32;i&#32;!=&#32;e;&#32;++i)
+00370 &#32;&#32;&#32;&#32;CXBases.push_back(&amp;BaseInfos[i]);
+00371 }
+00372 
+00373 SourceLocation&#32;CXIndexDataConsumer::CXXBasesListInfo::getBaseLoc(
+00374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;&amp;Base)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00375 &#32;&#32;SourceLocation&#32;Loc&#32;=&#32;Base.getSourceRange().getBegin();
+00376 &#32;&#32;TypeLoc&#32;TL;
+00377 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Base.getTypeSourceInfo())
+00378 &#32;&#32;&#32;&#32;TL&#32;=&#32;Base.getTypeSourceInfo()-&gt;getTypeLoc();
+00379 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TL.isNull())
+00380 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Loc;
+00381 
+00382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QualifiedTypeLoc&#32;QL&#32;=&#32;TL.getAs&lt;QualifiedTypeLoc&gt;())
+00383 &#32;&#32;&#32;&#32;TL&#32;=&#32;QL.getUnqualifiedLoc();
+00384 
+00385 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ElaboratedTypeLoc&#32;EL&#32;=&#32;TL.getAs&lt;ElaboratedTypeLoc&gt;())
+00386 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EL.getNamedTypeLoc().getBeginLoc();
+00387 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DependentNameTypeLoc&#32;DL&#32;=&#32;TL.getAs&lt;DependentNameTypeLoc&gt;())
+00388 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DL.getNameLoc();
+00389 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DependentTemplateSpecializationTypeLoc&#32;DTL&#32;=
+00390 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TL.getAs&lt;DependentTemplateSpecializationTypeLoc&gt;())
+00391 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DTL.getTemplateNameLoc();
+00392 
+00393 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Loc;
+00394 }
+00395 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00396"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a7b5b9de515cd117bc6a0d5a6a667b568">00396</link> <emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a7b5b9de515cd117bc6a0d5a6a667b568">ScratchAlloc::toCStr</link>(StringRef&#32;Str)&#32;{
+00397 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Str.empty())
+00398 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00399 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Str.data()[Str.size()]&#32;==&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>)
+00400 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Str.data();
+00401 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ada48af8bcc8f64c0645b5e86fed0af62">copyCStr</link>(Str);
+00402 }
+00403 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00404"/><link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ada48af8bcc8f64c0645b5e86fed0af62">00404</link> <emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ada48af8bcc8f64c0645b5e86fed0af62">ScratchAlloc::copyCStr</link>(StringRef&#32;Str)&#32;{
+00405 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*buf&#32;=&#32;IdxCtx.StrScratch.Allocate&lt;<emphasis role="keywordtype">char</emphasis>&gt;(Str.size()&#32;+&#32;1);
+00406 &#32;&#32;std::uninitialized_copy(Str.begin(),&#32;Str.end(),&#32;buf);
+00407 &#32;&#32;buf[Str.size()]&#32;=&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>;
+00408 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;buf;
+00409 }
+00410 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00411"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a4f34d3862aaca2e111d2d6fc283c16dd">00411</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a4f34d3862aaca2e111d2d6fc283c16dd">CXIndexDataConsumer::setASTContext</link>(ASTContext&#32;&amp;ctx)&#32;{
+00412 &#32;&#32;Ctx&#32;=&#32;&amp;ctx;
+00413 &#32;&#32;cxtu::getASTUnit(CXTU)-&gt;setASTContext(&amp;ctx);
+00414 }
+00415 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00416"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a26c09f765fc8cb328b567d0df24e3de0">00416</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a26c09f765fc8cb328b567d0df24e3de0">CXIndexDataConsumer::setPreprocessor</link>(std::shared_ptr&lt;Preprocessor&gt;&#32;PP)&#32;{
+00417 &#32;&#32;cxtu::getASTUnit(CXTU)-&gt;setPreprocessor(std::move(PP));
+00418 }
+00419 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00420"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abbffca61e5023fb01eb8ab8dcace8d48">00420</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abbffca61e5023fb01eb8ab8dcace8d48">CXIndexDataConsumer::isFunctionLocalDecl</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{
+00421 &#32;&#32;assert(D);
+00422 
+00423 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D-&gt;getParentFunctionOrMethod())
+00424 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00425 
+00426 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*ND&#32;=&#32;dyn_cast&lt;NamedDecl&gt;(D))&#32;{
+00427 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(ND-&gt;getFormalLinkage())&#32;{
+00428 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;NoLinkage:
+00429 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;InternalLinkage:
+00430 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00431 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;VisibleNoLinkage:
+00432 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ModuleInternalLinkage:
+00433 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;UniqueExternalLinkage:
+00434 &#32;&#32;&#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Not&#32;a&#32;sema&#32;linkage&quot;</emphasis>);
+00435 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ModuleLinkage:
+00436 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ExternalLinkage:
+00437 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00438 &#32;&#32;&#32;&#32;}
+00439 &#32;&#32;}
+00440 
+00441 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00442 }
+00443 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00444"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7448058a9a24e004514ecaacc168ea1a">00444</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7448058a9a24e004514ecaacc168ea1a">CXIndexDataConsumer::shouldAbort</link>()&#32;{
+00445 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.abortQuery)
+00446 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00447 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CB.abortQuery(ClientData,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00448 }
+00449 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00450"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5c669f287c160f0a54004247471fa65e">00450</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5c669f287c160f0a54004247471fa65e">CXIndexDataConsumer::enteredMainFile</link>(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File)&#32;{
+00451 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(File&#32;&amp;&amp;&#32;CB.enteredMainFile)&#32;{
+00452 &#32;&#32;&#32;&#32;CXIdxClientFile&#32;idxFile&#32;=
+00453 &#32;&#32;&#32;&#32;&#32;&#32;CB.enteredMainFile(ClientData,
+00454 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXFile<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(File)),
+00455 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">nullptr</emphasis>);
+00456 &#32;&#32;&#32;&#32;FileMap[File]&#32;=&#32;idxFile;
+00457 &#32;&#32;}
+00458 }
+00459 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00460"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b4e93bdd5828aee90dfbb5d09596c55">00460</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b4e93bdd5828aee90dfbb5d09596c55">CXIndexDataConsumer::ppIncludedFile</link>(SourceLocation&#32;hashLoc,
+00461 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;filename,
+00462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00463 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isImport,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isAngled,
+00464 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isModuleImport)&#32;{
+00465 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.ppIncludedFile)
+00466 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00467 
+00468 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00469 &#32;&#32;CXIdxIncludedFileInfo&#32;Info&#32;=&#32;{&#32;getIndexLoc(hashLoc),
+00470 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SA.<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a7b5b9de515cd117bc6a0d5a6a667b568">toCStr</link>(filename),
+00471 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXFile<emphasis role="keyword">&gt;</emphasis>(
+00472 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(File)),
+00473 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;isImport,&#32;isAngled,&#32;isModuleImport&#32;};
+00474 &#32;&#32;CXIdxClientFile&#32;idxFile&#32;=&#32;CB.ppIncludedFile(ClientData,&#32;&amp;Info);
+00475 &#32;&#32;FileMap[File]&#32;=&#32;idxFile;
+00476 }
+00477 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00478"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b3231674a4065575b31c62792f59f17">00478</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3b3231674a4065575b31c62792f59f17">CXIndexDataConsumer::importedModule</link>(<emphasis role="keyword">const</emphasis>&#32;ImportDecl&#32;*ImportD)&#32;{
+00479 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.importedASTFile)
+00480 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00481 
+00482 &#32;&#32;Module&#32;*Mod&#32;=&#32;ImportD-&gt;getImportedModule();
+00483 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Mod)
+00484 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00485 
+00486 &#32;&#32;<emphasis role="comment">//&#32;If&#32;the&#32;imported&#32;module&#32;is&#32;part&#32;of&#32;the&#32;top-level&#32;module&#32;that&#32;we&apos;re</emphasis>
+00487 &#32;&#32;<emphasis role="comment">//&#32;indexing,&#32;it&#32;doesn&apos;t&#32;correspond&#32;to&#32;an&#32;imported&#32;AST&#32;file.</emphasis>
+00488 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;This&#32;assumes&#32;that&#32;AST&#32;files&#32;and&#32;top-level&#32;modules&#32;directly</emphasis>
+00489 &#32;&#32;<emphasis role="comment">//&#32;correspond,&#32;which&#32;is&#32;unlikely&#32;to&#32;remain&#32;true&#32;forever.</emphasis>
+00490 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Module&#32;*SrcMod&#32;=&#32;ImportD-&gt;getImportedOwningModule())
+00491 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SrcMod-&gt;getTopLevelModule()&#32;==&#32;Mod-&gt;getTopLevelModule())
+00492 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00493 
+00494 &#32;&#32;FileEntry&#32;*FE&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00495 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;File&#32;=&#32;Mod-&gt;getASTFile())
+00496 &#32;&#32;&#32;&#32;FE&#32;=&#32;<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(&amp;File-&gt;getFileEntry());
+00497 &#32;&#32;CXIdxImportedASTFileInfo&#32;Info&#32;=&#32;{<emphasis role="keyword">static_cast&lt;</emphasis>CXFile<emphasis role="keyword">&gt;</emphasis>(FE),&#32;Mod,
+00498 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getIndexLoc(ImportD-&gt;getLocation()),
+00499 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ImportD-&gt;isImplicit()};
+00500 &#32;&#32;CXIdxClientASTFile&#32;astFile&#32;=&#32;CB.importedASTFile(ClientData,&#32;&amp;Info);
+00501 &#32;&#32;(void)astFile;
+00502 }
+00503 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00504"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab8f6df5dd61289c7cc6189a5e6cff6b7">00504</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab8f6df5dd61289c7cc6189a5e6cff6b7">CXIndexDataConsumer::importedPCH</link>(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File)&#32;{
+00505 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.importedASTFile)
+00506 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00507 
+00508 &#32;&#32;CXIdxImportedASTFileInfo&#32;Info&#32;=&#32;{
+00509 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXFile<emphasis role="keyword">&gt;</emphasis>(
+00510 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(File)),
+00511 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*module=*/</emphasis><emphasis role="keyword">nullptr</emphasis>,
+00512 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getIndexLoc(SourceLocation()),
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplicit=*/</emphasis><emphasis role="keyword">false</emphasis>
+00514 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;};
+00515 &#32;&#32;CXIdxClientASTFile&#32;astFile&#32;=&#32;CB.importedASTFile(ClientData,&#32;&amp;Info);
+00516 &#32;&#32;(void)astFile;
+00517 }
+00518 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00519"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b2dd8a844240181f6b09b91bfb25e7a">00519</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b2dd8a844240181f6b09b91bfb25e7a">CXIndexDataConsumer::startedTranslationUnit</link>()&#32;{
+00520 &#32;&#32;CXIdxClientContainer&#32;idxCont&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00521 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CB.startedTranslationUnit)
+00522 &#32;&#32;&#32;&#32;idxCont&#32;=&#32;CB.startedTranslationUnit(ClientData,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00523 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa606355afc24ae5ef78a5e1ae8e612c0">addContainerInMap</link>(Ctx-&gt;getTranslationUnitDecl(),&#32;idxCont);
+00524 }
+00525 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00526"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aeaf562b1dfa9686d4076b4de7e06cbbb">00526</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aeaf562b1dfa9686d4076b4de7e06cbbb">CXIndexDataConsumer::indexDiagnostics</link>()&#32;{
+00527 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a1c5524b549de49a156156a134ac86970">hasDiagnosticCallback</link>())
+00528 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00529 
+00530 &#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*DiagSet&#32;=&#32;<link linkend="_namespaceclang_1_1cxdiag_1a02bce7e16b9a44d64657a2b5f1419351">cxdiag::lazyCreateDiags</link>(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a1e920a3dc7386fbef4b9e600cccd67bc">getCXTU</link>());
+00531 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6d45d26c0132be1ec21d6abcf3dc96cf">handleDiagnosticSet</link>(DiagSet);
+00532 }
+00533 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00534"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6d45d26c0132be1ec21d6abcf3dc96cf">00534</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6d45d26c0132be1ec21d6abcf3dc96cf">CXIndexDataConsumer::handleDiagnosticSet</link>(CXDiagnostic&#32;CXDiagSet)&#32;{
+00535 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.diagnostic)
+00536 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00537 
+00538 &#32;&#32;CB.diagnostic(ClientData,&#32;CXDiagSet,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00539 }
+00540 
+00541 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::handleDecl(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,
+00542 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXCursor&#32;Cursor,
+00543 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;&amp;DInfo,
+00544 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*LexicalDC,
+00545 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*SemaDC)&#32;{
+00546 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.indexDeclaration&#32;||&#32;!D)
+00547 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00548 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;isImplicit()&#32;&amp;&amp;&#32;shouldIgnoreIfImplicit(D))
+00549 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00550 
+00551 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00552 &#32;&#32;getEntityInfo(D,&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">EntInfo</link>,&#32;SA);
+00553 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((!<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab96bf30db26572795d6e705d74711d8e">shouldIndexFunctionLocalSymbols</link>()&#32;&amp;&amp;&#32;!DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">EntInfo</link>.USR)
+00554 &#32;&#32;&#32;&#32;&#32;&#32;||&#32;Loc.isInvalid())
+00555 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00556 
+00557 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LexicalDC)
+00558 &#32;&#32;&#32;&#32;LexicalDC&#32;=&#32;D-&gt;getLexicalDeclContext();
+00559 
+00560 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())
+00561 &#32;&#32;&#32;&#32;markEntityOccurrenceInFile(D,&#32;Loc);
+00562 &#32;&#32;
+00563 &#32;&#32;DInfo.entityInfo&#32;=&#32;&amp;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">EntInfo</link>;
+00564 &#32;&#32;DInfo.cursor&#32;=&#32;Cursor;
+00565 &#32;&#32;DInfo.loc&#32;=&#32;getIndexLoc(Loc);
+00566 &#32;&#32;DInfo.isImplicit&#32;=&#32;D-&gt;isImplicit();
+00567 
+00568 &#32;&#32;DInfo.attributes&#32;=&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">EntInfo</link>.attributes;
+00569 &#32;&#32;DInfo.numAttributes&#32;=&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a3205d7c679ce2a769d43115947803a6f">EntInfo</link>.numAttributes;
+00570 
+00571 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!SemaDC)
+00572 &#32;&#32;&#32;&#32;SemaDC&#32;=&#32;D-&gt;getDeclContext();
+00573 &#32;&#32;getContainerInfo(SemaDC,&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a55ad0aa9c8dfd982fcf8b00b58f0619a">SemanticContainer</link>);
+00574 &#32;&#32;DInfo.semanticContainer&#32;=&#32;&amp;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a55ad0aa9c8dfd982fcf8b00b58f0619a">SemanticContainer</link>;
+00575 
+00576 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(LexicalDC&#32;==&#32;SemaDC)&#32;{
+00577 &#32;&#32;&#32;&#32;DInfo.lexicalContainer&#32;=&#32;&amp;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a55ad0aa9c8dfd982fcf8b00b58f0619a">SemanticContainer</link>;
+00578 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b05f1224c212db76edacb87a7982e66">isTemplateImplicitInstantiation</link>(D))&#32;{
+00579 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Implicit&#32;instantiations&#32;have&#32;the&#32;lexical&#32;context&#32;of&#32;where&#32;they&#32;were</emphasis>
+00580 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;instantiated&#32;first.&#32;We&#32;choose&#32;instead&#32;the&#32;semantic&#32;context&#32;because:</emphasis>
+00581 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;1)&#32;at&#32;the&#32;time&#32;that&#32;we&#32;see&#32;the&#32;instantiation&#32;we&#32;have&#32;not&#32;seen&#32;the</emphasis>
+00582 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;function&#32;where&#32;it&#32;occurred&#32;yet.</emphasis>
+00583 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;2)&#32;the&#32;lexical&#32;context&#32;of&#32;the&#32;first&#32;instantiation&#32;is&#32;not&#32;useful</emphasis>
+00584 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;information&#32;anyway.</emphasis>
+00585 &#32;&#32;&#32;&#32;DInfo.lexicalContainer&#32;=&#32;&amp;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a55ad0aa9c8dfd982fcf8b00b58f0619a">SemanticContainer</link>;
+00586 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00587 &#32;&#32;&#32;&#32;getContainerInfo(LexicalDC,&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ada54413c20545853e8f9828e2c81aa38">LexicalContainer</link>);
+00588 &#32;&#32;&#32;&#32;DInfo.lexicalContainer&#32;=&#32;&amp;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1ada54413c20545853e8f9828e2c81aa38">LexicalContainer</link>;
+00589 &#32;&#32;}
+00590 
+00591 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DInfo.isContainer)&#32;{
+00592 &#32;&#32;&#32;&#32;getContainerInfo(getEntityContainer(D),&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a468df952adc0f31a315c03106a1162a7">DeclAsContainer</link>);
+00593 &#32;&#32;&#32;&#32;DInfo.declAsContainer&#32;=&#32;&amp;DInfo.<link linkend="_structclang_1_1cxindex_1_1_decl_info_1a468df952adc0f31a315c03106a1162a7">DeclAsContainer</link>;
+00594 &#32;&#32;}
+00595 
+00596 &#32;&#32;CB.indexDeclaration(ClientData,&#32;&amp;DInfo);
+00597 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00598 }
+00599 
+00600 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::handleObjCContainer(<emphasis role="keyword">const</emphasis>&#32;ObjCContainerDecl&#32;*D,
+00601 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXCursor&#32;Cursor,
+00602 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;&amp;ContDInfo)&#32;{
+00603 &#32;&#32;ContDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>.declInfo&#32;=&#32;&amp;ContDInfo;
+00604 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;Loc,&#32;Cursor,&#32;ContDInfo);
+00605 }
+00606 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00607"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aea220dde32945d87ccb22ec24e237765">00607</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aea220dde32945d87ccb22ec24e237765">CXIndexDataConsumer::handleFunction</link>(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*D)&#32;{
+00608 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isDef&#32;=&#32;D-&gt;isThisDeclarationADefinition();
+00609 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isContainer&#32;=&#32;isDef;
+00610 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isSkipped&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00611 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;hasSkippedBody())&#32;{
+00612 &#32;&#32;&#32;&#32;isSkipped&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00613 &#32;&#32;&#32;&#32;isDef&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00614 &#32;&#32;&#32;&#32;isContainer&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00615 &#32;&#32;}
+00616 
+00617 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(!D-&gt;isFirstDecl(),&#32;isDef,&#32;isContainer);
+00618 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isSkipped)
+00619 &#32;&#32;&#32;&#32;DInfo.flags&#32;|=&#32;CXIdxDeclFlag_Skipped;
+00620 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00621 }
+00622 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00623"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ad0117660a1e29cae3cfd1c2d6050b189">00623</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ad0117660a1e29cae3cfd1c2d6050b189">CXIndexDataConsumer::handleVar</link>(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*D)&#32;{
+00624 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(!D-&gt;isFirstDecl(),&#32;D-&gt;isThisDeclarationADefinition(),
+00625 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00626 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00627 }
+00628 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00629"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1adb81ff6898a8c7d84f1e00e28bc51d0f">00629</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1adb81ff6898a8c7d84f1e00e28bc51d0f">CXIndexDataConsumer::handleField</link>(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*D)&#32;{
+00630 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis><emphasis role="keyword">false</emphasis>,&#32;<emphasis role="comment">/*isDefinition=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00631 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00632 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00633 }
+00634 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00635"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa1a4eeb2b5c25fb04e2e13cb52916f35">00635</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa1a4eeb2b5c25fb04e2e13cb52916f35">CXIndexDataConsumer::handleEnumerator</link>(<emphasis role="keyword">const</emphasis>&#32;EnumConstantDecl&#32;*D)&#32;{
+00636 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis><emphasis role="keyword">false</emphasis>,&#32;<emphasis role="comment">/*isDefinition=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00637 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00638 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00639 }
+00640 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00641"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8c8934e7ebac3bffc5fe3c8d90bb4853">00641</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8c8934e7ebac3bffc5fe3c8d90bb4853">CXIndexDataConsumer::handleTagDecl</link>(<emphasis role="keyword">const</emphasis>&#32;TagDecl&#32;*D)&#32;{
+00642 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*CXXRD&#32;=&#32;dyn_cast&lt;CXXRecordDecl&gt;(D))
+00643 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleCXXRecordDecl(CXXRD,&#32;D);
+00644 
+00645 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(!D-&gt;isFirstDecl(),&#32;D-&gt;isThisDeclarationADefinition(),
+00646 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;D-&gt;isThisDeclarationADefinition());
+00647 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00648 }
+00649 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00650"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a0e826e01744c0b02fa8be496457105be">00650</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a0e826e01744c0b02fa8be496457105be">CXIndexDataConsumer::handleTypedefName</link>(<emphasis role="keyword">const</emphasis>&#32;TypedefNameDecl&#32;*D)&#32;{
+00651 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(!D-&gt;isFirstDecl(),&#32;<emphasis role="comment">/*isDefinition=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00652 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00653 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00654 }
+00655 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00656"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5fe0ba54fa05604e9a5148384940779c">00656</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5fe0ba54fa05604e9a5148384940779c">CXIndexDataConsumer::handleObjCInterface</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*D)&#32;{
+00657 &#32;&#32;<emphasis role="comment">//&#32;For&#32;@class&#32;forward&#32;declarations,&#32;suppress&#32;them&#32;the&#32;same&#32;way&#32;as&#32;references.</emphasis>
+00658 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D-&gt;isThisDeclarationADefinition())&#32;{
+00659 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>()&#32;&amp;&amp;&#32;markEntityOccurrenceInFile(D,&#32;D-&gt;getLocation()))
+00660 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;<emphasis role="comment">//&#32;already&#32;occurred.</emphasis>
+00661 
+00662 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;This&#32;seems&#32;like&#32;the&#32;wrong&#32;definition&#32;for&#32;redeclaration.</emphasis>
+00663 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration&#32;=&#32;D-&gt;hasDefinition()&#32;||&#32;D-&gt;getPreviousDecl();
+00664 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;ContDInfo(<emphasis role="comment">/*isForwardRef=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;isRedeclaration,
+00665 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplementation=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00666 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;D-&gt;getLocation(),
+00667 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(D,&#32;D-&gt;getLocation(),
+00668 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTU),&#32;
+00669 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ContDInfo);
+00670 &#32;&#32;}
+00671 
+00672 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00673 
+00674 &#32;&#32;CXIdxBaseClassInfo&#32;<link linkend="_interface_base_class">BaseClass</link>;
+00675 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;BaseEntity;
+00676 &#32;&#32;<link linkend="_interface_base_class">BaseClass</link>.cursor&#32;=&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00677 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ObjCInterfaceDecl&#32;*SuperD&#32;=&#32;D-&gt;getSuperClass())&#32;{
+00678 &#32;&#32;&#32;&#32;getEntityInfo(SuperD,&#32;BaseEntity,&#32;SA);
+00679 &#32;&#32;&#32;&#32;SourceLocation&#32;SuperLoc&#32;=&#32;D-&gt;getSuperClassLoc();
+00680 &#32;&#32;&#32;&#32;<link linkend="_interface_base_class">BaseClass</link>.base&#32;=&#32;&amp;BaseEntity;
+00681 &#32;&#32;&#32;&#32;<link linkend="_interface_base_class">BaseClass</link>.cursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a81d6b09cb8995b57d394a8372437902a">MakeCursorObjCSuperClassRef</link>(SuperD,&#32;SuperLoc,&#32;CXTU);
+00682 &#32;&#32;&#32;&#32;<link linkend="_interface_base_class">BaseClass</link>.loc&#32;=&#32;getIndexLoc(SuperLoc);
+00683 
+00684 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())
+00685 &#32;&#32;&#32;&#32;&#32;&#32;markEntityOccurrenceInFile(SuperD,&#32;SuperLoc);
+00686 &#32;&#32;}
+00687 &#32;&#32;
+00688 &#32;&#32;ObjCProtocolList&#32;EmptyProtoList;
+00689 &#32;&#32;ObjCProtocolListInfo&#32;ProtInfo(D-&gt;isThisDeclarationADefinition()&#32;
+00690 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;D-&gt;getReferencedProtocols()
+00691 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;EmptyProtoList,&#32;
+00692 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">this</emphasis>,&#32;SA);
+00693 &#32;&#32;
+00694 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">ObjCInterfaceDeclInfo</link>&#32;InterInfo(D);
+00695 &#32;&#32;InterInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1af576b839a6a1d3ac815c20fc74ce4a25">ObjCProtoListInfo</link>&#32;=&#32;ProtInfo.getListInfo();
+00696 &#32;&#32;InterInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1aa5262af2cc1b91e25daa968df1846d43">ObjCInterDeclInfo</link>.containerInfo&#32;=&#32;&amp;InterInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>;
+00697 &#32;&#32;InterInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1aa5262af2cc1b91e25daa968df1846d43">ObjCInterDeclInfo</link>.superInfo&#32;=&#32;D-&gt;getSuperClass()&#32;?&#32;&amp;<link linkend="_interface_base_class">BaseClass</link>
+00698 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;<emphasis role="keyword">nullptr</emphasis>;
+00699 &#32;&#32;InterInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1aa5262af2cc1b91e25daa968df1846d43">ObjCInterDeclInfo</link>.protocols&#32;=&#32;&amp;InterInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info_1af576b839a6a1d3ac815c20fc74ce4a25">ObjCProtoListInfo</link>;
+00700 
+00701 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;InterInfo);
+00702 }
+00703 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00704"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2e1baec864df9b4f431c88d005b1964">00704</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2e1baec864df9b4f431c88d005b1964">CXIndexDataConsumer::handleObjCImplementation</link>(
+00705 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCImplementationDecl&#32;*D)&#32;{
+00706 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;ContDInfo(<emphasis role="comment">/*isForwardRef=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00707 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isRedeclaration=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00708 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplementation=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00709 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;ContDInfo);
+00710 }
+00711 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00712"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abda4f96d641a3bffe1dfd23402154681">00712</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abda4f96d641a3bffe1dfd23402154681">CXIndexDataConsumer::handleObjCProtocol</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*D)&#32;{
+00713 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D-&gt;isThisDeclarationADefinition())&#32;{
+00714 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>()&#32;&amp;&amp;&#32;markEntityOccurrenceInFile(D,&#32;D-&gt;getLocation()))
+00715 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;<emphasis role="comment">//&#32;already&#32;occurred.</emphasis>
+00716 &#32;&#32;&#32;&#32;
+00717 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;This&#32;seems&#32;like&#32;the&#32;wrong&#32;definition&#32;for&#32;redeclaration.</emphasis>
+00718 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isRedeclaration&#32;=&#32;D-&gt;hasDefinition()&#32;||&#32;D-&gt;getPreviousDecl();
+00719 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;ContDInfo(<emphasis role="comment">/*isForwardRef=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00720 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;isRedeclaration,
+00721 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isImplementation=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00722 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;D-&gt;getLocation(),&#32;
+00723 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac238ecc9f974783b9d0c2129f5aa675f">MakeCursorObjCProtocolRef</link>(D,&#32;D-&gt;getLocation(),
+00724 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTU),
+00725 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ContDInfo);&#32;&#32;&#32;&#32;
+00726 &#32;&#32;}
+00727 &#32;&#32;
+00728 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00729 &#32;&#32;ObjCProtocolList&#32;EmptyProtoList;
+00730 &#32;&#32;ObjCProtocolListInfo&#32;ProtListInfo(D-&gt;isThisDeclarationADefinition()
+00731 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;D-&gt;getReferencedProtocols()
+00732 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;EmptyProtoList,
+00733 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">this</emphasis>,&#32;SA);
+00734 &#32;&#32;
+00735 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info">ObjCProtocolDeclInfo</link>&#32;ProtInfo(D);
+00736 &#32;&#32;ProtInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info_1ac265cd967ddaad68ab0abaffb2d6eeba">ObjCProtoRefListInfo</link>&#32;=&#32;ProtListInfo.getListInfo();
+00737 
+00738 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;ProtInfo);
+00739 }
+00740 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00741"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1af6f8ba6a1c6db0fbf5b3b7c36ce42935">00741</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1af6f8ba6a1c6db0fbf5b3b7c36ce42935">CXIndexDataConsumer::handleObjCCategory</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryDecl&#32;*D)&#32;{
+00742 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00743 
+00744 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;CatDInfo(<emphasis role="comment">/*isImplementation=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00745 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;ClassEntity;
+00746 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*IFaceD&#32;=&#32;D-&gt;getClassInterface();
+00747 &#32;&#32;SourceLocation&#32;ClassLoc&#32;=&#32;D-&gt;getLocation();
+00748 &#32;&#32;SourceLocation&#32;CategoryLoc&#32;=&#32;D-&gt;IsClassExtension()&#32;?&#32;ClassLoc
+00749 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;D-&gt;getCategoryNameLoc();
+00750 &#32;&#32;getEntityInfo(IFaceD,&#32;ClassEntity,&#32;SA);
+00751 
+00752 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())
+00753 &#32;&#32;&#32;&#32;markEntityOccurrenceInFile(IFaceD,&#32;ClassLoc);
+00754 
+00755 &#32;&#32;ObjCProtocolListInfo&#32;ProtInfo(D-&gt;getReferencedProtocols(),&#32;*<emphasis role="keyword">this</emphasis>,&#32;SA);
+00756 &#32;&#32;
+00757 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.containerInfo&#32;=&#32;&amp;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>;
+00758 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IFaceD)&#32;{
+00759 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.objcClass&#32;=&#32;&amp;ClassEntity;
+00760 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.classCursor&#32;=
+00761 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(IFaceD,&#32;ClassLoc,&#32;CXTU);
+00762 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00763 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.objcClass&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00764 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.classCursor&#32;=&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00765 &#32;&#32;}
+00766 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.classLoc&#32;=&#32;getIndexLoc(ClassLoc);
+00767 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a98fbc89f0e51d50660836b95d5150b3f">ObjCProtoListInfo</link>&#32;=&#32;ProtInfo.getListInfo();
+00768 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.protocols&#32;=&#32;&amp;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1a98fbc89f0e51d50660836b95d5150b3f">ObjCProtoListInfo</link>;
+00769 
+00770 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;CategoryLoc,&#32;getCursor(D),&#32;CatDInfo);
+00771 }
+00772 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00773"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a384418d47049c76926499092ea8c6184">00773</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a384418d47049c76926499092ea8c6184">CXIndexDataConsumer::handleObjCCategoryImpl</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryImplDecl&#32;*D)&#32;{
+00774 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00775 
+00776 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryDecl&#32;*CatD&#32;=&#32;D-&gt;getCategoryDecl();
+00777 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;CatDInfo(<emphasis role="comment">/*isImplementation=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00778 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;ClassEntity;
+00779 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*IFaceD&#32;=&#32;CatD-&gt;getClassInterface();
+00780 &#32;&#32;SourceLocation&#32;ClassLoc&#32;=&#32;D-&gt;getLocation();
+00781 &#32;&#32;SourceLocation&#32;CategoryLoc&#32;=&#32;D-&gt;getCategoryNameLoc();
+00782 &#32;&#32;getEntityInfo(IFaceD,&#32;ClassEntity,&#32;SA);
+00783 
+00784 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())
+00785 &#32;&#32;&#32;&#32;markEntityOccurrenceInFile(IFaceD,&#32;ClassLoc);
+00786 
+00787 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.containerInfo&#32;=&#32;&amp;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info_1adf64bc4fe69c4f714e38d971a1fcae28">ObjCContDeclInfo</link>;
+00788 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IFaceD)&#32;{
+00789 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.objcClass&#32;=&#32;&amp;ClassEntity;
+00790 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.classCursor&#32;=
+00791 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(IFaceD,&#32;ClassLoc,&#32;CXTU);
+00792 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00793 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.objcClass&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00794 &#32;&#32;&#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.classCursor&#32;=&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+00795 &#32;&#32;}
+00796 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.classLoc&#32;=&#32;getIndexLoc(ClassLoc);
+00797 &#32;&#32;CatDInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info_1afca1ebd4b399e000c0c894df0304e02e">ObjCCatDeclInfo</link>.protocols&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00798 
+00799 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleObjCContainer(D,&#32;CategoryLoc,&#32;getCursor(D),&#32;CatDInfo);
+00800 }
+00801 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00802"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ae332e3b4ea50f3d47053f858f37e4217">00802</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ae332e3b4ea50f3d47053f858f37e4217">CXIndexDataConsumer::handleObjCMethod</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*D,
+00803 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)&#32;{
+00804 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isDef&#32;=&#32;D-&gt;isThisDeclarationADefinition();
+00805 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isContainer&#32;=&#32;isDef;
+00806 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isSkipped&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00807 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;hasSkippedBody())&#32;{
+00808 &#32;&#32;&#32;&#32;isSkipped&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00809 &#32;&#32;&#32;&#32;isDef&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00810 &#32;&#32;&#32;&#32;isContainer&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00811 &#32;&#32;}
+00812 
+00813 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(!D-&gt;isCanonicalDecl(),&#32;isDef,&#32;isContainer);
+00814 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isSkipped)
+00815 &#32;&#32;&#32;&#32;DInfo.flags&#32;|=&#32;CXIdxDeclFlag_Skipped;
+00816 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;Loc,&#32;getCursor(D),&#32;DInfo);
+00817 }
+00818 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00819"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab19b2040c03666b12d9d756b822e5237">00819</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab19b2040c03666b12d9d756b822e5237">CXIndexDataConsumer::handleSynthesizedObjCProperty</link>(
+00820 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyImplDecl&#32;*D)&#32;{
+00821 &#32;&#32;ObjCPropertyDecl&#32;*PD&#32;=&#32;D-&gt;getPropertyDecl();
+00822 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*DC&#32;=&#32;D-&gt;getDeclContext();
+00823 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6067a968d3482447348823dd7f913ced">handleReference</link>(PD,&#32;D-&gt;getLocation(),&#32;getCursor(D),
+00824 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast&lt;NamedDecl&gt;(DC),&#32;DC);
+00825 }
+00826 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00827"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac7f28ce4d8aa569c11fcb9aba670ba2f">00827</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac7f28ce4d8aa569c11fcb9aba670ba2f">CXIndexDataConsumer::handleSynthesizedObjCMethod</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*D,
+00828 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00829 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*LexicalDC)&#32;{
+00830 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;<emphasis role="comment">/*isDefinition=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00831 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00832 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;Loc,&#32;getCursor(D),&#32;DInfo,&#32;LexicalDC,&#32;D-&gt;getDeclContext());
+00833 }
+00834 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00835"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2c613e39c59a85bf307057d61b5877b">00835</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ac2c613e39c59a85bf307057d61b5877b">CXIndexDataConsumer::handleObjCProperty</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyDecl&#32;*D)&#32;{
+00836 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00837 
+00838 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info">ObjCPropertyDeclInfo</link>&#32;DInfo;
+00839 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;GetterEntity;
+00840 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;SetterEntity;
+00841 
+00842 &#32;&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">ObjCPropDeclInfo</link>.declInfo&#32;=&#32;&amp;DInfo;
+00843 
+00844 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ObjCMethodDecl&#32;*Getter&#32;=&#32;D-&gt;getGetterMethodDecl())&#32;{
+00845 &#32;&#32;&#32;&#32;getEntityInfo(Getter,&#32;GetterEntity,&#32;SA);
+00846 &#32;&#32;&#32;&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">ObjCPropDeclInfo</link>.getter&#32;=&#32;&amp;GetterEntity;
+00847 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00848 &#32;&#32;&#32;&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">ObjCPropDeclInfo</link>.getter&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00849 &#32;&#32;}
+00850 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ObjCMethodDecl&#32;*Setter&#32;=&#32;D-&gt;getSetterMethodDecl())&#32;{
+00851 &#32;&#32;&#32;&#32;getEntityInfo(Setter,&#32;SetterEntity,&#32;SA);
+00852 &#32;&#32;&#32;&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">ObjCPropDeclInfo</link>.setter&#32;=&#32;&amp;SetterEntity;
+00853 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00854 &#32;&#32;&#32;&#32;DInfo.<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info_1a43c730cefe85bb21949f7c08fd08393e">ObjCPropDeclInfo</link>.setter&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00855 &#32;&#32;}
+00856 
+00857 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00858 }
+00859 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00860"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7d653def424f7886d3d9240e6c8b02af">00860</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7d653def424f7886d3d9240e6c8b02af">CXIndexDataConsumer::handleNamespace</link>(<emphasis role="keyword">const</emphasis>&#32;NamespaceDecl&#32;*D)&#32;{
+00861 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis>!D-&gt;isOriginalNamespace(),
+00862 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isDefinition=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00863 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00864 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00865 }
+00866 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00867"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5a41d4d26d98678a051873f0bd45607e">00867</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5a41d4d26d98678a051873f0bd45607e">CXIndexDataConsumer::handleClassTemplate</link>(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateDecl&#32;*D)&#32;{
+00868 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleCXXRecordDecl(D-&gt;getTemplatedDecl(),&#32;D);
+00869 }
+00870 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00871"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3532519c64698588555b48efd372812f">00871</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a3532519c64698588555b48efd372812f">CXIndexDataConsumer::handleFunctionTemplate</link>(<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateDecl&#32;*D)&#32;{
+00872 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis>!D-&gt;isCanonicalDecl(),
+00873 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isDefinition=*/</emphasis>D-&gt;isThisDeclarationADefinition(),
+00874 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis>D-&gt;isThisDeclarationADefinition());
+00875 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00876 }
+00877 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00878"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a51308071d5e3e1eb995b0e3447024810">00878</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a51308071d5e3e1eb995b0e3447024810">CXIndexDataConsumer::handleTypeAliasTemplate</link>(<emphasis role="keyword">const</emphasis>&#32;TypeAliasTemplateDecl&#32;*D)&#32;{
+00879 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis>!D-&gt;isCanonicalDecl(),
+00880 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isDefinition=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;<emphasis role="comment">/*isContainer=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00881 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(D,&#32;D-&gt;getLocation(),&#32;getCursor(D),&#32;DInfo);
+00882 }
+00883 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00884"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6067a968d3482447348823dd7f913ced">00884</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6067a968d3482447348823dd7f913ced">CXIndexDataConsumer::handleReference</link>(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,&#32;SourceLocation&#32;Loc,
+00885 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursor&#32;Cursor,
+00886 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*Parent,
+00887 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC,
+00888 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E,
+00889 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxEntityRefKind&#32;Kind,
+00890 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSymbolRole&#32;Role)&#32;{
+00891 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CB.indexEntityReference)
+00892 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00893 
+00894 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D&#32;||&#32;!DC)
+00895 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00896 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isInvalid())
+00897 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00898 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1ab96bf30db26572795d6e705d74711d8e">shouldIndexFunctionLocalSymbols</link>()&#32;&amp;&amp;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1abbffca61e5023fb01eb8ab8dcace8d48">isFunctionLocalDecl</link>(D))
+00899 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00900 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a05b282788c19ebbbe352b78f1d1229f6">isNotFromSourceFile</link>(D-&gt;getLocation()))
+00901 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00902 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;isImplicit()&#32;&amp;&amp;&#32;shouldIgnoreIfImplicit(D))
+00903 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00904 
+00905 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())&#32;{
+00906 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(markEntityOccurrenceInFile(D,&#32;Loc))
+00907 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;<emphasis role="comment">//&#32;already&#32;occurred.</emphasis>
+00908 &#32;&#32;}
+00909 
+00910 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00911 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;RefEntity,&#32;ParentEntity;
+00912 &#32;&#32;getEntityInfo(D,&#32;RefEntity,&#32;SA);
+00913 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!RefEntity.USR)
+00914 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00915 
+00916 &#32;&#32;getEntityInfo(Parent,&#32;ParentEntity,&#32;SA);
+00917 
+00918 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;Container;
+00919 &#32;&#32;getContainerInfo(DC,&#32;Container);
+00920 
+00921 &#32;&#32;CXIdxEntityRefInfo&#32;Info&#32;=&#32;{&#32;Kind,
+00922 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Cursor,
+00923 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getIndexLoc(Loc),
+00924 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;RefEntity,
+00925 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Parent&#32;?&#32;&amp;ParentEntity&#32;:&#32;<emphasis role="keyword">nullptr</emphasis>,
+00926 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;Container,
+00927 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Role&#32;};
+00928 &#32;&#32;CB.indexEntityReference(ClientData,&#32;&amp;Info);
+00929 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00930 }
+00931 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00932"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a05b282788c19ebbbe352b78f1d1229f6">00932</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a05b282788c19ebbbe352b78f1d1229f6">CXIndexDataConsumer::isNotFromSourceFile</link>(SourceLocation&#32;Loc)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00933 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isInvalid())
+00934 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00935 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx-&gt;getSourceManager();
+00936 &#32;&#32;SourceLocation&#32;FileLoc&#32;=&#32;SM.getFileLoc(Loc);
+00937 &#32;&#32;FileID&#32;FID&#32;=&#32;SM.getFileID(FileLoc);
+00938 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SM.getFileEntryForID(FID)&#32;==&#32;<emphasis role="keyword">nullptr</emphasis>;
+00939 }
+00940 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00941"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa606355afc24ae5ef78a5e1ae8e612c0">00941</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa606355afc24ae5ef78a5e1ae8e612c0">CXIndexDataConsumer::addContainerInMap</link>(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC,
+00942 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxClientContainer&#32;container)&#32;{
+00943 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DC)
+00944 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00945 
+00946 &#32;&#32;ContainerMapTy::iterator&#32;I&#32;=&#32;ContainerMap.find(DC);
+00947 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;==&#32;ContainerMap.end())&#32;{
+00948 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(container)
+00949 &#32;&#32;&#32;&#32;&#32;&#32;ContainerMap[DC]&#32;=&#32;container;
+00950 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00951 &#32;&#32;}
+00952 &#32;&#32;<emphasis role="comment">//&#32;Allow&#32;changing&#32;the&#32;container&#32;of&#32;a&#32;previously&#32;seen&#32;DeclContext&#32;so&#32;we</emphasis>
+00953 &#32;&#32;<emphasis role="comment">//&#32;can&#32;handle&#32;invalid&#32;user&#32;code,&#32;like&#32;a&#32;function&#32;re-definition.</emphasis>
+00954 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(container)
+00955 &#32;&#32;&#32;&#32;I-&gt;second&#32;=&#32;container;
+00956 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00957 &#32;&#32;&#32;&#32;ContainerMap.erase(I);
+00958 }
+00959 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00960"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a758cad6aecad503d6dbda574e8f11f1b">00960</link> CXIdxClientEntity&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a758cad6aecad503d6dbda574e8f11f1b">CXIndexDataConsumer::getClientEntity</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00961 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00962 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00963 &#32;&#32;EntityMapTy::const_iterator&#32;I&#32;=&#32;EntityMap.find(D);
+00964 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;==&#32;EntityMap.end())
+00965 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00966 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;I-&gt;second;
+00967 }
+00968 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l00969"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8410b188890a57a9e2034f3c5275be7e">00969</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8410b188890a57a9e2034f3c5275be7e">CXIndexDataConsumer::setClientEntity</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;CXIdxClientEntity&#32;client)&#32;{
+00970 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00971 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00972 &#32;&#32;EntityMap[D]&#32;=&#32;client;
+00973 }
+00974 
+00975 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::handleCXXRecordDecl(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*RD,
+00976 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*OrigD)&#32;{
+00977 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RD-&gt;isThisDeclarationADefinition())&#32;{
+00978 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;SA(*<emphasis role="keyword">this</emphasis>);
+00979 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info">CXXClassDeclInfo</link>&#32;CXXDInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis>!OrigD-&gt;isCanonicalDecl(),
+00980 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isDefinition=*/</emphasis>RD-&gt;isThisDeclarationADefinition());
+00981 &#32;&#32;&#32;&#32;CXXBasesListInfo&#32;BaseList(RD,&#32;*<emphasis role="keyword">this</emphasis>,&#32;SA);
+00982 &#32;&#32;&#32;&#32;CXXDInfo.CXXClassInfo.declInfo&#32;=&#32;&amp;CXXDInfo;
+00983 &#32;&#32;&#32;&#32;CXXDInfo.CXXClassInfo.bases&#32;=&#32;BaseList.getBases();
+00984 &#32;&#32;&#32;&#32;CXXDInfo.CXXClassInfo.numBases&#32;=&#32;BaseList.getNumBases();
+00985 
+00986 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a532578623b1df6f45e25230f11242472">shouldSuppressRefs</link>())&#32;{
+00987 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Go&#32;through&#32;bases&#32;and&#32;mark&#32;them&#32;as&#32;referenced.</emphasis>
+00988 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0,&#32;e&#32;=&#32;BaseList.getNumBases();&#32;i&#32;!=&#32;e;&#32;++i)&#32;{
+00989 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXIdxBaseClassInfo&#32;*baseInfo&#32;=&#32;BaseList.getBases()[i];
+00990 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(baseInfo-&gt;base)&#32;{
+00991 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*BaseD&#32;=&#32;BaseList.BaseEntities[i].Dcl;
+00992 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation
+00993 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Loc&#32;=&#32;SourceLocation::getFromRawEncoding(baseInfo-&gt;loc.int_data);
+00994 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;markEntityOccurrenceInFile(BaseD,&#32;Loc);
+00995 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00996 &#32;&#32;&#32;&#32;&#32;&#32;}
+00997 &#32;&#32;&#32;&#32;}
+00998 
+00999 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(OrigD,&#32;OrigD-&gt;getLocation(),&#32;getCursor(OrigD),&#32;CXXDInfo);
+01000 &#32;&#32;}
+01001 
+01002 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;DInfo(<emphasis role="comment">/*isRedeclaration=*/</emphasis>!OrigD-&gt;isCanonicalDecl(),
+01003 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isDefinition=*/</emphasis>RD-&gt;isThisDeclarationADefinition(),
+01004 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*isContainer=*/</emphasis>RD-&gt;isThisDeclarationADefinition());
+01005 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;handleDecl(OrigD,&#32;OrigD-&gt;getLocation(),&#32;getCursor(OrigD),&#32;DInfo);
+01006 }
+01007 
+01008 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::markEntityOccurrenceInFile(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,
+01009 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)&#32;{
+01010 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D&#32;||&#32;Loc.isInvalid())
+01011 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01012 
+01013 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx-&gt;getSourceManager();
+01014 &#32;&#32;D&#32;=&#32;getEntityDecl(D);
+01015 &#32;&#32;
+01016 &#32;&#32;std::pair&lt;FileID,&#32;unsigned&gt;&#32;LocInfo&#32;=&#32;SM.getDecomposedLoc(SM.getFileLoc(Loc));
+01017 &#32;&#32;FileID&#32;FID&#32;=&#32;LocInfo.first;
+01018 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FID.isInvalid())
+01019 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01020 &#32;&#32;
+01021 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE&#32;=&#32;SM.getFileEntryForID(FID);
+01022 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FE)
+01023 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01024 &#32;&#32;RefFileOccurrence&#32;RefOccur(FE,&#32;D);
+01025 &#32;&#32;std::pair&lt;llvm::DenseSet&lt;RefFileOccurrence&gt;::iterator,&#32;<emphasis role="keywordtype">bool</emphasis>&gt;
+01026 &#32;&#32;res&#32;=&#32;RefFileOccurrences.insert(RefOccur);
+01027 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!res.second;&#32;<emphasis role="comment">//&#32;already&#32;in&#32;map</emphasis>
+01028 }
+01029 
+01030 <emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*CXIndexDataConsumer::getEntityDecl(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01031 &#32;&#32;assert(D);
+01032 &#32;&#32;D&#32;=&#32;cast&lt;NamedDecl&gt;(D-&gt;getCanonicalDecl());
+01033 
+01034 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCImplementationDecl&#32;*
+01035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ImplD&#32;=&#32;dyn_cast&lt;ObjCImplementationDecl&gt;(D))&#32;{
+01036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getEntityDecl(ImplD-&gt;getClassInterface());
+01037 
+01038 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCCategoryImplDecl&#32;*
+01039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CatImplD&#32;=&#32;dyn_cast&lt;ObjCCategoryImplDecl&gt;(D))&#32;{
+01040 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getEntityDecl(CatImplD-&gt;getCategoryDecl());
+01041 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast&lt;FunctionDecl&gt;(D))&#32;{
+01042 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FunctionTemplateDecl&#32;*TemplD&#32;=&#32;FD-&gt;getDescribedFunctionTemplate())
+01043 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getEntityDecl(TemplD);
+01044 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXRecordDecl&#32;*RD&#32;=&#32;dyn_cast&lt;CXXRecordDecl&gt;(D))&#32;{
+01045 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ClassTemplateDecl&#32;*TemplD&#32;=&#32;RD-&gt;getDescribedClassTemplate())
+01046 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getEntityDecl(TemplD);
+01047 &#32;&#32;}
+01048 
+01049 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D;
+01050 }
+01051 
+01052 <emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*
+01053 CXIndexDataConsumer::getEntityContainer(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01054 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC&#32;=&#32;dyn_cast&lt;DeclContext&gt;(D);
+01055 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DC)
+01056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DC;
+01057 
+01058 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateDecl&#32;*ClassTempl&#32;=&#32;dyn_cast&lt;ClassTemplateDecl&gt;(D))&#32;{
+01059 &#32;&#32;&#32;&#32;DC&#32;=&#32;ClassTempl-&gt;getTemplatedDecl();
+01060 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateDecl&#32;*
+01061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FuncTempl&#32;=&#32;dyn_cast&lt;FunctionTemplateDecl&gt;(D))&#32;{
+01062 &#32;&#32;&#32;&#32;DC&#32;=&#32;FuncTempl-&gt;getTemplatedDecl();
+01063 &#32;&#32;}
+01064 
+01065 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DC;
+01066 }
+01067 
+01068 CXIdxClientContainer
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l01069"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aab567cd0d93550e824a2e8f8e037d1f0">01069</link> <link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aab567cd0d93550e824a2e8f8e037d1f0">CXIndexDataConsumer::getClientContainerForDC</link>(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01070 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DC)
+01071 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01072 
+01073 &#32;&#32;ContainerMapTy::const_iterator&#32;I&#32;=&#32;ContainerMap.find(DC);
+01074 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;==&#32;ContainerMap.end())
+01075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01076 
+01077 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;I-&gt;second;
+01078 }
+01079 
+01080 CXIdxClientFile&#32;CXIndexDataConsumer::getIndexFile(<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File)&#32;{
+01081 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!File)
+01082 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01083 
+01084 &#32;&#32;FileMapTy::iterator&#32;FI&#32;=&#32;FileMap.find(File);
+01085 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FI&#32;!=&#32;FileMap.end())
+01086 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FI-&gt;second;
+01087 
+01088 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01089 }
+01090 
+01091 CXIdxLoc&#32;CXIndexDataConsumer::getIndexLoc(SourceLocation&#32;Loc)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01092 &#32;&#32;CXIdxLoc&#32;idxLoc&#32;=&#32;&#32;{&#32;{<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="keyword">nullptr</emphasis>},&#32;0&#32;};
+01093 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isInvalid())
+01094 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;idxLoc;
+01095 
+01096 &#32;&#32;idxLoc.ptr_data[0]&#32;=&#32;<emphasis role="keyword">const_cast&lt;</emphasis><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keyword">this</emphasis>);
+01097 &#32;&#32;idxLoc.int_data&#32;=&#32;Loc.getRawEncoding();
+01098 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;idxLoc;
+01099 }
+01100 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l01101"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5332371a52c1329c815af24c5dab3ed1">01101</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5332371a52c1329c815af24c5dab3ed1">CXIndexDataConsumer::translateLoc</link>(SourceLocation&#32;Loc,
+01102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXIdxClientFile&#32;*indexFile,&#32;CXFile&#32;*file,
+01103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*line,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*column,
+01104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*offset)&#32;{
+01105 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isInvalid())
+01106 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01107 
+01108 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx-&gt;getSourceManager();
+01109 &#32;&#32;Loc&#32;=&#32;SM.getFileLoc(Loc);
+01110 
+01111 &#32;&#32;std::pair&lt;FileID,&#32;unsigned&gt;&#32;LocInfo&#32;=&#32;SM.getDecomposedLoc(Loc);
+01112 &#32;&#32;FileID&#32;FID&#32;=&#32;LocInfo.first;
+01113 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;FileOffset&#32;=&#32;LocInfo.second;
+01114 
+01115 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FID.isInvalid())
+01116 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01117 &#32;&#32;
+01118 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*FE&#32;=&#32;SM.getFileEntryForID(FID);
+01119 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(indexFile)
+01120 &#32;&#32;&#32;&#32;*indexFile&#32;=&#32;getIndexFile(FE);
+01121 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(file)
+01122 &#32;&#32;&#32;&#32;*file&#32;=&#32;<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(FE);
+01123 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(line)
+01124 &#32;&#32;&#32;&#32;*line&#32;=&#32;SM.getLineNumber(FID,&#32;FileOffset);
+01125 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(column)
+01126 &#32;&#32;&#32;&#32;*column&#32;=&#32;SM.getColumnNumber(FID,&#32;FileOffset);
+01127 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(offset)
+01128 &#32;&#32;&#32;&#32;*offset&#32;=&#32;FileOffset;
+01129 }
+01130 
+01131 <emphasis role="keyword">static</emphasis>&#32;CXIdxEntityKind&#32;getEntityKindFromSymbolKind(SymbolKind&#32;K,&#32;SymbolLanguage&#32;L);
+01132 <emphasis role="keyword">static</emphasis>&#32;CXIdxEntityCXXTemplateKind
+01133 getEntityKindFromSymbolProperties(SymbolPropertySet&#32;K);
+01134 <emphasis role="keyword">static</emphasis>&#32;CXIdxEntityLanguage&#32;getEntityLangFromSymbolLang(SymbolLanguage&#32;L);
+01135 
+01136 <emphasis role="keywordtype">void</emphasis>&#32;CXIndexDataConsumer::getEntityInfo(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,
+01137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;&amp;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>,
+01138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc">ScratchAlloc</link>&#32;&amp;SA)&#32;{
+01139 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+01140 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01141 
+01142 &#32;&#32;D&#32;=&#32;getEntityDecl(D);
+01143 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.cursor&#32;=&#32;getCursor(D);
+01144 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.<link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">Dcl</link>&#32;=&#32;D;
+01145 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.<link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">IndexCtx</link>&#32;=&#32;<emphasis role="keyword">this</emphasis>;
+01146 
+01147 &#32;&#32;SymbolInfo&#32;SymInfo&#32;=&#32;getSymbolInfo(D);
+01148 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.kind&#32;=&#32;getEntityKindFromSymbolKind(SymInfo.Kind,&#32;SymInfo.Lang);
+01149 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.templateKind&#32;=&#32;getEntityKindFromSymbolProperties(SymInfo.Properties);
+01150 &#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.lang&#32;=&#32;getEntityLangFromSymbolLang(SymInfo.Lang);
+01151 
+01152 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;hasAttrs())&#32;{
+01153 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.<link linkend="_structclang_1_1cxindex_1_1_entity_info_1adedb0df679b564bb410ed977e7d9d553">AttrList</link>&#32;=&#32;<link linkend="_classclang_1_1cxindex_1_1_attr_list_info_1a3376ff1780ab325a8d140c6f063a1f5b">AttrListInfo::create</link>(D,&#32;*<emphasis role="keyword">this</emphasis>);
+01154 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.attributes&#32;=&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.<link linkend="_structclang_1_1cxindex_1_1_entity_info_1adedb0df679b564bb410ed977e7d9d553">AttrList</link>-&gt;getAttrs();
+01155 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.numAttributes&#32;=&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.<link linkend="_structclang_1_1cxindex_1_1_entity_info_1adedb0df679b564bb410ed977e7d9d553">AttrList</link>-&gt;getNumAttrs();
+01156 &#32;&#32;}
+01157 
+01158 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.kind&#32;==&#32;CXIdxEntity_Unexposed)
+01159 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01160 
+01161 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IdentifierInfo&#32;*II&#32;=&#32;D-&gt;getIdentifier())&#32;{
+01162 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.name&#32;=&#32;SA.<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1a7b5b9de515cd117bc6a0d5a6a667b568">toCStr</link>(II-&gt;getName());
+01163 
+01164 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;TagDecl&gt;(D)&#32;||&#32;isa&lt;FieldDecl&gt;(D)&#32;||&#32;isa&lt;NamespaceDecl&gt;(D))&#32;{
+01165 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.name&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;&#32;<emphasis role="comment">//&#32;anonymous&#32;tag/field/namespace.</emphasis>
+01166 
+01167 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01168 &#32;&#32;&#32;&#32;SmallString&lt;256&gt;&#32;StrBuf;
+01169 &#32;&#32;&#32;&#32;{
+01170 &#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_svector_ostream&#32;OS(StrBuf);
+01171 &#32;&#32;&#32;&#32;&#32;&#32;D-&gt;printName(OS);
+01172 &#32;&#32;&#32;&#32;}
+01173 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.name&#32;=&#32;SA.<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ada48af8bcc8f64c0645b5e86fed0af62">copyCStr</link>(StrBuf.str());
+01174 &#32;&#32;}
+01175 
+01176 &#32;&#32;{
+01177 &#32;&#32;&#32;&#32;SmallString&lt;512&gt;&#32;StrBuf;
+01178 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Ignore&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a70c40817415cbc686e998bde4fe2e16e">getDeclCursorUSR</link>(D,&#32;StrBuf);
+01179 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ignore)&#32;{
+01180 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.USR&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01181 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01182 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>.USR&#32;=&#32;SA.<link linkend="_classclang_1_1cxindex_1_1_scratch_alloc_1ada48af8bcc8f64c0645b5e86fed0af62">copyCStr</link>(StrBuf.str());
+01183 &#32;&#32;&#32;&#32;}
+01184 &#32;&#32;}
+01185 }
+01186 
+01187 <emphasis role="keywordtype">void</emphasis>&#32;CXIndexDataConsumer::getContainerInfo(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC,
+01188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;&amp;ContInfo)&#32;{
+01189 &#32;&#32;ContInfo.cursor&#32;=&#32;getCursor(cast&lt;Decl&gt;(DC));
+01190 &#32;&#32;ContInfo.<link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">DC</link>&#32;=&#32;DC;
+01191 &#32;&#32;ContInfo.<link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">IndexCtx</link>&#32;=&#32;<emphasis role="keyword">this</emphasis>;
+01192 }
+01193 
+01194 CXCursor&#32;CXIndexDataConsumer::getRefCursor(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*D,&#32;SourceLocation&#32;Loc)&#32;{
+01195 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TypeDecl&#32;*TD&#32;=&#32;dyn_cast&lt;TypeDecl&gt;(D))
+01196 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">MakeCursorTypeRef</link>(TD,&#32;Loc,&#32;CXTU);
+01197 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*ID&#32;=&#32;dyn_cast&lt;ObjCInterfaceDecl&gt;(D))
+01198 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(ID,&#32;Loc,&#32;CXTU);
+01199 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*PD&#32;=&#32;dyn_cast&lt;ObjCProtocolDecl&gt;(D))
+01200 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac238ecc9f974783b9d0c2129f5aa675f">MakeCursorObjCProtocolRef</link>(PD,&#32;Loc,&#32;CXTU);
+01201 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TemplateDecl&#32;*Template&#32;=&#32;dyn_cast&lt;TemplateDecl&gt;(D))
+01202 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac63e4fd5fdbaf88d0632a7682afbf744">MakeCursorTemplateRef</link>(Template,&#32;Loc,&#32;CXTU);
+01203 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;NamespaceDecl&#32;*Namespace&#32;=&#32;dyn_cast&lt;NamespaceDecl&gt;(D))
+01204 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eadc019bbae1f61434528c197111b0e">MakeCursorNamespaceRef</link>(Namespace,&#32;Loc,&#32;CXTU);
+01205 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;NamespaceAliasDecl&#32;*Namespace&#32;=&#32;dyn_cast&lt;NamespaceAliasDecl&gt;(D))
+01206 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eadc019bbae1f61434528c197111b0e">MakeCursorNamespaceRef</link>(Namespace,&#32;Loc,&#32;CXTU);
+01207 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*Field&#32;=&#32;dyn_cast&lt;FieldDecl&gt;(D))
+01208 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ad70c49c226f87377bc26fba7a4dbe973">MakeCursorMemberRef</link>(Field,&#32;Loc,&#32;CXTU);
+01209 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*Var&#32;=&#32;dyn_cast&lt;VarDecl&gt;(D))
+01210 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1abb9724d664f29289d46fb5b34eaf94e9">MakeCursorVariableRef</link>(Var,&#32;Loc,&#32;CXTU);
+01211 &#32;&#32;
+01212 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+01213 }
+01214 
+01215 <emphasis role="keywordtype">bool</emphasis>&#32;CXIndexDataConsumer::shouldIgnoreIfImplicit(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{
+01216 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ObjCInterfaceDecl&gt;(D))
+01217 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01218 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ObjCCategoryDecl&gt;(D))
+01219 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ObjCIvarDecl&gt;(D))
+01221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01222 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ObjCMethodDecl&gt;(D))
+01223 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01224 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ImportDecl&gt;(D))
+01225 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01226 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01227 }
+01228 
+<anchor xml:id="__c_x_index_data_consumer_8cpp_source_1l01229"/><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b05f1224c212db76edacb87a7982e66">01229</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a6b05f1224c212db76edacb87a7982e66">CXIndexDataConsumer::isTemplateImplicitInstantiation</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)&#32;{
+01230 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ClassTemplateSpecializationDecl&#32;*
+01231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SD&#32;=&#32;dyn_cast&lt;ClassTemplateSpecializationDecl&gt;(D))&#32;{
+01232 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SD-&gt;getSpecializationKind()&#32;==&#32;TSK_ImplicitInstantiation;
+01233 &#32;&#32;}
+01234 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast&lt;FunctionDecl&gt;(D))&#32;{
+01235 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;getTemplateSpecializationKind()&#32;==&#32;TSK_ImplicitInstantiation;
+01236 &#32;&#32;}
+01237 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01238 }
+01239 
+01240 <emphasis role="keyword">static</emphasis>&#32;CXIdxEntityKind&#32;getEntityKindFromSymbolKind(SymbolKind&#32;K,&#32;SymbolLanguage&#32;Lang)&#32;{
+01241 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(K)&#32;{
+01242 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Unknown:
+01243 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Module:
+01244 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Macro:
+01245 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::ClassProperty:
+01246 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Using:
+01247 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::TemplateTypeParm:
+01248 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::TemplateTemplateParm:
+01249 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::NonTypeTemplateParm:
+01250 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Unexposed;
+01251 
+01252 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Enum:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Enum;
+01253 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Struct:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Struct;
+01254 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Union:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Union;
+01255 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::TypeAlias:
+01256 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Lang&#32;==&#32;SymbolLanguage::CXX)
+01257 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXTypeAlias;
+01258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Typedef;
+01259 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Function:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Function;
+01260 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Variable:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Variable;
+01261 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Field:
+01262 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Lang&#32;==&#32;SymbolLanguage::ObjC)
+01263 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCIvar;
+01264 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Field;
+01265 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::EnumConstant:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_EnumConstant;
+01266 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Class:
+01267 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Lang&#32;==&#32;SymbolLanguage::ObjC)
+01268 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCClass;
+01269 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXClass;
+01270 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Protocol:
+01271 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Lang&#32;==&#32;SymbolLanguage::ObjC)
+01272 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCProtocol;
+01273 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXInterface;
+01274 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Extension:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCCategory;
+01275 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::InstanceMethod:
+01276 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Lang&#32;==&#32;SymbolLanguage::ObjC)
+01277 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCInstanceMethod;
+01278 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXInstanceMethod;
+01279 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::ClassMethod:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCClassMethod;
+01280 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::StaticMethod:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXStaticMethod;
+01281 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::InstanceProperty:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCProperty;
+01282 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::StaticProperty:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXStaticVariable;
+01283 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Namespace:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXNamespace;
+01284 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::NamespaceAlias:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXNamespaceAlias;
+01285 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Constructor:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXConstructor;
+01286 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Destructor:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXDestructor;
+01287 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::ConversionFunction:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_CXXConversionFunction;
+01288 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolKind::Parameter:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Variable;
+01289 &#32;&#32;}
+01290 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;invalid&#32;symbol&#32;kind&quot;</emphasis>);
+01291 }
+01292 
+01293 <emphasis role="keyword">static</emphasis>&#32;CXIdxEntityCXXTemplateKind
+01294 getEntityKindFromSymbolProperties(SymbolPropertySet&#32;K)&#32;{
+01295 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(K&#32;&amp;&#32;(SymbolPropertySet)SymbolProperty::TemplatePartialSpecialization)
+01296 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_TemplatePartialSpecialization;
+01297 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(K&#32;&amp;&#32;(SymbolPropertySet)SymbolProperty::TemplateSpecialization)
+01298 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_TemplateSpecialization;
+01299 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(K&#32;&amp;&#32;(SymbolPropertySet)SymbolProperty::Generic)
+01300 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_Template;
+01301 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_NonTemplate;
+01302 }
+01303 
+01304 <emphasis role="keyword">static</emphasis>&#32;CXIdxEntityLanguage&#32;getEntityLangFromSymbolLang(SymbolLanguage&#32;L)&#32;{
+01305 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(L)&#32;{
+01306 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolLanguage::C:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntityLang_C;
+01307 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolLanguage::ObjC:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntityLang_ObjC;
+01308 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolLanguage::CXX:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntityLang_CXX;
+01309 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;SymbolLanguage::Swift:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntityLang_Swift;
+01310 &#32;&#32;}
+01311 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;invalid&#32;symbol&#32;language&quot;</emphasis>);
+01312 }
+</programlisting></section>

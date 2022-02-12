@@ -1,0 +1,385 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_clang-import-test_8cpp_source" xml:lang="en-US">
+<title>clang-import-test.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-import-test/clang-import-test.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;clang-import-test.cpp&#32;-&#32;ASTImporter/ExternalASTSource&#32;testbed&#32;-----===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTContext.h&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTImporter.h&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclObjC.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ExternalASTMerger.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Builtins.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/FileManager.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/IdentifierTable.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceLocation.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/TargetInfo.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/TargetOptions.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/CodeGen/ModuleBuilder.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Types.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTConsumers.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/MultiplexConsumer.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticBuffer.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/Lexer.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/Preprocessor.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;clang/Parse/ParseAST.h&quot;</emphasis>
+00028 
+00029 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/LLVMContext.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/IR/Module.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Error.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Host.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00035 
+00036 <emphasis role="preprocessor">#include&#32;&lt;memory&gt;</emphasis>
+00037 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00038 
+00039 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00040 
+00041 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;std::string&gt;&#32;Expression(
+00042 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;expression&quot;</emphasis>,&#32;llvm::cl::Required,
+00043 &#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Path&#32;to&#32;a&#32;file&#32;containing&#32;the&#32;expression&#32;to&#32;parse&quot;</emphasis>));
+00044 
+00045 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::list&lt;std::string&gt;
+00046 &#32;&#32;&#32;&#32;Imports(<emphasis role="stringliteral">&quot;import&quot;</emphasis>,&#32;llvm::cl::ZeroOrMore,
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Path&#32;to&#32;a&#32;file&#32;containing&#32;declarations&#32;to&#32;import&quot;</emphasis>));
+00048 
+00049 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;
+00050 &#32;&#32;&#32;&#32;Direct(<emphasis role="stringliteral">&quot;direct&quot;</emphasis>,&#32;llvm::cl::Optional,
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Use&#32;the&#32;parsed&#32;declarations&#32;without&#32;indirection&quot;</emphasis>));
+00052 
+00053 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;&#32;UseOrigins(
+00054 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;use-origins&quot;</emphasis>,&#32;llvm::cl::Optional,
+00055 &#32;&#32;&#32;&#32;llvm::cl::desc(
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Use&#32;DeclContext&#32;origin&#32;information&#32;for&#32;more&#32;accurate&#32;lookups&quot;</emphasis>));
+00057 
+00058 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::list&lt;std::string&gt;
+00059 &#32;&#32;&#32;&#32;ClangArgs(<emphasis role="stringliteral">&quot;Xcc&quot;</emphasis>,&#32;llvm::cl::ZeroOrMore,
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Argument&#32;to&#32;pass&#32;to&#32;the&#32;CompilerInvocation&quot;</emphasis>),
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::CommaSeparated);
+00062 
+00063 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;std::string&gt;
+00064 &#32;&#32;&#32;&#32;Input(<emphasis role="stringliteral">&quot;x&quot;</emphasis>,&#32;llvm::cl::Optional,
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;The&#32;language&#32;to&#32;parse&#32;(default:&#32;c++)&quot;</emphasis>),
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::init(<emphasis role="stringliteral">&quot;c++&quot;</emphasis>));
+00067 
+00068 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;&#32;ObjCARC(<emphasis role="stringliteral">&quot;objc-arc&quot;</emphasis>,&#32;llvm::cl::init(<emphasis role="keyword">false</emphasis>),
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Emable&#32;ObjC&#32;ARC&quot;</emphasis>));
+00070 
+00071 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;&#32;DumpAST(<emphasis role="stringliteral">&quot;dump-ast&quot;</emphasis>,&#32;llvm::cl::init(<emphasis role="keyword">false</emphasis>),
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Dump&#32;combined&#32;AST&quot;</emphasis>));
+00073 
+00074 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;&#32;DumpIR(<emphasis role="stringliteral">&quot;dump-ir&quot;</emphasis>,&#32;llvm::cl::init(<emphasis role="keyword">false</emphasis>),
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Dump&#32;IR&#32;from&#32;final&#32;parse&quot;</emphasis>));
+00076 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00077"/><link linkend="_namespaceinit__convenience">00077</link> <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceinit__convenience">init_convenience</link>&#32;{
+<anchor xml:id="_clang-import-test_8cpp_source_1l00078"/><link linkend="_classinit__convenience_1_1_test_diagnostic_consumer">00078</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classinit__convenience_1_1_test_diagnostic_consumer">TestDiagnosticConsumer</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;DiagnosticConsumer&#32;{
+00079 <emphasis role="keyword">private</emphasis>:
+00080 &#32;&#32;std::unique_ptr&lt;TextDiagnosticBuffer&gt;&#32;Passthrough;
+00081 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;LangOptions&#32;*LangOpts&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00082 
+00083 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="_clang-import-test_8cpp_source_1l00084"/><link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a948982c3b94fd57e53605f8c5004448c">00084</link> &#32;&#32;<link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a948982c3b94fd57e53605f8c5004448c">TestDiagnosticConsumer</link>()
+00085 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;Passthrough(std::make_unique&lt;TextDiagnosticBuffer&gt;())&#32;{}
+00086 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00087"/><link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a47147cea123a6f8a35c72d3500c0d621">00087</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a47147cea123a6f8a35c72d3500c0d621">BeginSourceFile</link>(<emphasis role="keyword">const</emphasis>&#32;LangOptions&#32;&amp;LangOpts,
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Preprocessor&#32;*PP&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00089 &#32;&#32;&#32;&#32;this-&gt;LangOpts&#32;=&#32;&amp;LangOpts;
+00090 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Passthrough-&gt;BeginSourceFile(LangOpts,&#32;PP);
+00091 &#32;&#32;}
+00092 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00093"/><link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a3ff52d9dcb8d3e3074be3d9a90683b95">00093</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a3ff52d9dcb8d3e3074be3d9a90683b95">EndSourceFile</link>()<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00094 &#32;&#32;&#32;&#32;this-&gt;LangOpts&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00095 &#32;&#32;&#32;&#32;Passthrough-&gt;EndSourceFile();
+00096 &#32;&#32;}
+00097 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00098"/><link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a6343371f4a70c680c472a22195b48bf6">00098</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_classinit__convenience_1_1_test_diagnostic_consumer_1a6343371f4a70c680c472a22195b48bf6">IncludeInDiagnosticCounts</link>()<emphasis role="keyword">&#32;const&#32;override&#32;</emphasis>{
+00099 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Passthrough-&gt;IncludeInDiagnosticCounts();
+00100 &#32;&#32;}
+00101 
+00102 <emphasis role="keyword">private</emphasis>:
+00103 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;PrintSourceForLocation(<emphasis role="keyword">const</emphasis>&#32;SourceLocation&#32;&amp;Loc,
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM)&#32;{
+00105 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*LocData&#32;=&#32;SM.getCharacterData(Loc,&#32;<emphasis role="comment">/*Invalid=*/</emphasis><emphasis role="keyword">nullptr</emphasis>);
+00106 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;LocColumn&#32;=
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SM.getSpellingColumnNumber(Loc,&#32;<emphasis role="comment">/*Invalid=*/</emphasis><emphasis role="keyword">nullptr</emphasis>)&#32;-&#32;1;
+00108 &#32;&#32;&#32;&#32;FileID&#32;FID&#32;=&#32;SM.getFileID(Loc);
+00109 &#32;&#32;&#32;&#32;llvm::MemoryBufferRef&#32;Buffer&#32;=&#32;SM.getBufferOrFake(FID,&#32;Loc);
+00110 
+00111 &#32;&#32;&#32;&#32;assert(LocData&#32;&gt;=&#32;Buffer.getBufferStart()&#32;&amp;&amp;
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LocData&#32;&lt;&#32;Buffer.getBufferEnd());
+00113 
+00114 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*LineBegin&#32;=&#32;LocData&#32;-&#32;LocColumn;
+00115 
+00116 &#32;&#32;&#32;&#32;assert(LineBegin&#32;&gt;=&#32;Buffer.getBufferStart());
+00117 
+00118 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*LineEnd&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00119 
+00120 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(LineEnd&#32;=&#32;LineBegin;&#32;*LineEnd&#32;!=&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>&#32;&amp;&amp;&#32;*LineEnd&#32;!=&#32;<emphasis role="charliteral">&apos;\r&apos;</emphasis>&#32;&amp;&amp;
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;LineEnd&#32;&lt;&#32;Buffer.getBufferEnd();
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;++LineEnd)
+00123 &#32;&#32;&#32;&#32;&#32;&#32;;
+00124 
+00125 &#32;&#32;&#32;&#32;llvm::StringRef&#32;LineString(LineBegin,&#32;LineEnd&#32;-&#32;LineBegin);
+00126 
+00127 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;LineString&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00128 &#32;&#32;&#32;&#32;llvm::errs().indent(LocColumn);
+00129 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;^&apos;</emphasis>;
+00130 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00131 &#32;&#32;}
+00132 
+00133 &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;HandleDiagnostic(DiagnosticsEngine::Level&#32;DiagLevel,
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Diagnostic&#32;&amp;Info)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00135 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Info.hasSourceManager()&#32;&amp;&amp;&#32;LangOpts)&#32;{
+00136 &#32;&#32;&#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Info.getSourceManager();
+00137 
+00138 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Info.getLocation().isValid())&#32;{
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Info.getLocation().print(llvm::errs(),&#32;SM);
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>;
+00141 &#32;&#32;&#32;&#32;&#32;&#32;}
+00142 
+00143 &#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;16&gt;&#32;DiagText;
+00144 &#32;&#32;&#32;&#32;&#32;&#32;Info.FormatDiagnostic(DiagText);
+00145 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;DiagText&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00146 
+00147 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Info.getLocation().isValid())&#32;{
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintSourceForLocation(Info.getLocation(),&#32;SM);
+00149 &#32;&#32;&#32;&#32;&#32;&#32;}
+00150 
+00151 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CharSourceRange&#32;&amp;Range&#32;:&#32;Info.getRanges())&#32;{
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Invalid&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;Ref&#32;=&#32;Lexer::getSourceText(Range,&#32;SM,&#32;*LangOpts,&#32;&amp;Invalid);
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Invalid)&#32;{
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;Ref&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00157 &#32;&#32;&#32;&#32;&#32;&#32;}
+00158 &#32;&#32;&#32;&#32;}
+00159 &#32;&#32;&#32;&#32;DiagnosticConsumer::HandleDiagnostic(DiagLevel,&#32;Info);
+00160 &#32;&#32;}
+00161 };
+00162 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00163"/><link linkend="_namespaceinit__convenience_1a3a792e4d52dcac7d452c453d92cefedb">00163</link> std::unique_ptr&lt;CompilerInstance&gt;&#32;<link linkend="_namespaceinit__convenience_1a3a792e4d52dcac7d452c453d92cefedb">BuildCompilerInstance</link>()&#32;{
+00164 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Ins&#32;=&#32;std::make_unique&lt;CompilerInstance&gt;();
+00165 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;DC&#32;=&#32;std::make_unique&lt;TestDiagnosticConsumer&gt;();
+00166 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ShouldOwnClient&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00167 &#32;&#32;Ins-&gt;createDiagnostics(DC.release(),&#32;ShouldOwnClient);
+00168 
+00169 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Inv&#32;=&#32;std::make_unique&lt;CompilerInvocation&gt;();
+00170 
+00171 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;ClangArgv(ClangArgs.size());
+00172 &#32;&#32;std::transform(ClangArgs.begin(),&#32;ClangArgs.end(),&#32;ClangArgv.begin(),
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[](<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;s)&#32;-&gt;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*&#32;{&#32;return&#32;s.data();&#32;});
+00174 &#32;&#32;CompilerInvocation::CreateFromArgs(*Inv,&#32;ClangArgv,&#32;Ins-&gt;getDiagnostics());
+00175 
+00176 &#32;&#32;{
+00177 &#32;&#32;&#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>driver::types;
+00178 &#32;&#32;&#32;&#32;ID&#32;Id&#32;=&#32;lookupTypeForTypeSpecifier(Input.c_str());
+00179 &#32;&#32;&#32;&#32;assert(Id&#32;!=&#32;TY_INVALID);
+00180 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isCXX(Id))&#32;{
+00181 &#32;&#32;&#32;&#32;&#32;&#32;Inv-&gt;getLangOpts()-&gt;CPlusPlus&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00182 &#32;&#32;&#32;&#32;&#32;&#32;Inv-&gt;getLangOpts()-&gt;CPlusPlus11&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00183 &#32;&#32;&#32;&#32;&#32;&#32;Inv-&gt;getHeaderSearchOpts().UseLibcxx&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00184 &#32;&#32;&#32;&#32;}
+00185 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isObjC(Id))&#32;{
+00186 &#32;&#32;&#32;&#32;&#32;&#32;Inv-&gt;getLangOpts()-&gt;ObjC&#32;=&#32;1;
+00187 &#32;&#32;&#32;&#32;}
+00188 &#32;&#32;}
+00189 &#32;&#32;Inv-&gt;getLangOpts()-&gt;ObjCAutoRefCount&#32;=&#32;ObjCARC;
+00190 
+00191 &#32;&#32;Inv-&gt;getLangOpts()-&gt;Bool&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00192 &#32;&#32;Inv-&gt;getLangOpts()-&gt;WChar&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00193 &#32;&#32;Inv-&gt;getLangOpts()-&gt;Blocks&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00194 &#32;&#32;Inv-&gt;getLangOpts()-&gt;DebuggerSupport&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00195 &#32;&#32;Inv-&gt;getLangOpts()-&gt;SpellChecking&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00196 &#32;&#32;Inv-&gt;getLangOpts()-&gt;ThreadsafeStatics&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00197 &#32;&#32;Inv-&gt;getLangOpts()-&gt;AccessControl&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00198 &#32;&#32;Inv-&gt;getLangOpts()-&gt;DollarIdents&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00199 &#32;&#32;Inv-&gt;getLangOpts()-&gt;Exceptions&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00200 &#32;&#32;Inv-&gt;getLangOpts()-&gt;CXXExceptions&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00201 &#32;&#32;<emphasis role="comment">//&#32;Needed&#32;for&#32;testing&#32;dynamic_cast.</emphasis>
+00202 &#32;&#32;Inv-&gt;getLangOpts()-&gt;RTTI&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00203 &#32;&#32;Inv-&gt;getCodeGenOpts().setDebugInfo(codegenoptions::FullDebugInfo);
+00204 &#32;&#32;Inv-&gt;getTargetOpts().Triple&#32;=&#32;llvm::sys::getDefaultTargetTriple();
+00205 
+00206 &#32;&#32;Ins-&gt;setInvocation(std::move(Inv));
+00207 
+00208 &#32;&#32;TargetInfo&#32;*TI&#32;=&#32;TargetInfo::CreateTargetInfo(
+00209 &#32;&#32;&#32;&#32;&#32;&#32;Ins-&gt;getDiagnostics(),&#32;Ins-&gt;getInvocation().TargetOpts);
+00210 &#32;&#32;Ins-&gt;setTarget(TI);
+00211 &#32;&#32;Ins-&gt;getTarget().adjust(Ins-&gt;getDiagnostics(),&#32;Ins-&gt;getLangOpts());
+00212 &#32;&#32;Ins-&gt;createFileManager();
+00213 &#32;&#32;Ins-&gt;createSourceManager(Ins-&gt;getFileManager());
+00214 &#32;&#32;Ins-&gt;createPreprocessor(TU_Complete);
+00215 
+00216 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ins;
+00217 }
+00218 
+00219 std::unique_ptr&lt;ASTContext&gt;
+<anchor xml:id="_clang-import-test_8cpp_source_1l00220"/><link linkend="_namespaceinit__convenience_1ad79d228a70afd330881778896518e14f">00220</link> <link linkend="_namespaceinit__convenience_1ad79d228a70afd330881778896518e14f">BuildASTContext</link>(CompilerInstance&#32;&amp;CI,&#32;SelectorTable&#32;&amp;ST,&#32;Builtin::Context&#32;&amp;BC)&#32;{
+00221 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;AST&#32;=&#32;std::make_unique&lt;ASTContext&gt;(
+00222 &#32;&#32;&#32;&#32;&#32;&#32;CI.getLangOpts(),&#32;CI.getSourceManager(),
+00223 &#32;&#32;&#32;&#32;&#32;&#32;CI.getPreprocessor().getIdentifierTable(),&#32;ST,&#32;BC);
+00224 &#32;&#32;AST-&gt;InitBuiltinTypes(CI.getTarget());
+00225 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;AST;
+00226 }
+00227 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00228"/><link linkend="_namespaceinit__convenience_1a68375e72bc1be6e612bf4afc9a1d2afd">00228</link> std::unique_ptr&lt;CodeGenerator&gt;&#32;<link linkend="_namespaceinit__convenience_1a68375e72bc1be6e612bf4afc9a1d2afd">BuildCodeGen</link>(CompilerInstance&#32;&amp;CI,
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::LLVMContext&#32;&amp;LLVMCtx)&#32;{
+00230 &#32;&#32;StringRef&#32;ModuleName(<emphasis role="stringliteral">&quot;$__module&quot;</emphasis>);
+00231 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::unique_ptr&lt;CodeGenerator&gt;(CreateLLVMCodeGen(
+00232 &#32;&#32;&#32;&#32;&#32;&#32;CI.getDiagnostics(),&#32;ModuleName,&#32;CI.getHeaderSearchOpts(),
+00233 &#32;&#32;&#32;&#32;&#32;&#32;CI.getPreprocessorOpts(),&#32;CI.getCodeGenOpts(),&#32;LLVMCtx));
+00234 }
+00235 }&#32;<emphasis role="comment">//&#32;namespace&#32;init_convenience</emphasis>
+00236 
+00237 <emphasis role="keyword">namespace&#32;</emphasis>{
+00238 
+00247 <emphasis role="keyword">struct&#32;</emphasis>CIAndOrigins&#32;{
+00248 &#32;&#32;<emphasis role="keyword">using</emphasis>&#32;OriginMap&#32;=&#32;clang::ExternalASTMerger::OriginMap;
+00249 &#32;&#32;std::unique_ptr&lt;CompilerInstance&gt;&#32;CI;
+00250 
+00251 &#32;&#32;ASTContext&#32;&amp;getASTContext()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;CI-&gt;getASTContext();&#32;}
+00252 &#32;&#32;FileManager&#32;&amp;getFileManager()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;CI-&gt;getFileManager();&#32;}
+00253 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;OriginMap&#32;&amp;getOriginMap()&#32;{
+00254 &#32;&#32;&#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;OriginMap&#32;EmptyOriginMap{};
+00255 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ExternalASTSource&#32;*Source&#32;=&#32;CI-&gt;getASTContext().getExternalSource())
+00256 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>ExternalASTMerger&#32;*<emphasis role="keyword">&gt;</emphasis>(Source)-&gt;GetOrigins();
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EmptyOriginMap;
+00258 &#32;&#32;}
+00259 &#32;&#32;DiagnosticConsumer&#32;&amp;getDiagnosticClient()&#32;{
+00260 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CI-&gt;getDiagnosticClient();
+00261 &#32;&#32;}
+00262 &#32;&#32;CompilerInstance&#32;&amp;getCompilerInstance()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;*CI;&#32;}
+00263 };
+00264 
+00265 <emphasis role="keywordtype">void</emphasis>&#32;AddExternalSource(CIAndOrigins&#32;&amp;CI,
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MutableArrayRef&lt;CIAndOrigins&gt;&#32;Imports)&#32;{
+00267 &#32;&#32;ExternalASTMerger::ImporterTarget&#32;Target(
+00268 &#32;&#32;&#32;&#32;&#32;&#32;{CI.getASTContext(),&#32;CI.getFileManager()});
+00269 &#32;&#32;llvm::SmallVector&lt;ExternalASTMerger::ImporterSource,&#32;3&gt;&#32;Sources;
+00270 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(CIAndOrigins&#32;&amp;Import&#32;:&#32;Imports)
+00271 &#32;&#32;&#32;&#32;Sources.emplace_back(Import.getASTContext(),&#32;Import.getFileManager(),
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Import.getOriginMap());
+00273 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ES&#32;=&#32;std::make_unique&lt;ExternalASTMerger&gt;(Target,&#32;Sources);
+00274 &#32;&#32;CI.getASTContext().setExternalSource(ES.release());
+00275 &#32;&#32;CI.getASTContext().getTranslationUnitDecl()-&gt;setHasExternalVisibleStorage();
+00276 }
+00277 
+00278 CIAndOrigins&#32;BuildIndirect(CIAndOrigins&#32;&amp;CI)&#32;{
+00279 &#32;&#32;CIAndOrigins&#32;IndirectCI{<link linkend="_namespaceinit__convenience_1a3a792e4d52dcac7d452c453d92cefedb">init_convenience::BuildCompilerInstance</link>()};
+00280 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ST&#32;=&#32;std::make_unique&lt;SelectorTable&gt;();
+00281 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;BC&#32;=&#32;std::make_unique&lt;Builtin::Context&gt;();
+00282 &#32;&#32;std::unique_ptr&lt;ASTContext&gt;&#32;AST&#32;=&#32;<link linkend="_namespaceinit__convenience_1ad79d228a70afd330881778896518e14f">init_convenience::BuildASTContext</link>(
+00283 &#32;&#32;&#32;&#32;&#32;&#32;IndirectCI.getCompilerInstance(),&#32;*ST,&#32;*BC);
+00284 &#32;&#32;IndirectCI.getCompilerInstance().setASTContext(AST.release());
+00285 &#32;&#32;AddExternalSource(IndirectCI,&#32;CI);
+00286 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;IndirectCI;
+00287 }
+00288 
+00289 llvm::Error&#32;ParseSource(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;Path,&#32;CompilerInstance&#32;&amp;CI,
+00290 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ASTConsumer&#32;&amp;<link linkend="_class_consumer">Consumer</link>)&#32;{
+00291 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;CI.getSourceManager();
+00292 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;FE&#32;=&#32;CI.getFileManager().getFileRef(Path);
+00293 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FE)&#32;{
+00294 &#32;&#32;&#32;&#32;llvm::consumeError(FE.takeError());
+00295 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::make_error&lt;llvm::StringError&gt;(
+00296 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::Twine(<emphasis role="stringliteral">&quot;No&#32;such&#32;file&#32;or&#32;directory:&#32;&quot;</emphasis>,&#32;Path),&#32;std::error_code());
+00297 &#32;&#32;}
+00298 &#32;&#32;SM.setMainFileID(SM.createFileID(*FE,&#32;SourceLocation(),&#32;SrcMgr::C_User));
+00299 &#32;&#32;ParseAST(CI.getPreprocessor(),&#32;&amp;<link linkend="_class_consumer">Consumer</link>,&#32;CI.getASTContext());
+00300 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::Error::success();
+00301 }
+00302 
+00303 llvm::Expected&lt;CIAndOrigins&gt;&#32;Parse(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;Path,
+00304 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MutableArrayRef&lt;CIAndOrigins&gt;&#32;Imports,
+00305 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ShouldDumpAST,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ShouldDumpIR)&#32;{
+00306 &#32;&#32;CIAndOrigins&#32;CI{<link linkend="_namespaceinit__convenience_1a3a792e4d52dcac7d452c453d92cefedb">init_convenience::BuildCompilerInstance</link>()};
+00307 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ST&#32;=&#32;std::make_unique&lt;SelectorTable&gt;();
+00308 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;BC&#32;=&#32;std::make_unique&lt;Builtin::Context&gt;();
+00309 &#32;&#32;std::unique_ptr&lt;ASTContext&gt;&#32;AST&#32;=
+00310 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceinit__convenience_1ad79d228a70afd330881778896518e14f">init_convenience::BuildASTContext</link>(CI.getCompilerInstance(),&#32;*ST,&#32;*BC);
+00311 &#32;&#32;CI.getCompilerInstance().setASTContext(AST.release());
+00312 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Imports.size())
+00313 &#32;&#32;&#32;&#32;AddExternalSource(CI,&#32;Imports);
+00314 
+00315 &#32;&#32;std::vector&lt;std::unique_ptr&lt;ASTConsumer&gt;&gt;&#32;ASTConsumers;
+00316 
+00317 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;LLVMCtx&#32;=&#32;std::make_unique&lt;llvm::LLVMContext&gt;();
+00318 &#32;&#32;ASTConsumers.push_back(
+00319 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceinit__convenience_1a68375e72bc1be6e612bf4afc9a1d2afd">init_convenience::BuildCodeGen</link>(CI.getCompilerInstance(),&#32;*LLVMCtx));
+00320 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;CG&#32;=&#32;*<emphasis role="keyword">static_cast&lt;</emphasis>CodeGenerator&#32;*<emphasis role="keyword">&gt;</emphasis>(ASTConsumers.back().get());
+00321 
+00322 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ShouldDumpAST)
+00323 &#32;&#32;&#32;&#32;ASTConsumers.push_back(CreateASTDumper(<emphasis role="keyword">nullptr</emphasis>&#32;<emphasis role="comment">/*Dump&#32;to&#32;stdout.*/</emphasis>,&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>,
+00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">true</emphasis>,&#32;<emphasis role="keyword">false</emphasis>,&#32;<emphasis role="keyword">false</emphasis>,&#32;<emphasis role="keyword">false</emphasis>,
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::ADOF_Default));
+00326 
+00327 &#32;&#32;CI.getDiagnosticClient().BeginSourceFile(
+00328 &#32;&#32;&#32;&#32;&#32;&#32;CI.getCompilerInstance().getLangOpts(),
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&amp;CI.getCompilerInstance().getPreprocessor());
+00330 &#32;&#32;MultiplexConsumer&#32;Consumers(std::move(ASTConsumers));
+00331 &#32;&#32;Consumers.Initialize(CI.getASTContext());
+00332 
+00333 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::Error&#32;PE&#32;=&#32;ParseSource(Path,&#32;CI.getCompilerInstance(),&#32;Consumers))
+00334 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::move(PE);
+00335 &#32;&#32;CI.getDiagnosticClient().EndSourceFile();
+00336 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ShouldDumpIR)
+00337 &#32;&#32;&#32;&#32;CG.GetModule()-&gt;print(llvm::outs(),&#32;<emphasis role="keyword">nullptr</emphasis>);
+00338 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CI.getDiagnosticClient().getNumErrors())
+00339 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::make_error&lt;llvm::StringError&gt;(
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Errors&#32;occurred&#32;while&#32;parsing&#32;the&#32;expression.&quot;</emphasis>,&#32;std::error_code());
+00341 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::move(CI);
+00342 }
+00343 
+00344 <emphasis role="keywordtype">void</emphasis>&#32;Forget(CIAndOrigins&#32;&amp;CI,&#32;llvm::MutableArrayRef&lt;CIAndOrigins&gt;&#32;Imports)&#32;{
+00345 &#32;&#32;llvm::SmallVector&lt;ExternalASTMerger::ImporterSource,&#32;3&gt;&#32;Sources;
+00346 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(CIAndOrigins&#32;&amp;Import&#32;:&#32;Imports)
+00347 &#32;&#32;&#32;&#32;Sources.push_back({Import.getASTContext(),&#32;Import.getFileManager(),
+00348 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Import.getOriginMap()});
+00349 &#32;&#32;ExternalASTSource&#32;*Source&#32;=&#32;CI.CI-&gt;getASTContext().getExternalSource();
+00350 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;*Merger&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>ExternalASTMerger&#32;*<emphasis role="keyword">&gt;</emphasis>(Source);
+00351 &#32;&#32;Merger-&gt;RemoveSources(Sources);
+00352 }
+00353 
+00354 }&#32;<emphasis role="comment">//&#32;end&#32;namespace</emphasis>
+00355 
+<anchor xml:id="_clang-import-test_8cpp_source_1l00356"/><link linkend="_clang-import-test_8cpp_1a217dbf8b442f20279ea00b898af96f52">00356</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_clang-import-test_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00357 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;DisableCrashReporting&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00358 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0],&#32;DisableCrashReporting);
+00359 &#32;&#32;llvm::cl::ParseCommandLineOptions(argc,&#32;argv);
+00360 &#32;&#32;std::vector&lt;CIAndOrigins&gt;&#32;ImportCIs;
+00361 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;I&#32;:&#32;Imports)&#32;{
+00362 &#32;&#32;&#32;&#32;llvm::Expected&lt;CIAndOrigins&gt;&#32;ImportCI&#32;=&#32;Parse(I,&#32;{},&#32;<emphasis role="keyword">false</emphasis>,&#32;<emphasis role="keyword">false</emphasis>);
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;E&#32;=&#32;ImportCI.takeError())&#32;{
+00364 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;llvm::toString(std::move(E))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00365 &#32;&#32;&#32;&#32;&#32;&#32;exit(-1);
+00366 &#32;&#32;&#32;&#32;}
+00367 &#32;&#32;&#32;&#32;ImportCIs.push_back(std::move(*ImportCI));
+00368 &#32;&#32;}
+00369 &#32;&#32;std::vector&lt;CIAndOrigins&gt;&#32;IndirectCIs;
+00370 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Direct&#32;||&#32;UseOrigins)&#32;{
+00371 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;ImportCI&#32;:&#32;ImportCIs)&#32;{
+00372 &#32;&#32;&#32;&#32;&#32;&#32;CIAndOrigins&#32;IndirectCI&#32;=&#32;BuildIndirect(ImportCI);
+00373 &#32;&#32;&#32;&#32;&#32;&#32;IndirectCIs.push_back(std::move(IndirectCI));
+00374 &#32;&#32;&#32;&#32;}
+00375 &#32;&#32;}
+00376 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(UseOrigins)
+00377 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;ImportCI&#32;:&#32;ImportCIs)
+00378 &#32;&#32;&#32;&#32;&#32;&#32;IndirectCIs.push_back(std::move(ImportCI));
+00379 &#32;&#32;llvm::Expected&lt;CIAndOrigins&gt;&#32;ExpressionCI&#32;=
+00380 &#32;&#32;&#32;&#32;&#32;&#32;Parse(Expression,&#32;(Direct&#32;&amp;&amp;&#32;!UseOrigins)&#32;?&#32;ImportCIs&#32;:&#32;IndirectCIs,
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DumpAST,&#32;DumpIR);
+00382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;E&#32;=&#32;ExpressionCI.takeError())&#32;{
+00383 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;llvm::toString(std::move(E))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00384 &#32;&#32;&#32;&#32;exit(-1);
+00385 &#32;&#32;}
+00386 &#32;&#32;Forget(*ExpressionCI,&#32;(Direct&#32;&amp;&amp;&#32;!UseOrigins)&#32;?&#32;ImportCIs&#32;:&#32;IndirectCIs);
+00387 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00388 }
+</programlisting></section>

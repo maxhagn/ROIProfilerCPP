@@ -1,0 +1,135 @@
+.TH "tests.unit.test_intercept.InterceptUtilTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_intercept.InterceptUtilTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_format_entry_filters_action\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_format_entry_normalize_filename\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_sip\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 12 of file test_intercept\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_intercept\&.InterceptUtilTest\&.test_format_entry_filters_action ( self)"
+
+.PP
+Definition at line 14 of file test_intercept\&.py\&.
+.PP
+.nf
+14     def test_format_entry_filters_action(self):
+15         def test(command):
+16             trace = {'command': command, 'directory': '/opt/src/project'}
+17             return list(sut\&.format_entry(trace))
+18 
+19         self\&.assertTrue(test(['cc', '-c', 'file\&.c', '-o', 'file\&.o']))
+20         self\&.assertFalse(test(['cc', '-E', 'file\&.c']))
+21         self\&.assertFalse(test(['cc', '-MM', 'file\&.c']))
+22         self\&.assertFalse(test(['cc', 'this\&.o', 'that\&.o', '-o', 'a\&.out']))
+23 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_intercept\&.InterceptUtilTest\&.test_format_entry_normalize_filename ( self)"
+
+.PP
+Definition at line 24 of file test_intercept\&.py\&.
+.PP
+.nf
+24     def test_format_entry_normalize_filename(self):
+25         parent = os\&.path\&.join(os\&.sep, 'home', 'me')
+26         current = os\&.path\&.join(parent, 'project')
+27 
+28         def test(filename):
+29             trace = {'directory': current, 'command': ['cc', '-c', filename]}
+30             return list(sut\&.format_entry(trace))[0]['file']
+31 
+32         self\&.assertEqual(os\&.path\&.join(current, 'file\&.c'), test('file\&.c'))
+33         self\&.assertEqual(os\&.path\&.join(current, 'file\&.c'), test('\&./file\&.c'))
+34         self\&.assertEqual(os\&.path\&.join(parent, 'file\&.c'), test('\&.\&./file\&.c'))
+35         self\&.assertEqual(os\&.path\&.join(current, 'file\&.c'),
+36                          test(os\&.path\&.join(current, 'file\&.c')))
+37 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_intercept\&.InterceptUtilTest\&.test_sip ( self)"
+
+.PP
+Definition at line 38 of file test_intercept\&.py\&.
+.PP
+.nf
+38     def test_sip(self):
+39         def create_status_report(filename, message):
+40             content = """#!/usr/bin/env sh
+41                          echo 'sa-la-la-la'
+42                          echo 'la-la-la'
+43                          echo '{0}'
+44                          echo 'sa-la-la-la'
+45                          echo 'la-la-la'
+46                       """\&.format(message)
+47             lines = [line\&.strip() for line in content\&.split('\n')]
+48             with open(filename, 'w') as handle:
+49                 handle\&.write('\n'\&.join(lines))
+50                 handle\&.close()
+51             os\&.chmod(filename, 0x1ff)
+52 
+53         def create_csrutil(dest_dir, status):
+54             filename = os\&.path\&.join(dest_dir, 'csrutil')
+55             message = 'System Integrity Protection status: {0}'\&.format(status)
+56             return create_status_report(filename, message)
+57 
+58         def create_sestatus(dest_dir, status):
+59             filename = os\&.path\&.join(dest_dir, 'sestatus')
+60             message = 'SELinux status:\t{0}'\&.format(status)
+61             return create_status_report(filename, message)
+62 
+63         ENABLED = 'enabled'
+64         DISABLED = 'disabled'
+65 
+66         OSX = 'darwin'
+67 
+68         with libear\&.TemporaryDirectory() as tmpdir:
+69             saved = os\&.environ['PATH']
+70             try:
+71                 os\&.environ['PATH'] = tmpdir + ':' + saved
+72 
+73                 create_csrutil(tmpdir, ENABLED)
+74                 self\&.assertTrue(sut\&.is_preload_disabled(OSX))
+75 
+76                 create_csrutil(tmpdir, DISABLED)
+77                 self\&.assertFalse(sut\&.is_preload_disabled(OSX))
+78             finally:
+79                 os\&.environ['PATH'] = saved
+80 
+81         saved = os\&.environ['PATH']
+82         try:
+83             os\&.environ['PATH'] = ''
+84             # shall be false when it's not in the path
+85             self\&.assertFalse(sut\&.is_preload_disabled(OSX))
+86 
+87             self\&.assertFalse(sut\&.is_preload_disabled('unix'))
+88         finally:
+89             os\&.environ['PATH'] = saved
+.fi
+.PP
+References startfile\&.open(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

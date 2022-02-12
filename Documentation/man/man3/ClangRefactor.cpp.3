@@ -1,0 +1,105 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-refactor/ClangRefactor.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-refactor/ClangRefactor.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'TestSupport\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CommandLineSourceLoc\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticPrinter\&.h'\fP
+.br
+\fC#include 'clang/Rewrite/Core/Rewriter\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CommonOptionsParser\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring/RefactoringAction\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring/RefactoringOptions\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Refactoring/Rename/RenamingAction\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Tooling\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <string>\fP
+.br
+
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBopts\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This file implements a clang-refactor tool that performs various source transformations\&. 
+.PP
+Definition in file \fBClangRefactor\&.cpp\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 610 of file ClangRefactor\&.cpp\&.
+.PP
+.nf
+610                                       {
+611   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+612 
+613   ClangRefactorTool RefactorTool;
+614 
+615   auto ExpectedParser = CommonOptionsParser::create(
+616       argc, argv, cl::GeneralCategory, cl::ZeroOrMore,
+617       "Clang-based refactoring tool for C, C++ and Objective-C");
+618   if (!ExpectedParser) {
+619     llvm::errs() << ExpectedParser\&.takeError();
+620     return 1;
+621   }
+622   CommonOptionsParser &Options = ExpectedParser\&.get();
+623 
+624   if (auto Err = RefactorTool\&.Init()) {
+625     llvm::errs() << llvm::toString(std::move(Err)) << "\n";
+626     return 1;
+627   }
+628 
+629   auto ActionFactory = RefactorTool\&.getFrontendActionFactory();
+630   if (!ActionFactory) {
+631     llvm::errs() << llvm::toString(ActionFactory\&.takeError()) << "\n";
+632     return 1;
+633   }
+634   ClangTool Tool(Options\&.getCompilations(), Options\&.getSourcePathList());
+635   bool Failed = false;
+636   if (Tool\&.run(ActionFactory->get()) != 0) {
+637     llvm::errs() << "Failed to run refactoring action on files\n";
+638     // It is possible that TUs are broken while changes are generated correctly,
+639     // so we still try applying changes\&.
+640     Failed = true;
+641   }
+642   return RefactorTool\&.applySourceChanges() || Failed ||
+643          RefactorTool\&.hasFailed();
+644 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

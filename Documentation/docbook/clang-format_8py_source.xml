@@ -1,0 +1,161 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_clang-format_8py_source" xml:lang="en-US">
+<title>clang-format.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format/clang-format.py</primary></indexterm>
+<programlisting><anchor xml:id="_clang-format_8py_source_1l00001"/><link linkend="_namespaceclang-format">00001</link> <emphasis role="comment">#&#32;This&#32;file&#32;is&#32;a&#32;minimal&#32;clang-format&#32;vim-integration.&#32;To&#32;install:</emphasis>
+00002 <emphasis role="comment">#&#32;-&#32;Change&#32;&apos;binary&apos;&#32;if&#32;clang-format&#32;is&#32;not&#32;on&#32;the&#32;path&#32;(see&#32;below).</emphasis>
+00003 <emphasis role="comment">#&#32;-&#32;Add&#32;to&#32;your&#32;.vimrc:</emphasis>
+00004 <emphasis role="comment">#</emphasis>
+00005 <emphasis role="comment">#&#32;&#32;&#32;if&#32;has(&apos;python&apos;)</emphasis>
+00006 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;map&#32;&lt;C-I&gt;&#32;:pyf&#32;&lt;path-to-this-file&gt;/clang-format.py&lt;cr&gt;</emphasis>
+00007 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;imap&#32;&lt;C-I&gt;&#32;&lt;c-o&gt;:pyf&#32;&lt;path-to-this-file&gt;/clang-format.py&lt;cr&gt;</emphasis>
+00008 <emphasis role="comment">#&#32;&#32;&#32;elseif&#32;has(&apos;python3&apos;)</emphasis>
+00009 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;map&#32;&lt;C-I&gt;&#32;:py3f&#32;&lt;path-to-this-file&gt;/clang-format.py&lt;cr&gt;</emphasis>
+00010 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;imap&#32;&lt;C-I&gt;&#32;&lt;c-o&gt;:py3f&#32;&lt;path-to-this-file&gt;/clang-format.py&lt;cr&gt;</emphasis>
+00011 <emphasis role="comment">#&#32;&#32;&#32;endif</emphasis>
+00012 <emphasis role="comment">#</emphasis>
+00013 <emphasis role="comment">#&#32;The&#32;if-elseif-endif&#32;conditional&#32;should&#32;pick&#32;either&#32;the&#32;python3&#32;or&#32;python2&#32;</emphasis>
+00014 <emphasis role="comment">#&#32;integration&#32;depending&#32;on&#32;your&#32;vim&#32;setup.</emphasis>
+00015 <emphasis role="comment">#&#32;</emphasis>
+00016 <emphasis role="comment">#&#32;The&#32;first&#32;mapping&#32;enables&#32;clang-format&#32;for&#32;NORMAL&#32;and&#32;VISUAL&#32;mode,&#32;the&#32;second</emphasis>
+00017 <emphasis role="comment">#&#32;mapping&#32;adds&#32;support&#32;for&#32;INSERT&#32;mode.&#32;Change&#32;&quot;C-I&quot;&#32;to&#32;another&#32;binding&#32;if&#32;you</emphasis>
+00018 <emphasis role="comment">#&#32;need&#32;clang-format&#32;on&#32;a&#32;different&#32;key&#32;(C-I&#32;stands&#32;for&#32;Ctrl+i).</emphasis>
+00019 <emphasis role="comment">#</emphasis>
+00020 <emphasis role="comment">#&#32;With&#32;this&#32;integration&#32;you&#32;can&#32;press&#32;the&#32;bound&#32;key&#32;and&#32;clang-format&#32;will</emphasis>
+00021 <emphasis role="comment">#&#32;format&#32;the&#32;current&#32;line&#32;in&#32;NORMAL&#32;and&#32;INSERT&#32;mode&#32;or&#32;the&#32;selected&#32;region&#32;in</emphasis>
+00022 <emphasis role="comment">#&#32;VISUAL&#32;mode.&#32;The&#32;line&#32;or&#32;region&#32;is&#32;extended&#32;to&#32;the&#32;next&#32;bigger&#32;syntactic</emphasis>
+00023 <emphasis role="comment">#&#32;entity.</emphasis>
+00024 <emphasis role="comment">#</emphasis>
+00025 <emphasis role="comment">#&#32;You&#32;can&#32;also&#32;pass&#32;in&#32;the&#32;variable&#32;&quot;l:lines&quot;&#32;to&#32;choose&#32;the&#32;range&#32;for</emphasis>
+00026 <emphasis role="comment">#&#32;formatting.&#32;This&#32;variable&#32;can&#32;either&#32;contain&#32;&quot;&lt;start&#32;line&gt;:&lt;end&#32;line&gt;&quot;&#32;or</emphasis>
+00027 <emphasis role="comment">#&#32;&quot;all&quot;&#32;to&#32;format&#32;the&#32;full&#32;file.&#32;So,&#32;to&#32;format&#32;the&#32;full&#32;file,&#32;write&#32;a&#32;function</emphasis>
+00028 <emphasis role="comment">#&#32;like:</emphasis>
+00029 <emphasis role="comment">#&#32;:function&#32;FormatFile()</emphasis>
+00030 <emphasis role="comment">#&#32;:&#32;&#32;let&#32;l:lines=&quot;all&quot;</emphasis>
+00031 <emphasis role="comment">#&#32;:&#32;&#32;if&#32;has(&apos;python&apos;)</emphasis>
+00032 <emphasis role="comment">#&#32;:&#32;&#32;&#32;&#32;pyf&#32;&lt;path-to-this-file&gt;/clang-format.py</emphasis>
+00033 <emphasis role="comment">#&#32;:&#32;&#32;elseif&#32;has(&apos;python3&apos;)</emphasis>
+00034 <emphasis role="comment">#&#32;:&#32;&#32;&#32;&#32;py3f&#32;&lt;path-to-this-file&gt;/clang-format.py</emphasis>
+00035 <emphasis role="comment">#&#32;:&#32;&#32;endif</emphasis>
+00036 <emphasis role="comment">#&#32;:endfunction</emphasis>
+00037 <emphasis role="comment">#</emphasis>
+00038 <emphasis role="comment">#&#32;It&#32;operates&#32;on&#32;the&#32;current,&#32;potentially&#32;unsaved&#32;buffer&#32;and&#32;does&#32;not&#32;create</emphasis>
+00039 <emphasis role="comment">#&#32;or&#32;save&#32;any&#32;files.&#32;To&#32;revert&#32;a&#32;formatting,&#32;just&#32;undo.</emphasis>
+00040 <emphasis role="keyword">from</emphasis>&#32;__future__&#32;<emphasis role="keyword">import</emphasis>&#32;absolute_import,&#32;division,&#32;print_function
+00041 
+00042 <emphasis role="keyword">import</emphasis>&#32;difflib
+00043 <emphasis role="keyword">import</emphasis>&#32;json
+00044 <emphasis role="keyword">import</emphasis>&#32;platform
+00045 <emphasis role="keyword">import</emphasis>&#32;subprocess
+00046 <emphasis role="keyword">import</emphasis>&#32;sys
+00047 <emphasis role="keyword">import</emphasis>&#32;vim
+00048 
+00049 <emphasis role="comment">#&#32;set&#32;g:clang_format_path&#32;to&#32;the&#32;path&#32;to&#32;clang-format&#32;if&#32;it&#32;is&#32;not&#32;on&#32;the&#32;path</emphasis>
+00050 <emphasis role="comment">#&#32;Change&#32;this&#32;to&#32;the&#32;full&#32;path&#32;if&#32;clang-format&#32;is&#32;not&#32;on&#32;the&#32;path.</emphasis>
+<anchor xml:id="_clang-format_8py_source_1l00051"/><link linkend="_namespaceclang-format_1a48c3a40a10c470091bafc20fdb850416">00051</link> binary&#32;=&#32;<emphasis role="stringliteral">&apos;clang-format&apos;</emphasis>
+00052 <emphasis role="keywordflow">if</emphasis>&#32;vim.eval(<emphasis role="stringliteral">&apos;exists(&quot;g:clang_format_path&quot;)&apos;</emphasis>)&#32;==&#32;<emphasis role="stringliteral">&quot;1&quot;</emphasis>:
+00053 &#32;&#32;binary&#32;=&#32;vim.eval(<emphasis role="stringliteral">&apos;g:clang_format_path&apos;</emphasis>)
+00054 
+00055 <emphasis role="comment">#&#32;Change&#32;this&#32;to&#32;format&#32;according&#32;to&#32;other&#32;formatting&#32;styles.&#32;See&#32;the&#32;output&#32;of</emphasis>
+00056 <emphasis role="comment">#&#32;&apos;clang-format&#32;--help&apos;&#32;for&#32;a&#32;list&#32;of&#32;supported&#32;styles.&#32;The&#32;default&#32;looks&#32;for</emphasis>
+00057 <emphasis role="comment">#&#32;a&#32;&apos;.clang-format&apos;&#32;or&#32;&apos;_clang-format&apos;&#32;file&#32;to&#32;indicate&#32;the&#32;style&#32;that&#32;should&#32;be</emphasis>
+00058 <emphasis role="comment">#&#32;used.</emphasis>
+<anchor xml:id="_clang-format_8py_source_1l00059"/><link linkend="_namespaceclang-format_1a1af1663024b4cdd499a7a10e202c9b9e">00059</link> style&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+<anchor xml:id="_clang-format_8py_source_1l00060"/><link linkend="_namespaceclang-format_1a47ed01450573c329ec6a17c525c53668">00060</link> fallback_style&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00061 <emphasis role="keywordflow">if</emphasis>&#32;vim.eval(<emphasis role="stringliteral">&apos;exists(&quot;g:clang_format_fallback_style&quot;)&apos;</emphasis>)&#32;==&#32;<emphasis role="stringliteral">&quot;1&quot;</emphasis>:
+00062 &#32;&#32;fallback_style&#32;=&#32;vim.eval(<emphasis role="stringliteral">&apos;g:clang_format_fallback_style&apos;</emphasis>)
+00063 
+<anchor xml:id="_clang-format_8py_source_1l00064"/><link linkend="_namespaceclang-format_1a1ab610d513bddf3cc3deff4acf33b3c3">00064</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespaceclang-format_1a1ab610d513bddf3cc3deff4acf33b3c3">get_buffer</link>(encoding):
+00065 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;platform.python_version_tuple()[0]&#32;==&#32;<emphasis role="stringliteral">&apos;3&apos;</emphasis>:
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;vim.current.buffer
+00067 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[&#32;line.decode(encoding)&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;vim.current.buffer&#32;]
+00068 
+<anchor xml:id="_clang-format_8py_source_1l00069"/><link linkend="_namespaceclang-format_1ac2477eea4d65a2f4127d41719e424f61">00069</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespaceclang-format_1ac2477eea4d65a2f4127d41719e424f61">main</link>():
+00070 &#32;&#32;<emphasis role="comment">#&#32;Get&#32;the&#32;current&#32;text.</emphasis>
+00071 &#32;&#32;encoding&#32;=&#32;vim.eval(<emphasis role="stringliteral">&quot;&amp;encoding&quot;</emphasis>)
+00072 &#32;&#32;buf&#32;=&#32;<link linkend="_namespaceclang-format_1a1ab610d513bddf3cc3deff4acf33b3c3">get_buffer</link>(encoding)
+00073 &#32;&#32;<emphasis role="comment">#&#32;Join&#32;the&#32;buffer&#32;into&#32;a&#32;single&#32;string&#32;with&#32;a&#32;terminating&#32;newline</emphasis>
+00074 &#32;&#32;text&#32;=&#32;(<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join(buf)&#32;+&#32;<emphasis role="stringliteral">&apos;\n&apos;</emphasis>).<link linkend="_namespacelibscanbuild_1_1shell_1ac92beb78a0b5fd06775e27d7b87870ed">encode</link>(encoding)
+00075 
+00076 &#32;&#32;<emphasis role="comment">#&#32;Determine&#32;range&#32;to&#32;format.</emphasis>
+00077 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;vim.eval(<emphasis role="stringliteral">&apos;exists(&quot;l:lines&quot;)&apos;</emphasis>)&#32;==&#32;<emphasis role="stringliteral">&apos;1&apos;</emphasis>:
+00078 &#32;&#32;&#32;&#32;lines&#32;=&#32;[<emphasis role="stringliteral">&apos;-lines&apos;</emphasis>,&#32;vim.eval(<emphasis role="stringliteral">&apos;l:lines&apos;</emphasis>)]
+00079 &#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;vim.eval(<emphasis role="stringliteral">&apos;exists(&quot;l:formatdiff&quot;)&apos;</emphasis>)&#32;==&#32;<emphasis role="stringliteral">&apos;1&apos;</emphasis>:
+00080 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(vim.current.buffer.name,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;f:
+00081 &#32;&#32;&#32;&#32;&#32;&#32;ondisk&#32;=&#32;f.read().splitlines();
+00082 &#32;&#32;&#32;&#32;sequence&#32;=&#32;difflib.SequenceMatcher(<emphasis role="keywordtype">None</emphasis>,&#32;ondisk,&#32;vim.current.buffer)
+00083 &#32;&#32;&#32;&#32;lines&#32;=&#32;[]
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;op&#32;<emphasis role="keywordflow">in</emphasis>&#32;reversed(sequence.get_opcodes()):
+00085 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;op[0]&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;equal&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;delete&apos;</emphasis>]:
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lines&#32;+=&#32;[<emphasis role="stringliteral">&apos;-lines&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;%s:%s&apos;</emphasis>&#32;%&#32;(op[3]&#32;+&#32;1,&#32;op[4])]
+00087 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;lines&#32;==&#32;[]:
+00088 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>
+00089 &#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00090 &#32;&#32;&#32;&#32;lines&#32;=&#32;[<emphasis role="stringliteral">&apos;-lines&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;%s:%s&apos;</emphasis>&#32;%&#32;(vim.current.range.start&#32;+&#32;1,
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;vim.current.range.end&#32;+&#32;1)]
+00092 
+00093 &#32;&#32;<emphasis role="comment">#&#32;Convert&#32;cursor&#32;(line,&#32;col)&#32;to&#32;bytes.</emphasis>
+00094 &#32;&#32;<emphasis role="comment">#&#32;Don&apos;t&#32;use&#32;line2byte:&#32;https://github.com/vim/vim/issues/5930</emphasis>
+00095 &#32;&#32;_,&#32;cursor_line,&#32;cursor_col,&#32;_&#32;=&#32;vim.eval(<emphasis role="stringliteral">&apos;getpos(&quot;.&quot;)&apos;</emphasis>)&#32;<emphasis role="comment">#&#32;1-based</emphasis>
+00096 &#32;&#32;cursor_byte&#32;=&#32;0
+00097 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;text.split(b<emphasis role="stringliteral">&apos;\n&apos;</emphasis>)[:int(cursor_line)&#32;-&#32;1]:
+00098 &#32;&#32;&#32;&#32;cursor_byte&#32;+=&#32;len(line)&#32;+&#32;1
+00099 &#32;&#32;cursor_byte&#32;+=&#32;int(cursor_col)&#32;-&#32;1
+00100 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;cursor_byte&#32;&lt;&#32;0:
+00101 &#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;Couldn\&apos;t&#32;determine&#32;cursor&#32;position.&#32;Is&#32;your&#32;file&#32;empty?&apos;</emphasis>)
+00102 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>
+00103 
+00104 &#32;&#32;<emphasis role="comment">#&#32;Avoid&#32;flashing&#32;an&#32;ugly,&#32;ugly&#32;cmd&#32;prompt&#32;on&#32;Windows&#32;when&#32;invoking&#32;clang-format.</emphasis>
+00105 &#32;&#32;startupinfo&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00106 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;sys.platform.startswith(<emphasis role="stringliteral">&apos;win32&apos;</emphasis>):
+00107 &#32;&#32;&#32;&#32;startupinfo&#32;=&#32;subprocess.STARTUPINFO()
+00108 &#32;&#32;&#32;&#32;startupinfo.dwFlags&#32;|=&#32;subprocess.STARTF_USESHOWWINDOW
+00109 &#32;&#32;&#32;&#32;startupinfo.wShowWindow&#32;=&#32;subprocess.SW_HIDE
+00110 
+00111 &#32;&#32;<emphasis role="comment">#&#32;Call&#32;formatter.</emphasis>
+00112 &#32;&#32;command&#32;=&#32;[binary,&#32;<emphasis role="stringliteral">&apos;-cursor&apos;</emphasis>,&#32;str(cursor_byte)]
+00113 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;lines&#32;!=&#32;[<emphasis role="stringliteral">&apos;-lines&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;all&apos;</emphasis>]:
+00114 &#32;&#32;&#32;&#32;command&#32;+=&#32;lines
+00115 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;style:
+00116 &#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-style&apos;</emphasis>,&#32;style])
+00117 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;fallback_style:
+00118 &#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-fallback-style&apos;</emphasis>,&#32;fallback_style])
+00119 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;vim.current.buffer.name:
+00120 &#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-assume-filename&apos;</emphasis>,&#32;vim.current.buffer.name])
+00121 &#32;&#32;p&#32;=&#32;subprocess.Popen(command,
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stdout=subprocess.PIPE,&#32;stderr=subprocess.PIPE,
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stdin=subprocess.PIPE,&#32;startupinfo=startupinfo)
+00124 &#32;&#32;stdout,&#32;stderr&#32;=&#32;p.communicate(input=text)
+00125 
+00126 &#32;&#32;<emphasis role="comment">#&#32;If&#32;successful,&#32;replace&#32;buffer&#32;contents.</emphasis>
+00127 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;stderr:
+00128 &#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(stderr)
+00129 
+00130 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;stdout:
+00131 &#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;No&#32;output&#32;from&#32;clang-format&#32;(crashed?).\n&apos;</emphasis>
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;Please&#32;report&#32;to&#32;bugs.llvm.org.&apos;</emphasis>
+00134 &#32;&#32;&#32;&#32;)
+00135 &#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00136 &#32;&#32;&#32;&#32;header,&#32;content&#32;=&#32;stdout.split(b<emphasis role="stringliteral">&apos;\n&apos;</emphasis>,&#32;1)
+00137 &#32;&#32;&#32;&#32;header&#32;=&#32;json.loads(header)
+00138 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Strip&#32;off&#32;the&#32;trailing&#32;newline&#32;(added&#32;above).</emphasis>
+00139 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;This&#32;maintains&#32;trailing&#32;empty&#32;lines&#32;present&#32;in&#32;the&#32;buffer&#32;if</emphasis>
+00140 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;the&#32;-lines&#32;specification&#32;requests&#32;them&#32;to&#32;remain&#32;unchanged.</emphasis>
+00141 &#32;&#32;&#32;&#32;lines&#32;=&#32;content.decode(encoding).split(<emphasis role="stringliteral">&apos;\n&apos;</emphasis>)[:-1]
+00142 &#32;&#32;&#32;&#32;sequence&#32;=&#32;difflib.SequenceMatcher(<emphasis role="keywordtype">None</emphasis>,&#32;buf,&#32;lines)
+00143 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;op&#32;<emphasis role="keywordflow">in</emphasis>&#32;reversed(sequence.get_opcodes()):
+00144 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;op[0]&#32;!=&#32;<emphasis role="stringliteral">&apos;equal&apos;</emphasis>:
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;vim.current.buffer[op[1]:op[2]]&#32;=&#32;lines[op[3]:op[4]]
+00146 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;header.get(<emphasis role="stringliteral">&apos;IncompleteFormat&apos;</emphasis>):
+00147 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(<emphasis role="stringliteral">&apos;clang-format:&#32;incomplete&#32;(syntax&#32;errors)&apos;</emphasis>)
+00148 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Convert&#32;cursor&#32;bytes&#32;to&#32;(line,&#32;col)</emphasis>
+00149 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Don&apos;t&#32;use&#32;goto:&#32;https://github.com/vim/vim/issues/5930</emphasis>
+00150 &#32;&#32;&#32;&#32;cursor_byte&#32;=&#32;int(header[<emphasis role="stringliteral">&apos;Cursor&apos;</emphasis>])
+00151 &#32;&#32;&#32;&#32;prefix&#32;=&#32;content[0:cursor_byte]
+00152 &#32;&#32;&#32;&#32;cursor_line&#32;=&#32;1&#32;+&#32;prefix.count(b<emphasis role="stringliteral">&apos;\n&apos;</emphasis>)
+00153 &#32;&#32;&#32;&#32;cursor_column&#32;=&#32;1&#32;+&#32;len(prefix.rsplit(b<emphasis role="stringliteral">&apos;\n&apos;</emphasis>,&#32;1)[-1])
+00154 &#32;&#32;&#32;&#32;vim.command(<emphasis role="stringliteral">&apos;call&#32;cursor(%d,&#32;%d)&apos;</emphasis>&#32;%&#32;(cursor_line,&#32;cursor_column))
+00155 
+00156 <link linkend="_namespaceclang-format_1ac2477eea4d65a2f4127d41719e424f61">main</link>()
+</programlisting></section>

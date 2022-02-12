@@ -1,0 +1,999 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_code_completion_8cpp_source" xml:lang="en-US">
+<title>CIndexCodeCompletion.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCodeCompletion.cpp</primary></indexterm>
+<programlisting><anchor xml:id="__c_index_code_completion_8cpp_source_1l00001"/><link linkend="__c_index_code_completion_8cpp_1a6ce9754f88dc96e3628a7e479976c4e7">00001</link> <emphasis role="comment">//===-&#32;CIndexCodeCompletion.cpp&#32;-&#32;Code&#32;Completion&#32;API&#32;hooks&#32;---------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;the&#32;Clang-C&#32;Source&#32;Indexing&#32;library&#32;hooks&#32;for</emphasis>
+00010 <emphasis role="comment">//&#32;code&#32;completion.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_indexer_8h">CIndexer.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_index_diagnostic_8h">CIndexDiagnostic.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_log_8h">CLog.h</link>&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_source_location_8h">CXSourceLocation.h</link>&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Decl.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclObjC.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Type.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/FileManager.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceManager.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;clang/Sema/CodeCompleteConsumer.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;clang/Sema/Sema.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringExtras.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CrashRecoveryContext.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FormatVariadic.h&quot;</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00036 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Program.h&quot;</emphasis>
+00037 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Timer.h&quot;</emphasis>
+00038 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00039 <emphasis role="preprocessor">#include&#32;&lt;atomic&gt;</emphasis>
+00040 <emphasis role="preprocessor">#include&#32;&lt;cstdio&gt;</emphasis>
+00041 <emphasis role="preprocessor">#include&#32;&lt;cstdlib&gt;</emphasis>
+00042 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00043 
+00044 
+00045 <emphasis role="preprocessor">#ifdef&#32;UDP_CODE_COMPLETION_LOGGER</emphasis>
+00046 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Version.h&quot;</emphasis>
+00047 <emphasis role="preprocessor">#include&#32;&lt;arpa/inet.h&gt;</emphasis>
+00048 <emphasis role="preprocessor">#include&#32;&lt;sys/socket.h&gt;</emphasis>
+00049 <emphasis role="preprocessor">#include&#32;&lt;sys/types.h&gt;</emphasis>
+00050 <emphasis role="preprocessor">#include&#32;&lt;unistd.h&gt;</emphasis>
+00051 <emphasis role="preprocessor">#endif</emphasis>
+00052 
+00053 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00054 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1cxindex">clang::cxindex</link>;
+00055 
+00056 <emphasis role="keyword">enum</emphasis>&#32;CXCompletionChunkKind
+00057 <link linkend="__c_index_code_completion_8cpp_1a6ce9754f88dc96e3628a7e479976c4e7">clang_getCompletionChunkKind</link>(CXCompletionString&#32;completion_string,
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;chunk_number)&#32;{
+00059 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00060 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr&#32;||&#32;chunk_number&#32;&gt;=&#32;CCStr-&gt;size())
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Text;
+00062 
+00063 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((*CCStr)[chunk_number].Kind)&#32;{
+00064 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_TypedText:
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_TypedText;
+00066 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Text:
+00067 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Text;
+00068 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Optional:
+00069 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Optional;
+00070 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Placeholder:
+00071 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Placeholder;
+00072 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Informative:
+00073 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Informative;
+00074 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_ResultType:
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_ResultType;
+00076 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_CurrentParameter:
+00077 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_CurrentParameter;
+00078 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftParen:
+00079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftParen;
+00080 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightParen:
+00081 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightParen;
+00082 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBracket:
+00083 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftBracket;
+00084 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBracket:
+00085 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightBracket;
+00086 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBrace:
+00087 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftBrace;
+00088 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBrace:
+00089 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightBrace;
+00090 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftAngle:
+00091 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_LeftAngle;
+00092 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightAngle:
+00093 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_RightAngle;
+00094 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Comma:
+00095 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Comma;
+00096 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Colon:
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Colon;
+00098 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_SemiColon:
+00099 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_SemiColon;
+00100 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Equal:
+00101 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_Equal;
+00102 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_HorizontalSpace:
+00103 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_HorizontalSpace;
+00104 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_VerticalSpace:
+00105 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCompletionChunk_VerticalSpace;
+00106 &#32;&#32;}
+00107 
+00108 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;CompletionKind!&quot;</emphasis>);
+00109 }
+00110 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00111"/><link linkend="__c_index_code_completion_8cpp_1a374f74c7bf629362e8da626775301a00">00111</link> CXString&#32;<link linkend="__c_index_code_completion_8cpp_1a374f74c7bf629362e8da626775301a00">clang_getCompletionChunkText</link>(CXCompletionString&#32;completion_string,
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;chunk_number)&#32;{
+00113 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00114 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr&#32;||&#32;chunk_number&#32;&gt;=&#32;CCStr-&gt;size())
+00115 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00116 
+00117 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((*CCStr)[chunk_number].Kind)&#32;{
+00118 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_TypedText:
+00119 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Text:
+00120 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Placeholder:
+00121 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_CurrentParameter:
+00122 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Informative:
+00123 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftParen:
+00124 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightParen:
+00125 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBracket:
+00126 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBracket:
+00127 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBrace:
+00128 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBrace:
+00129 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftAngle:
+00130 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightAngle:
+00131 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Comma:
+00132 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_ResultType:
+00133 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Colon:
+00134 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_SemiColon:
+00135 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Equal:
+00136 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_HorizontalSpace:
+00137 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_VerticalSpace:
+00138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>((*CCStr)[chunk_number].Text);
+00139 &#32;&#32;&#32;&#32;&#32;&#32;
+00140 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Optional:
+00141 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Note:&#32;treated&#32;as&#32;an&#32;empty&#32;text&#32;block.</emphasis>
+00142 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00143 &#32;&#32;}
+00144 
+00145 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;CodeCompletionString&#32;Kind!&quot;</emphasis>);
+00146 }
+00147 
+00148 
+00149 CXCompletionString
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00150"/><link linkend="__c_index_code_completion_8cpp_1a50babc07437ed1bd140ed2580b7d84b4">00150</link> <link linkend="__c_index_code_completion_8cpp_1a50babc07437ed1bd140ed2580b7d84b4">clang_getCompletionChunkCompletionString</link>(CXCompletionString&#32;completion_string,
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;chunk_number)&#32;{
+00152 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00153 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr&#32;||&#32;chunk_number&#32;&gt;=&#32;CCStr-&gt;size())
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00155 
+00156 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;((*CCStr)[chunk_number].Kind)&#32;{
+00157 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_TypedText:
+00158 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Text:
+00159 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Placeholder:
+00160 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_CurrentParameter:
+00161 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Informative:
+00162 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftParen:
+00163 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightParen:
+00164 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBracket:
+00165 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBracket:
+00166 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftBrace:
+00167 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightBrace:
+00168 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_LeftAngle:
+00169 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_RightAngle:
+00170 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Comma:
+00171 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_ResultType:
+00172 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Colon:
+00173 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_SemiColon:
+00174 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Equal:
+00175 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_HorizontalSpace:
+00176 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_VerticalSpace:
+00177 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00178 
+00179 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionString::CK_Optional:
+00180 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Note:&#32;treated&#32;as&#32;an&#32;empty&#32;text&#32;block.</emphasis>
+00181 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(*CCStr)[chunk_number].Optional;
+00182 &#32;&#32;}
+00183 
+00184 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;CompletionKind!&quot;</emphasis>);
+00185 }
+00186 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00187"/><link linkend="__c_index_code_completion_8cpp_1a075fc2a04c95b00ccadf6ccc0ab5b91d">00187</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1a075fc2a04c95b00ccadf6ccc0ab5b91d">clang_getNumCompletionChunks</link>(CXCompletionString&#32;completion_string)&#32;{
+00188 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00189 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr?&#32;CCStr-&gt;size()&#32;:&#32;0;
+00190 }
+00191 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00192"/><link linkend="__c_index_code_completion_8cpp_1a705e9a4bdd5077e49d5a787fe913aeda">00192</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1ab31f7dbd962ec8e8cb586bb5e3c78276">clang_getCompletionPriority</link>(CXCompletionString&#32;completion_string)&#32;{
+00193 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00194 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr?&#32;CCStr-&gt;getPriority()&#32;:&#32;unsigned(CCP_Unlikely);
+00195 }
+00196 &#32;&#32;
+00197 <emphasis role="keyword">enum</emphasis>&#32;CXAvailabilityKind&#32;
+00198 <link linkend="__c_index_code_completion_8cpp_1a705e9a4bdd5077e49d5a787fe913aeda">clang_getCompletionAvailability</link>(CXCompletionString&#32;completion_string)&#32;{
+00199 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00200 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr?&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXAvailabilityKind<emphasis role="keyword">&gt;</emphasis>(CCStr-&gt;getAvailability())
+00201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;CXAvailability_Available;
+00202 }
+00203 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00204"/><link linkend="__c_index_code_completion_8cpp_1a8ab31cf1861905f7599d87eb48649c2c">00204</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1a8ab31cf1861905f7599d87eb48649c2c">clang_getCompletionNumAnnotations</link>(CXCompletionString&#32;completion_string)
+00205 {
+00206 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00207 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr&#32;?&#32;CCStr-&gt;getAnnotationCount()&#32;:&#32;0;
+00208 }
+00209 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00210"/><link linkend="__c_index_code_completion_8cpp_1ae2edaae1f93d1b09d474ae8446172037">00210</link> CXString&#32;<link linkend="__c_index_code_completion_8cpp_1ae2edaae1f93d1b09d474ae8446172037">clang_getCompletionAnnotation</link>(CXCompletionString&#32;completion_string,
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;annotation_number)&#32;{
+00212 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00213 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCStr&#32;?&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(CCStr-&gt;getAnnotation(annotation_number))
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00215 }
+00216 
+00217 CXString
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00218"/><link linkend="__c_index_code_completion_8cpp_1a7255187a485b3364cd0956ccc8a21ba7">00218</link> <link linkend="__c_index_code_completion_8cpp_1a7255187a485b3364cd0956ccc8a21ba7">clang_getCompletionParent</link>(CXCompletionString&#32;completion_string,
+00219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorKind&#32;*kind)&#32;{
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(kind)
+00221 &#32;&#32;&#32;&#32;*kind&#32;=&#32;CXCursor_NotImplemented;
+00222 &#32;&#32;
+00223 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00224 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr)
+00225 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00226 &#32;&#32;
+00227 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(CCStr-&gt;getParentContextName());
+00228 }
+00229 
+00230 CXString
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00231"/><link linkend="__c_index_code_completion_8cpp_1a583af69f4c45ceea22b0aacbaebfae23">00231</link> <link linkend="__c_index_code_completion_8cpp_1a583af69f4c45ceea22b0aacbaebfae23">clang_getCompletionBriefComment</link>(CXCompletionString&#32;completion_string)&#32;{
+00232 &#32;&#32;CodeCompletionString&#32;*CCStr&#32;=&#32;(CodeCompletionString&#32;*)completion_string;
+00233 
+00234 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCStr)
+00235 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00236 
+00237 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(CCStr-&gt;getBriefComment());
+00238 }
+00239 
+00240 <emphasis role="keyword">namespace&#32;</emphasis>{
+00241 
+00249 <emphasis role="keyword">struct&#32;</emphasis>AllocatedCXCodeCompleteResults&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;CXCodeCompleteResults&#32;{
+00250 &#32;&#32;AllocatedCXCodeCompleteResults(IntrusiveRefCntPtr&lt;FileManager&gt;&#32;FileMgr);
+00251 &#32;&#32;~AllocatedCXCodeCompleteResults();
+00252 &#32;&#32;
+00254 &#32;&#32;SmallVector&lt;StoredDiagnostic,&#32;8&gt;&#32;Diagnostics;
+00255 
+00257 &#32;&#32;SmallVector&lt;std::unique_ptr&lt;CXStoredDiagnostic&gt;,&#32;8&gt;&#32;DiagnosticsWrappers;
+00258 
+00259 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts;
+00260 &#32;&#32;
+00262 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;Diag;
+00263 &#32;&#32;
+00265 &#32;&#32;LangOptions&#32;LangOpts;
+00266 
+00268 &#32;&#32;IntrusiveRefCntPtr&lt;FileManager&gt;&#32;FileMgr;
+00269 
+00271 &#32;&#32;IntrusiveRefCntPtr&lt;SourceManager&gt;&#32;SourceMgr;
+00272 &#32;&#32;
+00275 &#32;&#32;SmallVector&lt;const&#32;llvm::MemoryBuffer&#32;*,&#32;1&gt;&#32;TemporaryBuffers;
+00276 &#32;&#32;
+00278 &#32;&#32;std::shared_ptr&lt;clang::GlobalCodeCompletionAllocator&gt;
+00279 &#32;&#32;&#32;&#32;&#32;&#32;CachedCompletionAllocator;
+00280 
+00282 &#32;&#32;std::shared_ptr&lt;clang::GlobalCodeCompletionAllocator&gt;&#32;CodeCompletionAllocator;
+00283 
+00285 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;clang::CodeCompletionContext::Kind&#32;ContextKind;
+00286 &#32;&#32;
+00289 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;Contexts;
+00290 &#32;&#32;
+00292 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;ContainerKind;
+00293 
+00295 &#32;&#32;std::string&#32;ContainerUSR;
+00296 
+00299 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ContainerIsIncomplete;
+00300 &#32;&#32;
+00303 &#32;&#32;std::string&#32;Selector;
+00304 
+00307 &#32;&#32;std::vector&lt;std::vector&lt;FixItHint&gt;&gt;&#32;FixItsVector;
+00308 };
+00309 
+00310 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00311 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00312"/><link linkend="__c_index_code_completion_8cpp_1a2a27263ad8d1070172cea3be70b4d8b9">00312</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1a2a27263ad8d1070172cea3be70b4d8b9">clang_getCompletionNumFixIts</link>(CXCodeCompleteResults&#32;*results,
+00313 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;completion_index)&#32;{
+00314 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*allocated_results&#32;=&#32;(AllocatedCXCodeCompleteResults&#32;*)results;
+00315 
+00316 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!allocated_results&#32;||&#32;allocated_results-&gt;FixItsVector.size()&#32;&lt;=&#32;completion_index)
+00317 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00318 
+00319 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">unsigned</emphasis><emphasis role="keyword">&gt;</emphasis>(allocated_results-&gt;FixItsVector[completion_index].size());
+00320 }
+00321 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00322"/><link linkend="__c_index_code_completion_8cpp_1a53d507b63fce804bcd705197ef5eda7a">00322</link> CXString&#32;<link linkend="__c_index_code_completion_8cpp_1a53d507b63fce804bcd705197ef5eda7a">clang_getCompletionFixIt</link>(CXCodeCompleteResults&#32;*results,
+00323 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;completion_index,
+00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;fixit_index,
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSourceRange&#32;*replacement_range)&#32;{
+00326 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*allocated_results&#32;=&#32;(AllocatedCXCodeCompleteResults&#32;*)results;
+00327 
+00328 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!allocated_results&#32;||&#32;allocated_results-&gt;FixItsVector.size()&#32;&lt;=&#32;completion_index)&#32;{
+00329 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacement_range)
+00330 &#32;&#32;&#32;&#32;&#32;&#32;*replacement_range&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1afadb1a95ce51366407cf6c363299a17f">clang_getNullRange</link>();
+00331 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00332 &#32;&#32;}
+00333 
+00334 &#32;&#32;ArrayRef&lt;FixItHint&gt;&#32;FixIts&#32;=&#32;allocated_results-&gt;FixItsVector[completion_index];
+00335 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FixIts.size()&#32;&lt;=&#32;fixit_index)&#32;{
+00336 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacement_range)
+00337 &#32;&#32;&#32;&#32;&#32;&#32;*replacement_range&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1afadb1a95ce51366407cf6c363299a17f">clang_getNullRange</link>();
+00338 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00339 &#32;&#32;}
+00340 
+00341 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FixItHint&#32;&amp;FixIt&#32;=&#32;FixIts[fixit_index];
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacement_range)&#32;{
+00343 &#32;&#32;&#32;&#32;*replacement_range&#32;=&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">cxloc::translateSourceRange</link>(
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*allocated_results-&gt;SourceMgr,&#32;allocated_results-&gt;LangOpts,
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FixIt.RemoveRange);
+00346 &#32;&#32;}
+00347 
+00348 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(FixIt.CodeToInsert.c_str());
+00349 }
+00350 
+00355 <emphasis role="keyword">static</emphasis>&#32;std::atomic&lt;unsigned&gt;&#32;CodeCompletionResultObjects;
+00356 
+00357 AllocatedCXCodeCompleteResults::AllocatedCXCodeCompleteResults(
+00358 &#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;FileManager&gt;&#32;FileMgr)
+00359 &#32;&#32;&#32;&#32;:&#32;CXCodeCompleteResults(),&#32;DiagOpts(new&#32;DiagnosticOptions),
+00360 &#32;&#32;&#32;&#32;&#32;&#32;Diag(new&#32;DiagnosticsEngine(
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;(new&#32;DiagnosticIDs),&#32;&amp;*DiagOpts)),
+00362 &#32;&#32;&#32;&#32;&#32;&#32;FileMgr(std::move(FileMgr)),
+00363 &#32;&#32;&#32;&#32;&#32;&#32;SourceMgr(new&#32;SourceManager(*Diag,&#32;*this-&gt;FileMgr)),
+00364 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionAllocator(
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_shared&lt;<link linkend="_namespaceclang">clang</link>::GlobalCodeCompletionAllocator&gt;()),
+00366 &#32;&#32;&#32;&#32;&#32;&#32;Contexts(CXCompletionContext_Unknown),
+00367 &#32;&#32;&#32;&#32;&#32;&#32;ContainerKind(CXCursor_InvalidCode),&#32;ContainerIsIncomplete(1)&#32;{
+00368 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_OBJTRACKING&quot;</emphasis>))
+00369 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;+++&#32;%u&#32;completion&#32;results\n&quot;</emphasis>,
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;++CodeCompletionResultObjects);
+00371 }
+00372 &#32;&#32;
+00373 AllocatedCXCodeCompleteResults::~AllocatedCXCodeCompleteResults()&#32;{
+00374 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;[]&#32;Results;
+00375 
+00376 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0,&#32;N&#32;=&#32;TemporaryBuffers.size();&#32;I&#32;!=&#32;N;&#32;++I)
+00377 &#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;TemporaryBuffers[I];
+00378 
+00379 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_OBJTRACKING&quot;</emphasis>))
+00380 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;---&#32;%u&#32;completion&#32;results\n&quot;</emphasis>,
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;--CodeCompletionResultObjects);
+00382 }
+00383 
+00384 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;getContextsForContextKind(
+00385 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CodeCompletionContext::Kind&#32;kind,&#32;
+00386 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Sema&#32;&amp;S)&#32;{
+00387 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;contexts&#32;=&#32;0;
+00388 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(kind)&#32;{
+00389 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_OtherWithMacros:&#32;{
+00390 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//We&#32;can&#32;allow&#32;macros&#32;here,&#32;but&#32;we&#32;don&apos;t&#32;know&#32;what&#32;else&#32;is&#32;permissible</emphasis>
+00391 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//So&#32;we&apos;ll&#32;say&#32;the&#32;only&#32;thing&#32;permissible&#32;are&#32;macros</emphasis>
+00392 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_MacroName;
+00393 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00394 &#32;&#32;&#32;&#32;}
+00395 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_TopLevel:
+00396 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCIvarList:
+00397 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ClassStructUnion:
+00398 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Type:&#32;{
+00399 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_AnyType&#32;|&#32;
+00400 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ObjCInterface;
+00401 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(S.getLangOpts().CPlusPlus)&#32;{
+00402 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;|=&#32;CXCompletionContext_EnumTag&#32;|
+00403 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_UnionTag&#32;|
+00404 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_StructTag&#32;|
+00405 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ClassTag&#32;|
+00406 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00407 &#32;&#32;&#32;&#32;&#32;&#32;}
+00408 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00409 &#32;&#32;&#32;&#32;}
+00410 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Statement:&#32;{
+00411 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_AnyType&#32;|
+00412 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ObjCInterface&#32;|
+00413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_AnyValue;
+00414 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(S.getLangOpts().CPlusPlus)&#32;{
+00415 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;|=&#32;CXCompletionContext_EnumTag&#32;|
+00416 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_UnionTag&#32;|
+00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_StructTag&#32;|
+00418 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ClassTag&#32;|
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00420 &#32;&#32;&#32;&#32;&#32;&#32;}
+00421 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00422 &#32;&#32;&#32;&#32;}
+00423 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Expression:&#32;{
+00424 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_AnyValue;
+00425 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(S.getLangOpts().CPlusPlus)&#32;{
+00426 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;|=&#32;CXCompletionContext_AnyType&#32;|
+00427 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ObjCInterface&#32;|
+00428 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_EnumTag&#32;|
+00429 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_UnionTag&#32;|
+00430 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_StructTag&#32;|
+00431 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ClassTag&#32;|
+00432 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00433 &#32;&#32;&#32;&#32;&#32;&#32;}
+00434 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00435 &#32;&#32;&#32;&#32;}
+00436 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCMessageReceiver:&#32;{
+00437 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCObjectValue&#32;|
+00438 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ObjCSelectorValue&#32;|
+00439 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ObjCInterface;
+00440 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(S.getLangOpts().CPlusPlus)&#32;{
+00441 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;|=&#32;CXCompletionContext_CXXClassTypeValue&#32;|
+00442 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_AnyType&#32;|
+00443 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_EnumTag&#32;|
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_UnionTag&#32;|
+00445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_StructTag&#32;|
+00446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ClassTag&#32;|
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00448 &#32;&#32;&#32;&#32;&#32;&#32;}
+00449 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00450 &#32;&#32;&#32;&#32;}
+00451 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_DotMemberAccess:&#32;{
+00452 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_DotMemberAccess;
+00453 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00454 &#32;&#32;&#32;&#32;}
+00455 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ArrowMemberAccess:&#32;{
+00456 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ArrowMemberAccess;
+00457 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00458 &#32;&#32;&#32;&#32;}
+00459 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCPropertyAccess:&#32;{
+00460 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCPropertyAccess;
+00461 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00462 &#32;&#32;&#32;&#32;}
+00463 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_EnumTag:&#32;{
+00464 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_EnumTag&#32;|
+00465 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00466 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00467 &#32;&#32;&#32;&#32;}
+00468 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_UnionTag:&#32;{
+00469 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_UnionTag&#32;|
+00470 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00471 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00472 &#32;&#32;&#32;&#32;}
+00473 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ClassOrStructTag:&#32;{
+00474 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_StructTag&#32;|
+00475 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ClassTag&#32;|
+00476 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00477 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00478 &#32;&#32;&#32;&#32;}
+00479 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCProtocolName:&#32;{
+00480 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCProtocol;
+00481 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00482 &#32;&#32;&#32;&#32;}
+00483 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Namespace:&#32;{
+00484 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_Namespace;
+00485 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00486 &#32;&#32;&#32;&#32;}
+00487 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_SymbolOrNewName:
+00488 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Symbol:&#32;{
+00489 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_NestedNameSpecifier;
+00490 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00491 &#32;&#32;&#32;&#32;}
+00492 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_MacroNameUse:&#32;{
+00493 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_MacroName;
+00494 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00495 &#32;&#32;&#32;&#32;}
+00496 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_NaturalLanguage:&#32;{
+00497 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_NaturalLanguage;
+00498 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00499 &#32;&#32;&#32;&#32;}
+00500 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_IncludedFile:&#32;{
+00501 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_IncludedFile;
+00502 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00503 &#32;&#32;&#32;&#32;}
+00504 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_SelectorName:&#32;{
+00505 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCSelectorName;
+00506 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00507 &#32;&#32;&#32;&#32;}
+00508 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ParenthesizedExpression:&#32;{
+00509 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_AnyType&#32;|
+00510 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ObjCInterface&#32;|
+00511 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_AnyValue;
+00512 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(S.getLangOpts().CPlusPlus)&#32;{
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;|=&#32;CXCompletionContext_EnumTag&#32;|
+00514 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_UnionTag&#32;|
+00515 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_StructTag&#32;|
+00516 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_ClassTag&#32;|
+00517 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionContext_NestedNameSpecifier;
+00518 &#32;&#32;&#32;&#32;&#32;&#32;}
+00519 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00520 &#32;&#32;&#32;&#32;}
+00521 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCInstanceMessage:&#32;{
+00522 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCInstanceMessage;
+00523 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00524 &#32;&#32;&#32;&#32;}
+00525 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCClassMessage:&#32;{
+00526 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCClassMessage;
+00527 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00528 &#32;&#32;&#32;&#32;}
+00529 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCInterfaceName:&#32;{
+00530 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCInterface;
+00531 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00532 &#32;&#32;&#32;&#32;}
+00533 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCCategoryName:&#32;{
+00534 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_ObjCCategory;
+00535 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00536 &#32;&#32;&#32;&#32;}
+00537 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Other:
+00538 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCInterface:
+00539 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_ObjCImplementation:
+00540 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_NewName:
+00541 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_MacroName:
+00542 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_PreprocessorExpression:
+00543 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_PreprocessorDirective:
+00544 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_TypeQualifiers:&#32;{
+00545 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//Only&#32;Clang&#32;results&#32;should&#32;be&#32;accepted,&#32;so&#32;we&apos;ll&#32;set&#32;all&#32;of&#32;the&#32;other</emphasis>
+00546 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//context&#32;bits&#32;to&#32;0&#32;(i.e.&#32;the&#32;empty&#32;set)</emphasis>
+00547 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_Unexposed;
+00548 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00549 &#32;&#32;&#32;&#32;}
+00550 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CodeCompletionContext::CCC_Recovery:&#32;{
+00551 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//We&#32;don&apos;t&#32;know&#32;what&#32;the&#32;current&#32;context&#32;is,&#32;so&#32;we&apos;ll&#32;return&#32;unknown</emphasis>
+00552 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//This&#32;is&#32;the&#32;equivalent&#32;of&#32;setting&#32;all&#32;of&#32;the&#32;other&#32;context&#32;bits</emphasis>
+00553 &#32;&#32;&#32;&#32;&#32;&#32;contexts&#32;=&#32;CXCompletionContext_Unknown;
+00554 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00555 &#32;&#32;&#32;&#32;}
+00556 &#32;&#32;}
+00557 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;contexts;
+00558 }
+00559 
+00560 <emphasis role="keyword">namespace&#32;</emphasis>{
+00561 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>CaptureCompletionResults&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;CodeCompleteConsumer&#32;{
+00562 &#32;&#32;&#32;&#32;AllocatedCXCodeCompleteResults&#32;&amp;AllocatedResults;
+00563 &#32;&#32;&#32;&#32;CodeCompletionTUInfo&#32;CCTUInfo;
+00564 &#32;&#32;&#32;&#32;SmallVector&lt;CXCompletionResult,&#32;16&gt;&#32;StoredResults;
+00565 &#32;&#32;&#32;&#32;CXTranslationUnit&#32;*TU;
+00566 &#32;&#32;<emphasis role="keyword">public</emphasis>:
+00567 &#32;&#32;&#32;&#32;CaptureCompletionResults(<emphasis role="keyword">const</emphasis>&#32;CodeCompleteOptions&#32;&amp;Opts,
+00568 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedCXCodeCompleteResults&#32;&amp;Results,
+00569 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;*TranslationUnit)
+00570 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;CodeCompleteConsumer(Opts),&#32;AllocatedResults(Results),
+00571 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CCTUInfo(Results.CodeCompletionAllocator),&#32;TU(TranslationUnit)&#32;{}
+00572 &#32;&#32;&#32;&#32;~CaptureCompletionResults()<emphasis role="keyword">&#32;override&#32;</emphasis>{&#32;Finish();&#32;}
+00573 
+00574 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;ProcessCodeCompleteResults(Sema&#32;&amp;S,&#32;
+00575 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionContext&#32;Context,
+00576 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionResult&#32;*Results,
+00577 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;NumResults)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00578 &#32;&#32;&#32;&#32;&#32;&#32;StoredResults.reserve(StoredResults.size()&#32;+&#32;NumResults);
+00579 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(includeFixIts())
+00580 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.FixItsVector.reserve(NumResults);
+00581 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;!=&#32;NumResults;&#32;++I)&#32;{
+00582 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionString&#32;*StoredCompletion
+00583 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;Results[I].CreateCodeCompletionString(S,&#32;Context,&#32;getAllocator(),
+00584 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getCodeCompletionTUInfo(),
+00585 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;includeBriefComments());
+00586 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00587 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionResult&#32;R;
+00588 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;R.CursorKind&#32;=&#32;Results[I].CursorKind;
+00589 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;R.CompletionString&#32;=&#32;StoredCompletion;
+00590 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StoredResults.push_back(R);
+00591 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(includeFixIts())
+00592 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.FixItsVector.emplace_back(std::move(Results[I].FixIts));
+00593 &#32;&#32;&#32;&#32;&#32;&#32;}
+00594 
+00595 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CodeCompletionContext::Kind&#32;contextKind&#32;=&#32;Context.getKind();
+00596 &#32;&#32;&#32;&#32;&#32;&#32;
+00597 &#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContextKind&#32;=&#32;contextKind;
+00598 &#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.Contexts&#32;=&#32;getContextsForContextKind(contextKind,&#32;S);
+00599 &#32;&#32;&#32;&#32;&#32;&#32;
+00600 &#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.Selector&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00601 &#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;IdentifierInfo&#32;*&gt;&#32;SelIdents&#32;=&#32;Context.getSelIdents();
+00602 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ArrayRef&lt;IdentifierInfo&#32;*&gt;::iterator&#32;I&#32;=&#32;SelIdents.begin(),
+00603 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;E&#32;=&#32;SelIdents.end();
+00604 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00605 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IdentifierInfo&#32;*selIdent&#32;=&#32;*I)
+00606 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.Selector&#32;+=&#32;selIdent-&gt;getName();
+00607 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.Selector&#32;+=&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>;
+00608 &#32;&#32;&#32;&#32;&#32;&#32;}
+00609 &#32;&#32;&#32;&#32;&#32;&#32;
+00610 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;baseType&#32;=&#32;Context.getBaseType();
+00611 &#32;&#32;&#32;&#32;&#32;&#32;NamedDecl&#32;*D&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00612 
+00613 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!baseType.isNull())&#32;{
+00614 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;declaration&#32;for&#32;a&#32;class/struct/union/enum&#32;type</emphasis>
+00615 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TagType&#32;*Tag&#32;=&#32;baseType-&gt;getAs&lt;TagType&gt;())
+00616 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;D&#32;=&#32;Tag-&gt;getDecl();
+00617 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;@interface&#32;declaration&#32;for&#32;a&#32;(possibly-qualified)&#32;Objective-C</emphasis>
+00618 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;object&#32;pointer&#32;type,&#32;e.g.,&#32;NSString*</emphasis>
+00619 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCObjectPointerType&#32;*ObjPtr&#32;=&#32;
+00620 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;baseType-&gt;getAs&lt;ObjCObjectPointerType&gt;())
+00621 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;D&#32;=&#32;ObjPtr-&gt;getInterfaceDecl();
+00622 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;@interface&#32;declaration&#32;for&#32;an&#32;Objective-C&#32;object&#32;type</emphasis>
+00623 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*Obj&#32;=&#32;baseType-&gt;getAs&lt;ObjCObjectType&gt;())
+00624 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;D&#32;=&#32;Obj-&gt;getInterface();
+00625 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;class&#32;for&#32;a&#32;C++&#32;injected-class-name</emphasis>
+00626 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;InjectedClassNameType&#32;*Injected&#32;=
+00627 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;baseType-&gt;getAs&lt;InjectedClassNameType&gt;())
+00628 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;D&#32;=&#32;Injected-&gt;getDecl();
+00629 &#32;&#32;&#32;&#32;&#32;&#32;}
+00630 
+00631 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>)&#32;{
+00632 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursor&#32;cursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(D,&#32;*TU);
+00633 
+00634 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerKind&#32;=&#32;<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(cursor);
+00635 
+00636 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;CursorUSR&#32;=&#32;<link linkend="__c_index_u_s_rs_8cpp_1ae603480d6cea9e6b8e4a3bc927c1f43b">clang_getCursorUSR</link>(cursor);
+00637 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerUSR&#32;=&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(CursorUSR);
+00638 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(CursorUSR);
+00639 
+00640 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*type&#32;=&#32;baseType.getTypePtrOrNull();
+00641 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(type)&#32;{
+00642 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerIsIncomplete&#32;=&#32;type-&gt;isIncompleteType();
+00643 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00644 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00645 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerIsIncomplete&#32;=&#32;1;
+00646 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00647 &#32;&#32;&#32;&#32;&#32;&#32;}
+00648 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00649 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerKind&#32;=&#32;CXCursor_InvalidCode;
+00650 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerUSR.clear();
+00651 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.ContainerIsIncomplete&#32;=&#32;1;
+00652 &#32;&#32;&#32;&#32;&#32;&#32;}
+00653 &#32;&#32;&#32;&#32;}
+00654 
+00655 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;ProcessOverloadCandidates(Sema&#32;&amp;S,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;CurrentArg,
+00656 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OverloadCandidate&#32;*Candidates,
+00657 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;NumCandidates,
+00658 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;OpenParLoc)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00659 &#32;&#32;&#32;&#32;&#32;&#32;StoredResults.reserve(StoredResults.size()&#32;+&#32;NumCandidates);
+00660 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;!=&#32;NumCandidates;&#32;++I)&#32;{
+00661 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionString&#32;*StoredCompletion
+00662 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;Candidates[I].CreateSignatureString(CurrentArg,&#32;S,&#32;getAllocator(),
+00663 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getCodeCompletionTUInfo(),
+00664 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;includeBriefComments());
+00665 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00666 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompletionResult&#32;R;
+00667 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;R.CursorKind&#32;=&#32;CXCursor_OverloadCandidate;
+00668 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;R.CompletionString&#32;=&#32;StoredCompletion;
+00669 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StoredResults.push_back(R);
+00670 &#32;&#32;&#32;&#32;&#32;&#32;}
+00671 &#32;&#32;&#32;&#32;}
+00672 
+00673 &#32;&#32;&#32;&#32;CodeCompletionAllocator&#32;&amp;getAllocator()<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00674 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*AllocatedResults.CodeCompletionAllocator;
+00675 &#32;&#32;&#32;&#32;}
+00676 
+00677 &#32;&#32;&#32;&#32;CodeCompletionTUInfo&#32;&amp;getCodeCompletionTUInfo()<emphasis role="keyword">&#32;override&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;CCTUInfo;}
+00678 
+00679 &#32;&#32;<emphasis role="keyword">private</emphasis>:
+00680 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;Finish()&#32;{
+00681 &#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.Results&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;CXCompletionResult&#32;[StoredResults.size()];
+00682 &#32;&#32;&#32;&#32;&#32;&#32;AllocatedResults.NumResults&#32;=&#32;StoredResults.size();
+00683 &#32;&#32;&#32;&#32;&#32;&#32;std::memcpy(AllocatedResults.Results,&#32;StoredResults.data(),&#32;
+00684 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StoredResults.size()&#32;*&#32;<emphasis role="keyword">sizeof</emphasis>(CXCompletionResult));
+00685 &#32;&#32;&#32;&#32;&#32;&#32;StoredResults.clear();
+00686 &#32;&#32;&#32;&#32;}
+00687 &#32;&#32;};
+00688 }
+00689 
+00690 <emphasis role="keyword">static</emphasis>&#32;CXCodeCompleteResults&#32;*
+00691 clang_codeCompleteAt_Impl(CXTranslationUnit&#32;TU,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*complete_filename,
+00692 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;complete_line,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;complete_column,
+00693 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;CXUnsavedFile&gt;&#32;unsaved_files,
+00694 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_namespaceoptions">options</link>)&#32;{
+00695 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IncludeBriefComments&#32;=&#32;<link linkend="_namespaceoptions">options</link>&#32;&amp;&#32;CXCodeComplete_IncludeBriefComments;
+00696 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;SkipPreamble&#32;=&#32;<link linkend="_namespaceoptions">options</link>&#32;&amp;&#32;CXCodeComplete_SkipPreamble;
+00697 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IncludeFixIts&#32;=&#32;<link linkend="_namespaceoptions">options</link>&#32;&amp;&#32;CXCodeComplete_IncludeCompletionsWithFixIts;
+00698 
+00699 <emphasis role="preprocessor">#ifdef&#32;UDP_CODE_COMPLETION_LOGGER</emphasis>
+00700 <emphasis role="preprocessor">#ifdef&#32;UDP_CODE_COMPLETION_LOGGER_PORT</emphasis>
+00701 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::TimeRecord&#32;&amp;StartTime&#32;=&#32;&#32;llvm::TimeRecord::getCurrentTime();
+00702 <emphasis role="preprocessor">#endif</emphasis>
+00703 <emphasis role="preprocessor">#endif</emphasis>
+00704 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;EnableLogging&#32;=&#32;getenv(<emphasis role="stringliteral">&quot;LIBCLANG_CODE_COMPLETION_LOGGING&quot;</emphasis>)&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00705 
+00706 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(TU))&#32;{
+00707 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(TU);
+00708 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00709 &#32;&#32;}
+00710 
+00711 &#32;&#32;ASTUnit&#32;*AST&#32;=&#32;cxtu::getASTUnit(TU);
+00712 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AST)
+00713 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00714 
+00715 &#32;&#32;<link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;*CXXIdx&#32;=&#32;TU-&gt;CIdx;
+00716 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1a226e7b660fe75abfc7e93f72021a8db3">isOptEnabled</link>(CXGlobalOpt_ThreadBackgroundPriorityForEditing))
+00717 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1ab1c32e4de49bdf7a50374807a6d2701c">setThreadBackgroundPriority</link>();
+00718 
+00719 &#32;&#32;ASTUnit::ConcurrencyCheck&#32;Check(*AST);
+00720 
+00721 &#32;&#32;<emphasis role="comment">//&#32;Perform&#32;the&#32;remapping&#32;of&#32;source&#32;files.</emphasis>
+00722 &#32;&#32;SmallVector&lt;ASTUnit::RemappedFile,&#32;4&gt;&#32;RemappedFiles;
+00723 
+00724 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;UF&#32;:&#32;unsaved_files)&#32;{
+00725 &#32;&#32;&#32;&#32;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&#32;MB&#32;=
+00726 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getMemBufferCopy(getContents(UF),&#32;UF.Filename);
+00727 &#32;&#32;&#32;&#32;RemappedFiles.push_back(std::make_pair(UF.Filename,&#32;MB.release()));
+00728 &#32;&#32;}
+00729 
+00730 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EnableLogging)&#32;{
+00731 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Add&#32;logging.</emphasis>
+00732 &#32;&#32;}
+00733 
+00734 &#32;&#32;<emphasis role="comment">//&#32;Parse&#32;the&#32;resulting&#32;source&#32;file&#32;to&#32;find&#32;code-completion&#32;results.</emphasis>
+00735 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;AllocatedCXCodeCompleteResults(
+00736 &#32;&#32;&#32;&#32;&#32;&#32;&amp;AST-&gt;getFileManager());
+00737 &#32;&#32;Results-&gt;Results&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00738 &#32;&#32;Results-&gt;NumResults&#32;=&#32;0;
+00739 &#32;&#32;
+00740 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;a&#32;code-completion&#32;consumer&#32;to&#32;capture&#32;the&#32;results.</emphasis>
+00741 &#32;&#32;CodeCompleteOptions&#32;Opts;
+00742 &#32;&#32;Opts.IncludeBriefComments&#32;=&#32;IncludeBriefComments;
+00743 &#32;&#32;Opts.LoadExternal&#32;=&#32;!SkipPreamble;
+00744 &#32;&#32;Opts.IncludeFixIts&#32;=&#32;IncludeFixIts;
+00745 &#32;&#32;CaptureCompletionResults&#32;Capture(Opts,&#32;*Results,&#32;&amp;TU);
+00746 
+00747 &#32;&#32;<emphasis role="comment">//&#32;Perform&#32;completion.</emphasis>
+00748 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;CArgs;
+00749 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Arg&#32;:&#32;TU-&gt;Arguments)
+00750 &#32;&#32;&#32;&#32;CArgs.push_back(Arg.c_str());
+00751 &#32;&#32;std::string&#32;CompletionInvocation&#32;=
+00752 &#32;&#32;&#32;&#32;&#32;&#32;llvm::formatv(<emphasis role="stringliteral">&quot;-code-completion-at={0}:{1}:{2}&quot;</emphasis>,&#32;complete_filename,
+00753 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;complete_line,&#32;complete_column)
+00754 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.str();
+00755 &#32;&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter">LibclangInvocationReporter</link>&#32;InvocationReporter(
+00756 &#32;&#32;&#32;&#32;&#32;&#32;*CXXIdx,&#32;LibclangInvocationReporter::OperationKind::CompletionOperation,
+00757 &#32;&#32;&#32;&#32;&#32;&#32;TU-&gt;ParsingOptions,&#32;CArgs,&#32;CompletionInvocation,&#32;unsaved_files);
+00758 &#32;&#32;AST-&gt;CodeComplete(complete_filename,&#32;complete_line,&#32;complete_column,
+00759 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RemappedFiles,&#32;(<link linkend="_namespaceoptions">options</link>&#32;&amp;&#32;CXCodeComplete_IncludeMacros),
+00760 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(<link linkend="_namespaceoptions">options</link>&#32;&amp;&#32;CXCodeComplete_IncludeCodePatterns),
+00761 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IncludeBriefComments,&#32;Capture,
+00762 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXXIdx-&gt;<link linkend="_classclang_1_1_c_indexer_1aca55b1e223fa5e22564d21c796f83b53">getPCHContainerOperations</link>(),&#32;*Results-&gt;Diag,
+00763 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Results-&gt;LangOpts,&#32;*Results-&gt;SourceMgr,&#32;*Results-&gt;FileMgr,
+00764 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Results-&gt;Diagnostics,&#32;Results-&gt;TemporaryBuffers);
+00765 
+00766 &#32;&#32;Results-&gt;DiagnosticsWrappers.resize(Results-&gt;Diagnostics.size());
+00767 
+00768 &#32;&#32;<emphasis role="comment">//&#32;Keep&#32;a&#32;reference&#32;to&#32;the&#32;allocator&#32;used&#32;for&#32;cached&#32;global&#32;completions,&#32;so</emphasis>
+00769 &#32;&#32;<emphasis role="comment">//&#32;that&#32;we&#32;can&#32;be&#32;sure&#32;that&#32;the&#32;memory&#32;used&#32;by&#32;our&#32;code&#32;completion&#32;strings</emphasis>
+00770 &#32;&#32;<emphasis role="comment">//&#32;doesn&apos;t&#32;get&#32;freed&#32;due&#32;to&#32;subsequent&#32;reparses&#32;(while&#32;the&#32;code&#32;completion</emphasis>
+00771 &#32;&#32;<emphasis role="comment">//&#32;results&#32;are&#32;still&#32;active).</emphasis>
+00772 &#32;&#32;Results-&gt;CachedCompletionAllocator&#32;=&#32;AST-&gt;getCachedCompletionAllocator();
+00773 
+00774 &#32;&#32;
+00775 
+00776 <emphasis role="preprocessor">#ifdef&#32;UDP_CODE_COMPLETION_LOGGER</emphasis>
+00777 <emphasis role="preprocessor">#ifdef&#32;UDP_CODE_COMPLETION_LOGGER_PORT</emphasis>
+00778 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;llvm::TimeRecord&#32;&amp;EndTime&#32;=&#32;&#32;llvm::TimeRecord::getCurrentTime();
+00779 &#32;&#32;SmallString&lt;256&gt;&#32;LogResult;
+00780 &#32;&#32;llvm::raw_svector_ostream&#32;os(LogResult);
+00781 
+00782 &#32;&#32;<emphasis role="comment">//&#32;Figure&#32;out&#32;the&#32;language&#32;and&#32;whether&#32;or&#32;not&#32;it&#32;uses&#32;PCH.</emphasis>
+00783 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*lang&#32;=&#32;0;
+00784 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;usesPCH&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00785 
+00786 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(std::vector&lt;const&#32;char*&gt;::iterator&#32;I&#32;=&#32;argv.begin(),&#32;E&#32;=&#32;argv.end();
+00787 &#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00788 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(*I&#32;==&#32;0)
+00789 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00790 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp(*I,&#32;<emphasis role="stringliteral">&quot;-x&quot;</emphasis>)&#32;==&#32;0)&#32;{
+00791 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;1&#32;!=&#32;E)&#32;{
+00792 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lang&#32;=&#32;*(++I);
+00793 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00794 &#32;&#32;&#32;&#32;&#32;&#32;}
+00795 &#32;&#32;&#32;&#32;}
+00796 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp(*I,&#32;<emphasis role="stringliteral">&quot;-include&quot;</emphasis>)&#32;==&#32;0)&#32;{
+00797 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I+1&#32;!=&#32;E)&#32;{
+00798 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*arg&#32;=&#32;*(++I);
+00799 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;512&gt;&#32;pchName;
+00800 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00801 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_svector_ostream&#32;os(pchName);
+00802 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os&#32;&lt;&lt;&#32;arg&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;.pth&quot;</emphasis>;
+00803 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00804 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pchName.push_back(<emphasis role="charliteral">&apos;\0&apos;</emphasis>);
+00805 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::fs::file_status&#32;stat_results;
+00806 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!llvm::sys::fs::status(pchName,&#32;stat_results))
+00807 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;usesPCH&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00808 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00809 &#32;&#32;&#32;&#32;&#32;&#32;}
+00810 &#32;&#32;&#32;&#32;}
+00811 &#32;&#32;}
+00812 
+00813 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;{&#32;&quot;</emphasis>;
+00814 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;wall\&quot;:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;(EndTime.getWallTime()&#32;-&#32;StartTime.getWallTime());
+00815 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;numRes\&quot;:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Results-&gt;NumResults;
+00816 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;diags\&quot;:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Results-&gt;Diagnostics.size();
+00817 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;pch\&quot;:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;(usesPCH&#32;?&#32;<emphasis role="stringliteral">&quot;true&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;false&quot;</emphasis>);
+00818 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;lang\&quot;:&#32;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;(lang&#32;?&#32;lang&#32;:&#32;<emphasis role="stringliteral">&quot;&lt;unknown&gt;&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00819 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*name&#32;=&#32;getlogin();
+00820 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;user\&quot;:&#32;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;(name&#32;?&#32;name&#32;:&#32;<emphasis role="stringliteral">&quot;unknown&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00821 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;\&quot;clangVer\&quot;:&#32;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;getClangFullVersion()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00822 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;}&quot;</emphasis>;
+00823 
+00824 &#32;&#32;StringRef&#32;res&#32;=&#32;os.str();
+00825 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(res.size()&#32;&gt;&#32;0)&#32;{
+00826 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">do</emphasis>&#32;{
+00827 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Setup&#32;the&#32;UDP&#32;socket.</emphasis>
+00828 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>sockaddr_in&#32;servaddr;
+00829 &#32;&#32;&#32;&#32;&#32;&#32;bzero(&amp;servaddr,&#32;<emphasis role="keyword">sizeof</emphasis>(servaddr));
+00830 &#32;&#32;&#32;&#32;&#32;&#32;servaddr.sin_family&#32;=&#32;AF_INET;
+00831 &#32;&#32;&#32;&#32;&#32;&#32;servaddr.sin_port&#32;=&#32;htons(UDP_CODE_COMPLETION_LOGGER_PORT);
+00832 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(inet_pton(AF_INET,&#32;UDP_CODE_COMPLETION_LOGGER,
+00833 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;servaddr.sin_addr)&#32;&lt;=&#32;0)
+00834 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00835 
+00836 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;sockfd&#32;=&#32;socket(AF_INET,&#32;SOCK_DGRAM,&#32;0);
+00837 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(sockfd&#32;&lt;&#32;0)
+00838 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00839 
+00840 &#32;&#32;&#32;&#32;&#32;&#32;sendto(sockfd,&#32;res.data(),&#32;res.size(),&#32;0,
+00841 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(<emphasis role="keyword">struct</emphasis>&#32;sockaddr&#32;*)&amp;servaddr,&#32;<emphasis role="keyword">sizeof</emphasis>(servaddr));
+00842 &#32;&#32;&#32;&#32;&#32;&#32;close(sockfd);
+00843 &#32;&#32;&#32;&#32;}
+00844 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">false</emphasis>);
+00845 &#32;&#32;}
+00846 <emphasis role="preprocessor">#endif</emphasis>
+00847 <emphasis role="preprocessor">#endif</emphasis>
+00848 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results;
+00849 }
+00850 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00851"/><link linkend="__c_index_code_completion_8cpp_1aa00452b93a381eacef696b538f19ca6e">00851</link> CXCodeCompleteResults&#32;*<link linkend="__c_index_code_completion_8cpp_1aa00452b93a381eacef696b538f19ca6e">clang_codeCompleteAt</link>(CXTranslationUnit&#32;TU,
+00852 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*complete_filename,
+00853 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;complete_line,
+00854 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;complete_column,
+00855 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">struct</emphasis>&#32;CXUnsavedFile&#32;*unsaved_files,
+00856 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;num_unsaved_files,
+00857 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_namespaceoptions">options</link>)&#32;{
+00858 &#32;&#32;<link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">LOG_FUNC_SECTION</link>&#32;{
+00859 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;TU&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>
+00860 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;complete_filename&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;complete_line&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;complete_column;
+00861 &#32;&#32;}
+00862 
+00863 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_unsaved_files&#32;&amp;&amp;&#32;!unsaved_files)
+00864 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00865 
+00866 &#32;&#32;CXCodeCompleteResults&#32;*result;
+00867 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CodeCompleteAtImpl&#32;=&#32;[=,&#32;&amp;result]()&#32;{
+00868 &#32;&#32;&#32;&#32;result&#32;=&#32;clang_codeCompleteAt_Impl(
+00869 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU,&#32;complete_filename,&#32;complete_line,&#32;complete_column,
+00870 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::makeArrayRef(unsaved_files,&#32;num_unsaved_files),&#32;<link linkend="_namespaceoptions">options</link>);
+00871 &#32;&#32;};
+00872 
+00873 &#32;&#32;llvm::CrashRecoveryContext&#32;CRC;
+00874 
+00875 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(CRC,&#32;CodeCompleteAtImpl))&#32;{
+00876 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;libclang:&#32;crash&#32;detected&#32;in&#32;code&#32;completion\n&quot;</emphasis>);
+00877 &#32;&#32;&#32;&#32;cxtu::getASTUnit(TU)-&gt;setUnsafeToFree(<emphasis role="keyword">true</emphasis>);
+00878 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00879 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_RESOURCE_USAGE&quot;</emphasis>))
+00880 &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1aa969857ada50e5f302f7127c78a63018">PrintLibclangResourceUsage</link>(TU);
+00881 
+00882 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00883 }
+00884 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00885"/><link linkend="__c_index_code_completion_8cpp_1a6cf74c52d33527eeee0b2bd27ef69044">00885</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1a6cf74c52d33527eeee0b2bd27ef69044">clang_defaultCodeCompleteOptions</link>(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00886 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCodeComplete_IncludeMacros;
+00887 }
+00888 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00889"/><link linkend="__c_index_code_completion_8cpp_1ab33453b1d11a0d7c68ccf5c2f3f55bb3">00889</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1ab33453b1d11a0d7c68ccf5c2f3f55bb3">clang_disposeCodeCompleteResults</link>(CXCodeCompleteResults&#32;*ResultsIn)&#32;{
+00890 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ResultsIn)
+00891 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00892 
+00893 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00894 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00895 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;Results;
+00896 }
+00897 &#32;&#32;
+00898 <emphasis role="keywordtype">unsigned</emphasis>&#32;
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00899"/><link linkend="__c_index_code_completion_8cpp_1aaa0ec260d3ad875615930d0c009e5dba">00899</link> <link linkend="__c_index_code_completion_8cpp_1aaa0ec260d3ad875615930d0c009e5dba">clang_codeCompleteGetNumDiagnostics</link>(CXCodeCompleteResults&#32;*ResultsIn)&#32;{
+00900 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00901 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00902 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00903 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00904 
+00905 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results-&gt;Diagnostics.size();
+00906 }
+00907 
+00908 CXDiagnostic&#32;
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00909"/><link linkend="__c_index_code_completion_8cpp_1a2889b7f63ecab662d464c9c64921f4de">00909</link> <link linkend="__c_index_code_completion_8cpp_1a2889b7f63ecab662d464c9c64921f4de">clang_codeCompleteGetDiagnostic</link>(CXCodeCompleteResults&#32;*ResultsIn,
+00910 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Index)&#32;{
+00911 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00912 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00913 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results&#32;||&#32;Index&#32;&gt;=&#32;Results-&gt;Diagnostics.size())
+00914 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00915 
+00916 &#32;&#32;<link linkend="_structclang_1_1_c_x_stored_diagnostic">CXStoredDiagnostic</link>&#32;*Diag&#32;=&#32;Results-&gt;DiagnosticsWrappers[Index].get();
+00917 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Diag)
+00918 &#32;&#32;&#32;&#32;Diag&#32;=&#32;(Results-&gt;DiagnosticsWrappers[Index]&#32;=
+00919 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;CXStoredDiagnostic&gt;(
+00920 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Results-&gt;Diagnostics[Index],&#32;Results-&gt;LangOpts))
+00921 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>();
+00922 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Diag;
+00923 }
+00924 
+00925 <emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00926"/><link linkend="__c_index_code_completion_8cpp_1a6d5d24395b436aaedf13984af8f19afa">00926</link> <link linkend="__c_index_code_completion_8cpp_1afc1d7645383b816cb5e62253b85f9b7c">clang_codeCompleteGetContexts</link>(CXCodeCompleteResults&#32;*ResultsIn)&#32;{
+00927 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results
+00928 &#32;&#32;&#32;&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00929 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00930 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00931 &#32;&#32;
+00932 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results-&gt;Contexts;
+00933 }
+00934 
+00935 <emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;<link linkend="__c_index_code_completion_8cpp_1a6d5d24395b436aaedf13984af8f19afa">clang_codeCompleteGetContainerKind</link>(
+00936 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCodeCompleteResults&#32;*ResultsIn,
+00937 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*IsIncomplete)&#32;{
+00938 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=
+00939 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults&#32;*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00940 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00941 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCursor_InvalidCode;
+00942 
+00943 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IsIncomplete&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>)&#32;{
+00944 &#32;&#32;&#32;&#32;*IsIncomplete&#32;=&#32;Results-&gt;ContainerIsIncomplete;
+00945 &#32;&#32;}
+00946 &#32;&#32;
+00947 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Results-&gt;ContainerKind;
+00948 }
+00949 &#32;&#32;
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00950"/><link linkend="__c_index_code_completion_8cpp_1aa7fdf1ceb18aed68b458ebd05f5aa6c5">00950</link> CXString&#32;<link linkend="__c_index_code_completion_8cpp_1aa7fdf1ceb18aed68b458ebd05f5aa6c5">clang_codeCompleteGetContainerUSR</link>(CXCodeCompleteResults&#32;*ResultsIn)&#32;{
+00951 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=
+00952 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults&#32;*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00953 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00954 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00955 
+00956 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(Results-&gt;ContainerUSR.c_str());
+00957 }
+00958 
+00959 &#32;&#32;
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l00960"/><link linkend="__c_index_code_completion_8cpp_1a1cee18661b755d3b0b6ee3b44630033f">00960</link> CXString&#32;<link linkend="__c_index_code_completion_8cpp_1a1cee18661b755d3b0b6ee3b44630033f">clang_codeCompleteGetObjCSelector</link>(CXCodeCompleteResults&#32;*ResultsIn)&#32;{
+00961 &#32;&#32;AllocatedCXCodeCompleteResults&#32;*Results&#32;=
+00962 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>AllocatedCXCodeCompleteResults&#32;*<emphasis role="keyword">&gt;</emphasis>(ResultsIn);
+00963 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Results)
+00964 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00965 &#32;&#32;
+00966 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(Results-&gt;Selector);
+00967 }
+00968 &#32;&#32;
+00980 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;AppendToString(StringRef&#32;&amp;Old,&#32;StringRef&#32;New,
+00981 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;256&gt;&#32;&amp;Buffer)&#32;{
+00982 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Old.empty())&#32;{
+00983 &#32;&#32;&#32;&#32;Old&#32;=&#32;New;
+00984 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00985 &#32;&#32;}
+00986 &#32;&#32;
+00987 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Buffer.empty())
+00988 &#32;&#32;&#32;&#32;Buffer.append(Old.begin(),&#32;Old.end());
+00989 &#32;&#32;Buffer.append(New.begin(),&#32;New.end());
+00990 &#32;&#32;Old&#32;=&#32;Buffer.str();
+00991 }
+00992 
+01000 <emphasis role="keyword">static</emphasis>&#32;StringRef&#32;GetTypedName(CodeCompletionString&#32;*String,
+01001 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;256&gt;&#32;&amp;Buffer)&#32;{
+01002 &#32;&#32;StringRef&#32;Result;
+01003 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(CodeCompletionString::iterator&#32;C&#32;=&#32;String-&gt;begin(),&#32;CEnd&#32;=&#32;String-&gt;end();
+01004 &#32;&#32;&#32;&#32;&#32;&#32;&#32;C&#32;!=&#32;CEnd;&#32;++C)&#32;{
+01005 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(C-&gt;Kind&#32;==&#32;CodeCompletionString::CK_TypedText)
+01006 &#32;&#32;&#32;&#32;&#32;&#32;AppendToString(Result,&#32;C-&gt;Text,&#32;Buffer);
+01007 &#32;&#32;}
+01008 &#32;&#32;
+01009 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+01010 }
+01011 
+01012 <emphasis role="keyword">namespace&#32;</emphasis>{
+01013 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>OrderCompletionResults&#32;{
+01014 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;operator()(<emphasis role="keyword">const</emphasis>&#32;CXCompletionResult&#32;&amp;XR,&#32;
+01015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXCompletionResult&#32;&amp;YR)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+01016 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionString&#32;*X
+01017 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;(CodeCompletionString&#32;*)XR.CompletionString;
+01018 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionString&#32;*Y
+01019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;(CodeCompletionString&#32;*)YR.CompletionString;
+01020 
+01021 &#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;256&gt;&#32;XBuffer;
+01022 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;XText&#32;=&#32;GetTypedName(X,&#32;XBuffer);
+01023 &#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;256&gt;&#32;YBuffer;
+01024 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;YText&#32;=&#32;GetTypedName(Y,&#32;YBuffer);
+01025 &#32;&#32;&#32;&#32;&#32;&#32;
+01026 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(XText.empty()&#32;||&#32;YText.empty())
+01027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!XText.empty();
+01028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+01029 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;result&#32;=&#32;XText.compare_insensitive(YText);
+01030 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(result&#32;&lt;&#32;0)
+01031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01032 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(result&#32;&gt;&#32;0)
+01033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01034 &#32;&#32;&#32;&#32;&#32;&#32;
+01035 &#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;XText.compare(YText);
+01036 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result&#32;&lt;&#32;0;
+01037 &#32;&#32;&#32;&#32;}
+01038 &#32;&#32;};
+01039 }
+01040 
+<anchor xml:id="__c_index_code_completion_8cpp_source_1l01041"/><link linkend="__c_index_code_completion_8cpp_1a15ff3b3f6b97479e2516f3e4993a9baa">01041</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_index_code_completion_8cpp_1a15ff3b3f6b97479e2516f3e4993a9baa">clang_sortCodeCompletionResults</link>(CXCompletionResult&#32;*Results,
+01042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;NumResults)&#32;{
+01043 &#32;&#32;std::stable_sort(Results,&#32;Results&#32;+&#32;NumResults,&#32;OrderCompletionResults());
+01044 }
+</programlisting></section>

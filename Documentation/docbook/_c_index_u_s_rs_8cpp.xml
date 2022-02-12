@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_u_s_rs_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexUSRs.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexUSRs.cpp</primary></indexterm>
+<programlisting>#include &quot;CIndexer.h&quot;
+#include &quot;CXCursor.h&quot;
+#include &quot;CXString.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Index/USRGeneration.h&quot;
+#include &quot;clang/Lex/PreprocessingRecord.h&quot;
+#include &quot;llvm/ADT/SmallString.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1ae603480d6cea9e6b8e4a3bc927c1f43b">clang_getCursorUSR</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1a0a694bd3222726fa935bec5d6c6ffa74">clang_constructUSR_ObjCIvar</link> (const char *name, CXString classUSR)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1a57441154398db67af15555136489c8da">clang_constructUSR_ObjCMethod</link> (const char *name, unsigned isInstanceMethod, CXString classUSR)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1afa75d3cdc7f1246aa196336006b6b17e">clang_constructUSR_ObjCClass</link> (const char *name)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1ad9eadd6627e168000a1d8a0a487f04ec">clang_constructUSR_ObjCProtocol</link> (const char *name)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1a100f21ca740fca2384413c0e8fbb26ba">clang_constructUSR_ObjCCategory</link> (const char *class_name, const char *category_name)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_u_s_rs_8cpp_1a06209d1976eb61cf961c047c4ceb0ee4">clang_constructUSR_ObjCProperty</link> (const char *property, CXString classUSR)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__c_index_u_s_rs_8cpp_1a100f21ca740fca2384413c0e8fbb26ba"/>    <section>
+    <title>clang_constructUSR_ObjCCategory()</title>
+<indexterm><primary>clang_constructUSR_ObjCCategory</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_constructUSR_ObjCCategory</secondary></indexterm>
+<para><computeroutput>CXString clang_constructUSR_ObjCCategory (const char * class_name, const char * category_name)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00124">124</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00126 &#32;&#32;SmallString&lt;128&gt;&#32;Buf(getUSRSpacePrefix());
+00127 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00128 &#32;&#32;generateUSRForObjCCategory(class_name,&#32;category_name,&#32;OS);
+00129 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00130 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00067">clang::cxstring::createDup()</link>.</para>
+    </section><anchor xml:id="__c_index_u_s_rs_8cpp_1afa75d3cdc7f1246aa196336006b6b17e"/>    <section>
+    <title>clang_constructUSR_ObjCClass()</title>
+<indexterm><primary>clang_constructUSR_ObjCClass</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_constructUSR_ObjCClass</secondary></indexterm>
+<para><computeroutput>CXString clang_constructUSR_ObjCClass (const char * name)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00110">110</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00111 &#32;&#32;SmallString&lt;128&gt;&#32;Buf(getUSRSpacePrefix());
+00112 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00113 &#32;&#32;generateUSRForObjCClass(name,&#32;OS);
+00114 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00115 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00067">clang::cxstring::createDup()</link>.</para>
+    </section><anchor xml:id="__c_index_u_s_rs_8cpp_1a0a694bd3222726fa935bec5d6c6ffa74"/>    <section>
+    <title>clang_constructUSR_ObjCIvar()</title>
+<indexterm><primary>clang_constructUSR_ObjCIvar</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_constructUSR_ObjCIvar</secondary></indexterm>
+<para><computeroutput>CXString clang_constructUSR_ObjCIvar (const char * name, CXString classUSR)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00092">92</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00093 &#32;&#32;SmallString&lt;128&gt;&#32;Buf(getUSRSpacePrefix());
+00094 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00095 &#32;&#32;OS&#32;&lt;&lt;&#32;extractUSRSuffix(<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(classUSR));
+00096 &#32;&#32;generateUSRForObjCIvar(name,&#32;OS);
+00097 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00098 }
+</programlisting>    </section><anchor xml:id="__c_index_u_s_rs_8cpp_1a57441154398db67af15555136489c8da"/>    <section>
+    <title>clang_constructUSR_ObjCMethod()</title>
+<indexterm><primary>clang_constructUSR_ObjCMethod</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_constructUSR_ObjCMethod</secondary></indexterm>
+<para><computeroutput>CXString clang_constructUSR_ObjCMethod (const char * name, unsigned isInstanceMethod, CXString classUSR)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00100">100</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00103 &#32;&#32;SmallString&lt;128&gt;&#32;Buf(getUSRSpacePrefix());
+00104 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00105 &#32;&#32;OS&#32;&lt;&lt;&#32;extractUSRSuffix(<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(classUSR));
+00106 &#32;&#32;generateUSRForObjCMethod(name,&#32;isInstanceMethod,&#32;OS);
+00107 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00108 }
+</programlisting>    </section><anchor xml:id="__c_index_u_s_rs_8cpp_1a06209d1976eb61cf961c047c4ceb0ee4"/>    <section>
+    <title>clang_constructUSR_ObjCProperty()</title>
+<indexterm><primary>clang_constructUSR_ObjCProperty</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_constructUSR_ObjCProperty</secondary></indexterm>
+<para><computeroutput>CXString clang_constructUSR_ObjCProperty (const char * property, CXString classUSR)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00132">132</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00134 &#32;&#32;SmallString&lt;128&gt;&#32;Buf(getUSRSpacePrefix());
+00135 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00136 &#32;&#32;OS&#32;&lt;&lt;&#32;extractUSRSuffix(<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(classUSR));
+00137 &#32;&#32;generateUSRForObjCProperty(property,&#32;<emphasis role="comment">/*isClassProp=*/</emphasis><emphasis role="keyword">false</emphasis>,&#32;OS);
+00138 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00139 }
+</programlisting>    </section><anchor xml:id="__c_index_u_s_rs_8cpp_1ad9eadd6627e168000a1d8a0a487f04ec"/>    <section>
+    <title>clang_constructUSR_ObjCProtocol()</title>
+<indexterm><primary>clang_constructUSR_ObjCProtocol</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_constructUSR_ObjCProtocol</secondary></indexterm>
+<para><computeroutput>CXString clang_constructUSR_ObjCProtocol (const char * name)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00117">117</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00118 &#32;&#32;SmallString&lt;128&gt;&#32;Buf(getUSRSpacePrefix());
+00119 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00120 &#32;&#32;generateUSRForObjCProtocol(name,&#32;OS);
+00121 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00122 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00067">clang::cxstring::createDup()</link>.</para>
+    </section><anchor xml:id="__c_index_u_s_rs_8cpp_1ae603480d6cea9e6b8e4a3bc927c1f43b"/>    <section>
+    <title>clang_getCursorUSR()</title>
+<indexterm><primary>clang_getCursorUSR</primary><secondary>CIndexUSRs.cpp</secondary></indexterm>
+<indexterm><primary>CIndexUSRs.cpp</primary><secondary>clang_getCursorUSR</secondary></indexterm>
+<para><computeroutput>CXString clang_getCursorUSR (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_u_s_rs_8cpp_source_1l00038">38</link> of file <link linkend="__c_index_u_s_rs_8cpp_source">CIndexUSRs.cpp</link>.</para>
+<programlisting>00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00039 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CXCursorKind&#32;&amp;K&#32;=&#32;<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(C);
+00040 
+00041 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(K))&#32;{
+00042 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00043 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00044 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00045 
+00046 &#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+00047 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU)
+00048 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00049 
+00050 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">cxstring::CXStringBuf</link>&#32;*buf&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1ad1ccb52527d7a42e4ad5c3e1f6af9907">cxstring::getCXStringBuf</link>(TU);
+00051 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!buf)
+00052 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00053 
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Ignore&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a70c40817415cbc686e998bde4fe2e16e">cxcursor::getDeclCursorUSR</link>(D,&#32;buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">Data</link>);
+00055 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ignore)&#32;{
+00056 &#32;&#32;&#32;&#32;&#32;&#32;buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1add7775f4003b4bfbb5c470976ef73485">dispose</link>();
+00057 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00058 &#32;&#32;&#32;&#32;}
+00059 
+00060 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Return&#32;the&#32;C-string,&#32;but&#32;don&apos;t&#32;make&#32;a&#32;copy&#32;since&#32;it&#32;is&#32;already&#32;in</emphasis>
+00061 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;the&#32;string&#32;buffer.</emphasis>
+00062 &#32;&#32;&#32;&#32;buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">Data</link>.push_back(<emphasis role="charliteral">&apos;\0&apos;</emphasis>);
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a4ea867311d5651a36d2dfa1f1258638c">createCXString</link>(buf);
+00064 &#32;&#32;}
+00065 
+00066 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(K&#32;==&#32;CXCursor_MacroDefinition)&#32;{
+00067 &#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+00068 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU)
+00069 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00070 
+00071 &#32;&#32;&#32;&#32;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf">cxstring::CXStringBuf</link>&#32;*buf&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1ad1ccb52527d7a42e4ad5c3e1f6af9907">cxstring::getCXStringBuf</link>(TU);
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!buf)
+00073 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00074 
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Ignore&#32;=&#32;generateUSRForMacro(<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">cxcursor::getCursorMacroDefinition</link>(C),
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cxtu::getASTUnit(TU)-&gt;getSourceManager(),
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">Data</link>);
+00078 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ignore)&#32;{
+00079 &#32;&#32;&#32;&#32;&#32;&#32;buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1add7775f4003b4bfbb5c470976ef73485">dispose</link>();
+00080 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00081 &#32;&#32;&#32;&#32;}
+00082 
+00083 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Return&#32;the&#32;C-string,&#32;but&#32;don&apos;t&#32;make&#32;a&#32;copy&#32;since&#32;it&#32;is&#32;already&#32;in</emphasis>
+00084 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;the&#32;string&#32;buffer.</emphasis>
+00085 &#32;&#32;&#32;&#32;buf-&gt;<link linkend="_structclang_1_1cxstring_1_1_c_x_string_buf_1a54c757e75ae022f0206c53f0e64044f8">Data</link>.push_back(<emphasis role="charliteral">&apos;\0&apos;</emphasis>);
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a4ea867311d5651a36d2dfa1f1258638c">createCXString</link>(buf);
+00087 &#32;&#32;}
+00088 
+00089 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00090 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05984">clang_getCursorKind()</link>, <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>, <link linkend="__c_x_string_8h_source_1l00086">clang::cxstring::CXStringBuf::Data</link>, <link linkend="__c_x_string_8cpp_source_1l00148">clang::cxstring::CXStringBuf::dispose()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, <link linkend="__c_x_string_8cpp_source_1l00144">clang::cxstring::getCXStringBuf()</link>, and <link linkend="__c_index_u_s_rs_8cpp_source_1l00034">clang::cxcursor::getDeclCursorUSR()</link>.</para>
+</section>
+</section>
+</section>

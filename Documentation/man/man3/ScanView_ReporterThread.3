@@ -1,0 +1,136 @@
+.TH "ScanView.ReporterThread" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ScanView.ReporterThread
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits threading\&.Thread\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self, \fBreport\fP, \fBreporter\fP, \fBparameters\fP, \fBserver\fP)"
+.br
+.ti -1c
+.RI "def \fBrun\fP (self)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBreport\fP"
+.br
+.ti -1c
+.RI "\fBserver\fP"
+.br
+.ti -1c
+.RI "\fBreporter\fP"
+.br
+.ti -1c
+.RI "\fBparameters\fP"
+.br
+.ti -1c
+.RI "\fBsuccess\fP"
+.br
+.ti -1c
+.RI "\fBstatus\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 102 of file ScanView\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def ScanView\&.ReporterThread\&.__init__ ( self,  report,  reporter,  parameters,  server)"
+
+.PP
+Definition at line 103 of file ScanView\&.py\&.
+.PP
+.nf
+103     def __init__(self, report, reporter, parameters, server):
+104         threading\&.Thread\&.__init__(self)
+105         self\&.report = report
+106         self\&.server = server
+107         self\&.reporter = reporter
+108         self\&.parameters = parameters
+109         self\&.success = False
+110         self\&.status = None
+111 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def ScanView\&.ReporterThread\&.run ( self)"
+
+.PP
+Definition at line 112 of file ScanView\&.py\&.
+.PP
+.nf
+112     def run(self):
+113         result = None
+114         try:
+115             if self\&.server\&.options\&.debug:
+116                 print("%s: SERVER: submitting bug\&."%(sys\&.argv[0],), file=sys\&.stderr)
+117             self\&.status = self\&.reporter\&.fileReport(self\&.report, self\&.parameters)
+118             self\&.success = True
+119             time\&.sleep(3)
+120             if self\&.server\&.options\&.debug:
+121                 print("%s: SERVER: submission complete\&."%(sys\&.argv[0],), file=sys\&.stderr)
+122         except Reporter\&.ReportFailure as e:
+123             self\&.status = e\&.value
+124         except Exception as e:
+125             s = StringIO()
+126             import traceback
+127             print('<b>Unhandled Exception</b><br><pre>', file=s)
+128             traceback\&.print_exc(file=s)
+129             print('</pre>', file=s)
+130             self\&.status = s\&.getvalue()
+131 
+.fi
+.PP
+References ScanView\&.ReporterThread\&.parameters, print(), ScanView\&.ReporterThread\&.report, ScanView\&.ReporterThread\&.reporter, ScanView\&.ReporterThread\&.server, ScanView\&.ReporterThread\&.status, tests\&.unit\&.test_analyze\&.Spy\&.success, and ScanView\&.ReporterThread\&.success\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "ScanView\&.ReporterThread\&.parameters"
+
+.PP
+Definition at line 108 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ReporterThread\&.run()\&.
+.SS "ScanView\&.ReporterThread\&.report"
+
+.PP
+Definition at line 105 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ReporterThread\&.run()\&.
+.SS "ScanView\&.ReporterThread\&.reporter"
+
+.PP
+Definition at line 107 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ReporterThread\&.run()\&.
+.SS "ScanView\&.ReporterThread\&.server"
+
+.PP
+Definition at line 106 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.load_crashes(), ScanView\&.ScanViewRequestHandler\&.load_report(), ScanView\&.ScanViewRequestHandler\&.log_message(), ScanView\&.ReporterThread\&.run(), ScanView\&.ScanViewRequestHandler\&.send_head(), ScanView\&.ScanViewRequestHandler\&.send_open_report(), ScanView\&.ScanViewRequestHandler\&.send_path(), ScanView\&.ScanViewRequestHandler\&.send_report(), and ScanView\&.ScanViewRequestHandler\&.submit_bug()\&.
+.SS "ScanView\&.ReporterThread\&.status"
+
+.PP
+Definition at line 110 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ReporterThread\&.run()\&.
+.SS "ScanView\&.ReporterThread\&.success"
+
+.PP
+Definition at line 109 of file ScanView\&.py\&.
+.PP
+Referenced by tests\&.unit\&.test_analyze\&.Spy\&.call(), and ScanView\&.ReporterThread\&.run()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

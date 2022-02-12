@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_format_fuzzer_8cpp_source" xml:lang="en-US">
+<title>ClangFormatFuzzer.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format/fuzzer/ClangFormatFuzzer.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;ClangFormatFuzzer.cpp&#32;-&#32;Fuzz&#32;the&#32;Clang&#32;format&#32;tool&#32;----------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Format/Format.h&quot;</emphasis>
+00016 
+<anchor xml:id="__clang_format_fuzzer_8cpp_source_1l00017"/><link linkend="__clang_format_fuzzer_8cpp_1aecb7ba40a567c045e6eb69209014e460">00017</link> <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="stringliteral">&quot;C&quot;</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_format_fuzzer_8cpp_1aecb7ba40a567c045e6eb69209014e460">LLVMFuzzerTestOneInput</link>(uint8_t&#32;*data,&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;size)&#32;{
+00018 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;fuzz&#32;more&#32;things:&#32;different&#32;styles,&#32;different&#32;style&#32;features.</emphasis>
+00019 &#32;&#32;std::string&#32;s((<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*)data,&#32;size);
+00020 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Style&#32;=&#32;getGoogleStyle(clang::format::FormatStyle::LK_Cpp);
+00021 &#32;&#32;Style.ColumnLimit&#32;=&#32;60;
+00022 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Replaces&#32;=&#32;reformat(Style,&#32;s,&#32;clang::tooling::Range(0,&#32;s.size()));
+00023 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Result&#32;=&#32;applyAllReplacements(s,&#32;Replaces);
+00024 
+00025 &#32;&#32;<emphasis role="comment">//&#32;Output&#32;must&#32;be&#32;checked,&#32;as&#32;otherwise&#32;we&#32;crash.</emphasis>
+00026 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Result)&#32;{}
+00027 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00028 }
+</programlisting></section>

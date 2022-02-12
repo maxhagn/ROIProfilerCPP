@@ -1,0 +1,445 @@
+\hypertarget{class_object_file_handler}{}\doxysection{Object\+File\+Handler Class Reference}
+\label{class_object_file_handler}\index{ObjectFileHandler@{ObjectFileHandler}}
+Inheritance diagram for Object\+File\+Handler\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_object_file_handler}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_object_file_handler_a6d8bdf5bea2b4d5e6ab08a698406758d}{Object\+File\+Handler}} (std\+::unique\+\_\+ptr$<$ Object\+File $>$ Obj\+In)
+\item 
+\mbox{\hyperlink{class_object_file_handler_aa32a0f47a2433eccee0d8812a4ddd31c}{$\sim$\+Object\+File\+Handler}} () final
+\item 
+Error \mbox{\hyperlink{class_object_file_handler_a721cdcac5b3554e5685c96f4788bc655}{Read\+Header}} (Memory\+Buffer \&Input) final
+\item 
+Expected$<$ Optional$<$ String\+Ref $>$ $>$ \mbox{\hyperlink{class_object_file_handler_ab8cb60c1eecea680fcdb327779cf66c3}{Read\+Bundle\+Start}} (Memory\+Buffer \&Input) final
+\item 
+Error \mbox{\hyperlink{class_object_file_handler_ada66ffa9cbb4567b92dc3b371ea01481}{Read\+Bundle\+End}} (Memory\+Buffer \&Input) final
+\begin{DoxyCompactList}\small\item\em Read the marker that closes the current bundle. \end{DoxyCompactList}\item 
+Error \mbox{\hyperlink{class_object_file_handler_a8cf5a7c710bc3c27212d1976c80a8258}{Read\+Bundle}} (raw\+\_\+ostream \&OS, Memory\+Buffer \&Input) final
+\begin{DoxyCompactList}\small\item\em Read the current bundle and write the result into the stream {\itshape OS}. \end{DoxyCompactList}\item 
+Error \mbox{\hyperlink{class_object_file_handler_a6bad7c10b02f3f50d099204afbc663a0}{Write\+Header}} (raw\+\_\+fd\+\_\+ostream \&OS, Array\+Ref$<$ std\+::unique\+\_\+ptr$<$ Memory\+Buffer $>$$>$ Inputs) final
+\item 
+Error \mbox{\hyperlink{class_object_file_handler_a959f87929ecfa735f661b55a38695eda}{Write\+Bundle\+Start}} (raw\+\_\+fd\+\_\+ostream \&OS, String\+Ref Target\+Triple) final
+\item 
+Error \mbox{\hyperlink{class_object_file_handler_aa0f573b07d6599ba4c403dfd4b43471a}{Write\+Bundle\+End}} (raw\+\_\+fd\+\_\+ostream \&OS, String\+Ref Target\+Triple) final
+\item 
+Error \mbox{\hyperlink{class_object_file_handler_ae617802036593fc283753c6ddf0ea221}{Write\+Bundle}} (raw\+\_\+fd\+\_\+ostream \&OS, Memory\+Buffer \&Input) final
+\begin{DoxyCompactList}\small\item\em Write the bundle from {\itshape Input} into {\itshape OS}. \end{DoxyCompactList}\item 
+virtual Error \mbox{\hyperlink{class_file_handler_a70cbb9c0347d248c018e52993a13255b}{list\+Bundle\+IDs}} (Memory\+Buffer \&Input)
+\begin{DoxyCompactList}\small\item\em List bundle IDs in {\itshape Input}. \end{DoxyCompactList}\item 
+Error \mbox{\hyperlink{class_file_handler_a70ed8dd129df99dcd5d5e42fffd7b125}{for\+Each\+Bundle}} (Memory\+Buffer \&Input, std\+::function$<$ Error(const \mbox{\hyperlink{struct_file_handler_1_1_bundle_info}{Bundle\+Info}} \&)$>$ Func)
+\begin{DoxyCompactList}\small\item\em For each bundle in {\itshape Input}, do {\itshape Func}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual Error \mbox{\hyperlink{class_file_handler_af0a452c5014ddb59b9558614d21daaed}{list\+Bundle\+IDs\+Callback}} (Memory\+Buffer \&Input, const \mbox{\hyperlink{struct_file_handler_1_1_bundle_info}{Bundle\+Info}} \&Info)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Handler for object files. The bundles are organized by sections with a designated name.
+
+To unbundle, we just copy the contents of the designated section. 
+
+Definition at line 515 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_object_file_handler_a6d8bdf5bea2b4d5e6ab08a698406758d}\label{class_object_file_handler_a6d8bdf5bea2b4d5e6ab08a698406758d}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!ObjectFileHandler@{ObjectFileHandler}}
+\index{ObjectFileHandler@{ObjectFileHandler}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{ObjectFileHandler()}{ObjectFileHandler()}}
+{\footnotesize\ttfamily Object\+File\+Handler\+::\+Object\+File\+Handler (\begin{DoxyParamCaption}\item[{std\+::unique\+\_\+ptr$<$ Object\+File $>$}]{Obj\+In }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 550 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{551       : \mbox{\hyperlink{class_file_handler_a0d1ac8e9911e19255e8b2d99c2d93f43}{FileHandler}}(), Obj(std::move(ObjIn)),}
+\DoxyCodeLine{552         CurrentSection(Obj-\/>section\_begin()),}
+\DoxyCodeLine{553         NextSection(Obj-\/>section\_begin()) \{\}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_aa32a0f47a2433eccee0d8812a4ddd31c}\label{class_object_file_handler_aa32a0f47a2433eccee0d8812a4ddd31c}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!````~ObjectFileHandler@{$\sim$ObjectFileHandler}}
+\index{````~ObjectFileHandler@{$\sim$ObjectFileHandler}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{$\sim$ObjectFileHandler()}{~ObjectFileHandler()}}
+{\footnotesize\ttfamily Object\+File\+Handler\+::$\sim$\+Object\+File\+Handler (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}}
+
+
+
+Definition at line 555 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{555 \{\}}
+
+\end{DoxyCode}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_file_handler_a70ed8dd129df99dcd5d5e42fffd7b125}\label{class_file_handler_a70ed8dd129df99dcd5d5e42fffd7b125}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!forEachBundle@{forEachBundle}}
+\index{forEachBundle@{forEachBundle}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{forEachBundle()}{forEachBundle()}}
+{\footnotesize\ttfamily Error File\+Handler\+::for\+Each\+Bundle (\begin{DoxyParamCaption}\item[{Memory\+Buffer \&}]{Input,  }\item[{std\+::function$<$ Error(const \mbox{\hyperlink{struct_file_handler_1_1_bundle_info}{Bundle\+Info}} \&)$>$}]{Func }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [inherited]}}
+
+
+
+For each bundle in {\itshape Input}, do {\itshape Func}. 
+
+
+
+Definition at line 234 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{235                                                                    \{}
+\DoxyCodeLine{236     \textcolor{keywordflow}{while} (\textcolor{keyword}{true}) \{}
+\DoxyCodeLine{237       Expected<Optional<StringRef>> CurTripleOrErr = \mbox{\hyperlink{class_file_handler_a5b31037af59fa8c77b8287d8ae9d84c4}{ReadBundleStart}}(Input);}
+\DoxyCodeLine{238       \textcolor{keywordflow}{if} (!CurTripleOrErr)}
+\DoxyCodeLine{239         \textcolor{keywordflow}{return} CurTripleOrErr.takeError();}
+\DoxyCodeLine{240 }
+\DoxyCodeLine{241       \textcolor{comment}{// No more bundles.}}
+\DoxyCodeLine{242       \textcolor{keywordflow}{if} (!*CurTripleOrErr)}
+\DoxyCodeLine{243         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{244 }
+\DoxyCodeLine{245       StringRef CurTriple = **CurTripleOrErr;}
+\DoxyCodeLine{246       assert(!CurTriple.empty());}
+\DoxyCodeLine{247 }
+\DoxyCodeLine{248       BundleInfo Info\{CurTriple\};}
+\DoxyCodeLine{249       \textcolor{keywordflow}{if} (Error Err = Func(Info))}
+\DoxyCodeLine{250         \textcolor{keywordflow}{return} Err;}
+\DoxyCodeLine{251     \}}
+\DoxyCodeLine{252     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{253   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_file_handler_a70cbb9c0347d248c018e52993a13255b}\label{class_file_handler_a70cbb9c0347d248c018e52993a13255b}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!listBundleIDs@{listBundleIDs}}
+\index{listBundleIDs@{listBundleIDs}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{listBundleIDs()}{listBundleIDs()}}
+{\footnotesize\ttfamily virtual Error File\+Handler\+::list\+Bundle\+IDs (\begin{DoxyParamCaption}\item[{Memory\+Buffer \&}]{Input }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}, {\ttfamily [inherited]}}
+
+
+
+List bundle IDs in {\itshape Input}. 
+
+
+
+Definition at line 220 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{220                                                    \{}
+\DoxyCodeLine{221     \textcolor{keywordflow}{if} (Error Err = \mbox{\hyperlink{class_file_handler_a0b973008bf7d7a53bc33d0f75b0dadef}{ReadHeader}}(Input))}
+\DoxyCodeLine{222       \textcolor{keywordflow}{return} Err;}
+\DoxyCodeLine{223 }
+\DoxyCodeLine{224     \textcolor{keywordflow}{return} \mbox{\hyperlink{class_file_handler_a70ed8dd129df99dcd5d5e42fffd7b125}{forEachBundle}}(Input, [\&](\textcolor{keyword}{const} BundleInfo \&Info) -\/> Error \{}
+\DoxyCodeLine{225       llvm::outs() << Info.BundleID << \textcolor{charliteral}{'\(\backslash\)n'};}
+\DoxyCodeLine{226       Error Err = \mbox{\hyperlink{class_file_handler_af0a452c5014ddb59b9558614d21daaed}{listBundleIDsCallback}}(Input, Info);}
+\DoxyCodeLine{227       \textcolor{keywordflow}{if} (Err)}
+\DoxyCodeLine{228         \textcolor{keywordflow}{return} Err;}
+\DoxyCodeLine{229       \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{230     \});}
+\DoxyCodeLine{231   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_file_handler_af0a452c5014ddb59b9558614d21daaed}\label{class_file_handler_af0a452c5014ddb59b9558614d21daaed}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!listBundleIDsCallback@{listBundleIDsCallback}}
+\index{listBundleIDsCallback@{listBundleIDsCallback}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{listBundleIDsCallback()}{listBundleIDsCallback()}}
+{\footnotesize\ttfamily virtual Error File\+Handler\+::list\+Bundle\+IDs\+Callback (\begin{DoxyParamCaption}\item[{Memory\+Buffer \&}]{Input,  }\item[{const \mbox{\hyperlink{struct_file_handler_1_1_bundle_info}{Bundle\+Info}} \&}]{Info }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}, {\ttfamily [virtual]}, {\ttfamily [inherited]}}
+
+
+
+Reimplemented in \mbox{\hyperlink{class_text_file_handler_a87e2401d42b38125b706e0827723d5ec}{Text\+File\+Handler}}.
+
+
+
+Definition at line 256 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{257                                                               \{}
+\DoxyCodeLine{258     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{259   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_a8cf5a7c710bc3c27212d1976c80a8258}\label{class_object_file_handler_a8cf5a7c710bc3c27212d1976c80a8258}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!ReadBundle@{ReadBundle}}
+\index{ReadBundle@{ReadBundle}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{ReadBundle()}{ReadBundle()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Read\+Bundle (\begin{DoxyParamCaption}\item[{raw\+\_\+ostream \&}]{OS,  }\item[{Memory\+Buffer \&}]{Input }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+
+
+Read the current bundle and write the result into the stream {\itshape OS}. 
+
+
+
+Implements \mbox{\hyperlink{class_file_handler_a6e4e497d5160eff3cab43dfdfd7e2a13}{File\+Handler}}.
+
+
+
+Definition at line 578 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{578                                                                \{}
+\DoxyCodeLine{579     Expected<StringRef> ContentOrErr = CurrentSection-\/>getContents();}
+\DoxyCodeLine{580     \textcolor{keywordflow}{if} (!ContentOrErr)}
+\DoxyCodeLine{581       \textcolor{keywordflow}{return} ContentOrErr.takeError();}
+\DoxyCodeLine{582     StringRef Content = *ContentOrErr;}
+\DoxyCodeLine{583 }
+\DoxyCodeLine{584     \textcolor{comment}{// Copy fat object contents to the output when extracting host bundle.}}
+\DoxyCodeLine{585     \textcolor{keywordflow}{if} (Content.size() == 1u \&\& Content.front() == 0)}
+\DoxyCodeLine{586       Content = StringRef(Input.getBufferStart(), Input.getBufferSize());}
+\DoxyCodeLine{587 }
+\DoxyCodeLine{588     OS.write(Content.data(), Content.size());}
+\DoxyCodeLine{589     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{590   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_ada66ffa9cbb4567b92dc3b371ea01481}\label{class_object_file_handler_ada66ffa9cbb4567b92dc3b371ea01481}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!ReadBundleEnd@{ReadBundleEnd}}
+\index{ReadBundleEnd@{ReadBundleEnd}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{ReadBundleEnd()}{ReadBundleEnd()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Read\+Bundle\+End (\begin{DoxyParamCaption}\item[{Memory\+Buffer \&}]{Input }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+
+
+Read the marker that closes the current bundle. 
+
+
+
+Implements \mbox{\hyperlink{class_file_handler_a0dc30eeb824c348cc6f9bba853c93c41}{File\+Handler}}.
+
+
+
+Definition at line 576 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{576 \{ \textcolor{keywordflow}{return} Error::success(); \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_ab8cb60c1eecea680fcdb327779cf66c3}\label{class_object_file_handler_ab8cb60c1eecea680fcdb327779cf66c3}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!ReadBundleStart@{ReadBundleStart}}
+\index{ReadBundleStart@{ReadBundleStart}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{ReadBundleStart()}{ReadBundleStart()}}
+{\footnotesize\ttfamily Expected$<$Optional$<$String\+Ref$>$ $>$ Object\+File\+Handler\+::\+Read\+Bundle\+Start (\begin{DoxyParamCaption}\item[{Memory\+Buffer \&}]{Input }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+Read the marker of the next bundled to be read in the file. The bundle name is returned if there is one in the file, or {\ttfamily None} if there are no more bundles to be read. 
+
+Implements \mbox{\hyperlink{class_file_handler_a5b31037af59fa8c77b8287d8ae9d84c4}{File\+Handler}}.
+
+
+
+Definition at line 559 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{559                                                                            \{}
+\DoxyCodeLine{560     \textcolor{keywordflow}{while} (NextSection != Obj-\/>section\_end()) \{}
+\DoxyCodeLine{561       CurrentSection = NextSection;}
+\DoxyCodeLine{562       ++NextSection;}
+\DoxyCodeLine{563 }
+\DoxyCodeLine{564       \textcolor{comment}{// Check if the current section name starts with the reserved prefix. If}}
+\DoxyCodeLine{565       \textcolor{comment}{// so, return the triple.}}
+\DoxyCodeLine{566       Expected<Optional<StringRef>> TripleOrErr =}
+\DoxyCodeLine{567           IsOffloadSection(*CurrentSection);}
+\DoxyCodeLine{568       \textcolor{keywordflow}{if} (!TripleOrErr)}
+\DoxyCodeLine{569         \textcolor{keywordflow}{return} TripleOrErr.takeError();}
+\DoxyCodeLine{570       \textcolor{keywordflow}{if} (*TripleOrErr)}
+\DoxyCodeLine{571         \textcolor{keywordflow}{return} **TripleOrErr;}
+\DoxyCodeLine{572     \}}
+\DoxyCodeLine{573     \textcolor{keywordflow}{return} None;}
+\DoxyCodeLine{574   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_a721cdcac5b3554e5685c96f4788bc655}\label{class_object_file_handler_a721cdcac5b3554e5685c96f4788bc655}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!ReadHeader@{ReadHeader}}
+\index{ReadHeader@{ReadHeader}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{ReadHeader()}{ReadHeader()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Read\+Header (\begin{DoxyParamCaption}\item[{Memory\+Buffer \&}]{Input }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+Update the file handler with information from the header of the bundled file. 
+
+Implements \mbox{\hyperlink{class_file_handler_a0b973008bf7d7a53bc33d0f75b0dadef}{File\+Handler}}.
+
+
+
+Definition at line 557 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{557 \{ \textcolor{keywordflow}{return} Error::success(); \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_ae617802036593fc283753c6ddf0ea221}\label{class_object_file_handler_ae617802036593fc283753c6ddf0ea221}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!WriteBundle@{WriteBundle}}
+\index{WriteBundle@{WriteBundle}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{WriteBundle()}{WriteBundle()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Write\+Bundle (\begin{DoxyParamCaption}\item[{raw\+\_\+fd\+\_\+ostream \&}]{OS,  }\item[{Memory\+Buffer \&}]{Input }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+
+
+Write the bundle from {\itshape Input} into {\itshape OS}. 
+
+
+
+Implements \mbox{\hyperlink{class_file_handler_aa308cfef5f3c06d3c15478097799e0e5}{File\+Handler}}.
+
+
+
+Definition at line 671 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{671                                                                    \{}
+\DoxyCodeLine{672     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{673   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_aa0f573b07d6599ba4c403dfd4b43471a}\label{class_object_file_handler_aa0f573b07d6599ba4c403dfd4b43471a}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!WriteBundleEnd@{WriteBundleEnd}}
+\index{WriteBundleEnd@{WriteBundleEnd}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{WriteBundleEnd()}{WriteBundleEnd()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Write\+Bundle\+End (\begin{DoxyParamCaption}\item[{raw\+\_\+fd\+\_\+ostream \&}]{OS,  }\item[{String\+Ref}]{Target\+Triple }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+Write the marker that closes a bundle for the triple {\itshape Target\+Triple} to {\itshape OS}. 
+
+Implements \mbox{\hyperlink{class_file_handler_a716f51f009426d516f30cd7527f25681}{File\+Handler}}.
+
+
+
+Definition at line 606 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{606                                                                          \{}
+\DoxyCodeLine{607     assert(NumberOfProcessedInputs <= NumberOfInputs \&\&}
+\DoxyCodeLine{608            \textcolor{stringliteral}{"{}Processing more inputs that actually exist!"{}});}
+\DoxyCodeLine{609     assert(HostInputIndex != \string~0u \&\& \textcolor{stringliteral}{"{}Host input index not defined."{}});}
+\DoxyCodeLine{610 }
+\DoxyCodeLine{611     \textcolor{comment}{// If this is not the last output, we don't have to do anything.}}
+\DoxyCodeLine{612     \textcolor{keywordflow}{if} (NumberOfProcessedInputs != NumberOfInputs)}
+\DoxyCodeLine{613       \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{614 }
+\DoxyCodeLine{615     \textcolor{comment}{// We will use llvm-\/objcopy to add target objects sections to the output}}
+\DoxyCodeLine{616     \textcolor{comment}{// fat object. These sections should have 'exclude' flag set which tells}}
+\DoxyCodeLine{617     \textcolor{comment}{// link editor to remove them from linker inputs when linking executable or}}
+\DoxyCodeLine{618     \textcolor{comment}{// shared library.}}
+\DoxyCodeLine{619 }
+\DoxyCodeLine{620     \textcolor{comment}{// Find llvm-\/objcopy in order to create the bundle binary.}}
+\DoxyCodeLine{621     ErrorOr<std::string> Objcopy = sys::findProgramByName(}
+\DoxyCodeLine{622         \textcolor{stringliteral}{"{}llvm-\/objcopy"{}}, sys::path::parent\_path(BundlerExecutable));}
+\DoxyCodeLine{623     \textcolor{keywordflow}{if} (!Objcopy)}
+\DoxyCodeLine{624       Objcopy = sys::findProgramByName(\textcolor{stringliteral}{"{}llvm-\/objcopy"{}});}
+\DoxyCodeLine{625     \textcolor{keywordflow}{if} (!Objcopy)}
+\DoxyCodeLine{626       \textcolor{keywordflow}{return} createStringError(Objcopy.getError(),}
+\DoxyCodeLine{627                                \textcolor{stringliteral}{"{}unable to find 'llvm-\/objcopy' in path"{}});}
+\DoxyCodeLine{628 }
+\DoxyCodeLine{629     \textcolor{comment}{// We write to the output file directly. So, we close it and use the name}}
+\DoxyCodeLine{630     \textcolor{comment}{// to pass down to llvm-\/objcopy.}}
+\DoxyCodeLine{631     OS.close();}
+\DoxyCodeLine{632 }
+\DoxyCodeLine{633     \textcolor{comment}{// Temporary files that need to be removed.}}
+\DoxyCodeLine{634     TempFileHandlerRAII TempFiles;}
+\DoxyCodeLine{635 }
+\DoxyCodeLine{636     \textcolor{comment}{// Compose llvm-\/objcopy command line for add target objects' sections with}}
+\DoxyCodeLine{637     \textcolor{comment}{// appropriate flags.}}
+\DoxyCodeLine{638     BumpPtrAllocator Alloc;}
+\DoxyCodeLine{639     StringSaver SS\{Alloc\};}
+\DoxyCodeLine{640     SmallVector<StringRef, 8u> ObjcopyArgs\{\textcolor{stringliteral}{"{}llvm-\/objcopy"{}}\};}
+\DoxyCodeLine{641     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} I = 0; I < NumberOfInputs; ++I) \{}
+\DoxyCodeLine{642       StringRef InputFile = InputFileNames[I];}
+\DoxyCodeLine{643       \textcolor{keywordflow}{if} (I == HostInputIndex) \{}
+\DoxyCodeLine{644         \textcolor{comment}{// Special handling for the host bundle. We do not need to add a}}
+\DoxyCodeLine{645         \textcolor{comment}{// standard bundle for the host object since we are going to use fat}}
+\DoxyCodeLine{646         \textcolor{comment}{// object as a host object. Therefore use dummy contents (one zero byte)}}
+\DoxyCodeLine{647         \textcolor{comment}{// when creating section for the host bundle.}}
+\DoxyCodeLine{648         Expected<StringRef> TempFileOrErr = TempFiles.Create(ArrayRef<char>(0));}
+\DoxyCodeLine{649         \textcolor{keywordflow}{if} (!TempFileOrErr)}
+\DoxyCodeLine{650           \textcolor{keywordflow}{return} TempFileOrErr.takeError();}
+\DoxyCodeLine{651         InputFile = *TempFileOrErr;}
+\DoxyCodeLine{652       \}}
+\DoxyCodeLine{653 }
+\DoxyCodeLine{654       ObjcopyArgs.push\_back(SS.save(Twine(\textcolor{stringliteral}{"{}-\/-\/add-\/section="{}}) +}
+\DoxyCodeLine{655                                     \mbox{\hyperlink{_clang_offload_bundler_8cpp_a8261baf2ddbb8a17f287149d5415eebf}{OFFLOAD\_BUNDLER\_MAGIC\_STR}} + TargetNames[I] +}
+\DoxyCodeLine{656                                     \textcolor{stringliteral}{"{}="{}} + InputFile));}
+\DoxyCodeLine{657       ObjcopyArgs.push\_back(SS.save(Twine(\textcolor{stringliteral}{"{}-\/-\/set-\/section-\/flags="{}}) +}
+\DoxyCodeLine{658                                     \mbox{\hyperlink{_clang_offload_bundler_8cpp_a8261baf2ddbb8a17f287149d5415eebf}{OFFLOAD\_BUNDLER\_MAGIC\_STR}} + TargetNames[I] +}
+\DoxyCodeLine{659                                     \textcolor{stringliteral}{"{}=readonly,exclude"{}}));}
+\DoxyCodeLine{660     \}}
+\DoxyCodeLine{661     ObjcopyArgs.push\_back(\textcolor{stringliteral}{"{}-\/-\/"{}});}
+\DoxyCodeLine{662     ObjcopyArgs.push\_back(InputFileNames[HostInputIndex]);}
+\DoxyCodeLine{663     ObjcopyArgs.push\_back(OutputFileNames.front());}
+\DoxyCodeLine{664 }
+\DoxyCodeLine{665     \textcolor{keywordflow}{if} (Error Err = executeObjcopy(*Objcopy, ObjcopyArgs))}
+\DoxyCodeLine{666       \textcolor{keywordflow}{return} Err;}
+\DoxyCodeLine{667 }
+\DoxyCodeLine{668     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{669   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_a959f87929ecfa735f661b55a38695eda}\label{class_object_file_handler_a959f87929ecfa735f661b55a38695eda}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!WriteBundleStart@{WriteBundleStart}}
+\index{WriteBundleStart@{WriteBundleStart}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{WriteBundleStart()}{WriteBundleStart()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Write\+Bundle\+Start (\begin{DoxyParamCaption}\item[{raw\+\_\+fd\+\_\+ostream \&}]{OS,  }\item[{String\+Ref}]{Target\+Triple }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+Write the marker that initiates a bundle for the triple {\itshape Target\+Triple} to {\itshape OS}. 
+
+Implements \mbox{\hyperlink{class_file_handler_a023196b877e9ab83859f7194e9b38d9e}{File\+Handler}}.
+
+
+
+Definition at line 601 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{601                                                                            \{}
+\DoxyCodeLine{602     ++NumberOfProcessedInputs;}
+\DoxyCodeLine{603     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{604   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{class_object_file_handler_a6bad7c10b02f3f50d099204afbc663a0}\label{class_object_file_handler_a6bad7c10b02f3f50d099204afbc663a0}} 
+\index{ObjectFileHandler@{ObjectFileHandler}!WriteHeader@{WriteHeader}}
+\index{WriteHeader@{WriteHeader}!ObjectFileHandler@{ObjectFileHandler}}
+\doxysubsubsection{\texorpdfstring{WriteHeader()}{WriteHeader()}}
+{\footnotesize\ttfamily Error Object\+File\+Handler\+::\+Write\+Header (\begin{DoxyParamCaption}\item[{raw\+\_\+fd\+\_\+ostream \&}]{OS,  }\item[{Array\+Ref$<$ std\+::unique\+\_\+ptr$<$ Memory\+Buffer $>$$>$}]{Inputs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [final]}, {\ttfamily [virtual]}}
+
+Write the header of the bundled file to {\itshape OS} based on the information gathered from {\itshape Inputs}. 
+
+Implements \mbox{\hyperlink{class_file_handler_ab587b57538b319ab796b4f9ac060db56}{File\+Handler}}.
+
+
+
+Definition at line 592 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{593                                                                         \{}
+\DoxyCodeLine{594     assert(HostInputIndex != \string~0u \&\& \textcolor{stringliteral}{"{}Host input index not defined."{}});}
+\DoxyCodeLine{595 }
+\DoxyCodeLine{596     \textcolor{comment}{// Record number of inputs.}}
+\DoxyCodeLine{597     NumberOfInputs = Inputs.size();}
+\DoxyCodeLine{598     \textcolor{keywordflow}{return} Error::success();}
+\DoxyCodeLine{599   \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/bundler/\mbox{\hyperlink{_clang_offload_bundler_8cpp}{Clang\+Offload\+Bundler.\+cpp}}\end{DoxyCompactItemize}

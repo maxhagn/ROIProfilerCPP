@@ -1,0 +1,122 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__rewrite_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/Rewrite.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/Rewrite.cpp</primary></indexterm>
+<programlisting>#include &quot;clang-c/Rewrite.h&quot;
+#include &quot;CXSourceLocation.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;clang/Basic/SourceManager.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Rewrite/Core/Rewriter.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>CXRewriter <link linkend="__rewrite_8cpp_1a8cb11432d44a1976b464ad2b46e4cae4">clang_CXRewriter_create</link> (CXTranslationUnit TU)</para>
+</listitem>
+            <listitem><para>void <link linkend="__rewrite_8cpp_1a3faba2a366e9e55647e55a7a4bfa5fa6">clang_CXRewriter_insertTextBefore</link> (CXRewriter Rew, CXSourceLocation Loc, const char *Insert)</para>
+</listitem>
+            <listitem><para>void <link linkend="__rewrite_8cpp_1aaf2ed4bc46f8a7f1308dc554d3adddf4">clang_CXRewriter_replaceText</link> (CXRewriter Rew, CXSourceRange ToBeReplaced, const char *Replacement)</para>
+</listitem>
+            <listitem><para>void <link linkend="__rewrite_8cpp_1aa070032b429b0d61ab5a4940822d4f37">clang_CXRewriter_removeText</link> (CXRewriter Rew, CXSourceRange ToBeRemoved)</para>
+</listitem>
+            <listitem><para>int <link linkend="__rewrite_8cpp_1a6e85bb2b3b72a6ba4b4371502fd21060">clang_CXRewriter_overwriteChangedFiles</link> (CXRewriter Rew)</para>
+</listitem>
+            <listitem><para>void <link linkend="__rewrite_8cpp_1ac7577e0b1ce139d370923eaef5ce50d4">clang_CXRewriter_writeMainFileToStdOut</link> (CXRewriter Rew)</para>
+</listitem>
+            <listitem><para>void <link linkend="__rewrite_8cpp_1a8cb2800b504e554267b5fb9a459deb86">clang_CXRewriter_dispose</link> (CXRewriter Rew)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__rewrite_8cpp_1a8cb11432d44a1976b464ad2b46e4cae4"/>    <section>
+    <title>clang_CXRewriter_create()</title>
+<indexterm><primary>clang_CXRewriter_create</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_create</secondary></indexterm>
+<para><computeroutput>CXRewriter clang_CXRewriter_create (CXTranslationUnit TU)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00016">16</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00016 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00017 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang::cxtu::isNotUsableTU(TU))&#32;{
+00018 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(TU);
+00019 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;{};
+00020 &#32;&#32;}
+00021 &#32;&#32;clang::ASTUnit&#32;*AU&#32;=&#32;clang::cxtu::getASTUnit(TU);
+00022 &#32;&#32;assert(AU);
+00023 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">reinterpret_cast&lt;</emphasis>CXRewriter<emphasis role="keyword">&gt;</emphasis>(
+00024 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;clang::Rewriter(AU-&gt;getSourceManager(),&#32;AU-&gt;getLangOpts()));
+00025 }
+</programlisting><para>
+References <link linkend="__c_x_translation_unit_8h_source_1l00063">LOG_BAD_TU</link>.</para>
+    </section><anchor xml:id="__rewrite_8cpp_1a8cb2800b504e554267b5fb9a459deb86"/>    <section>
+    <title>clang_CXRewriter_dispose()</title>
+<indexterm><primary>clang_CXRewriter_dispose</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_dispose</secondary></indexterm>
+<para><computeroutput>void clang_CXRewriter_dispose (CXRewriter Rew)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00060">60</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00061 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Rew)
+00062 &#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">reinterpret_cast&lt;</emphasis>clang::Rewriter&#32;*<emphasis role="keyword">&gt;</emphasis>(Rew);
+00063 }
+</programlisting>    </section><anchor xml:id="__rewrite_8cpp_1a3faba2a366e9e55647e55a7a4bfa5fa6"/>    <section>
+    <title>clang_CXRewriter_insertTextBefore()</title>
+<indexterm><primary>clang_CXRewriter_insertTextBefore</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_insertTextBefore</secondary></indexterm>
+<para><computeroutput>void clang_CXRewriter_insertTextBefore (CXRewriter Rew, CXSourceLocation Loc, const char * Insert)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00027">27</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00029 &#32;&#32;assert(Rew);
+00030 &#32;&#32;clang::Rewriter&#32;&amp;R&#32;=&#32;*<emphasis role="keyword">reinterpret_cast&lt;</emphasis>clang::Rewriter&#32;*<emphasis role="keyword">&gt;</emphasis>(Rew);
+00031 &#32;&#32;R.InsertTextBefore(clang::cxloc::translateSourceLocation(Loc),&#32;Insert);
+00032 }
+</programlisting>    </section><anchor xml:id="__rewrite_8cpp_1a6e85bb2b3b72a6ba4b4371502fd21060"/>    <section>
+    <title>clang_CXRewriter_overwriteChangedFiles()</title>
+<indexterm><primary>clang_CXRewriter_overwriteChangedFiles</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_overwriteChangedFiles</secondary></indexterm>
+<para><computeroutput>int clang_CXRewriter_overwriteChangedFiles (CXRewriter Rew)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00048">48</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00049 &#32;&#32;assert(Rew);
+00050 &#32;&#32;clang::Rewriter&#32;&amp;R&#32;=&#32;*<emphasis role="keyword">reinterpret_cast&lt;</emphasis>clang::Rewriter&#32;*<emphasis role="keyword">&gt;</emphasis>(Rew);
+00051 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;R.overwriteChangedFiles();
+00052 }
+</programlisting>    </section><anchor xml:id="__rewrite_8cpp_1aa070032b429b0d61ab5a4940822d4f37"/>    <section>
+    <title>clang_CXRewriter_removeText()</title>
+<indexterm><primary>clang_CXRewriter_removeText</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_removeText</secondary></indexterm>
+<para><computeroutput>void clang_CXRewriter_removeText (CXRewriter Rew, CXSourceRange ToBeRemoved)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00042">42</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00043 &#32;&#32;assert(Rew);
+00044 &#32;&#32;clang::Rewriter&#32;&amp;R&#32;=&#32;*<emphasis role="keyword">reinterpret_cast&lt;</emphasis>clang::Rewriter&#32;*<emphasis role="keyword">&gt;</emphasis>(Rew);
+00045 &#32;&#32;R.RemoveText(<link linkend="_namespaceclang_1_1cxloc_1aa8c3cee435c88a9e8a61f79cc8a0c0da">clang::cxloc::translateCXRangeToCharRange</link>(ToBeRemoved));
+00046 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l00167">clang::cxloc::translateCXRangeToCharRange()</link>.</para>
+    </section><anchor xml:id="__rewrite_8cpp_1aaf2ed4bc46f8a7f1308dc554d3adddf4"/>    <section>
+    <title>clang_CXRewriter_replaceText()</title>
+<indexterm><primary>clang_CXRewriter_replaceText</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_replaceText</secondary></indexterm>
+<para><computeroutput>void clang_CXRewriter_replaceText (CXRewriter Rew, CXSourceRange ToBeReplaced, const char * Replacement)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00034">34</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00036 &#32;&#32;assert(Rew);
+00037 &#32;&#32;clang::Rewriter&#32;&amp;R&#32;=&#32;*<emphasis role="keyword">reinterpret_cast&lt;</emphasis>clang::Rewriter&#32;*<emphasis role="keyword">&gt;</emphasis>(Rew);
+00038 &#32;&#32;R.ReplaceText(<link linkend="_namespaceclang_1_1cxloc_1aa8c3cee435c88a9e8a61f79cc8a0c0da">clang::cxloc::translateCXRangeToCharRange</link>(ToBeReplaced),
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Replacement);
+00040 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l00167">clang::cxloc::translateCXRangeToCharRange()</link>.</para>
+    </section><anchor xml:id="__rewrite_8cpp_1ac7577e0b1ce139d370923eaef5ce50d4"/>    <section>
+    <title>clang_CXRewriter_writeMainFileToStdOut()</title>
+<indexterm><primary>clang_CXRewriter_writeMainFileToStdOut</primary><secondary>Rewrite.cpp</secondary></indexterm>
+<indexterm><primary>Rewrite.cpp</primary><secondary>clang_CXRewriter_writeMainFileToStdOut</secondary></indexterm>
+<para><computeroutput>void clang_CXRewriter_writeMainFileToStdOut (CXRewriter Rew)</computeroutput></para><para>
+Definition at line <link linkend="__rewrite_8cpp_source_1l00054">54</link> of file <link linkend="__rewrite_8cpp_source">Rewrite.cpp</link>.</para>
+<programlisting>00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00055 &#32;&#32;assert(Rew);
+00056 &#32;&#32;clang::Rewriter&#32;&amp;R&#32;=&#32;*<emphasis role="keyword">reinterpret_cast&lt;</emphasis>clang::Rewriter&#32;*<emphasis role="keyword">&gt;</emphasis>(Rew);
+00057 &#32;&#32;R.getEditBuffer(R.getSourceMgr().getMainFileID()).write(llvm::outs());
+00058 }
+</programlisting></section>
+</section>
+</section>

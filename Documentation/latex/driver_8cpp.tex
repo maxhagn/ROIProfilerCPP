@@ -1,0 +1,583 @@
+\hypertarget{driver_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/driver/driver.cpp File Reference}
+\label{driver_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/driver/driver.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/driver/driver.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Driver.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Diagnostic\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Stack.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Config/config.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Compilation.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Driver\+Diagnostic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Tool\+Chain.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Chained\+Diagnostic\+Consumer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Invocation.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Serialized\+Diagnostic\+Printer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Text\+Diagnostic\+Printer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Utils.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Array\+Ref.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Small\+String.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Small\+Vector.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Option/\+Arg\+List.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Option/\+Opt\+Table.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Option/\+Option.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Bury\+Pointer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Crash\+Recovery\+Context.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Error\+Handling.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Host.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Init\+LLVM.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Path.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Pretty\+Stack\+Trace.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Process.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Program.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Regex.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+String\+Saver.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Target\+Select.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Timer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$memory$>$}\newline
+{\ttfamily \#include $<$set$>$}\newline
+{\ttfamily \#include $<$system\+\_\+error$>$}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \mbox{\hyperlink{driver_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{Get\+Executable\+Path}} (const char $\ast$Argv0, bool Canonical\+Prefixes)
+\item 
+int \mbox{\hyperlink{driver_8cpp_a86ac52e41ae670905ca66a8bf1eb04b9}{cc1\+\_\+main}} (Array\+Ref$<$ const char $\ast$ $>$ Argv, const char $\ast$Argv0, void $\ast$Main\+Addr)
+\item 
+int \mbox{\hyperlink{driver_8cpp_ac7d9c4a59e9773f938ddff75f14b90a6}{cc1as\+\_\+main}} (Array\+Ref$<$ const char $\ast$ $>$ Argv, const char $\ast$Argv0, void $\ast$Main\+Addr)
+\item 
+int \mbox{\hyperlink{driver_8cpp_a27f0fa14a18bd4a9c735d321f74779d9}{cc1gen\+\_\+reproducer\+\_\+main}} (Array\+Ref$<$ const char $\ast$ $>$ Argv, const char $\ast$Argv0, void $\ast$Main\+Addr)
+\item 
+int \mbox{\hyperlink{driver_8cpp_ae98fb7c14fb481a1151b423f9d4adb82}{main}} (int Argc, const char $\ast$$\ast$Argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{driver_8cpp_a86ac52e41ae670905ca66a8bf1eb04b9}\label{driver_8cpp_a86ac52e41ae670905ca66a8bf1eb04b9}} 
+\index{driver.cpp@{driver.cpp}!cc1\_main@{cc1\_main}}
+\index{cc1\_main@{cc1\_main}!driver.cpp@{driver.cpp}}
+\doxysubsubsection{\texorpdfstring{cc1\_main()}{cc1\_main()}}
+{\footnotesize\ttfamily int cc1\+\_\+main (\begin{DoxyParamCaption}\item[{Array\+Ref$<$ const char $\ast$ $>$}]{Argv,  }\item[{const char $\ast$}]{Argv0,  }\item[{void $\ast$}]{Main\+Addr }\end{DoxyParamCaption})}
+
+
+
+Definition at line 184 of file cc1\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{184                                                                              \{}
+\DoxyCodeLine{185   ensureSufficientStack();}
+\DoxyCodeLine{186 }
+\DoxyCodeLine{187   std::unique\_ptr<CompilerInstance> Clang(\textcolor{keyword}{new} CompilerInstance());}
+\DoxyCodeLine{188   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(\textcolor{keyword}{new} DiagnosticIDs());}
+\DoxyCodeLine{189 }
+\DoxyCodeLine{190   \textcolor{comment}{// Register the support for object-\/file-\/wrapped Clang modules.}}
+\DoxyCodeLine{191   \textcolor{keyword}{auto} PCHOps = Clang-\/>getPCHContainerOperations();}
+\DoxyCodeLine{192   PCHOps-\/>registerWriter(std::make\_unique<ObjectFilePCHContainerWriter>());}
+\DoxyCodeLine{193   PCHOps-\/>registerReader(std::make\_unique<ObjectFilePCHContainerReader>());}
+\DoxyCodeLine{194 }
+\DoxyCodeLine{195   \textcolor{comment}{// Initialize targets first, so that -\/-\/version shows registered targets.}}
+\DoxyCodeLine{196   llvm::InitializeAllTargets();}
+\DoxyCodeLine{197   llvm::InitializeAllTargetMCs();}
+\DoxyCodeLine{198   llvm::InitializeAllAsmPrinters();}
+\DoxyCodeLine{199   llvm::InitializeAllAsmParsers();}
+\DoxyCodeLine{200 }
+\DoxyCodeLine{201   \textcolor{comment}{// Buffer diagnostics from argument parsing so that we can output them using a}}
+\DoxyCodeLine{202   \textcolor{comment}{// well formed diagnostic object.}}
+\DoxyCodeLine{203   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = \textcolor{keyword}{new} DiagnosticOptions();}
+\DoxyCodeLine{204   TextDiagnosticBuffer *DiagsBuffer = \textcolor{keyword}{new} TextDiagnosticBuffer;}
+\DoxyCodeLine{205   DiagnosticsEngine Diags(DiagID, \&*DiagOpts, DiagsBuffer);}
+\DoxyCodeLine{206 }
+\DoxyCodeLine{207   \textcolor{comment}{// Setup round-\/trip remarks for the DiagnosticsEngine used in CreateFromArgs.}}
+\DoxyCodeLine{208   \textcolor{keywordflow}{if} (find(Argv, StringRef(\textcolor{stringliteral}{"{}-\/Rround-\/trip-\/cc1-\/args"{}})) != Argv.end())}
+\DoxyCodeLine{209     Diags.setSeverity(diag::remark\_cc1\_round\_trip\_generated,}
+\DoxyCodeLine{210                       diag::Severity::Remark, \{\});}
+\DoxyCodeLine{211 }
+\DoxyCodeLine{212   \textcolor{keywordtype}{bool} Success = CompilerInvocation::CreateFromArgs(Clang-\/>getInvocation(),}
+\DoxyCodeLine{213                                                     Argv, Diags, Argv0);}
+\DoxyCodeLine{214 }
+\DoxyCodeLine{215   \textcolor{keywordflow}{if} (Clang-\/>getFrontendOpts().TimeTrace) \{}
+\DoxyCodeLine{216     llvm::timeTraceProfilerInitialize(}
+\DoxyCodeLine{217         Clang-\/>getFrontendOpts().TimeTraceGranularity, Argv0);}
+\DoxyCodeLine{218   \}}
+\DoxyCodeLine{219   \textcolor{comment}{// -\/-\/print-\/supported-\/cpus takes priority over the actual compilation.}}
+\DoxyCodeLine{220   \textcolor{keywordflow}{if} (Clang-\/>getFrontendOpts().PrintSupportedCPUs)}
+\DoxyCodeLine{221     \textcolor{keywordflow}{return} PrintSupportedCPUs(Clang-\/>getTargetOpts().Triple);}
+\DoxyCodeLine{222 }
+\DoxyCodeLine{223   \textcolor{comment}{// Infer the builtin include path if unspecified.}}
+\DoxyCodeLine{224   \textcolor{keywordflow}{if} (Clang-\/>getHeaderSearchOpts().UseBuiltinIncludes \&\&}
+\DoxyCodeLine{225       Clang-\/>getHeaderSearchOpts().ResourceDir.empty())}
+\DoxyCodeLine{226     Clang-\/>getHeaderSearchOpts().ResourceDir =}
+\DoxyCodeLine{227       CompilerInvocation::GetResourcesPath(Argv0, MainAddr);}
+\DoxyCodeLine{228 }
+\DoxyCodeLine{229   \textcolor{comment}{// Create the actual diagnostics engine.}}
+\DoxyCodeLine{230   Clang-\/>createDiagnostics();}
+\DoxyCodeLine{231   \textcolor{keywordflow}{if} (!Clang-\/>hasDiagnostics())}
+\DoxyCodeLine{232     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{233 }
+\DoxyCodeLine{234   \textcolor{comment}{// Set an error handler, so that any LLVM backend diagnostics go through our}}
+\DoxyCodeLine{235   \textcolor{comment}{// error handler.}}
+\DoxyCodeLine{236   llvm::install\_fatal\_error\_handler(LLVMErrorHandler,}
+\DoxyCodeLine{237                                   \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{void}*\textcolor{keyword}{>}(\&Clang-\/>getDiagnostics()));}
+\DoxyCodeLine{238 }
+\DoxyCodeLine{239   DiagsBuffer-\/>FlushDiagnostics(Clang-\/>getDiagnostics());}
+\DoxyCodeLine{240   \textcolor{keywordflow}{if} (!Success)}
+\DoxyCodeLine{241     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{242 }
+\DoxyCodeLine{243   \textcolor{comment}{// Execute the frontend actions.}}
+\DoxyCodeLine{244   \{}
+\DoxyCodeLine{245     llvm::TimeTraceScope TimeScope(\textcolor{stringliteral}{"{}ExecuteCompiler"{}});}
+\DoxyCodeLine{246     Success = ExecuteCompilerInvocation(Clang.get());}
+\DoxyCodeLine{247   \}}
+\DoxyCodeLine{248 }
+\DoxyCodeLine{249   \textcolor{comment}{// If any timers were active but haven't been destroyed yet, print their}}
+\DoxyCodeLine{250   \textcolor{comment}{// results now.  This happens in -\/disable-\/free mode.}}
+\DoxyCodeLine{251   llvm::TimerGroup::printAll(llvm::errs());}
+\DoxyCodeLine{252   llvm::TimerGroup::clearAll();}
+\DoxyCodeLine{253 }
+\DoxyCodeLine{254   \textcolor{keywordflow}{if} (llvm::timeTraceProfilerEnabled()) \{}
+\DoxyCodeLine{255     SmallString<128> Path(Clang-\/>getFrontendOpts().OutputFile);}
+\DoxyCodeLine{256     llvm::sys::path::replace\_extension(Path, \textcolor{stringliteral}{"{}json"{}});}
+\DoxyCodeLine{257     \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} profilerOutput = Clang-\/>createOutputFile(}
+\DoxyCodeLine{258             Path.str(), \textcolor{comment}{/*Binary=*/}\textcolor{keyword}{false}, \textcolor{comment}{/*RemoveFileOnSignal=*/}\textcolor{keyword}{false},}
+\DoxyCodeLine{259             \textcolor{comment}{/*useTemporary=*/}\textcolor{keyword}{false})) \{}
+\DoxyCodeLine{260       llvm::timeTraceProfilerWrite(*profilerOutput);}
+\DoxyCodeLine{261       \textcolor{comment}{// FIXME(ibiryukov): make profilerOutput flush in destructor instead.}}
+\DoxyCodeLine{262       profilerOutput-\/>flush();}
+\DoxyCodeLine{263       llvm::timeTraceProfilerCleanup();}
+\DoxyCodeLine{264       Clang-\/>clearOutputFiles(\textcolor{keyword}{false});}
+\DoxyCodeLine{265     \}}
+\DoxyCodeLine{266   \}}
+\DoxyCodeLine{267 }
+\DoxyCodeLine{268   \textcolor{comment}{// Our error handler depends on the Diagnostics object, which we're}}
+\DoxyCodeLine{269   \textcolor{comment}{// potentially about to delete. Uninstall the handler now so that any}}
+\DoxyCodeLine{270   \textcolor{comment}{// later errors use the default handling behavior instead.}}
+\DoxyCodeLine{271   llvm::remove\_fatal\_error\_handler();}
+\DoxyCodeLine{272 }
+\DoxyCodeLine{273   \textcolor{comment}{// When running with -\/disable-\/free, don't do any destruction or shutdown.}}
+\DoxyCodeLine{274   \textcolor{keywordflow}{if} (Clang-\/>getFrontendOpts().DisableFree) \{}
+\DoxyCodeLine{275     llvm::BuryPointer(std::move(Clang));}
+\DoxyCodeLine{276     \textcolor{keywordflow}{return} !Success;}
+\DoxyCodeLine{277   \}}
+\DoxyCodeLine{278 }
+\DoxyCodeLine{279   \textcolor{keywordflow}{return} !Success;}
+\DoxyCodeLine{280 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{driver_8cpp_ac7d9c4a59e9773f938ddff75f14b90a6}\label{driver_8cpp_ac7d9c4a59e9773f938ddff75f14b90a6}} 
+\index{driver.cpp@{driver.cpp}!cc1as\_main@{cc1as\_main}}
+\index{cc1as\_main@{cc1as\_main}!driver.cpp@{driver.cpp}}
+\doxysubsubsection{\texorpdfstring{cc1as\_main()}{cc1as\_main()}}
+{\footnotesize\ttfamily int cc1as\+\_\+main (\begin{DoxyParamCaption}\item[{Array\+Ref$<$ const char $\ast$ $>$}]{Argv,  }\item[{const char $\ast$}]{Argv0,  }\item[{void $\ast$}]{Main\+Addr }\end{DoxyParamCaption})}
+
+
+
+Definition at line 563 of file cc1as\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{563                                                                                \{}
+\DoxyCodeLine{564   \textcolor{comment}{// Initialize targets and assembly printers/parsers.}}
+\DoxyCodeLine{565   InitializeAllTargetInfos();}
+\DoxyCodeLine{566   InitializeAllTargetMCs();}
+\DoxyCodeLine{567   InitializeAllAsmParsers();}
+\DoxyCodeLine{568 }
+\DoxyCodeLine{569   \textcolor{comment}{// Construct our diagnostic client.}}
+\DoxyCodeLine{570   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = \textcolor{keyword}{new} DiagnosticOptions();}
+\DoxyCodeLine{571   TextDiagnosticPrinter *DiagClient}
+\DoxyCodeLine{572     = \textcolor{keyword}{new} TextDiagnosticPrinter(errs(), \&*DiagOpts);}
+\DoxyCodeLine{573   DiagClient-\/>setPrefix(\textcolor{stringliteral}{"{}clang -\/cc1as"{}});}
+\DoxyCodeLine{574   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(\textcolor{keyword}{new} DiagnosticIDs());}
+\DoxyCodeLine{575   DiagnosticsEngine Diags(DiagID, \&*DiagOpts, DiagClient);}
+\DoxyCodeLine{576 }
+\DoxyCodeLine{577   \textcolor{comment}{// Set an error handler, so that any LLVM backend diagnostics go through our}}
+\DoxyCodeLine{578   \textcolor{comment}{// error handler.}}
+\DoxyCodeLine{579   ScopedFatalErrorHandler FatalErrorHandler}
+\DoxyCodeLine{580     (LLVMErrorHandler, \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{void}*\textcolor{keyword}{>}(\&Diags));}
+\DoxyCodeLine{581 }
+\DoxyCodeLine{582   \textcolor{comment}{// Parse the arguments.}}
+\DoxyCodeLine{583   AssemblerInvocation Asm;}
+\DoxyCodeLine{584   \textcolor{keywordflow}{if} (!AssemblerInvocation::CreateFromArgs(Asm, Argv, Diags))}
+\DoxyCodeLine{585     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{586 }
+\DoxyCodeLine{587   \textcolor{keywordflow}{if} (Asm.ShowHelp) \{}
+\DoxyCodeLine{588     getDriverOptTable().printHelp(}
+\DoxyCodeLine{589         llvm::outs(), \textcolor{stringliteral}{"{}clang -\/cc1as [options] file..."{}},}
+\DoxyCodeLine{590         \textcolor{stringliteral}{"{}Clang Integrated Assembler"{}},}
+\DoxyCodeLine{591         \textcolor{comment}{/*Include=*/}driver::options::CC1AsOption, \textcolor{comment}{/*Exclude=*/}0,}
+\DoxyCodeLine{592         \textcolor{comment}{/*ShowAllAliases=*/}\textcolor{keyword}{false});}
+\DoxyCodeLine{593     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{594   \}}
+\DoxyCodeLine{595 }
+\DoxyCodeLine{596   \textcolor{comment}{// Honor -\/version.}}
+\DoxyCodeLine{597   \textcolor{comment}{//}}
+\DoxyCodeLine{598   \textcolor{comment}{// FIXME: Use a better -\/version message?}}
+\DoxyCodeLine{599   \textcolor{keywordflow}{if} (Asm.ShowVersion) \{}
+\DoxyCodeLine{600     llvm::cl::PrintVersionMessage();}
+\DoxyCodeLine{601     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{602   \}}
+\DoxyCodeLine{603 }
+\DoxyCodeLine{604   \textcolor{comment}{// Honor -\/mllvm.}}
+\DoxyCodeLine{605   \textcolor{comment}{//}}
+\DoxyCodeLine{606   \textcolor{comment}{// FIXME: Remove this, one day.}}
+\DoxyCodeLine{607   \textcolor{keywordflow}{if} (!Asm.LLVMArgs.empty()) \{}
+\DoxyCodeLine{608     \textcolor{keywordtype}{unsigned} NumArgs = Asm.LLVMArgs.size();}
+\DoxyCodeLine{609     \textcolor{keyword}{auto} Args = std::make\_unique<const char*[]>(NumArgs + 2);}
+\DoxyCodeLine{610     Args[0] = \textcolor{stringliteral}{"{}clang (LLVM option parsing)"{}};}
+\DoxyCodeLine{611     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} i = 0; i != NumArgs; ++i)}
+\DoxyCodeLine{612       Args[i + 1] = Asm.LLVMArgs[i].c\_str();}
+\DoxyCodeLine{613     Args[NumArgs + 1] = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{614     llvm::cl::ParseCommandLineOptions(NumArgs + 1, Args.get());}
+\DoxyCodeLine{615   \}}
+\DoxyCodeLine{616 }
+\DoxyCodeLine{617   \textcolor{comment}{// Execute the invocation, unless there were parsing errors.}}
+\DoxyCodeLine{618   \textcolor{keywordtype}{bool} Failed = Diags.hasErrorOccurred() || ExecuteAssembler(Asm, Diags);}
+\DoxyCodeLine{619 }
+\DoxyCodeLine{620   \textcolor{comment}{// If any timers were active but haven't been destroyed yet, print their}}
+\DoxyCodeLine{621   \textcolor{comment}{// results now.}}
+\DoxyCodeLine{622   TimerGroup::printAll(errs());}
+\DoxyCodeLine{623   TimerGroup::clearAll();}
+\DoxyCodeLine{624 }
+\DoxyCodeLine{625   \textcolor{keywordflow}{return} !!Failed;}
+\DoxyCodeLine{626 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{driver_8cpp_a27f0fa14a18bd4a9c735d321f74779d9}\label{driver_8cpp_a27f0fa14a18bd4a9c735d321f74779d9}} 
+\index{driver.cpp@{driver.cpp}!cc1gen\_reproducer\_main@{cc1gen\_reproducer\_main}}
+\index{cc1gen\_reproducer\_main@{cc1gen\_reproducer\_main}!driver.cpp@{driver.cpp}}
+\doxysubsubsection{\texorpdfstring{cc1gen\_reproducer\_main()}{cc1gen\_reproducer\_main()}}
+{\footnotesize\ttfamily int cc1gen\+\_\+reproducer\+\_\+main (\begin{DoxyParamCaption}\item[{Array\+Ref$<$ const char $\ast$ $>$}]{Argv,  }\item[{const char $\ast$}]{Argv0,  }\item[{void $\ast$}]{Main\+Addr }\end{DoxyParamCaption})}
+
+
+
+Definition at line 156 of file cc1gen\+\_\+reproducer\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{157                                            \{}
+\DoxyCodeLine{158   \textcolor{keywordflow}{if} (Argv.size() < 1) \{}
+\DoxyCodeLine{159     llvm::errs() << \textcolor{stringliteral}{"{}error: missing invocation file\(\backslash\)n"{}};}
+\DoxyCodeLine{160     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{161   \}}
+\DoxyCodeLine{162   \textcolor{comment}{// Parse the invocation descriptor.}}
+\DoxyCodeLine{163   StringRef Input = Argv[0];}
+\DoxyCodeLine{164   llvm::ErrorOr<std::unique\_ptr<llvm::MemoryBuffer>> Buffer =}
+\DoxyCodeLine{165       llvm::MemoryBuffer::getFile(Input, \textcolor{comment}{/*IsText=*/}\textcolor{keyword}{true});}
+\DoxyCodeLine{166   \textcolor{keywordflow}{if} (!Buffer) \{}
+\DoxyCodeLine{167     llvm::errs() << \textcolor{stringliteral}{"{}error: failed to read "{}} << Input << \textcolor{stringliteral}{"{}: "{}}}
+\DoxyCodeLine{168                  << Buffer.getError().message() << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{169     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{170   \}}
+\DoxyCodeLine{171   llvm::yaml::Input YAML(Buffer.get()-\/>getBuffer());}
+\DoxyCodeLine{172   ClangInvocationInfo InvocationInfo;}
+\DoxyCodeLine{173   YAML >> InvocationInfo;}
+\DoxyCodeLine{174   \textcolor{keywordflow}{if} (Argv.size() > 1 \&\& Argv[1] == StringRef(\textcolor{stringliteral}{"{}-\/v"{}}))}
+\DoxyCodeLine{175     InvocationInfo.Dump = \textcolor{keyword}{true};}
+\DoxyCodeLine{176 }
+\DoxyCodeLine{177   \textcolor{comment}{// Create an invocation that will produce the reproducer.}}
+\DoxyCodeLine{178   std::vector<const char *> DriverArgs;}
+\DoxyCodeLine{179   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} \&Arg : InvocationInfo.Arguments)}
+\DoxyCodeLine{180     DriverArgs.push\_back(Arg.c\_str());}
+\DoxyCodeLine{181   std::string Path = \mbox{\hyperlink{cc1gen__reproducer__main_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{GetExecutablePath}}(Argv0, \textcolor{comment}{/*CanonicalPrefixes=*/}\textcolor{keyword}{true});}
+\DoxyCodeLine{182   DriverArgs[0] = Path.c\_str();}
+\DoxyCodeLine{183   llvm::Optional<driver::Driver::CompilationDiagnosticReport> Report =}
+\DoxyCodeLine{184       generateReproducerForInvocationArguments(DriverArgs, InvocationInfo);}
+\DoxyCodeLine{185 }
+\DoxyCodeLine{186   \textcolor{comment}{// Emit the information about the reproduce files to stdout.}}
+\DoxyCodeLine{187   \textcolor{keywordtype}{int} Result = 1;}
+\DoxyCodeLine{188   \textcolor{keywordflow}{if} (Report) \{}
+\DoxyCodeLine{189     printReproducerInformation(llvm::outs(), InvocationInfo, *Report);}
+\DoxyCodeLine{190     Result = 0;}
+\DoxyCodeLine{191   \}}
+\DoxyCodeLine{192 }
+\DoxyCodeLine{193   \textcolor{comment}{// Remove the input file.}}
+\DoxyCodeLine{194   llvm::sys::fs::remove(Input);}
+\DoxyCodeLine{195   \textcolor{keywordflow}{return} Result;}
+\DoxyCodeLine{196 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{driver_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}\label{driver_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}} 
+\index{driver.cpp@{driver.cpp}!GetExecutablePath@{GetExecutablePath}}
+\index{GetExecutablePath@{GetExecutablePath}!driver.cpp@{driver.cpp}}
+\doxysubsubsection{\texorpdfstring{GetExecutablePath()}{GetExecutablePath()}}
+{\footnotesize\ttfamily std\+::string Get\+Executable\+Path (\begin{DoxyParamCaption}\item[{const char $\ast$}]{Argv0,  }\item[{bool}]{Canonical\+Prefixes }\end{DoxyParamCaption})}
+
+
+
+Definition at line 57 of file driver.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{57                                                                        \{}
+\DoxyCodeLine{58   \textcolor{keywordflow}{if} (!CanonicalPrefixes) \{}
+\DoxyCodeLine{59     SmallString<128> ExecutablePath(Argv0);}
+\DoxyCodeLine{60     \textcolor{comment}{// Do a PATH lookup if Argv0 isn't a valid path.}}
+\DoxyCodeLine{61     \textcolor{keywordflow}{if} (!llvm::sys::fs::exists(ExecutablePath))}
+\DoxyCodeLine{62       \textcolor{keywordflow}{if} (llvm::ErrorOr<std::string> P =}
+\DoxyCodeLine{63               llvm::sys::findProgramByName(ExecutablePath))}
+\DoxyCodeLine{64         ExecutablePath = *P;}
+\DoxyCodeLine{65     \textcolor{keywordflow}{return} std::string(ExecutablePath.str());}
+\DoxyCodeLine{66   \}}
+\DoxyCodeLine{67 }
+\DoxyCodeLine{68   \textcolor{comment}{// This just needs to be some symbol in the binary; C++ doesn't}}
+\DoxyCodeLine{69   \textcolor{comment}{// allow taking the address of ::main however.}}
+\DoxyCodeLine{70   \textcolor{keywordtype}{void} *P = (\textcolor{keywordtype}{void}*) (intptr\_t) \mbox{\hyperlink{driver_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{GetExecutablePath}};}
+\DoxyCodeLine{71   \textcolor{keywordflow}{return} llvm::sys::fs::getMainExecutable(Argv0, P);}
+\DoxyCodeLine{72 \}}
+
+\end{DoxyCode}
+
+
+References Get\+Executable\+Path().
+
+
+
+Referenced by Get\+Executable\+Path().
+
+\mbox{\Hypertarget{driver_8cpp_ae98fb7c14fb481a1151b423f9d4adb82}\label{driver_8cpp_ae98fb7c14fb481a1151b423f9d4adb82}} 
+\index{driver.cpp@{driver.cpp}!main@{main}}
+\index{main@{main}!driver.cpp@{driver.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{Argc,  }\item[{const char $\ast$$\ast$}]{Argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 351 of file driver.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{351                                       \{}
+\DoxyCodeLine{352   noteBottomOfStack();}
+\DoxyCodeLine{353   llvm::InitLLVM X(Argc, Argv);}
+\DoxyCodeLine{354   llvm::setBugReportMsg(\textcolor{stringliteral}{"{}PLEASE submit a bug report to "{}} BUG\_REPORT\_URL}
+\DoxyCodeLine{355                         \textcolor{stringliteral}{"{} and include the crash backtrace, preprocessed "{}}}
+\DoxyCodeLine{356                         \textcolor{stringliteral}{"{}source, and associated run script.\(\backslash\)n"{}});}
+\DoxyCodeLine{357   SmallVector<const char *, 256> Args(Argv, Argv + Argc);}
+\DoxyCodeLine{358 }
+\DoxyCodeLine{359   \textcolor{keywordflow}{if} (llvm::sys::Process::FixupStandardFileDescriptors())}
+\DoxyCodeLine{360     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{361 }
+\DoxyCodeLine{362   llvm::InitializeAllTargets();}
+\DoxyCodeLine{363   \textcolor{keyword}{auto} TargetAndMode = ToolChain::getTargetAndModeFromProgramName(Args[0]);}
+\DoxyCodeLine{364 }
+\DoxyCodeLine{365   llvm::BumpPtrAllocator A;}
+\DoxyCodeLine{366   llvm::StringSaver Saver(A);}
+\DoxyCodeLine{367 }
+\DoxyCodeLine{368   \textcolor{comment}{// Parse response files using the GNU syntax, unless we're in CL mode. There}}
+\DoxyCodeLine{369   \textcolor{comment}{// are two ways to put clang in CL compatibility mode: Args[0] is either}}
+\DoxyCodeLine{370   \textcolor{comment}{// clang-\/cl or cl, or -\/-\/driver-\/mode=cl is on the command line. The normal}}
+\DoxyCodeLine{371   \textcolor{comment}{// command line parsing can't happen until after response file parsing, so we}}
+\DoxyCodeLine{372   \textcolor{comment}{// have to manually search for a -\/-\/driver-\/mode=cl argument the hard way.}}
+\DoxyCodeLine{373   \textcolor{comment}{// Finally, our -\/cc1 tools don't care which tokenization mode we use because}}
+\DoxyCodeLine{374   \textcolor{comment}{// response files written by clang will tokenize the same way in either mode.}}
+\DoxyCodeLine{375   \textcolor{keywordtype}{bool} ClangCLMode = \textcolor{keyword}{false};}
+\DoxyCodeLine{376   \textcolor{keywordflow}{if} (StringRef(TargetAndMode.DriverMode).equals(\textcolor{stringliteral}{"{}-\/-\/driver-\/mode=cl"{}}) ||}
+\DoxyCodeLine{377       llvm::find\_if(Args, [](\textcolor{keyword}{const} \textcolor{keywordtype}{char} *F) \{}
+\DoxyCodeLine{378         return F \&\& strcmp(F, \textcolor{stringliteral}{"{}-\/-\/driver-\/mode=cl"{}}) == 0;}
+\DoxyCodeLine{379       \}) != Args.end()) \{}
+\DoxyCodeLine{380     ClangCLMode = \textcolor{keyword}{true};}
+\DoxyCodeLine{381   \}}
+\DoxyCodeLine{382   \textcolor{keyword}{enum} \{ Default, POSIX, Windows \} RSPQuoting = Default;}
+\DoxyCodeLine{383   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keywordtype}{char} *F : Args) \{}
+\DoxyCodeLine{384     \textcolor{keywordflow}{if} (strcmp(F, \textcolor{stringliteral}{"{}-\/-\/rsp-\/quoting=posix"{}}) == 0)}
+\DoxyCodeLine{385       RSPQuoting = POSIX;}
+\DoxyCodeLine{386     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (strcmp(F, \textcolor{stringliteral}{"{}-\/-\/rsp-\/quoting=windows"{}}) == 0)}
+\DoxyCodeLine{387       RSPQuoting = Windows;}
+\DoxyCodeLine{388   \}}
+\DoxyCodeLine{389 }
+\DoxyCodeLine{390   \textcolor{comment}{// Determines whether we want nullptr markers in Args to indicate response}}
+\DoxyCodeLine{391   \textcolor{comment}{// files end-\/of-\/lines. We only use this for the /LINK driver argument with}}
+\DoxyCodeLine{392   \textcolor{comment}{// clang-\/cl.exe on Windows.}}
+\DoxyCodeLine{393   \textcolor{keywordtype}{bool} MarkEOLs = ClangCLMode;}
+\DoxyCodeLine{394 }
+\DoxyCodeLine{395   llvm::cl::TokenizerCallback Tokenizer;}
+\DoxyCodeLine{396   \textcolor{keywordflow}{if} (RSPQuoting == Windows || (RSPQuoting == Default \&\& ClangCLMode))}
+\DoxyCodeLine{397     Tokenizer = \&llvm::cl::TokenizeWindowsCommandLine;}
+\DoxyCodeLine{398   \textcolor{keywordflow}{else}}
+\DoxyCodeLine{399     Tokenizer = \&llvm::cl::TokenizeGNUCommandLine;}
+\DoxyCodeLine{400 }
+\DoxyCodeLine{401   \textcolor{keywordflow}{if} (MarkEOLs \&\& Args.size() > 1 \&\& StringRef(Args[1]).startswith(\textcolor{stringliteral}{"{}-\/cc1"{}}))}
+\DoxyCodeLine{402     MarkEOLs = \textcolor{keyword}{false};}
+\DoxyCodeLine{403   llvm::cl::ExpandResponseFiles(Saver, Tokenizer, Args, MarkEOLs);}
+\DoxyCodeLine{404 }
+\DoxyCodeLine{405   \textcolor{comment}{// Handle -\/cc1 integrated tools, even if -\/cc1 was expanded from a response}}
+\DoxyCodeLine{406   \textcolor{comment}{// file.}}
+\DoxyCodeLine{407   \textcolor{keyword}{auto} FirstArg = std::find\_if(Args.begin() + 1, Args.end(),}
+\DoxyCodeLine{408                                [](\textcolor{keyword}{const} \textcolor{keywordtype}{char} *A) \{ return A != nullptr; \});}
+\DoxyCodeLine{409   \textcolor{keywordflow}{if} (FirstArg != Args.end() \&\& StringRef(*FirstArg).startswith(\textcolor{stringliteral}{"{}-\/cc1"{}})) \{}
+\DoxyCodeLine{410     \textcolor{comment}{// If -\/cc1 came from a response file, remove the EOL sentinels.}}
+\DoxyCodeLine{411     \textcolor{keywordflow}{if} (MarkEOLs) \{}
+\DoxyCodeLine{412       \textcolor{keyword}{auto} newEnd = std::remove(Args.begin(), Args.end(), \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{413       Args.resize(newEnd -\/ Args.begin());}
+\DoxyCodeLine{414     \}}
+\DoxyCodeLine{415     \textcolor{keywordflow}{return} ExecuteCC1Tool(Args);}
+\DoxyCodeLine{416   \}}
+\DoxyCodeLine{417 }
+\DoxyCodeLine{418   \textcolor{comment}{// Handle options that need handling before the real command line parsing in}}
+\DoxyCodeLine{419   \textcolor{comment}{// Driver::BuildCompilation()}}
+\DoxyCodeLine{420   \textcolor{keywordtype}{bool} CanonicalPrefixes = \textcolor{keyword}{true};}
+\DoxyCodeLine{421   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 1, size = Args.size(); i < size; ++i) \{}
+\DoxyCodeLine{422     \textcolor{comment}{// Skip end-\/of-\/line response file markers}}
+\DoxyCodeLine{423     \textcolor{keywordflow}{if} (Args[i] == \textcolor{keyword}{nullptr})}
+\DoxyCodeLine{424       \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{425     \textcolor{keywordflow}{if} (StringRef(Args[i]) == \textcolor{stringliteral}{"{}-\/no-\/canonical-\/prefixes"{}}) \{}
+\DoxyCodeLine{426       CanonicalPrefixes = \textcolor{keyword}{false};}
+\DoxyCodeLine{427       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{428     \}}
+\DoxyCodeLine{429   \}}
+\DoxyCodeLine{430 }
+\DoxyCodeLine{431   \textcolor{comment}{// Handle CL and \_CL\_ which permits additional command line options to be}}
+\DoxyCodeLine{432   \textcolor{comment}{// prepended or appended.}}
+\DoxyCodeLine{433   \textcolor{keywordflow}{if} (ClangCLMode) \{}
+\DoxyCodeLine{434     \textcolor{comment}{// Arguments in "{}CL"{} are prepended.}}
+\DoxyCodeLine{435     llvm::Optional<std::string> OptCL = llvm::sys::Process::GetEnv(\textcolor{stringliteral}{"{}CL"{}});}
+\DoxyCodeLine{436     \textcolor{keywordflow}{if} (OptCL.hasValue()) \{}
+\DoxyCodeLine{437       SmallVector<const char *, 8> PrependedOpts;}
+\DoxyCodeLine{438       getCLEnvVarOptions(OptCL.getValue(), Saver, PrependedOpts);}
+\DoxyCodeLine{439 }
+\DoxyCodeLine{440       \textcolor{comment}{// Insert right after the program name to prepend to the argument list.}}
+\DoxyCodeLine{441       Args.insert(Args.begin() + 1, PrependedOpts.begin(), PrependedOpts.end());}
+\DoxyCodeLine{442     \}}
+\DoxyCodeLine{443     \textcolor{comment}{// Arguments in "{}\_CL\_"{} are appended.}}
+\DoxyCodeLine{444     llvm::Optional<std::string> Opt\_CL\_ = llvm::sys::Process::GetEnv(\textcolor{stringliteral}{"{}\_CL\_"{}});}
+\DoxyCodeLine{445     \textcolor{keywordflow}{if} (Opt\_CL\_.hasValue()) \{}
+\DoxyCodeLine{446       SmallVector<const char *, 8> AppendedOpts;}
+\DoxyCodeLine{447       getCLEnvVarOptions(Opt\_CL\_.getValue(), Saver, AppendedOpts);}
+\DoxyCodeLine{448 }
+\DoxyCodeLine{449       \textcolor{comment}{// Insert at the end of the argument list to append.}}
+\DoxyCodeLine{450       Args.append(AppendedOpts.begin(), AppendedOpts.end());}
+\DoxyCodeLine{451     \}}
+\DoxyCodeLine{452   \}}
+\DoxyCodeLine{453 }
+\DoxyCodeLine{454   std::set<std::string> SavedStrings;}
+\DoxyCodeLine{455   \textcolor{comment}{// Handle CCC\_OVERRIDE\_OPTIONS, used for editing a command line behind the}}
+\DoxyCodeLine{456   \textcolor{comment}{// scenes.}}
+\DoxyCodeLine{457   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} \textcolor{keywordtype}{char} *OverrideStr = ::getenv(\textcolor{stringliteral}{"{}CCC\_OVERRIDE\_OPTIONS"{}})) \{}
+\DoxyCodeLine{458     \textcolor{comment}{// FIXME: Driver shouldn't take extra initial argument.}}
+\DoxyCodeLine{459     ApplyQAOverride(Args, OverrideStr, SavedStrings);}
+\DoxyCodeLine{460   \}}
+\DoxyCodeLine{461 }
+\DoxyCodeLine{462   std::string Path = \mbox{\hyperlink{driver_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{GetExecutablePath}}(Args[0], CanonicalPrefixes);}
+\DoxyCodeLine{463 }
+\DoxyCodeLine{464   \textcolor{comment}{// Whether the cc1 tool should be called inside the current process, or if we}}
+\DoxyCodeLine{465   \textcolor{comment}{// should spawn a new clang subprocess (old behavior).}}
+\DoxyCodeLine{466   \textcolor{comment}{// Not having an additional process saves some execution time of Windows,}}
+\DoxyCodeLine{467   \textcolor{comment}{// and makes debugging and profiling easier.}}
+\DoxyCodeLine{468   \textcolor{keywordtype}{bool} UseNewCC1Process;}
+\DoxyCodeLine{469 }
+\DoxyCodeLine{470   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts =}
+\DoxyCodeLine{471       CreateAndPopulateDiagOpts(Args, UseNewCC1Process);}
+\DoxyCodeLine{472 }
+\DoxyCodeLine{473   TextDiagnosticPrinter *DiagClient}
+\DoxyCodeLine{474     = \textcolor{keyword}{new} TextDiagnosticPrinter(llvm::errs(), \&*DiagOpts);}
+\DoxyCodeLine{475   FixupDiagPrefixExeName(DiagClient, Path);}
+\DoxyCodeLine{476 }
+\DoxyCodeLine{477   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(\textcolor{keyword}{new} DiagnosticIDs());}
+\DoxyCodeLine{478 }
+\DoxyCodeLine{479   DiagnosticsEngine Diags(DiagID, \&*DiagOpts, DiagClient);}
+\DoxyCodeLine{480 }
+\DoxyCodeLine{481   \textcolor{keywordflow}{if} (!DiagOpts-\/>DiagnosticSerializationFile.empty()) \{}
+\DoxyCodeLine{482     \textcolor{keyword}{auto} SerializedConsumer =}
+\DoxyCodeLine{483         clang::serialized\_diags::create(DiagOpts-\/>DiagnosticSerializationFile,}
+\DoxyCodeLine{484                                         \&*DiagOpts, \textcolor{comment}{/*MergeChildRecords=*/}\textcolor{keyword}{true});}
+\DoxyCodeLine{485     Diags.setClient(\textcolor{keyword}{new} ChainedDiagnosticConsumer(}
+\DoxyCodeLine{486         Diags.takeClient(), std::move(SerializedConsumer)));}
+\DoxyCodeLine{487   \}}
+\DoxyCodeLine{488 }
+\DoxyCodeLine{489   ProcessWarningOptions(Diags, *DiagOpts, \textcolor{comment}{/*ReportDiags=*/}\textcolor{keyword}{false});}
+\DoxyCodeLine{490 }
+\DoxyCodeLine{491   Driver TheDriver(Path, llvm::sys::getDefaultTargetTriple(), Diags);}
+\DoxyCodeLine{492   SetInstallDir(Args, TheDriver, CanonicalPrefixes);}
+\DoxyCodeLine{493   TheDriver.setTargetAndMode(TargetAndMode);}
+\DoxyCodeLine{494 }
+\DoxyCodeLine{495   insertTargetAndModeArgs(TargetAndMode, Args, SavedStrings);}
+\DoxyCodeLine{496 }
+\DoxyCodeLine{497   SetBackdoorDriverOutputsFromEnvVars(TheDriver);}
+\DoxyCodeLine{498 }
+\DoxyCodeLine{499   \textcolor{keywordflow}{if} (!UseNewCC1Process) \{}
+\DoxyCodeLine{500     TheDriver.CC1Main = \&ExecuteCC1Tool;}
+\DoxyCodeLine{501     \textcolor{comment}{// Ensure the CC1Command actually catches cc1 crashes}}
+\DoxyCodeLine{502     llvm::CrashRecoveryContext::Enable();}
+\DoxyCodeLine{503   \}}
+\DoxyCodeLine{504 }
+\DoxyCodeLine{505   std::unique\_ptr<Compilation> C(TheDriver.BuildCompilation(Args));}
+\DoxyCodeLine{506   \textcolor{keywordtype}{int} Res = 1;}
+\DoxyCodeLine{507   \textcolor{keywordtype}{bool} IsCrash = \textcolor{keyword}{false};}
+\DoxyCodeLine{508   \textcolor{keywordflow}{if} (C \&\& !C-\/>containsError()) \{}
+\DoxyCodeLine{509     SmallVector<std::pair<int, const Command *>, 4> FailingCommands;}
+\DoxyCodeLine{510     Res = TheDriver.ExecuteCompilation(*C, FailingCommands);}
+\DoxyCodeLine{511 }
+\DoxyCodeLine{512     \textcolor{comment}{// Force a crash to test the diagnostics.}}
+\DoxyCodeLine{513     \textcolor{keywordflow}{if} (TheDriver.GenReproducer) \{}
+\DoxyCodeLine{514       Diags.Report(diag::err\_drv\_force\_crash)}
+\DoxyCodeLine{515         << !::getenv(\textcolor{stringliteral}{"{}FORCE\_CLANG\_DIAGNOSTICS\_CRASH"{}});}
+\DoxyCodeLine{516 }
+\DoxyCodeLine{517       \textcolor{comment}{// Pretend that every command failed.}}
+\DoxyCodeLine{518       FailingCommands.clear();}
+\DoxyCodeLine{519       \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} \&J : C-\/>getJobs())}
+\DoxyCodeLine{520         \textcolor{keywordflow}{if} (\textcolor{keyword}{const} Command *C = dyn\_cast<Command>(\&J))}
+\DoxyCodeLine{521           FailingCommands.push\_back(std::make\_pair(-\/1, C));}
+\DoxyCodeLine{522 }
+\DoxyCodeLine{523       \textcolor{comment}{// Print the bug report message that would be printed if we did actually}}
+\DoxyCodeLine{524       \textcolor{comment}{// crash, but only if we're crashing due to FORCE\_CLANG\_DIAGNOSTICS\_CRASH.}}
+\DoxyCodeLine{525       \textcolor{keywordflow}{if} (::getenv(\textcolor{stringliteral}{"{}FORCE\_CLANG\_DIAGNOSTICS\_CRASH"{}}))}
+\DoxyCodeLine{526         llvm::dbgs() << llvm::getBugReportMsg();}
+\DoxyCodeLine{527     \}}
+\DoxyCodeLine{528 }
+\DoxyCodeLine{529     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} \&P : FailingCommands) \{}
+\DoxyCodeLine{530       \textcolor{keywordtype}{int} CommandRes = P.first;}
+\DoxyCodeLine{531       \textcolor{keyword}{const} Command *FailingCommand = P.second;}
+\DoxyCodeLine{532       \textcolor{keywordflow}{if} (!Res)}
+\DoxyCodeLine{533         Res = CommandRes;}
+\DoxyCodeLine{534 }
+\DoxyCodeLine{535       \textcolor{comment}{// If result status is < 0, then the driver command signalled an error.}}
+\DoxyCodeLine{536       \textcolor{comment}{// If result status is 70, then the driver command reported a fatal error.}}
+\DoxyCodeLine{537       \textcolor{comment}{// On Windows, abort will return an exit code of 3.  In these cases,}}
+\DoxyCodeLine{538       \textcolor{comment}{// generate additional diagnostic information if possible.}}
+\DoxyCodeLine{539       IsCrash = CommandRes < 0 || CommandRes == 70;}
+\DoxyCodeLine{540 \textcolor{preprocessor}{\#ifdef \_WIN32}}
+\DoxyCodeLine{541       IsCrash |= CommandRes == 3;}
+\DoxyCodeLine{542 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{543 \textcolor{preprocessor}{\#if LLVM\_ON\_UNIX}}
+\DoxyCodeLine{544       \textcolor{comment}{// When running in integrated-\/cc1 mode, the CrashRecoveryContext returns}}
+\DoxyCodeLine{545       \textcolor{comment}{// the same codes as if the program crashed. See section "{}Exit Status for}}
+\DoxyCodeLine{546       \textcolor{comment}{// Commands"{}:}}
+\DoxyCodeLine{547       \textcolor{comment}{// https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4\_xcu\_chap02.html}}
+\DoxyCodeLine{548       IsCrash |= CommandRes > 128;}
+\DoxyCodeLine{549 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{550       \textcolor{keywordflow}{if} (IsCrash) \{}
+\DoxyCodeLine{551         TheDriver.generateCompilationDiagnostics(*C, *FailingCommand);}
+\DoxyCodeLine{552         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{553       \}}
+\DoxyCodeLine{554     \}}
+\DoxyCodeLine{555   \}}
+\DoxyCodeLine{556 }
+\DoxyCodeLine{557   Diags.getClient()-\/>finish();}
+\DoxyCodeLine{558 }
+\DoxyCodeLine{559   \textcolor{keywordflow}{if} (!UseNewCC1Process \&\& IsCrash) \{}
+\DoxyCodeLine{560     \textcolor{comment}{// When crashing in -\/fintegrated-\/cc1 mode, bury the timer pointers, because}}
+\DoxyCodeLine{561     \textcolor{comment}{// the internal linked list might point to already released stack frames.}}
+\DoxyCodeLine{562     llvm::BuryPointer(llvm::TimerGroup::aquireDefaultGroup());}
+\DoxyCodeLine{563   \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{564     \textcolor{comment}{// If any timers were active but haven't been destroyed yet, print their}}
+\DoxyCodeLine{565     \textcolor{comment}{// results now.  This happens in -\/disable-\/free mode.}}
+\DoxyCodeLine{566     llvm::TimerGroup::printAll(llvm::errs());}
+\DoxyCodeLine{567     llvm::TimerGroup::clearAll();}
+\DoxyCodeLine{568   \}}
+\DoxyCodeLine{569 }
+\DoxyCodeLine{570 \textcolor{preprocessor}{\#ifdef \_WIN32}}
+\DoxyCodeLine{571   \textcolor{comment}{// Exit status should not be negative on Win32, unless abnormal termination.}}
+\DoxyCodeLine{572   \textcolor{comment}{// Once abnormal termination was caught, negative status should not be}}
+\DoxyCodeLine{573   \textcolor{comment}{// propagated.}}
+\DoxyCodeLine{574   \textcolor{keywordflow}{if} (Res < 0)}
+\DoxyCodeLine{575     Res = 1;}
+\DoxyCodeLine{576 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{577 }
+\DoxyCodeLine{578   \textcolor{comment}{// If we have multiple failing commands, we return the result of the first}}
+\DoxyCodeLine{579   \textcolor{comment}{// failing command.}}
+\DoxyCodeLine{580   \textcolor{keywordflow}{return} Res;}
+\DoxyCodeLine{581 \}}
+
+\end{DoxyCode}

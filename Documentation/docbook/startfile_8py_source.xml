@@ -1,0 +1,214 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_startfile_8py_source" xml:lang="en-US">
+<title>startfile.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-view/share/startfile.py</primary></indexterm>
+<programlisting><anchor xml:id="_startfile_8py_source_1l00001"/><link linkend="_namespacestartfile">00001</link> <emphasis role="comment">#!/usr/bin/env&#32;python</emphasis>
+00002 <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00003 
+00004 <emphasis role="stringliteral">&quot;&quot;&quot;Utility&#32;for&#32;opening&#32;a&#32;file&#32;using&#32;the&#32;default&#32;application&#32;in&#32;a&#32;cross-platform</emphasis>
+00005 <emphasis role="stringliteral">manner.&#32;Modified&#32;from&#32;http://code.activestate.com/recipes/511443/.</emphasis>
+00006 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00007 
+00008 __version__&#32;=&#32;<emphasis role="stringliteral">&apos;1.1x&apos;</emphasis>
+00009 __all__&#32;=&#32;[<emphasis role="stringliteral">&apos;open&apos;</emphasis>]
+00010 
+00011 <emphasis role="keyword">import</emphasis>&#32;os
+00012 <emphasis role="keyword">import</emphasis>&#32;sys
+00013 <emphasis role="keyword">import</emphasis>&#32;webbrowser
+00014 <emphasis role="keyword">import</emphasis>&#32;subprocess
+00015 
+00016 _controllers&#32;=&#32;{}
+00017 _open&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00018 
+00019 
+<anchor xml:id="_startfile_8py_source_1l00020"/><link linkend="_classstartfile_1_1_base_controller">00020</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classstartfile_1_1_base_controller">BaseController</link>(object):
+00021 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;&apos;Base&#32;class&#32;for&#32;open&#32;program&#32;controllers.&apos;&apos;&apos;</emphasis>
+00022 
+<anchor xml:id="_startfile_8py_source_1l00023"/><link linkend="_classstartfile_1_1_base_controller_1a8367541cb0e213cbea6892ee0ff67d56">00023</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_base_controller_1a8367541cb0e213cbea6892ee0ff67d56">__init__</link>(self,&#32;name):
+<anchor xml:id="_startfile_8py_source_1l00024"/><link linkend="_classstartfile_1_1_base_controller_1ad9e6e0d4ceeda91504f0dd6126cd6246">00024</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classstartfile_1_1_base_controller_1ad9e6e0d4ceeda91504f0dd6126cd6246">name</link>name&#32;=&#32;name
+00025 
+<anchor xml:id="_startfile_8py_source_1l00026"/><link linkend="_classstartfile_1_1_base_controller_1af78fb0d129e26fc5b3792e1f079ae8df">00026</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_base_controller_1af78fb0d129e26fc5b3792e1f079ae8df">open</link>(self,&#32;filename):
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;NotImplementedError
+00028 
+00029 
+<anchor xml:id="_startfile_8py_source_1l00030"/><link linkend="_classstartfile_1_1_controller">00030</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classstartfile_1_1_controller">Controller</link>(<link linkend="_classstartfile_1_1_base_controller">BaseController</link>):
+00031 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;&apos;Controller&#32;for&#32;a&#32;generic&#32;open&#32;program.&apos;&apos;&apos;</emphasis>
+00032 
+<anchor xml:id="_startfile_8py_source_1l00033"/><link linkend="_classstartfile_1_1_controller_1a040f769349e6d5137a0840fb6f41e0ff">00033</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_controller_1a040f769349e6d5137a0840fb6f41e0ff">__init__</link>(self,&#32;*args):
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;super(Controller,&#32;self).<link linkend="_classstartfile_1_1_controller_1a040f769349e6d5137a0840fb6f41e0ff">__init__</link>(os.path.basename(args[0]))
+<anchor xml:id="_startfile_8py_source_1l00035"/><link linkend="_classstartfile_1_1_controller_1a6ef31d03556efffda2eedfc4ec5a7d02">00035</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classstartfile_1_1_controller_1a6ef31d03556efffda2eedfc4ec5a7d02">args</link>args&#32;=&#32;list(args)
+00036 
+00037 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>_invoke(self,&#32;cmdline):
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;sys.platform[:3]&#32;==&#32;<emphasis role="stringliteral">&apos;win&apos;</emphasis>:
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;closefds&#32;=&#32;<emphasis role="keyword">False</emphasis>
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;startupinfo&#32;=&#32;subprocess.STARTUPINFO()
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;startupinfo.dwFlags&#32;|=&#32;subprocess.STARTF_USESHOWWINDOW
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;closefds&#32;=&#32;<emphasis role="keyword">True</emphasis>
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;startupinfo&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00045 
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(os.environ.get(<emphasis role="stringliteral">&apos;DISPLAY&apos;</emphasis>)&#32;<emphasis role="keywordflow">or</emphasis>&#32;sys.platform[:3]&#32;==&#32;<emphasis role="stringliteral">&apos;win&apos;</emphasis>&#32;<emphasis role="keywordflow">or</emphasis>
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sys.platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>):
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;inout&#32;=&#32;file(os.devnull,&#32;<emphasis role="stringliteral">&apos;r+&apos;</emphasis>)
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;for&#32;TTY&#32;programs,&#32;we&#32;need&#32;stdin/out</emphasis>
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;inout&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00052 
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;if&#32;possible,&#32;put&#32;the&#32;child&#32;precess&#32;in&#32;separate&#32;process&#32;group,</emphasis>
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;so&#32;keyboard&#32;interrupts&#32;don&apos;t&#32;affect&#32;child&#32;precess&#32;as&#32;well&#32;as</emphasis>
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Python</emphasis>
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;setsid&#32;=&#32;getattr(os,&#32;<emphasis role="stringliteral">&apos;setsid&apos;</emphasis>,&#32;<emphasis role="keywordtype">None</emphasis>)
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;setsid:
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;setsid&#32;=&#32;getattr(os,&#32;<emphasis role="stringliteral">&apos;setpgrp&apos;</emphasis>,&#32;<emphasis role="keywordtype">None</emphasis>)
+00059 
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pipe&#32;=&#32;subprocess.Popen(cmdline,&#32;stdin=inout,&#32;stdout=inout,
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderr=inout,&#32;close_fds=closefds,
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;preexec_fn=setsid,&#32;startupinfo=startupinfo)
+00063 
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;It&#32;is&#32;assumed&#32;that&#32;this&#32;kind&#32;of&#32;tools&#32;(gnome-open,&#32;kfmclient,</emphasis>
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;exo-open,&#32;xdg-open&#32;and&#32;open&#32;for&#32;OSX)&#32;immediately&#32;exit&#32;after&#32;launching</emphasis>
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;the&#32;specific&#32;application</emphasis>
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;returncode&#32;=&#32;pipe.wait()
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;hasattr(self,&#32;<emphasis role="stringliteral">&apos;fixreturncode&apos;</emphasis>):
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;returncode&#32;=&#32;self.fixreturncode(returncode)
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;returncode
+00071 
+<anchor xml:id="_startfile_8py_source_1l00072"/><link linkend="_classstartfile_1_1_controller_1ad911d97641fe0e125235d0d6243620cf">00072</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_controller_1ad911d97641fe0e125235d0d6243620cf">open</link>(self,&#32;filename):
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;isinstance(filename,&#32;basestring):
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmdline&#32;=&#32;self.<link linkend="_classstartfile_1_1_controller_1a6ef31d03556efffda2eedfc4ec5a7d02">args</link>args&#32;+&#32;[filename]
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;assume&#32;it&#32;is&#32;a&#32;sequence</emphasis>
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmdline&#32;=&#32;self.<link linkend="_classstartfile_1_1_controller_1a6ef31d03556efffda2eedfc4ec5a7d02">args</link>args&#32;+&#32;filename
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;self.<link linkend="_classstartfile_1_1_controller_1af3b37d2f077d424adce5d60e5ccdb987">_invoke</link>_invoke(cmdline)
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;OSError:
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00082 
+00083 
+00084 <emphasis role="comment">#&#32;Platform&#32;support&#32;for&#32;Windows</emphasis>
+00085 <emphasis role="keywordflow">if</emphasis>&#32;sys.platform[:3]&#32;==&#32;<emphasis role="stringliteral">&apos;win&apos;</emphasis>:
+00086 
+<anchor xml:id="_startfile_8py_source_1l00087"/><link linkend="_classstartfile_1_1_start">00087</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_classstartfile_1_1_start">Start</link>(<link linkend="_classstartfile_1_1_base_controller">BaseController</link>):
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;&apos;Controller&#32;for&#32;the&#32;win32&#32;start&#32;program&#32;through&#32;os.startfile.&apos;&apos;&apos;</emphasis>
+00089 
+<anchor xml:id="_startfile_8py_source_1l00090"/><link linkend="_classstartfile_1_1_start_1a4f7bf3fc016d9e10879cbe92df3ecafa">00090</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_start_1a4f7bf3fc016d9e10879cbe92df3ecafa">open</link>(self,&#32;filename):
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.startfile(filename)
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;WindowsError:
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;[Error&#32;22]&#32;No&#32;application&#32;is&#32;associated&#32;with&#32;the&#32;specified</emphasis>
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;file&#32;for&#32;this&#32;operation:&#32;&apos;&lt;URL&gt;&apos;</emphasis>
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">True</emphasis>
+00099 
+00100 &#32;&#32;&#32;&#32;_controllers[<emphasis role="stringliteral">&apos;windows-default&apos;</emphasis>]&#32;=&#32;<link linkend="_classstartfile_1_1_start">Start</link>(<emphasis role="stringliteral">&apos;start&apos;</emphasis>)
+00101 &#32;&#32;&#32;&#32;_open&#32;=&#32;_controllers[<emphasis role="stringliteral">&apos;windows-default&apos;</emphasis>].open
+00102 
+00103 
+00104 <emphasis role="comment">#&#32;Platform&#32;support&#32;for&#32;MacOS</emphasis>
+00105 <emphasis role="keywordflow">elif</emphasis>&#32;sys.platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>:
+00106 &#32;&#32;&#32;&#32;_controllers[<emphasis role="stringliteral">&apos;open&apos;</emphasis>]=&#32;<link linkend="_classstartfile_1_1_controller">Controller</link>(<emphasis role="stringliteral">&apos;open&apos;</emphasis>)
+00107 &#32;&#32;&#32;&#32;_open&#32;=&#32;_controllers[<emphasis role="stringliteral">&apos;open&apos;</emphasis>].open
+00108 
+00109 
+00110 <emphasis role="comment">#&#32;Platform&#32;support&#32;for&#32;Unix</emphasis>
+00111 <emphasis role="keywordflow">else</emphasis>:
+00112 
+00113 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;commands&#32;<emphasis role="keyword">import</emphasis>&#32;getoutput
+00115 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;ImportError:
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;subprocess&#32;<emphasis role="keyword">import</emphasis>&#32;getoutput
+00117 
+00118 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;@WARNING:&#32;use&#32;the&#32;private&#32;API&#32;of&#32;the&#32;webbrowser&#32;module</emphasis>
+00119 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;webbrowser&#32;<emphasis role="keyword">import</emphasis>&#32;_iscommand
+00120 
+<anchor xml:id="_startfile_8py_source_1l00121"/><link linkend="_classstartfile_1_1_kfm_client">00121</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_classstartfile_1_1_kfm_client">KfmClient</link>(<link linkend="_classstartfile_1_1_controller">Controller</link>):
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;&apos;Controller&#32;for&#32;the&#32;KDE&#32;kfmclient&#32;program.&apos;&apos;&apos;</emphasis>
+00123 
+<anchor xml:id="_startfile_8py_source_1l00124"/><link linkend="_classstartfile_1_1_kfm_client_1a4778925e6204bb0d3c395d5a34d7681b">00124</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_kfm_client_1a4778925e6204bb0d3c395d5a34d7681b">__init__</link>(self,&#32;kfmclient=&apos;kfmclient&apos;):
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;super(KfmClient,&#32;self).<link linkend="_classstartfile_1_1_kfm_client_1a4778925e6204bb0d3c395d5a34d7681b">__init__</link>(kfmclient,&#32;<emphasis role="stringliteral">&apos;exec&apos;</emphasis>)
+<anchor xml:id="_startfile_8py_source_1l00126"/><link linkend="_classstartfile_1_1_kfm_client_1aff20165d7c305bede24eb38da4fe5ef6">00126</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classstartfile_1_1_kfm_client_1aff20165d7c305bede24eb38da4fe5ef6">kde_version</link>kde_version&#32;=&#32;self.<link linkend="_classstartfile_1_1_kfm_client_1a581ba63d96de2cb2e5a383f2a2dad679">detect_kde_version</link>detect_kde_version()
+00127 
+<anchor xml:id="_startfile_8py_source_1l00128"/><link linkend="_classstartfile_1_1_kfm_client_1a581ba63d96de2cb2e5a383f2a2dad679">00128</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_kfm_client_1a581ba63d96de2cb2e5a383f2a2dad679">detect_kde_version</link>(self):
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;kde_version&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;info&#32;=&#32;getoutput(<emphasis role="stringliteral">&apos;kde-config&#32;--version&apos;</emphasis>)
+00132 
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;info.splitlines():
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;line.startswith(<emphasis role="stringliteral">&apos;KDE&apos;</emphasis>):
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;kde_version&#32;=&#32;line.split(<emphasis role="stringliteral">&apos;:&apos;</emphasis>)[-1].strip()
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;(OSError,&#32;RuntimeError):
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00139 
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;kde_version
+00141 
+<anchor xml:id="_startfile_8py_source_1l00142"/><link linkend="_classstartfile_1_1_kfm_client_1a145ae28b80eb1010fef30887f7f30cc8">00142</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classstartfile_1_1_kfm_client_1a145ae28b80eb1010fef30887f7f30cc8">fixreturncode</link>(self,&#32;returncode):
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;returncode&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">and</emphasis>&#32;self.<link linkend="_classstartfile_1_1_kfm_client_1aff20165d7c305bede24eb38da4fe5ef6">kde_version</link>kde_version&#32;&gt;&#32;<emphasis role="stringliteral">&apos;3.5.4&apos;</emphasis>:
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;returncode
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.EX_OK
+00147 
+<anchor xml:id="_startfile_8py_source_1l00148"/><link linkend="_namespacestartfile_1afa337d13522bb3e9c4a8d12190480c18">00148</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacestartfile_1afa337d13522bb3e9c4a8d12190480c18">detect_desktop_environment</link>():
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;&apos;Checks&#32;for&#32;known&#32;desktop&#32;environments</emphasis>
+00150 <emphasis role="stringliteral"></emphasis>
+00151 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Return&#32;the&#32;desktop&#32;environments&#32;name,&#32;lowercase&#32;(kde,&#32;gnome,&#32;xfce)</emphasis>
+00152 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;or&#32;&quot;generic&quot;</emphasis>
+00153 <emphasis role="stringliteral"></emphasis>
+00154 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&apos;&apos;&apos;</emphasis>
+00155 
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;desktop_environment&#32;=&#32;<emphasis role="stringliteral">&apos;generic&apos;</emphasis>
+00157 
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;os.environ.get(<emphasis role="stringliteral">&apos;KDE_FULL_SESSION&apos;</emphasis>)&#32;==&#32;<emphasis role="stringliteral">&apos;true&apos;</emphasis>:
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;desktop_environment&#32;=&#32;<emphasis role="stringliteral">&apos;kde&apos;</emphasis>
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;os.environ.get(<emphasis role="stringliteral">&apos;GNOME_DESKTOP_SESSION_ID&apos;</emphasis>):
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;desktop_environment&#32;=&#32;<emphasis role="stringliteral">&apos;gnome&apos;</emphasis>
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;info&#32;=&#32;getoutput(<emphasis role="stringliteral">&apos;xprop&#32;-root&#32;_DT_SAVE_MODE&apos;</emphasis>)
+00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;&#32;=&#32;&quot;xfce4&quot;&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;info:
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;desktop_environment&#32;=&#32;<emphasis role="stringliteral">&apos;xfce&apos;</emphasis>
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;(OSError,&#32;RuntimeError):
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00169 
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;desktop_environment
+00171 
+00172 
+<anchor xml:id="_startfile_8py_source_1l00173"/><link linkend="_namespacestartfile_1a5cedadc2bd383955c01a824f59e9ae59">00173</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacestartfile_1a5cedadc2bd383955c01a824f59e9ae59">register_X_controllers</link>():
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;_iscommand(<emphasis role="stringliteral">&apos;kfmclient&apos;</emphasis>):
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_controllers[<emphasis role="stringliteral">&apos;kde-open&apos;</emphasis>]&#32;=&#32;<link linkend="_classstartfile_1_1_kfm_client">KfmClient</link>()
+00176 
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;command&#32;<emphasis role="keywordflow">in</emphasis>&#32;(<emphasis role="stringliteral">&apos;gnome-open&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;exo-open&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;xdg-open&apos;</emphasis>):
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;_iscommand(command):
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_controllers[command]&#32;=&#32;<link linkend="_classstartfile_1_1_controller">Controller</link>(command)
+00180 
+<anchor xml:id="_startfile_8py_source_1l00181"/><link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">00181</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>():
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;controllers_map&#32;=&#32;{
+00183 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;gnome&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;gnome-open&apos;</emphasis>,
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;kde&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;kde-open&apos;</emphasis>,
+00185 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;xfce&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;exo-open&apos;</emphasis>,
+00186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00187 
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;desktop_environment&#32;=&#32;<link linkend="_namespacestartfile_1afa337d13522bb3e9c4a8d12190480c18">detect_desktop_environment</link>()
+00189 
+00190 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;controller_name&#32;=&#32;controllers_map[desktop_environment]
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;_controllers[controller_name].open
+00193 
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;KeyError:
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;xdg-open&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;_controllers:
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;_controllers[<emphasis role="stringliteral">&apos;xdg-open&apos;</emphasis>].open
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;webbrowser.open
+00199 
+00200 
+00201 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;os.environ.get(<emphasis role="stringliteral">&quot;DISPLAY&quot;</emphasis>):
+00202 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacestartfile_1a5cedadc2bd383955c01a824f59e9ae59">register_X_controllers</link>()
+00203 &#32;&#32;&#32;&#32;_open&#32;=&#32;<link linkend="_namespacestartfile_1af8790d592af0bdf089efd317cbd70e2e">get</link>()
+00204 
+00205 
+<anchor xml:id="_startfile_8py_source_1l00206"/><link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">00206</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename):
+00207 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&apos;&apos;Open&#32;a&#32;file&#32;or&#32;a&#32;URL&#32;in&#32;the&#32;registered&#32;default&#32;application.&apos;&apos;&apos;</emphasis>
+00208 
+00209 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;_open(filename)
+</programlisting></section>

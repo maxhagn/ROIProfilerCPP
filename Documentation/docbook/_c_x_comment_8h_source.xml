@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_comment_8h_source" xml:lang="en-US">
+<title>CXComment.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXComment.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXComment.h&#32;-&#32;Routines&#32;for&#32;manipulating&#32;CXComments&#32;-----------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXComments.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXCOMMENT_H</emphasis>
+00014 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXCOMMENT_H</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Documentation.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTContext.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Comment.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00022 
+00023 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+<anchor xml:id="__c_x_comment_8h_source_1l00024"/><link linkend="_namespaceclang_1_1comments">00024</link> <emphasis role="keyword">namespace&#32;</emphasis>comments&#32;{
+00025 &#32;&#32;<emphasis role="keyword">class&#32;</emphasis>CommandTraits;
+00026 }
+00027 
+<anchor xml:id="__c_x_comment_8h_source_1l00028"/><link linkend="_namespaceclang_1_1cxcomment">00028</link> <emphasis role="keyword">namespace&#32;</emphasis>cxcomment&#32;{
+00029 
+00030 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXComment&#32;createCXComment(<emphasis role="keyword">const</emphasis>&#32;comments::Comment&#32;*C,
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU)&#32;{
+00032 &#32;&#32;CXComment&#32;Result;
+00033 &#32;&#32;Result.ASTNode&#32;=&#32;C;
+00034 &#32;&#32;Result.TranslationUnit&#32;=&#32;TU;
+00035 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00036 }
+00037 
+00038 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;comments::Comment&#32;*getASTNode(CXComment&#32;CXC)&#32;{
+00039 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>comments::Comment&#32;*<emphasis role="keyword">&gt;</emphasis>(CXC.ASTNode);
+00040 }
+00041 
+00042 <emphasis role="keyword">template</emphasis>&lt;<emphasis role="keyword">typename</emphasis>&#32;T&gt;
+00043 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;T&#32;*getASTNodeAs(CXComment&#32;CXC)&#32;{
+00044 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;comments::Comment&#32;*C&#32;=&#32;getASTNode(CXC);
+00045 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!C)
+00046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00047 
+00048 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;dyn_cast&lt;T&gt;(C);
+00049 }
+00050 
+00051 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;ASTContext&#32;&amp;getASTContext(CXComment&#32;CXC)&#32;{
+00052 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cxtu::getASTUnit(CXC.TranslationUnit)-&gt;getASTContext();
+00053 }
+00054 
+00055 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;comments::CommandTraits&#32;&amp;getCommandTraits(CXComment&#32;CXC)&#32;{
+00056 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getASTContext(CXC).getCommentCommandTraits();
+00057 }
+00058 
+00059 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;cxcomment</emphasis>
+00060 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;clang</emphasis>
+00061 
+00062 <emphasis role="preprocessor">#endif</emphasis>
+00063 
+</programlisting></section>

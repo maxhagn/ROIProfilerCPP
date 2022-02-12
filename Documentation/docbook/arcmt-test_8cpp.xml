@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_arcmt-test_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/arcmt-test/arcmt-test.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/arcmt-test/arcmt-test.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/ARCMigrate/ARCMT.h&quot;
+#include &quot;clang/AST/ASTContext.h&quot;
+#include &quot;clang/Frontend/PCHContainerOperations.h&quot;
+#include &quot;clang/Frontend/TextDiagnosticPrinter.h&quot;
+#include &quot;clang/Frontend/Utils.h&quot;
+#include &quot;clang/Frontend/VerifyDiagnosticConsumer.h&quot;
+#include &quot;clang/Lex/Preprocessor.h&quot;
+#include &quot;clang/Lex/PreprocessorOptions.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/MemoryBuffer.h&quot;
+#include &quot;llvm/Support/Path.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &lt;system_error&gt;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>std::string <link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">GetExecutablePath</link> (const char *Argv0)</para>
+</listitem>
+            <listitem><para>int <link linkend="_arcmt-test_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd"/>    <section>
+    <title>GetExecutablePath()</title>
+<indexterm><primary>GetExecutablePath</primary><secondary>arcmt-test.cpp</secondary></indexterm>
+<indexterm><primary>arcmt-test.cpp</primary><secondary>GetExecutablePath</secondary></indexterm>
+<para><computeroutput>std::string GetExecutablePath (const char * Argv0)</computeroutput></para><para>
+Definition at line <link linkend="_arcmt-test_8cpp_source_1l00066">66</link> of file <link linkend="_arcmt-test_8cpp_source">arcmt-test.cpp</link>.</para>
+<programlisting>00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00067 &#32;&#32;<emphasis role="comment">//&#32;This&#32;just&#32;needs&#32;to&#32;be&#32;some&#32;symbol&#32;in&#32;the&#32;binary;&#32;C++&#32;doesn&apos;t</emphasis>
+00068 &#32;&#32;<emphasis role="comment">//&#32;allow&#32;taking&#32;the&#32;address&#32;of&#32;::main&#32;however.</emphasis>
+00069 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">GetExecutablePath</link>;
+00070 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::fs::getMainExecutable(Argv0,&#32;MainAddr);
+00071 }
+</programlisting><para>
+Referenced by <link linkend="_arcmt-test_8cpp_source_1l00343">main()</link>.</para>
+    </section><anchor xml:id="_arcmt-test_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>arcmt-test.cpp</secondary></indexterm>
+<indexterm><primary>arcmt-test.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_arcmt-test_8cpp_source_1l00343">343</link> of file <link linkend="_arcmt-test_8cpp_source">arcmt-test.cpp</link>.</para>
+<programlisting>00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00344 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_arcmt-test_8cpp_1ad6d8d337ab25547248d119bea48daefd">GetExecutablePath</link>;
+00345 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+00346 
+00347 &#32;&#32;std::string
+00348 &#32;&#32;&#32;&#32;resourcesPath&#32;=&#32;CompilerInvocation::GetResourcesPath(argv[0],&#32;MainAddr);
+00349 
+00350 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;optargc&#32;=&#32;0;
+00351 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;optargc&#32;!=&#32;argc;&#32;++optargc)&#32;{
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StringRef(argv[optargc])&#32;==&#32;<emphasis role="stringliteral">&quot;--args&quot;</emphasis>)
+00353 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00354 &#32;&#32;}
+00355 &#32;&#32;llvm::cl::ParseCommandLineOptions(optargc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;arcmt-test&quot;</emphasis>);
+00356 
+00357 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(VerifyTransformedFiles)&#32;{
+00358 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ResultFiles.empty())&#32;{
+00359 &#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::PrintHelpMessage();
+00360 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00361 &#32;&#32;&#32;&#32;}
+00362 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;verifyTransformedFiles(ResultFiles);
+00363 &#32;&#32;}
+00364 
+00365 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(optargc&#32;==&#32;argc)&#32;{
+00366 &#32;&#32;&#32;&#32;llvm::cl::PrintHelpMessage();
+00367 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00368 &#32;&#32;}
+00369 
+00370 &#32;&#32;ArrayRef&lt;const&#32;char*&gt;&#32;Args(argv+optargc+1,&#32;argc-optargc-1);
+00371 
+00372 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CheckOnly)
+00373 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;checkForMigration(resourcesPath,&#32;Args);
+00374 
+00375 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;performTransformations(resourcesPath,&#32;Args);
+00376 }
+</programlisting><para>
+References <link linkend="_arcmt-test_8cpp_source_1l00066">GetExecutablePath()</link>.</para>
+</section>
+</section>
+</section>

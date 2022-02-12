@@ -1,0 +1,609 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_report_8py_source" xml:lang="en-US">
+<title>report.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libscanbuild/report.py</primary></indexterm>
+<programlisting><anchor xml:id="_report_8py_source_1l00001"/><link linkend="_namespacelibscanbuild_1_1report">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 <emphasis role="stringliteral">&quot;&quot;&quot;&#32;This&#32;module&#32;is&#32;responsible&#32;to&#32;generate&#32;&apos;index.html&apos;&#32;for&#32;the&#32;report.</emphasis>
+00006 <emphasis role="stringliteral"></emphasis>
+00007 <emphasis role="stringliteral">The&#32;input&#32;for&#32;this&#32;step&#32;is&#32;the&#32;output&#32;directory,&#32;where&#32;individual&#32;reports</emphasis>
+00008 <emphasis role="stringliteral">could&#32;be&#32;found.&#32;It&#32;parses&#32;those&#32;reports&#32;and&#32;generates&#32;&apos;index.html&apos;.&#32;&quot;&quot;&quot;</emphasis>
+00009 
+00010 <emphasis role="keyword">import</emphasis>&#32;re
+00011 <emphasis role="keyword">import</emphasis>&#32;os
+00012 <emphasis role="keyword">import</emphasis>&#32;os.path
+00013 <emphasis role="keyword">import</emphasis>&#32;sys
+00014 <emphasis role="keyword">import</emphasis>&#32;shutil
+00015 <emphasis role="keyword">import</emphasis>&#32;plistlib
+00016 <emphasis role="keyword">import</emphasis>&#32;glob
+00017 <emphasis role="keyword">import</emphasis>&#32;json
+00018 <emphasis role="keyword">import</emphasis>&#32;logging
+00019 <emphasis role="keyword">import</emphasis>&#32;datetime
+00020 <emphasis role="keyword">from</emphasis>&#32;libscanbuild&#32;<emphasis role="keyword">import</emphasis>&#32;duplicate_check
+00021 <emphasis role="keyword">from</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1clang">libscanbuild.clang</link>&#32;<emphasis role="keyword">import</emphasis>&#32;get_version
+00022 
+00023 __all__&#32;=&#32;[<emphasis role="stringliteral">&apos;document&apos;</emphasis>]
+00024 
+00025 
+<anchor xml:id="_report_8py_source_1l00026"/><link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">00026</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>(args):
+00027 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Generates&#32;cover&#32;report&#32;and&#32;returns&#32;the&#32;number&#32;of&#32;bugs/crashes.&#32;&quot;&quot;&quot;</emphasis>
+00028 
+00029 &#32;&#32;&#32;&#32;html_reports_available&#32;=&#32;args.output_format&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;html&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;plist-html&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;sarif-html&apos;</emphasis>}
+00030 &#32;&#32;&#32;&#32;sarif_reports_available&#32;=&#32;args.output_format&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;sarif&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;sarif-html&apos;</emphasis>}
+00031 
+00032 &#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;count&#32;crashes&#32;and&#32;bugs&apos;</emphasis>)
+00033 &#32;&#32;&#32;&#32;crash_count&#32;=&#32;sum(1&#32;<emphasis role="keywordflow">for</emphasis>&#32;_&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1a91e42310b6d2f7481dd6ecaeb6b6ed2c">read_crashes</link>(args.output))
+00034 &#32;&#32;&#32;&#32;bug_counter&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1report_1ab6fe93c5edac5c757c5af61d76f68c92">create_counters</link>()
+00035 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;bug&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1a9f6c036e066d7865cf1ec5e0bdf9efdd">read_bugs</link>(args.output,&#32;html_reports_available):
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;bug_counter(bug)
+00037 &#32;&#32;&#32;&#32;result&#32;=&#32;crash_count&#32;+&#32;bug_counter.total
+00038 
+00039 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;html_reports_available&#32;<emphasis role="keywordflow">and</emphasis>&#32;result:
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;use_cdb&#32;=&#32;os.path.exists(args.cdb)
+00041 
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;generate&#32;index.html&#32;file&apos;</emphasis>)
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;common&#32;prefix&#32;for&#32;source&#32;files&#32;to&#32;have&#32;sorter&#32;path</emphasis>
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;prefix&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1report_1aeb8315b6b6ed9cd384c69945cfe72f0e">commonprefix_from</link>(args.cdb)&#32;<emphasis role="keywordflow">if</emphasis>&#32;use_cdb&#32;<emphasis role="keywordflow">else</emphasis>&#32;os.getcwd()
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;assemble&#32;the&#32;cover&#32;from&#32;multiple&#32;fragments</emphasis>
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fragments&#32;=&#32;[]
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;bug_counter.total:
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fragments.append(<link linkend="_namespacelibscanbuild_1_1report_1afc1b1da23765899e904bc16cf9c06b3a">bug_summary</link>(args.output,&#32;bug_counter))
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fragments.append(<link linkend="_namespacelibscanbuild_1_1report_1aa68a6231342d399bd4143502d01e1b8e">bug_report</link>(args.output,&#32;prefix))
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;crash_count:
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fragments.append(<link linkend="_namespacelibscanbuild_1_1report_1a9284ae2d8b7d761ff2f5467efb478092">crash_report</link>(args.output,&#32;prefix))
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a3f60e1b669bd373d36ebca8e1f48f002">assemble_cover</link>(args,&#32;prefix,&#32;fragments)
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;copy&#32;additional&#32;files&#32;to&#32;the&#32;report</emphasis>
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a481afed4a0e425fc21badb3efcbe1baa">copy_resource_files</link>(args.output)
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;use_cdb:
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;shutil.copy(args.cdb,&#32;args.output)
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">finally</emphasis>:
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;fragment&#32;<emphasis role="keywordflow">in</emphasis>&#32;fragments:
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.remove(fragment)
+00061 
+00062 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;sarif_reports_available:
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;merging&#32;sarif&#32;files&apos;</emphasis>)
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1af377afe72b83398aa02352a3aefe3564">merge_sarif_files</link>(args.output)
+00065 
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result
+00067 
+00068 
+<anchor xml:id="_report_8py_source_1l00069"/><link linkend="_namespacelibscanbuild_1_1report_1a3f60e1b669bd373d36ebca8e1f48f002">00069</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a3f60e1b669bd373d36ebca8e1f48f002">assemble_cover</link>(args,&#32;prefix,&#32;fragments):
+00070 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Put&#32;together&#32;the&#32;fragments&#32;into&#32;a&#32;final&#32;report.&#32;&quot;&quot;&quot;</emphasis>
+00071 
+00072 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;getpass
+00073 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;socket
+00074 
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;args.html_title&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;args.html_title&#32;=&#32;os.path.basename(prefix)&#32;+&#32;<emphasis role="stringliteral">&apos;&#32;-&#32;analyzer&#32;results&apos;</emphasis>
+00077 
+00078 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(os.path.join(args.output,&#32;<emphasis role="stringliteral">&apos;index.html&apos;</emphasis>),&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;indent&#32;=&#32;0
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00081 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;!DOCTYPE&#32;html&gt;</emphasis>
+00082 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;html&gt;</emphasis>
+00083 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;head&gt;</emphasis>
+00084 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;title&gt;{html_title}&lt;/title&gt;</emphasis>
+00085 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;link&#32;type=&quot;text/css&quot;&#32;rel=&quot;stylesheet&quot;&#32;href=&quot;scanview.css&quot;/&gt;</emphasis>
+00086 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;script&#32;type=&apos;text/javascript&apos;&#32;src=&quot;sorttable.js&quot;&gt;&lt;/script&gt;</emphasis>
+00087 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;script&#32;type=&apos;text/javascript&apos;&#32;src=&apos;selectable.js&apos;&gt;&lt;/script&gt;</emphasis>
+00088 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/head&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(html_title=args.html_title))
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;SUMMARYENDHEAD&apos;</emphasis>))
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00091 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;body&gt;</emphasis>
+00092 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;h1&gt;{html_title}&lt;/h1&gt;</emphasis>
+00093 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;table&gt;</emphasis>
+00094 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;tr&gt;&lt;th&gt;User:&lt;/th&gt;&lt;td&gt;{user_name}@{host_name}&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00095 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;tr&gt;&lt;th&gt;Working&#32;Directory:&lt;/th&gt;&lt;td&gt;{current_dir}&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00096 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;tr&gt;&lt;th&gt;Command&#32;Line:&lt;/th&gt;&lt;td&gt;{cmd_args}&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00097 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;tr&gt;&lt;th&gt;Clang&#32;Version:&lt;/th&gt;&lt;td&gt;{clang_version}&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00098 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;tr&gt;&lt;th&gt;Date:&lt;/th&gt;&lt;td&gt;{date}&lt;/td&gt;&lt;/tr&gt;</emphasis>
+00099 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/table&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(html_title=args.html_title,
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;user_name=getpass.getuser(),
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;host_name=socket.gethostname(),
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current_dir=prefix,
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cmd_args=<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>.join(sys.argv),
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang_version=<link linkend="_namespacelibscanbuild_1_1clang_1ac38809d624aaefe00fff85b0bfa1005f">get_version</link>(args.clang),
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;date=datetime.datetime.today(
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;).strftime(<emphasis role="stringliteral">&apos;%c&apos;</emphasis>)))
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;fragment&#32;<emphasis role="keywordflow">in</emphasis>&#32;fragments:
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;copy&#32;the&#32;content&#32;of&#32;fragments</emphasis>
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(fragment,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;input_handle:
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;shutil.copyfileobj(input_handle,&#32;handle)
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00112 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/body&gt;</emphasis>
+00113 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;/html&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00114 
+00115 
+<anchor xml:id="_report_8py_source_1l00116"/><link linkend="_namespacelibscanbuild_1_1report_1afc1b1da23765899e904bc16cf9c06b3a">00116</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1afc1b1da23765899e904bc16cf9c06b3a">bug_summary</link>(output_dir,&#32;bug_counter):
+00117 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Bug&#32;summary&#32;is&#32;a&#32;HTML&#32;table&#32;to&#32;give&#32;a&#32;better&#32;overview&#32;of&#32;the&#32;bugs.&#32;&quot;&quot;&quot;</emphasis>
+00118 
+00119 &#32;&#32;&#32;&#32;name&#32;=&#32;os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;summary.html.fragment&apos;</emphasis>)
+00120 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(name,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;indent&#32;=&#32;4
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00123 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;h2&gt;Bug&#32;Summary&lt;/h2&gt;</emphasis>
+00124 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;table&gt;</emphasis>
+00125 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;thead&gt;</emphasis>
+00126 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&gt;</emphasis>
+00127 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Bug&#32;Type&lt;/td&gt;</emphasis>
+00128 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Quantity&lt;/td&gt;</emphasis>
+00129 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;sorttable_nosort&quot;&gt;Display?&lt;/td&gt;</emphasis>
+00130 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;</emphasis>
+00131 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/thead&gt;</emphasis>
+00132 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;tbody&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00134 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&#32;style=&quot;font-weight:bold&quot;&gt;</emphasis>
+00135 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;SUMM_DESC&quot;&gt;All&#32;Bugs&lt;/td&gt;</emphasis>
+00136 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;Q&quot;&gt;{0}&lt;/td&gt;</emphasis>
+00137 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;</emphasis>
+00138 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;center&gt;</emphasis>
+00139 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;input&#32;checked&#32;type=&quot;checkbox&quot;&#32;id=&quot;AllBugsCheck&quot;</emphasis>
+00140 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;onClick=&quot;CopyCheckedStateToCheckButtons(this);&quot;/&gt;</emphasis>
+00141 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;/center&gt;</emphasis>
+00142 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;/td&gt;</emphasis>
+00143 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(bug_counter.total))
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;category,&#32;types&#32;<emphasis role="keywordflow">in</emphasis>&#32;bug_counter.categories.items():
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00146 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&gt;</emphasis>
+00147 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;th&gt;{0}&lt;/th&gt;&lt;th&#32;colspan=2&gt;&lt;/th&gt;</emphasis>
+00148 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(category))
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;bug_type&#32;<emphasis role="keywordflow">in</emphasis>&#32;types.values():
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00151 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&gt;</emphasis>
+00152 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;SUMM_DESC&quot;&gt;{bug_type}&lt;/td&gt;</emphasis>
+00153 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;Q&quot;&gt;{bug_count}&lt;/td&gt;</emphasis>
+00154 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;</emphasis>
+00155 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;center&gt;</emphasis>
+00156 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;input&#32;checked&#32;type=&quot;checkbox&quot;</emphasis>
+00157 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;onClick=&quot;ToggleDisplay(this,&apos;{bug_type_class}&apos;);&quot;/&gt;</emphasis>
+00158 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;/center&gt;</emphasis>
+00159 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;/td&gt;</emphasis>
+00160 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(**bug_type))
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00162 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/tbody&gt;</emphasis>
+00163 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;/table&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;SUMMARYBUGEND&apos;</emphasis>))
+00165 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;name
+00166 
+00167 
+<anchor xml:id="_report_8py_source_1l00168"/><link linkend="_namespacelibscanbuild_1_1report_1aa68a6231342d399bd4143502d01e1b8e">00168</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1aa68a6231342d399bd4143502d01e1b8e">bug_report</link>(output_dir,&#32;prefix):
+00169 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Creates&#32;a&#32;fragment&#32;from&#32;the&#32;analyzer&#32;reports.&#32;&quot;&quot;&quot;</emphasis>
+00170 
+00171 &#32;&#32;&#32;&#32;pretty&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1report_1a6c64ec6d654aabfdb8472eb77020d1c0">prettify_bug</link>(prefix,&#32;output_dir)
+00172 &#32;&#32;&#32;&#32;bugs&#32;=&#32;(pretty(bug)&#32;<emphasis role="keywordflow">for</emphasis>&#32;bug&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1a9f6c036e066d7865cf1ec5e0bdf9efdd">read_bugs</link>(output_dir,&#32;<emphasis role="keyword">True</emphasis>))
+00173 
+00174 &#32;&#32;&#32;&#32;name&#32;=&#32;os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;bugs.html.fragment&apos;</emphasis>)
+00175 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(name,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;indent&#32;=&#32;4
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00178 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;h2&gt;Reports&lt;/h2&gt;</emphasis>
+00179 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;table&#32;class=&quot;sortable&quot;&#32;style=&quot;table-layout:automatic&quot;&gt;</emphasis>
+00180 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;thead&gt;</emphasis>
+00181 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&gt;</emphasis>
+00182 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Bug&#32;Group&lt;/td&gt;</emphasis>
+00183 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;sorttable_sorted&quot;&gt;</emphasis>
+00184 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Bug&#32;Type</emphasis>
+00185 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;span&#32;id=&quot;sorttable_sortfwdind&quot;&gt;&amp;nbsp;&amp;#x25BE;&lt;/span&gt;</emphasis>
+00186 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;/td&gt;</emphasis>
+00187 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;File&lt;/td&gt;</emphasis>
+00188 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Function/Method&lt;/td&gt;</emphasis>
+00189 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;Q&quot;&gt;Line&lt;/td&gt;</emphasis>
+00190 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;Q&quot;&gt;Path&#32;Length&lt;/td&gt;</emphasis>
+00191 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;sorttable_nosort&quot;&gt;&lt;/td&gt;</emphasis>
+00192 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;</emphasis>
+00193 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/thead&gt;</emphasis>
+00194 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;tbody&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;REPORTBUGCOL&apos;</emphasis>))
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;current&#32;<emphasis role="keywordflow">in</emphasis>&#32;bugs:
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00198 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&#32;class=&quot;{bug_type_class}&quot;&gt;</emphasis>
+00199 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;DESC&quot;&gt;{bug_category}&lt;/td&gt;</emphasis>
+00200 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;DESC&quot;&gt;{bug_type}&lt;/td&gt;</emphasis>
+00201 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;{bug_file}&lt;/td&gt;</emphasis>
+00202 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;DESC&quot;&gt;{bug_function}&lt;/td&gt;</emphasis>
+00203 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;Q&quot;&gt;{bug_line}&lt;/td&gt;</emphasis>
+00204 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&#32;class=&quot;Q&quot;&gt;{bug_path_length}&lt;/td&gt;</emphasis>
+00205 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;&lt;a&#32;href=&quot;{report_file}#EndPath&quot;&gt;View&#32;Report&lt;/a&gt;&lt;/td&gt;</emphasis>
+00206 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(**current))
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;REPORTBUG&apos;</emphasis>,&#32;{<emphasis role="stringliteral">&apos;id&apos;</emphasis>:&#32;current[<emphasis role="stringliteral">&apos;report_file&apos;</emphasis>]}))
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00209 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/tbody&gt;</emphasis>
+00210 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;/table&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;REPORTBUGEND&apos;</emphasis>))
+00212 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;name
+00213 
+00214 
+<anchor xml:id="_report_8py_source_1l00215"/><link linkend="_namespacelibscanbuild_1_1report_1a9284ae2d8b7d761ff2f5467efb478092">00215</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a9284ae2d8b7d761ff2f5467efb478092">crash_report</link>(output_dir,&#32;prefix):
+00216 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Creates&#32;a&#32;fragment&#32;from&#32;the&#32;compiler&#32;crashes.&#32;&quot;&quot;&quot;</emphasis>
+00217 
+00218 &#32;&#32;&#32;&#32;pretty&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1report_1a48fe2a16d071ac8ea6ed7905e9f97e21">prettify_crash</link>(prefix,&#32;output_dir)
+00219 &#32;&#32;&#32;&#32;crashes&#32;=&#32;(pretty(crash)&#32;<emphasis role="keywordflow">for</emphasis>&#32;crash&#32;<emphasis role="keywordflow">in</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1a91e42310b6d2f7481dd6ecaeb6b6ed2c">read_crashes</link>(output_dir))
+00220 
+00221 &#32;&#32;&#32;&#32;name&#32;=&#32;os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;crashes.html.fragment&apos;</emphasis>)
+00222 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(name,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;indent&#32;=&#32;4
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00225 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;h2&gt;Analyzer&#32;Failures&lt;/h2&gt;</emphasis>
+00226 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;p&gt;The&#32;analyzer&#32;had&#32;problems&#32;processing&#32;the&#32;following&#32;files:&lt;/p&gt;</emphasis>
+00227 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;table&gt;</emphasis>
+00228 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;thead&gt;</emphasis>
+00229 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&gt;</emphasis>
+00230 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Problem&lt;/td&gt;</emphasis>
+00231 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Source&#32;File&lt;/td&gt;</emphasis>
+00232 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;Preprocessed&#32;File&lt;/td&gt;</emphasis>
+00233 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;STDERR&#32;Output&lt;/td&gt;</emphasis>
+00234 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;</emphasis>
+00235 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/thead&gt;</emphasis>
+00236 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;tbody&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;current&#32;<emphasis role="keywordflow">in</emphasis>&#32;crashes:
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00239 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;tr&gt;</emphasis>
+00240 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;{problem}&lt;/td&gt;</emphasis>
+00241 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;{source}&lt;/td&gt;</emphasis>
+00242 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;&lt;a&#32;href=&quot;{file}&quot;&gt;preprocessor&#32;output&lt;/a&gt;&lt;/td&gt;</emphasis>
+00243 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&#32;&#32;&lt;td&gt;&lt;a&#32;href=&quot;{stderr}&quot;&gt;analyzer&#32;std&#32;err&lt;/a&gt;&lt;/td&gt;</emphasis>
+00244 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&#32;&#32;&lt;/tr&gt;&quot;&quot;&quot;</emphasis>,&#32;indent).format(**current))
+00245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;REPORTPROBLEM&apos;</emphasis>,&#32;current))
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00247 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&#32;&#32;&lt;/tbody&gt;</emphasis>
+00248 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;|&lt;/table&gt;&quot;&quot;&quot;</emphasis>,&#32;indent))
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(<emphasis role="stringliteral">&apos;REPORTCRASHES&apos;</emphasis>))
+00250 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;name
+00251 
+00252 
+<anchor xml:id="_report_8py_source_1l00253"/><link linkend="_namespacelibscanbuild_1_1report_1a91e42310b6d2f7481dd6ecaeb6b6ed2c">00253</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a91e42310b6d2f7481dd6ecaeb6b6ed2c">read_crashes</link>(output_dir):
+00254 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Generate&#32;a&#32;unique&#32;sequence&#32;of&#32;crashes&#32;from&#32;given&#32;output&#32;directory.&#32;&quot;&quot;&quot;</emphasis>
+00255 
+00256 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<link linkend="_namespacelibscanbuild_1_1report_1ace97ff6a1dfab0a84df7ad6be77f10be">parse_crash</link>(filename)
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;filename&#32;<emphasis role="keywordflow">in</emphasis>&#32;glob.iglob(os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;failures&apos;</emphasis>,
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;*.info.txt&apos;</emphasis>)))
+00259 
+00260 
+<anchor xml:id="_report_8py_source_1l00261"/><link linkend="_namespacelibscanbuild_1_1report_1a9f6c036e066d7865cf1ec5e0bdf9efdd">00261</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a9f6c036e066d7865cf1ec5e0bdf9efdd">read_bugs</link>(output_dir,&#32;html):
+00262 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;type:&#32;(str,&#32;bool)&#32;-&gt;&#32;Generator[Dict[str,&#32;Any],&#32;None,&#32;None]</emphasis>
+00263 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Generate&#32;a&#32;unique&#32;sequence&#32;of&#32;bugs&#32;from&#32;given&#32;output&#32;directory.</emphasis>
+00264 <emphasis role="stringliteral"></emphasis>
+00265 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Duplicates&#32;can&#32;be&#32;in&#32;a&#32;project&#32;if&#32;the&#32;same&#32;module&#32;was&#32;compiled&#32;multiple</emphasis>
+00266 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;times&#32;with&#32;different&#32;compiler&#32;options.&#32;These&#32;would&#32;be&#32;better&#32;to&#32;show&#32;in</emphasis>
+00267 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;the&#32;final&#32;report&#32;(cover)&#32;only&#32;once.&#32;&quot;&quot;&quot;</emphasis>
+00268 
+00269 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>empty(file_name):
+00270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.stat(file_name).st_size&#32;==&#32;0
+00271 
+00272 &#32;&#32;&#32;&#32;duplicate&#32;=&#32;<link linkend="_namespacelibscanbuild_1a0ddf12c926f03c7f5e3671f162f92832">duplicate_check</link>(
+00273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">lambda</emphasis>&#32;bug:&#32;<emphasis role="stringliteral">&apos;{bug_line}.{bug_path_length}:{bug_file}&apos;</emphasis>.format(**bug))
+00274 
+00275 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;get&#32;the&#32;right&#32;parser&#32;for&#32;the&#32;job.</emphasis>
+00276 &#32;&#32;&#32;&#32;parser&#32;=&#32;parse_bug_html&#32;<emphasis role="keywordflow">if</emphasis>&#32;html&#32;<emphasis role="keywordflow">else</emphasis>&#32;parse_bug_plist
+00277 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;get&#32;the&#32;input&#32;files,&#32;which&#32;are&#32;not&#32;empty.</emphasis>
+00278 &#32;&#32;&#32;&#32;pattern&#32;=&#32;os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;*.html&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;html&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;*.plist&apos;</emphasis>)
+00279 &#32;&#32;&#32;&#32;bug_files&#32;=&#32;(file&#32;<emphasis role="keywordflow">for</emphasis>&#32;file&#32;<emphasis role="keywordflow">in</emphasis>&#32;glob.iglob(pattern)&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;empty(file))
+00280 
+00281 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;bug_file&#32;<emphasis role="keywordflow">in</emphasis>&#32;bug_files:
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;bug&#32;<emphasis role="keywordflow">in</emphasis>&#32;parser(bug_file):
+00283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;duplicate(bug):
+00284 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;bug
+00285 
+<anchor xml:id="_report_8py_source_1l00286"/><link linkend="_namespacelibscanbuild_1_1report_1af377afe72b83398aa02352a3aefe3564">00286</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1af377afe72b83398aa02352a3aefe3564">merge_sarif_files</link>(output_dir,&#32;sort_files=False):
+00287 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Reads&#32;and&#32;merges&#32;all&#32;.sarif&#32;files&#32;in&#32;the&#32;given&#32;output&#32;directory.</emphasis>
+00288 <emphasis role="stringliteral"></emphasis>
+00289 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Each&#32;sarif&#32;file&#32;in&#32;the&#32;output&#32;directory&#32;is&#32;understood&#32;as&#32;a&#32;single&#32;run</emphasis>
+00290 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;and&#32;thus&#32;appear&#32;separate&#32;in&#32;the&#32;top&#32;level&#32;runs&#32;array.&#32;This&#32;requires</emphasis>
+00291 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;modifying&#32;the&#32;run&#32;index&#32;of&#32;any&#32;embedded&#32;links&#32;in&#32;messages.</emphasis>
+00292 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&quot;&quot;&quot;</emphasis>
+00293 
+00294 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>empty(file_name):
+00295 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.stat(file_name).st_size&#32;==&#32;0
+00296 
+00297 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>update_sarif_object(sarif_object,&#32;runs_count_offset):
+00298 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00299 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Given&#32;a&#32;SARIF&#32;object,&#32;checks&#32;its&#32;dictionary&#32;entries&#32;for&#32;a&#32;&apos;message&apos;&#32;property.</emphasis>
+00300 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;If&#32;it&#32;exists,&#32;updates&#32;the&#32;message&#32;index&#32;of&#32;embedded&#32;links&#32;in&#32;the&#32;run&#32;index.</emphasis>
+00301 <emphasis role="stringliteral"></emphasis>
+00302 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Recursively&#32;looks&#32;through&#32;entries&#32;in&#32;the&#32;dictionary.</emphasis>
+00303 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&quot;&quot;&quot;</emphasis>
+00304 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;isinstance(sarif_object,&#32;dict):
+00305 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;sarif_object
+00306 
+00307 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;message&apos;</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;sarif_object:
+00308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sarif_object[<emphasis role="stringliteral">&apos;message&apos;</emphasis>]&#32;=&#32;match_and_update_run(sarif_object[<emphasis role="stringliteral">&apos;message&apos;</emphasis>],&#32;runs_count_offset)
+00309 
+00310 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;key&#32;<emphasis role="keywordflow">in</emphasis>&#32;sarif_object:
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;isinstance(sarif_object[key],&#32;list):
+00312 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;iterate&#32;through&#32;subobjects&#32;and&#32;update&#32;it.</emphasis>
+00313 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;arr&#32;=&#32;[update_sarif_object(entry,&#32;runs_count_offset)&#32;<emphasis role="keywordflow">for</emphasis>&#32;entry&#32;<emphasis role="keywordflow">in</emphasis>&#32;sarif_object[key]]
+00314 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sarif_object[key]&#32;=&#32;arr
+00315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;isinstance(sarif_object[key],&#32;dict):
+00316 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sarif_object[key]&#32;=&#32;update_sarif_object(sarif_object[key],&#32;runs_count_offset)
+00317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00318 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;do&#32;nothing</emphasis>
+00319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00320 
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;sarif_object
+00322 
+00323 
+00324 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>match_and_update_run(message,&#32;runs_count_offset):
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>
+00326 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Given&#32;a&#32;SARIF&#32;message&#32;object,&#32;checks&#32;if&#32;the&#32;text&#32;property&#32;contains&#32;an&#32;embedded&#32;link&#32;and</emphasis>
+00327 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;updates&#32;the&#32;run&#32;index&#32;if&#32;necessary.</emphasis>
+00328 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&quot;&quot;&quot;</emphasis>
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;text&apos;</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;message:
+00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;message
+00331 
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;we&#32;only&#32;merge&#32;runs,&#32;so&#32;we&#32;only&#32;need&#32;to&#32;update&#32;the&#32;run&#32;index</emphasis>
+00333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pattern&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;sarif:/runs/(\d+)&apos;</emphasis>)
+00334 
+00335 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;text&#32;=&#32;message[<emphasis role="stringliteral">&apos;text&apos;</emphasis>]
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;matches&#32;=&#32;re.finditer(pattern,&#32;text)
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;matches_list&#32;=&#32;list(matches)
+00338 
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;update&#32;matches&#32;from&#32;right&#32;to&#32;left&#32;to&#32;make&#32;increasing&#32;character&#32;length&#32;(9-&gt;10)&#32;smoother</emphasis>
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;idx&#32;<emphasis role="keywordflow">in</emphasis>&#32;range(len(matches_list)&#32;-&#32;1,&#32;-1,&#32;-1):
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;match&#32;=&#32;matches_list[idx]
+00342 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;new_run_count&#32;=&#32;str(runs_count_offset&#32;+&#32;int(match.group(1)))
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;text&#32;=&#32;text[0:match.start(1)]&#32;+&#32;new_run_count&#32;+&#32;text[match.end(1):]
+00344 
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;message[<emphasis role="stringliteral">&apos;text&apos;</emphasis>]&#32;=&#32;text
+00346 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;message
+00347 
+00348 
+00349 
+00350 &#32;&#32;&#32;&#32;sarif_files&#32;=&#32;(file&#32;<emphasis role="keywordflow">for</emphasis>&#32;file&#32;<emphasis role="keywordflow">in</emphasis>&#32;glob.iglob(os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;*.sarif&apos;</emphasis>))&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;empty(file))
+00351 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;exposed&#32;for&#32;testing&#32;since&#32;the&#32;order&#32;of&#32;files&#32;returned&#32;by&#32;glob&#32;is&#32;not&#32;guaranteed&#32;to&#32;be&#32;sorted</emphasis>
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;sort_files:
+00353 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sarif_files&#32;=&#32;list(sarif_files)
+00354 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sarif_files.sort()
+00355 
+00356 &#32;&#32;&#32;&#32;runs_count&#32;=&#32;0
+00357 &#32;&#32;&#32;&#32;merged&#32;=&#32;{}
+00358 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;sarif_file&#32;<emphasis role="keywordflow">in</emphasis>&#32;sarif_files:
+00359 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(sarif_file)&#32;<emphasis role="keyword">as</emphasis>&#32;fp:
+00360 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sarif&#32;=&#32;json.load(fp)
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="stringliteral">&apos;runs&apos;</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;sarif:
+00362 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>
+00363 
+00364 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;start&#32;with&#32;the&#32;first&#32;file</emphasis>
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;merged:
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;merged&#32;=&#32;sarif
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;extract&#32;the&#32;run&#32;and&#32;append&#32;it&#32;to&#32;the&#32;merged&#32;output</emphasis>
+00369 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;run&#32;<emphasis role="keywordflow">in</emphasis>&#32;sarif[<emphasis role="stringliteral">&apos;runs&apos;</emphasis>]:
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;new_run&#32;=&#32;update_sarif_object(run,&#32;runs_count)
+00371 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;merged[<emphasis role="stringliteral">&apos;runs&apos;</emphasis>].append(new_run)
+00372 
+00373 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;runs_count&#32;+=&#32;len(sarif[<emphasis role="stringliteral">&apos;runs&apos;</emphasis>])
+00374 
+00375 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(os.path.join(output_dir,&#32;<emphasis role="stringliteral">&apos;results-merged.sarif&apos;</emphasis>),&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;out:
+00376 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;json.dump(merged,&#32;out,&#32;indent=4,&#32;sort_keys=<emphasis role="keyword">True</emphasis>)
+00377 
+00378 
+<anchor xml:id="_report_8py_source_1l00379"/><link linkend="_namespacelibscanbuild_1_1report_1a53db60116acb650fd020be033dd159ae">00379</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a53db60116acb650fd020be033dd159ae">parse_bug_plist</link>(filename):
+00380 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;the&#32;generator&#32;of&#32;bugs&#32;from&#32;a&#32;single&#32;.plist&#32;file.&#32;&quot;&quot;&quot;</emphasis>
+00381 
+00382 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;rb&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;fp:
+00383 &#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;plistlib.load(fp)
+00384 &#32;&#32;&#32;&#32;&#32;&#32;files&#32;=&#32;content.get(<emphasis role="stringliteral">&apos;files&apos;</emphasis>)
+00385 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;bug&#32;<emphasis role="keywordflow">in</emphasis>&#32;content.get(<emphasis role="stringliteral">&apos;diagnostics&apos;</emphasis>,&#32;[]):
+00386 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;len(files)&#32;&lt;=&#32;int(bug[<emphasis role="stringliteral">&apos;location&apos;</emphasis>][<emphasis role="stringliteral">&apos;file&apos;</emphasis>]):
+00387 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.warning(<emphasis role="stringliteral">&apos;Parsing&#32;bug&#32;from&#32;&quot;%s&quot;&#32;failed&apos;</emphasis>,&#32;filename)
+00388 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>
+00389 
+00390 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;{
+00391 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;result&apos;</emphasis>:&#32;filename,
+00392 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_type&apos;</emphasis>:&#32;bug[<emphasis role="stringliteral">&apos;type&apos;</emphasis>],
+00393 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_category&apos;</emphasis>:&#32;bug[<emphasis role="stringliteral">&apos;category&apos;</emphasis>],
+00394 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_line&apos;</emphasis>:&#32;int(bug[<emphasis role="stringliteral">&apos;location&apos;</emphasis>][<emphasis role="stringliteral">&apos;line&apos;</emphasis>]),
+00395 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_path_length&apos;</emphasis>:&#32;int(bug[<emphasis role="stringliteral">&apos;location&apos;</emphasis>][<emphasis role="stringliteral">&apos;col&apos;</emphasis>]),
+00396 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_file&apos;</emphasis>:&#32;files[int(bug[<emphasis role="stringliteral">&apos;location&apos;</emphasis>][<emphasis role="stringliteral">&apos;file&apos;</emphasis>])]
+00397 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00398 
+00399 
+<anchor xml:id="_report_8py_source_1l00400"/><link linkend="_namespacelibscanbuild_1_1report_1a0eb8ade4d53c8f3bf7f63bc788182809">00400</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a0eb8ade4d53c8f3bf7f63bc788182809">parse_bug_html</link>(filename):
+00401 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Parse&#32;out&#32;the&#32;bug&#32;information&#32;from&#32;HTML&#32;output.&#32;&quot;&quot;&quot;</emphasis>
+00402 
+00403 &#32;&#32;&#32;&#32;patterns&#32;=&#32;[re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGTYPE&#32;(?P&lt;bug_type&gt;.*)&#32;--&gt;$&apos;</emphasis>),
+00404 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGFILE&#32;(?P&lt;bug_file&gt;.*)&#32;--&gt;$&apos;</emphasis>),
+00405 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGPATHLENGTH&#32;(?P&lt;bug_path_length&gt;.*)&#32;--&gt;$&apos;</emphasis>),
+00406 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGLINE&#32;(?P&lt;bug_line&gt;.*)&#32;--&gt;$&apos;</emphasis>),
+00407 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGCATEGORY&#32;(?P&lt;bug_category&gt;.*)&#32;--&gt;$&apos;</emphasis>),
+00408 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGDESC&#32;(?P&lt;bug_description&gt;.*)&#32;--&gt;$&apos;</emphasis>),
+00409 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;FUNCTIONNAME&#32;(?P&lt;bug_function&gt;.*)&#32;--&gt;$&apos;</emphasis>)]
+00410 &#32;&#32;&#32;&#32;endsign&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;&lt;!--&#32;BUGMETAEND&#32;--&gt;&apos;</emphasis>)
+00411 
+00412 &#32;&#32;&#32;&#32;bug&#32;=&#32;{
+00413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;report_file&apos;</emphasis>:&#32;filename,
+00414 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_function&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;n/a&apos;</emphasis>,&#32;&#32;<emphasis role="comment">#&#32;compatibility&#32;with&#32;&lt;&#32;clang-3.5</emphasis>
+00415 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_category&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;Other&apos;</emphasis>,
+00416 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_line&apos;</emphasis>:&#32;0,
+00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_path_length&apos;</emphasis>:&#32;1
+00418 &#32;&#32;&#32;&#32;}
+00419 
+00420 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename)&#32;<emphasis role="keyword">as</emphasis>&#32;handler:
+00421 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;handler.readlines():
+00422 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;do&#32;not&#32;read&#32;the&#32;file&#32;further</emphasis>
+00423 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;endsign.match(line):
+00424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00425 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;search&#32;for&#32;the&#32;right&#32;lines</emphasis>
+00426 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;regex&#32;<emphasis role="keywordflow">in</emphasis>&#32;patterns:
+00427 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;match&#32;=&#32;regex.match(line.strip())
+00428 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;match:
+00429 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;bug.update(match.groupdict())
+00430 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00431 
+00432 &#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(bug,&#32;<emphasis role="stringliteral">&apos;bug_line&apos;</emphasis>,&#32;int)
+00433 &#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(bug,&#32;<emphasis role="stringliteral">&apos;bug_path_length&apos;</emphasis>,&#32;int)
+00434 
+00435 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;bug
+00436 
+00437 
+<anchor xml:id="_report_8py_source_1l00438"/><link linkend="_namespacelibscanbuild_1_1report_1ace97ff6a1dfab0a84df7ad6be77f10be">00438</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1ace97ff6a1dfab0a84df7ad6be77f10be">parse_crash</link>(filename):
+00439 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Parse&#32;out&#32;the&#32;crash&#32;information&#32;from&#32;the&#32;report&#32;file.&#32;&quot;&quot;&quot;</emphasis>
+00440 
+00441 &#32;&#32;&#32;&#32;match&#32;=&#32;re.match(<emphasis role="stringliteral">r&apos;(.*)\.info\.txt&apos;</emphasis>,&#32;filename)
+00442 &#32;&#32;&#32;&#32;name&#32;=&#32;match.group(1)&#32;<emphasis role="keywordflow">if</emphasis>&#32;match&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00443 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;mode=<emphasis role="stringliteral">&apos;rb&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handler:
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;this&#32;is&#32;a&#32;workaround&#32;to&#32;fix&#32;windows&#32;read&#32;&apos;\r\n&apos;&#32;as&#32;new&#32;lines.</emphasis>
+00445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lines&#32;=&#32;[line.decode().rstrip()&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;handler.readlines()]
+00446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;{
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;source&apos;</emphasis>:&#32;lines[0],
+00448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;problem&apos;</emphasis>:&#32;lines[1],
+00449 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>:&#32;name,
+00450 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;info&apos;</emphasis>:&#32;name&#32;+&#32;<emphasis role="stringliteral">&apos;.info.txt&apos;</emphasis>,
+00451 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>:&#32;name&#32;+&#32;<emphasis role="stringliteral">&apos;.stderr.txt&apos;</emphasis>
+00452 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00453 
+00454 
+<anchor xml:id="_report_8py_source_1l00455"/><link linkend="_namespacelibscanbuild_1_1report_1abfe396af83ba1c101b979ab138125e42">00455</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1abfe396af83ba1c101b979ab138125e42">category_type_name</link>(bug):
+00456 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Create&#32;a&#32;new&#32;bug&#32;attribute&#32;from&#32;bug&#32;by&#32;category&#32;and&#32;type.</emphasis>
+00457 <emphasis role="stringliteral"></emphasis>
+00458 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;The&#32;result&#32;will&#32;be&#32;used&#32;as&#32;CSS&#32;class&#32;selector&#32;in&#32;the&#32;final&#32;report.&#32;&quot;&quot;&quot;</emphasis>
+00459 
+00460 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>smash(key):
+00461 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Make&#32;value&#32;ready&#32;to&#32;be&#32;HTML&#32;attribute&#32;value.&#32;&quot;&quot;&quot;</emphasis>
+00462 
+00463 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;bug.get(key,&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>).lower().replace(<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;_&apos;</emphasis>).replace(<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>)
+00464 
+00465 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<emphasis role="stringliteral">&apos;bt_&apos;</emphasis>&#32;+&#32;smash(<emphasis role="stringliteral">&apos;bug_category&apos;</emphasis>)&#32;+&#32;<emphasis role="stringliteral">&apos;_&apos;</emphasis>&#32;+&#32;smash(<emphasis role="stringliteral">&apos;bug_type&apos;</emphasis>))
+00466 
+00467 
+<anchor xml:id="_report_8py_source_1l00468"/><link linkend="_namespacelibscanbuild_1_1report_1ab6fe93c5edac5c757c5af61d76f68c92">00468</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1ab6fe93c5edac5c757c5af61d76f68c92">create_counters</link>():
+00469 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Create&#32;counters&#32;for&#32;bug&#32;statistics.</emphasis>
+00470 <emphasis role="stringliteral"></emphasis>
+00471 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Two&#32;entries&#32;are&#32;maintained:&#32;&apos;total&apos;&#32;is&#32;an&#32;integer,&#32;represents&#32;the</emphasis>
+00472 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;number&#32;of&#32;bugs.&#32;The&#32;&apos;categories&apos;&#32;is&#32;a&#32;two&#32;level&#32;categorisation&#32;of&#32;bug</emphasis>
+00473 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;counters.&#32;The&#32;first&#32;level&#32;is&#32;&apos;bug&#32;category&apos;&#32;the&#32;second&#32;is&#32;&apos;bug&#32;type&apos;.</emphasis>
+00474 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Each&#32;entry&#32;in&#32;this&#32;classification&#32;is&#32;a&#32;dictionary&#32;of&#32;&apos;count&apos;,&#32;&apos;type&apos;</emphasis>
+00475 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;and&#32;&apos;label&apos;.&#32;&quot;&quot;&quot;</emphasis>
+00476 
+00477 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>predicate(bug):
+00478 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;bug_category&#32;=&#32;bug[<emphasis role="stringliteral">&apos;bug_category&apos;</emphasis>]
+00479 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;bug_type&#32;=&#32;bug[<emphasis role="stringliteral">&apos;bug_type&apos;</emphasis>]
+00480 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current_category&#32;=&#32;predicate.categories.get(bug_category,&#32;dict())
+00481 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current_type&#32;=&#32;current_category.get(bug_type,&#32;{
+00482 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_type&apos;</emphasis>:&#32;bug_type,
+00483 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_type_class&apos;</emphasis>:&#32;<link linkend="_namespacelibscanbuild_1_1report_1abfe396af83ba1c101b979ab138125e42">category_type_name</link>(bug),
+00484 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;bug_count&apos;</emphasis>:&#32;0
+00485 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;})
+00486 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current_type.update({<emphasis role="stringliteral">&apos;bug_count&apos;</emphasis>:&#32;current_type[<emphasis role="stringliteral">&apos;bug_count&apos;</emphasis>]&#32;+&#32;1})
+00487 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current_category.update({bug_type:&#32;current_type})
+00488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;predicate.categories.update({bug_category:&#32;current_category})
+00489 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;predicate.total&#32;+=&#32;1
+00490 
+00491 &#32;&#32;&#32;&#32;predicate.total&#32;=&#32;0
+00492 &#32;&#32;&#32;&#32;predicate.categories&#32;=&#32;dict()
+00493 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;predicate
+00494 
+00495 
+<anchor xml:id="_report_8py_source_1l00496"/><link linkend="_namespacelibscanbuild_1_1report_1a6c64ec6d654aabfdb8472eb77020d1c0">00496</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a6c64ec6d654aabfdb8472eb77020d1c0">prettify_bug</link>(prefix,&#32;output_dir):
+00497 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>predicate(bug):
+00498 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Make&#32;safe&#32;this&#32;values&#32;to&#32;embed&#32;into&#32;HTML.&#32;&quot;&quot;&quot;</emphasis>
+00499 
+00500 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;bug[<emphasis role="stringliteral">&apos;bug_type_class&apos;</emphasis>]&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1report_1abfe396af83ba1c101b979ab138125e42">category_type_name</link>(bug)
+00501 
+00502 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(bug,&#32;<emphasis role="stringliteral">&apos;bug_file&apos;</emphasis>,&#32;<emphasis role="keyword">lambda</emphasis>&#32;x:&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(prefix,&#32;x)))
+00503 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(bug,&#32;<emphasis role="stringliteral">&apos;bug_category&apos;</emphasis>,&#32;escape)
+00504 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(bug,&#32;<emphasis role="stringliteral">&apos;bug_type&apos;</emphasis>,&#32;escape)
+00505 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(bug,&#32;<emphasis role="stringliteral">&apos;report_file&apos;</emphasis>,&#32;<emphasis role="keyword">lambda</emphasis>&#32;x:&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(output_dir,&#32;x)))
+00506 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;bug
+00507 
+00508 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;predicate
+00509 
+00510 
+<anchor xml:id="_report_8py_source_1l00511"/><link linkend="_namespacelibscanbuild_1_1report_1a48fe2a16d071ac8ea6ed7905e9f97e21">00511</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a48fe2a16d071ac8ea6ed7905e9f97e21">prettify_crash</link>(prefix,&#32;output_dir):
+00512 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>predicate(crash):
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Make&#32;safe&#32;this&#32;values&#32;to&#32;embed&#32;into&#32;HTML.&#32;&quot;&quot;&quot;</emphasis>
+00514 
+00515 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(crash,&#32;<emphasis role="stringliteral">&apos;source&apos;</emphasis>,&#32;<emphasis role="keyword">lambda</emphasis>&#32;x:&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(prefix,&#32;x)))
+00516 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(crash,&#32;<emphasis role="stringliteral">&apos;problem&apos;</emphasis>,&#32;escape)
+00517 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(crash,&#32;<emphasis role="stringliteral">&apos;file&apos;</emphasis>,&#32;<emphasis role="keyword">lambda</emphasis>&#32;x:&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(output_dir,&#32;x)))
+00518 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(crash,&#32;<emphasis role="stringliteral">&apos;info&apos;</emphasis>,&#32;<emphasis role="keyword">lambda</emphasis>&#32;x:&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(output_dir,&#32;x)))
+00519 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(crash,&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>,&#32;<emphasis role="keyword">lambda</emphasis>&#32;x:&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(<link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(output_dir,&#32;x)))
+00520 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;crash
+00521 
+00522 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;predicate
+00523 
+00524 
+<anchor xml:id="_report_8py_source_1l00525"/><link linkend="_namespacelibscanbuild_1_1report_1a481afed4a0e425fc21badb3efcbe1baa">00525</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a481afed4a0e425fc21badb3efcbe1baa">copy_resource_files</link>(output_dir):
+00526 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Copy&#32;the&#32;javascript&#32;and&#32;css&#32;files&#32;to&#32;the&#32;report&#32;directory.&#32;&quot;&quot;&quot;</emphasis>
+00527 
+00528 &#32;&#32;&#32;&#32;this_dir&#32;=&#32;os.path.dirname(os.path.realpath(__file__))
+00529 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;resource&#32;<emphasis role="keywordflow">in</emphasis>&#32;os.listdir(os.path.join(this_dir,&#32;<emphasis role="stringliteral">&apos;resources&apos;</emphasis>)):
+00530 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;shutil.copy(os.path.join(this_dir,&#32;<emphasis role="stringliteral">&apos;resources&apos;</emphasis>,&#32;resource),&#32;output_dir)
+00531 
+00532 
+<anchor xml:id="_report_8py_source_1l00533"/><link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">00533</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a8340e20f16307bf7009c30537fa4afc6">encode_value</link>(container,&#32;key,&#32;encode):
+00534 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Run&#32;&apos;encode&apos;&#32;on&#32;&apos;container[key]&apos;&#32;value&#32;and&#32;update&#32;it.&#32;&quot;&quot;&quot;</emphasis>
+00535 
+00536 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;key&#32;<emphasis role="keywordflow">in</emphasis>&#32;container:
+00537 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;value&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1shell_1ac92beb78a0b5fd06775e27d7b87870ed">encode</link>(container[key])
+00538 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;container.update({key:&#32;value})
+00539 
+00540 
+<anchor xml:id="_report_8py_source_1l00541"/><link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">00541</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a74b5499b0fe4cc50ba4fab2bc51c0b1d">chop</link>(prefix,&#32;filename):
+00542 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Create&#32;&apos;filename&apos;&#32;from&#32;&apos;/prefix/filename&apos;&#32;&quot;&quot;&quot;</emphasis>
+00543 
+00544 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;filename&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;len(prefix)&#32;<emphasis role="keywordflow">else</emphasis>&#32;os.path.relpath(filename,&#32;prefix)
+00545 
+00546 
+<anchor xml:id="_report_8py_source_1l00547"/><link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">00547</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(text):
+00548 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Paranoid&#32;HTML&#32;escape&#32;method.&#32;(Python&#32;version&#32;independent)&#32;&quot;&quot;&quot;</emphasis>
+00549 
+00550 &#32;&#32;&#32;&#32;escape_table&#32;=&#32;{
+00551 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&amp;&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;&amp;amp;&apos;</emphasis>,
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;&amp;quot;&apos;</emphasis>,
+00553 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>:&#32;<emphasis role="stringliteral">&apos;&amp;apos;&apos;</emphasis>,
+00554 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&gt;&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;&amp;gt;&apos;</emphasis>,
+00555 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;&amp;lt;&apos;</emphasis>
+00556 &#32;&#32;&#32;&#32;}
+00557 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>.join(escape_table.get(c,&#32;c)&#32;<emphasis role="keywordflow">for</emphasis>&#32;c&#32;<emphasis role="keywordflow">in</emphasis>&#32;text)
+00558 
+00559 
+<anchor xml:id="_report_8py_source_1l00560"/><link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">00560</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1adf9dbcea0435f622fce5a89df7f93459">reindent</link>(text,&#32;indent):
+00561 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Utility&#32;function&#32;to&#32;format&#32;html&#32;output&#32;and&#32;keep&#32;indentation.&#32;&quot;&quot;&quot;</emphasis>
+00562 
+00563 &#32;&#32;&#32;&#32;result&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00564 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;text.splitlines():
+00565 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;len(line.strip()):
+00566 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;+=&#32;<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>&#32;*&#32;indent&#32;+&#32;line.split(<emphasis role="stringliteral">&apos;|&apos;</emphasis>)[1]&#32;+&#32;os.linesep
+00567 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result
+00568 
+00569 
+<anchor xml:id="_report_8py_source_1l00570"/><link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">00570</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a2dbff8736ede60f531df420dc9ba1069">comment</link>(name,&#32;opts=dict()):
+00571 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Utility&#32;function&#32;to&#32;format&#32;meta&#32;information&#32;as&#32;comment.&#32;&quot;&quot;&quot;</emphasis>
+00572 
+00573 &#32;&#32;&#32;&#32;attributes&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00574 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;key,&#32;value&#32;<emphasis role="keywordflow">in</emphasis>&#32;opts.items():
+00575 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;attributes&#32;+=&#32;<emphasis role="stringliteral">&apos;&#32;{0}=&quot;{1}&quot;&apos;</emphasis>.format(key,&#32;value)
+00576 
+00577 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;&lt;!--&#32;{0}{1}&#32;--&gt;{2}&apos;</emphasis>.format(name,&#32;attributes,&#32;os.linesep)
+00578 
+00579 
+<anchor xml:id="_report_8py_source_1l00580"/><link linkend="_namespacelibscanbuild_1_1report_1aeb8315b6b6ed9cd384c69945cfe72f0e">00580</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1aeb8315b6b6ed9cd384c69945cfe72f0e">commonprefix_from</link>(filename):
+00581 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Create&#32;file&#32;prefix&#32;from&#32;a&#32;compilation&#32;database&#32;entries.&#32;&quot;&quot;&quot;</emphasis>
+00582 
+00583 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00584 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1a5c3a4a52647fd7fe533765b16ec98a23">commonprefix</link>(item[<emphasis role="stringliteral">&apos;file&apos;</emphasis>]&#32;<emphasis role="keywordflow">for</emphasis>&#32;item&#32;<emphasis role="keywordflow">in</emphasis>&#32;json.load(handle))
+00585 
+00586 
+<anchor xml:id="_report_8py_source_1l00587"/><link linkend="_namespacelibscanbuild_1_1report_1a5c3a4a52647fd7fe533765b16ec98a23">00587</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a5c3a4a52647fd7fe533765b16ec98a23">commonprefix</link>(files):
+00588 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Fixed&#32;version&#32;of&#32;os.path.commonprefix.</emphasis>
+00589 <emphasis role="stringliteral"></emphasis>
+00590 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:param&#32;files:&#32;list&#32;of&#32;file&#32;names.</emphasis>
+00591 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;:return:&#32;the&#32;longest&#32;path&#32;prefix&#32;that&#32;is&#32;a&#32;prefix&#32;of&#32;all&#32;files.&#32;&quot;&quot;&quot;</emphasis>
+00592 &#32;&#32;&#32;&#32;result&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00593 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;current&#32;<emphasis role="keywordflow">in</emphasis>&#32;files:
+00594 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;result&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00595 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;os.path.commonprefix([result,&#32;current])
+00596 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00597 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;current
+00598 
+00599 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;result&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00600 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00601 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;os.path.isdir(result):
+00602 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.path.dirname(result)
+00603 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00604 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.path.abspath(result)
+</programlisting></section>

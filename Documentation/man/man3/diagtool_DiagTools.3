@@ -1,0 +1,108 @@
+.TH "diagtool::DiagTools" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+diagtool::DiagTools
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <DiagTool\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBDiagTools\fP ()"
+.br
+.ti -1c
+.RI "\fB~DiagTools\fP ()"
+.br
+.ti -1c
+.RI "\fBDiagTool\fP * \fBgetTool\fP (llvm::StringRef toolCmd)"
+.br
+.ti -1c
+.RI "void \fBregisterTool\fP (\fBDiagTool\fP *tool)"
+.br
+.ti -1c
+.RI "void \fBprintCommands\fP (llvm::raw_ostream &out)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 37 of file DiagTool\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "DiagTools::DiagTools ()"
+
+.PP
+Definition at line 27 of file DiagTool\&.cpp\&.
+.PP
+.nf
+27 : tools(new ToolMap()) {}
+.fi
+.SS "DiagTools::~DiagTools ()"
+
+.PP
+Definition at line 28 of file DiagTool\&.cpp\&.
+.PP
+.nf
+28 { delete getTools(tools); }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "\fBDiagTool\fP * DiagTools::getTool (llvm::StringRef toolCmd)"
+
+.PP
+Definition at line 30 of file DiagTool\&.cpp\&.
+.PP
+.nf
+30                                                   {
+31   ToolMap::iterator it = getTools(tools)->find(toolCmd);
+32   return (it == getTools(tools)->end()) ? nullptr : it->getValue();
+33 }
+.fi
+.SS "void DiagTools::printCommands (llvm::raw_ostream & out)"
+
+.PP
+Definition at line 39 of file DiagTool\&.cpp\&.
+.PP
+.nf
+39                                                   {
+40   std::vector<llvm::StringRef> toolNames;
+41   unsigned maxName = 0;
+42   for (ToolMap::iterator it = getTools(tools)->begin(),
+43        ei = getTools(tools)->end(); it != ei; ++it) {
+44     toolNames\&.push_back(it->getKey());
+45     unsigned len = it->getKey()\&.size();
+46     if (len > maxName)
+47       maxName = len;    
+48   }
+49   llvm::sort(toolNames);
+50 
+51   for (std::vector<llvm::StringRef>::iterator it = toolNames\&.begin(),
+52        ei = toolNames\&.end(); it != ei; ++it) {
+53 
+54     out << "  " << (*it);
+55     unsigned spaces = (maxName + 3) - (it->size());
+56     for (unsigned i = 0; i < spaces; ++i)
+57       out << ' ';
+58     
+59     out << getTool(*it)->getDescription() << '\n';    
+60   }
+61 }
+.fi
+.SS "void DiagTools::registerTool (\fBDiagTool\fP * tool)"
+
+.PP
+Definition at line 35 of file DiagTool\&.cpp\&.
+.PP
+.nf
+35                                            {
+36   (*getTools(tools))[tool->getName()] = tool;
+37 }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

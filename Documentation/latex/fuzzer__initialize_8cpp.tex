@@ -1,0 +1,71 @@
+\hypertarget{fuzzer__initialize_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/fuzzer/fuzzer-\/initialize/fuzzer\+\_\+initialize.cpp File Reference}
+\label{fuzzer__initialize_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/fuzzer/fuzzer-\/initialize/fuzzer\_initialize.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/fuzzer/fuzzer-\/initialize/fuzzer\_initialize.cpp}}
+{\ttfamily \#include \char`\"{}fuzzer\+\_\+initialize.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Initialize\+Passes.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Pass\+Registry.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Target\+Select.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$cstring$>$}\newline
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespaceclang__fuzzer}{clang\+\_\+fuzzer}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+const std\+::vector$<$ const char $\ast$ $>$ \& \mbox{\hyperlink{namespaceclang__fuzzer_a7204f11d358bc8d6b48eb043fdba0ce4}{clang\+\_\+fuzzer\+::\+Get\+CLArgs}} ()
+\item 
+int \mbox{\hyperlink{fuzzer__initialize_8cpp_aa30889313cc057073351a87b2590b886}{LLVMFuzzer\+Initialize}} (int $\ast$argc, char $\ast$$\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file implements two functions\+: one that returns the command line arguments for a given call to the fuzz target and one that initializes the fuzzer with the correct command line arguments. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{fuzzer__initialize_8cpp_aa30889313cc057073351a87b2590b886}\label{fuzzer__initialize_8cpp_aa30889313cc057073351a87b2590b886}} 
+\index{fuzzer\_initialize.cpp@{fuzzer\_initialize.cpp}!LLVMFuzzerInitialize@{LLVMFuzzerInitialize}}
+\index{LLVMFuzzerInitialize@{LLVMFuzzerInitialize}!fuzzer\_initialize.cpp@{fuzzer\_initialize.cpp}}
+\doxysubsubsection{\texorpdfstring{LLVMFuzzerInitialize()}{LLVMFuzzerInitialize()}}
+{\footnotesize\ttfamily int LLVMFuzzer\+Initialize (\begin{DoxyParamCaption}\item[{int $\ast$}]{argc,  }\item[{char $\ast$$\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 37 of file fuzzer\+\_\+initialize.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{37                                                              \{}
+\DoxyCodeLine{38   InitializeAllTargets();}
+\DoxyCodeLine{39   InitializeAllTargetMCs();}
+\DoxyCodeLine{40   InitializeAllAsmPrinters();}
+\DoxyCodeLine{41   InitializeAllAsmParsers();}
+\DoxyCodeLine{42   }
+\DoxyCodeLine{43   PassRegistry \&Registry = *PassRegistry::getPassRegistry();}
+\DoxyCodeLine{44   initializeCore(Registry);}
+\DoxyCodeLine{45   initializeScalarOpts(Registry);}
+\DoxyCodeLine{46   initializeVectorization(Registry);}
+\DoxyCodeLine{47   initializeIPO(Registry);}
+\DoxyCodeLine{48   initializeAnalysis(Registry);}
+\DoxyCodeLine{49   initializeTransformUtils(Registry);}
+\DoxyCodeLine{50   initializeInstCombine(Registry);}
+\DoxyCodeLine{51   initializeAggressiveInstCombine(Registry);}
+\DoxyCodeLine{52   initializeInstrumentation(Registry);}
+\DoxyCodeLine{53   initializeTarget(Registry);}
+\DoxyCodeLine{54 }
+\DoxyCodeLine{55   CLArgs.push\_back(\textcolor{stringliteral}{"{}-\/O2"{}});}
+\DoxyCodeLine{56   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} I = 1; I < *argc; I++) \{}
+\DoxyCodeLine{57     \textcolor{keywordflow}{if} (strcmp((*argv)[I], \textcolor{stringliteral}{"{}-\/ignore\_remaining\_args=1"{}}) == 0) \{}
+\DoxyCodeLine{58       \textcolor{keywordflow}{for} (I++; I < *argc; I++)}
+\DoxyCodeLine{59         CLArgs.push\_back((*argv)[I]);}
+\DoxyCodeLine{60       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{61     \}}
+\DoxyCodeLine{62   \}}
+\DoxyCodeLine{63   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{64 \}}
+
+\end{DoxyCode}
+
+
+Referenced by main().
+

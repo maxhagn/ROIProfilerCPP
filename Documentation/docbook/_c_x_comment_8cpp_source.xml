@@ -1,0 +1,413 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_comment_8cpp_source" xml:lang="en-US">
+<title>CXComment.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXComment.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXComment.cpp&#32;-&#32;libclang&#32;APIs&#32;for&#32;manipulating&#32;CXComments&#32;----------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;all&#32;libclang&#32;APIs&#32;related&#32;to&#32;walking&#32;comment&#32;AST.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_comment_8h">CXComment.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Documentation.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Decl.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Index/CommentToXML.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringExtras.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&lt;climits&gt;</emphasis>
+00023 
+00024 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00025 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1comments">clang::comments</link>;
+00026 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1cxcomment">clang::cxcomment</link>;
+00027 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00028"/><link linkend="__c_x_comment_8cpp_1a38c8a63eb2af838b36cb67b0944345cf">00028</link> CXComment&#32;<link linkend="__c_x_comment_8cpp_1af71dde2d11999c585b48866a426276c8">clang_Cursor_getParsedComment</link>(CXCursor&#32;C)&#32;{
+00029 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1cxcursor">clang::cxcursor</link>;
+00030 
+00031 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+00032 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createCXComment(<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00033 
+00034 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C);
+00035 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ASTContext&#32;&amp;Context&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">getCursorContext</link>(C);
+00036 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FullComment&#32;*FC&#32;=&#32;Context.getCommentForDecl(D,&#32;<emphasis role="comment">/*PP=*/</emphasis><emphasis role="keyword">nullptr</emphasis>);
+00037 
+00038 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createCXComment(FC,&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+00039 }
+00040 
+00041 <emphasis role="keyword">enum</emphasis>&#32;CXCommentKind&#32;<link linkend="__c_x_comment_8cpp_1a38c8a63eb2af838b36cb67b0944345cf">clang_Comment_getKind</link>(CXComment&#32;CXC)&#32;{
+00042 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Comment&#32;*C&#32;=&#32;getASTNode(CXC);
+00043 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!C)
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_Null;
+00045 
+00046 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C-&gt;getCommentKind())&#32;{
+00047 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::NoCommentKind:
+00048 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_Null;
+00049 
+00050 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::TextCommentKind:
+00051 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_Text;
+00052 
+00053 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::InlineCommandCommentKind:
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_InlineCommand;
+00055 
+00056 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::HTMLStartTagCommentKind:
+00057 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_HTMLStartTag;
+00058 
+00059 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::HTMLEndTagCommentKind:
+00060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_HTMLEndTag;
+00061 
+00062 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::ParagraphCommentKind:
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_Paragraph;
+00064 
+00065 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::BlockCommandCommentKind:
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_BlockCommand;
+00067 
+00068 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::ParamCommandCommentKind:
+00069 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_ParamCommand;
+00070 
+00071 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::TParamCommandCommentKind:
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_TParamCommand;
+00073 
+00074 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::VerbatimBlockCommentKind:
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_VerbatimBlockCommand;
+00076 
+00077 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::VerbatimBlockLineCommentKind:
+00078 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_VerbatimBlockLine;
+00079 
+00080 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::VerbatimLineCommentKind:
+00081 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_VerbatimLine;
+00082 
+00083 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Comment::FullCommentKind:
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXComment_FullComment;
+00085 &#32;&#32;}
+00086 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;unknown&#32;CommentKind&quot;</emphasis>);
+00087 }
+00088 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00089"/><link linkend="__c_x_comment_8cpp_1a8def4fcae92fd482b6af111c41bc24ad">00089</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a8def4fcae92fd482b6af111c41bc24ad">clang_Comment_getNumChildren</link>(CXComment&#32;CXC)&#32;{
+00090 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Comment&#32;*C&#32;=&#32;getASTNode(CXC);
+00091 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!C)
+00092 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00093 
+00094 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C-&gt;child_count();
+00095 }
+00096 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00097"/><link linkend="__c_x_comment_8cpp_1aebc90b00afa512bdac23ab77739d75c1">00097</link> CXComment&#32;<link linkend="__c_x_comment_8cpp_1aebc90b00afa512bdac23ab77739d75c1">clang_Comment_getChild</link>(CXComment&#32;CXC,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ChildIdx)&#32;{
+00098 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Comment&#32;*C&#32;=&#32;getASTNode(CXC);
+00099 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!C&#32;||&#32;ChildIdx&#32;&gt;=&#32;C-&gt;child_count())
+00100 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createCXComment(<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00101 
+00102 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createCXComment(*(C-&gt;child_begin()&#32;+&#32;ChildIdx),&#32;CXC.TranslationUnit);
+00103 }
+00104 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00105"/><link linkend="__c_x_comment_8cpp_1a1be64745ce67f00827e1c06c0f82e0f3">00105</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a1be64745ce67f00827e1c06c0f82e0f3">clang_Comment_isWhitespace</link>(CXComment&#32;CXC)&#32;{
+00106 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Comment&#32;*C&#32;=&#32;getASTNode(CXC);
+00107 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!C)
+00108 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00109 
+00110 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TextComment&#32;*TC&#32;=&#32;dyn_cast&lt;TextComment&gt;(C))
+00111 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TC-&gt;isWhitespace();
+00112 
+00113 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ParagraphComment&#32;*PC&#32;=&#32;dyn_cast&lt;ParagraphComment&gt;(C))
+00114 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PC-&gt;isWhitespace();
+00115 
+00116 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00117 }
+00118 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00119"/><link linkend="__c_x_comment_8cpp_1a7f6654b305c4cb96b6e1bf6a85cbf94c">00119</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a7f6654b305c4cb96b6e1bf6a85cbf94c">clang_InlineContentComment_hasTrailingNewline</link>(CXComment&#32;CXC)&#32;{
+00120 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;InlineContentComment&#32;*ICC&#32;=&#32;getASTNodeAs&lt;InlineContentComment&gt;(CXC);
+00121 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ICC)
+00122 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00123 
+00124 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ICC-&gt;hasTrailingNewline();
+00125 }
+00126 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00127"/><link linkend="__c_x_comment_8cpp_1adbe075bc5d064d1e16b2e1902cb9a853">00127</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1adbe075bc5d064d1e16b2e1902cb9a853">clang_TextComment_getText</link>(CXComment&#32;CXC)&#32;{
+00128 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TextComment&#32;*TC&#32;=&#32;getASTNodeAs&lt;TextComment&gt;(CXC);
+00129 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TC)
+00130 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00131 
+00132 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(TC-&gt;getText());
+00133 }
+00134 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00135"/><link linkend="__c_x_comment_8cpp_1a7b57052f2d22bdd2f8b9c4ffe42fc11d">00135</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a7b57052f2d22bdd2f8b9c4ffe42fc11d">clang_InlineCommandComment_getCommandName</link>(CXComment&#32;CXC)&#32;{
+00136 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;InlineCommandComment&#32;*ICC&#32;=&#32;getASTNodeAs&lt;InlineCommandComment&gt;(CXC);
+00137 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ICC)
+00138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00139 
+00140 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CommandTraits&#32;&amp;Traits&#32;=&#32;getCommandTraits(CXC);
+00141 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(ICC-&gt;getCommandName(Traits));
+00142 }
+00143 
+00144 <emphasis role="keyword">enum</emphasis>&#32;CXCommentInlineCommandRenderKind
+00145 <link linkend="__c_x_comment_8cpp_1a69760fad9e09c24602f5366a7ad9df5b">clang_InlineCommandComment_getRenderKind</link>(CXComment&#32;CXC)&#32;{
+00146 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;InlineCommandComment&#32;*ICC&#32;=&#32;getASTNodeAs&lt;InlineCommandComment&gt;(CXC);
+00147 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ICC)
+00148 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentInlineCommandRenderKind_Normal;
+00149 
+00150 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(ICC-&gt;getRenderKind())&#32;{
+00151 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;InlineCommandComment::RenderNormal:
+00152 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentInlineCommandRenderKind_Normal;
+00153 
+00154 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;InlineCommandComment::RenderBold:
+00155 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentInlineCommandRenderKind_Bold;
+00156 
+00157 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;InlineCommandComment::RenderMonospaced:
+00158 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentInlineCommandRenderKind_Monospaced;
+00159 
+00160 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;InlineCommandComment::RenderEmphasized:
+00161 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentInlineCommandRenderKind_Emphasized;
+00162 
+00163 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;InlineCommandComment::RenderAnchor:
+00164 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentInlineCommandRenderKind_Anchor;
+00165 &#32;&#32;}
+00166 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;unknown&#32;InlineCommandComment::RenderKind&quot;</emphasis>);
+00167 }
+00168 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00169"/><link linkend="__c_x_comment_8cpp_1aa068e80a8f08f0cc72e16793f3cc1872">00169</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1aa068e80a8f08f0cc72e16793f3cc1872">clang_InlineCommandComment_getNumArgs</link>(CXComment&#32;CXC)&#32;{
+00170 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;InlineCommandComment&#32;*ICC&#32;=&#32;getASTNodeAs&lt;InlineCommandComment&gt;(CXC);
+00171 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ICC)
+00172 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00173 
+00174 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ICC-&gt;getNumArgs();
+00175 }
+00176 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00177"/><link linkend="__c_x_comment_8cpp_1a1d115b5be591e36494a110bf94e19192">00177</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a1d115b5be591e36494a110bf94e19192">clang_InlineCommandComment_getArgText</link>(CXComment&#32;CXC,
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ArgIdx)&#32;{
+00179 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;InlineCommandComment&#32;*ICC&#32;=&#32;getASTNodeAs&lt;InlineCommandComment&gt;(CXC);
+00180 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ICC&#32;||&#32;ArgIdx&#32;&gt;=&#32;ICC-&gt;getNumArgs())
+00181 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00182 
+00183 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(ICC-&gt;getArgText(ArgIdx));
+00184 }
+00185 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00186"/><link linkend="__c_x_comment_8cpp_1a083dc5803164ddfaf16f03aa57f083a0">00186</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a083dc5803164ddfaf16f03aa57f083a0">clang_HTMLTagComment_getTagName</link>(CXComment&#32;CXC)&#32;{
+00187 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;HTMLTagComment&#32;*HTC&#32;=&#32;getASTNodeAs&lt;HTMLTagComment&gt;(CXC);
+00188 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HTC)
+00189 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00190 
+00191 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(HTC-&gt;getTagName());
+00192 }
+00193 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00194"/><link linkend="__c_x_comment_8cpp_1a1bf46cbe9764181afb8c2f798f08ab90">00194</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a1bf46cbe9764181afb8c2f798f08ab90">clang_HTMLStartTagComment_isSelfClosing</link>(CXComment&#32;CXC)&#32;{
+00195 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;HTMLStartTagComment&#32;*HST&#32;=&#32;getASTNodeAs&lt;HTMLStartTagComment&gt;(CXC);
+00196 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HST)
+00197 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00198 
+00199 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;HST-&gt;isSelfClosing();
+00200 }
+00201 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00202"/><link linkend="__c_x_comment_8cpp_1af9cca60b360405d919eb42008ac5c3ae">00202</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1af9cca60b360405d919eb42008ac5c3ae">clang_HTMLStartTag_getNumAttrs</link>(CXComment&#32;CXC)&#32;{
+00203 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;HTMLStartTagComment&#32;*HST&#32;=&#32;getASTNodeAs&lt;HTMLStartTagComment&gt;(CXC);
+00204 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HST)
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00206 
+00207 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;HST-&gt;getNumAttrs();
+00208 }
+00209 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00210"/><link linkend="__c_x_comment_8cpp_1a48435f0360547546f604d695cd4d9c2d">00210</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a48435f0360547546f604d695cd4d9c2d">clang_HTMLStartTag_getAttrName</link>(CXComment&#32;CXC,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;AttrIdx)&#32;{
+00211 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;HTMLStartTagComment&#32;*HST&#32;=&#32;getASTNodeAs&lt;HTMLStartTagComment&gt;(CXC);
+00212 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HST&#32;||&#32;AttrIdx&#32;&gt;=&#32;HST-&gt;getNumAttrs())
+00213 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00214 
+00215 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(HST-&gt;getAttr(AttrIdx).Name);
+00216 }
+00217 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00218"/><link linkend="__c_x_comment_8cpp_1afc2ea55ff9ec0feb975b5402d6497e8b">00218</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1afc2ea55ff9ec0feb975b5402d6497e8b">clang_HTMLStartTag_getAttrValue</link>(CXComment&#32;CXC,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;AttrIdx)&#32;{
+00219 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;HTMLStartTagComment&#32;*HST&#32;=&#32;getASTNodeAs&lt;HTMLStartTagComment&gt;(CXC);
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HST&#32;||&#32;AttrIdx&#32;&gt;=&#32;HST-&gt;getNumAttrs())
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00222 
+00223 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(HST-&gt;getAttr(AttrIdx).Value);
+00224 }
+00225 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00226"/><link linkend="__c_x_comment_8cpp_1a1a5f0a59b1bfdf9f53585e67f7fc74c2">00226</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a1a5f0a59b1bfdf9f53585e67f7fc74c2">clang_BlockCommandComment_getCommandName</link>(CXComment&#32;CXC)&#32;{
+00227 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;BlockCommandComment&#32;*BCC&#32;=&#32;getASTNodeAs&lt;BlockCommandComment&gt;(CXC);
+00228 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BCC)
+00229 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00230 
+00231 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CommandTraits&#32;&amp;Traits&#32;=&#32;getCommandTraits(CXC);
+00232 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(BCC-&gt;getCommandName(Traits));
+00233 }
+00234 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00235"/><link linkend="__c_x_comment_8cpp_1a5ddde9da58fc7ab03db0126e8f8d8944">00235</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a5ddde9da58fc7ab03db0126e8f8d8944">clang_BlockCommandComment_getNumArgs</link>(CXComment&#32;CXC)&#32;{
+00236 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;BlockCommandComment&#32;*BCC&#32;=&#32;getASTNodeAs&lt;BlockCommandComment&gt;(CXC);
+00237 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BCC)
+00238 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00239 
+00240 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;BCC-&gt;getNumArgs();
+00241 }
+00242 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00243"/><link linkend="__c_x_comment_8cpp_1a7458f2a97375f474c7373600474ae71d">00243</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a7458f2a97375f474c7373600474ae71d">clang_BlockCommandComment_getArgText</link>(CXComment&#32;CXC,
+00244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ArgIdx)&#32;{
+00245 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;BlockCommandComment&#32;*BCC&#32;=&#32;getASTNodeAs&lt;BlockCommandComment&gt;(CXC);
+00246 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BCC&#32;||&#32;ArgIdx&#32;&gt;=&#32;BCC-&gt;getNumArgs())
+00247 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00248 
+00249 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(BCC-&gt;getArgText(ArgIdx));
+00250 }
+00251 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00252"/><link linkend="__c_x_comment_8cpp_1a427d1b23036b8e8ac8cff62a7ff9f335">00252</link> CXComment&#32;<link linkend="__c_x_comment_8cpp_1a427d1b23036b8e8ac8cff62a7ff9f335">clang_BlockCommandComment_getParagraph</link>(CXComment&#32;CXC)&#32;{
+00253 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;BlockCommandComment&#32;*BCC&#32;=&#32;getASTNodeAs&lt;BlockCommandComment&gt;(CXC);
+00254 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BCC)
+00255 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createCXComment(<emphasis role="keyword">nullptr</emphasis>,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00256 
+00257 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createCXComment(BCC-&gt;getParagraph(),&#32;CXC.TranslationUnit);
+00258 }
+00259 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00260"/><link linkend="__c_x_comment_8cpp_1ac80ae00d8799af7924ffa42c02817681">00260</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1ac80ae00d8799af7924ffa42c02817681">clang_ParamCommandComment_getParamName</link>(CXComment&#32;CXC)&#32;{
+00261 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ParamCommandComment&#32;*PCC&#32;=&#32;getASTNodeAs&lt;ParamCommandComment&gt;(CXC);
+00262 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PCC&#32;||&#32;!PCC-&gt;hasParamName())
+00263 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00264 
+00265 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(PCC-&gt;getParamNameAsWritten());
+00266 }
+00267 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00268"/><link linkend="__c_x_comment_8cpp_1a4ca05fbed7e50993c40ddaeca781f1e9">00268</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a4ca05fbed7e50993c40ddaeca781f1e9">clang_ParamCommandComment_isParamIndexValid</link>(CXComment&#32;CXC)&#32;{
+00269 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ParamCommandComment&#32;*PCC&#32;=&#32;getASTNodeAs&lt;ParamCommandComment&gt;(CXC);
+00270 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PCC)
+00271 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00272 
+00273 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PCC-&gt;isParamIndexValid();
+00274 }
+00275 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00276"/><link linkend="__c_x_comment_8cpp_1a3b9e42358aee7f66d87713e2509734cf">00276</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a3b9e42358aee7f66d87713e2509734cf">clang_ParamCommandComment_getParamIndex</link>(CXComment&#32;CXC)&#32;{
+00277 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ParamCommandComment&#32;*PCC&#32;=&#32;getASTNodeAs&lt;ParamCommandComment&gt;(CXC);
+00278 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PCC&#32;||&#32;!PCC-&gt;isParamIndexValid()&#32;||&#32;PCC-&gt;isVarArgParam())
+00279 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ParamCommandComment::InvalidParamIndex;
+00280 
+00281 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PCC-&gt;getParamIndex();
+00282 }
+00283 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00284"/><link linkend="__c_x_comment_8cpp_1a77e3fadc4012a1bf122edfb99c14e729">00284</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a0b31491b9046e1c9ad9eb95851fd7903">clang_ParamCommandComment_isDirectionExplicit</link>(CXComment&#32;CXC)&#32;{
+00285 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ParamCommandComment&#32;*PCC&#32;=&#32;getASTNodeAs&lt;ParamCommandComment&gt;(CXC);
+00286 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PCC)
+00287 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00288 
+00289 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PCC-&gt;isDirectionExplicit();
+00290 }
+00291 
+00292 <emphasis role="keyword">enum</emphasis>&#32;CXCommentParamPassDirection&#32;<link linkend="__c_x_comment_8cpp_1a77e3fadc4012a1bf122edfb99c14e729">clang_ParamCommandComment_getDirection</link>(
+00293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXComment&#32;CXC)&#32;{
+00294 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ParamCommandComment&#32;*PCC&#32;=&#32;getASTNodeAs&lt;ParamCommandComment&gt;(CXC);
+00295 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PCC)
+00296 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentParamPassDirection_In;
+00297 
+00298 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(PCC-&gt;getDirection())&#32;{
+00299 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ParamCommandComment::In:
+00300 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentParamPassDirection_In;
+00301 
+00302 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ParamCommandComment::Out:
+00303 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentParamPassDirection_Out;
+00304 
+00305 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;ParamCommandComment::InOut:
+00306 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCommentParamPassDirection_InOut;
+00307 &#32;&#32;}
+00308 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;unknown&#32;ParamCommandComment::PassDirection&quot;</emphasis>);
+00309 }
+00310 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00311"/><link linkend="__c_x_comment_8cpp_1af45d777f6b38f24eda40170b4f80cfe1">00311</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1af45d777f6b38f24eda40170b4f80cfe1">clang_TParamCommandComment_getParamName</link>(CXComment&#32;CXC)&#32;{
+00312 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TParamCommandComment&#32;*TPCC&#32;=&#32;getASTNodeAs&lt;TParamCommandComment&gt;(CXC);
+00313 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TPCC&#32;||&#32;!TPCC-&gt;hasParamName())
+00314 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00315 
+00316 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(TPCC-&gt;getParamNameAsWritten());
+00317 }
+00318 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00319"/><link linkend="__c_x_comment_8cpp_1a65d7ba852058cdc5fb7a9310b9cb848a">00319</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a65d7ba852058cdc5fb7a9310b9cb848a">clang_TParamCommandComment_isParamPositionValid</link>(CXComment&#32;CXC)&#32;{
+00320 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TParamCommandComment&#32;*TPCC&#32;=&#32;getASTNodeAs&lt;TParamCommandComment&gt;(CXC);
+00321 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TPCC)
+00322 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00323 
+00324 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TPCC-&gt;isPositionValid();
+00325 }
+00326 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00327"/><link linkend="__c_x_comment_8cpp_1ace49c2197ef00c6dc2252e40446706cd">00327</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1ace49c2197ef00c6dc2252e40446706cd">clang_TParamCommandComment_getDepth</link>(CXComment&#32;CXC)&#32;{
+00328 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TParamCommandComment&#32;*TPCC&#32;=&#32;getASTNodeAs&lt;TParamCommandComment&gt;(CXC);
+00329 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TPCC&#32;||&#32;!TPCC-&gt;isPositionValid())
+00330 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00331 
+00332 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TPCC-&gt;getDepth();
+00333 }
+00334 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00335"/><link linkend="__c_x_comment_8cpp_1a2ecc76615a2b767762b9352bb9d1a407">00335</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="__c_x_comment_8cpp_1a2ecc76615a2b767762b9352bb9d1a407">clang_TParamCommandComment_getIndex</link>(CXComment&#32;CXC,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Depth)&#32;{
+00336 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TParamCommandComment&#32;*TPCC&#32;=&#32;getASTNodeAs&lt;TParamCommandComment&gt;(CXC);
+00337 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TPCC&#32;||&#32;!TPCC-&gt;isPositionValid()&#32;||&#32;Depth&#32;&gt;=&#32;TPCC-&gt;getDepth())
+00338 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00339 
+00340 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TPCC-&gt;getIndex(Depth);
+00341 }
+00342 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00343"/><link linkend="__c_x_comment_8cpp_1ac973016ab20d3e638594058265cc85fc">00343</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1ac973016ab20d3e638594058265cc85fc">clang_VerbatimBlockLineComment_getText</link>(CXComment&#32;CXC)&#32;{
+00344 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;VerbatimBlockLineComment&#32;*VBL&#32;=
+00345 &#32;&#32;&#32;&#32;&#32;&#32;getASTNodeAs&lt;VerbatimBlockLineComment&gt;(CXC);
+00346 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!VBL)
+00347 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00348 
+00349 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(VBL-&gt;getText());
+00350 }
+00351 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00352"/><link linkend="__c_x_comment_8cpp_1ab45fe28ecf1dd5155379ecbc388694f3">00352</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1ab45fe28ecf1dd5155379ecbc388694f3">clang_VerbatimLineComment_getText</link>(CXComment&#32;CXC)&#32;{
+00353 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;VerbatimLineComment&#32;*VLC&#32;=&#32;getASTNodeAs&lt;VerbatimLineComment&gt;(CXC);
+00354 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!VLC)
+00355 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00356 
+00357 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(VLC-&gt;getText());
+00358 }
+00359 
+00360 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00361 <emphasis role="comment">//&#32;Converting&#32;comments&#32;to&#32;XML.</emphasis>
+00362 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00363 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00364"/><link linkend="__c_x_comment_8cpp_1a2dbb376060076aaca6da701c8078fc4d">00364</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a2dbb376060076aaca6da701c8078fc4d">clang_HTMLTagComment_getAsString</link>(CXComment&#32;CXC)&#32;{
+00365 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;HTMLTagComment&#32;*HTC&#32;=&#32;getASTNodeAs&lt;HTMLTagComment&gt;(CXC);
+00366 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!HTC)
+00367 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00368 
+00369 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;CXC.TranslationUnit;
+00370 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU-&gt;CommentToXML)
+00371 &#32;&#32;&#32;&#32;TU-&gt;CommentToXML&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;clang::index::CommentToXMLConverter();
+00372 
+00373 &#32;&#32;SmallString&lt;128&gt;&#32;Text;
+00374 &#32;&#32;TU-&gt;CommentToXML-&gt;convertHTMLTagNodeToText(
+00375 &#32;&#32;&#32;&#32;&#32;&#32;HTC,&#32;Text,&#32;cxtu::getASTUnit(TU)-&gt;getASTContext());
+00376 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(Text.str());
+00377 }
+00378 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00379"/><link linkend="__c_x_comment_8cpp_1aeeb543f510f3d530b95c81aa94e6c6b4">00379</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1aeeb543f510f3d530b95c81aa94e6c6b4">clang_FullComment_getAsHTML</link>(CXComment&#32;CXC)&#32;{
+00380 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FullComment&#32;*FC&#32;=&#32;getASTNodeAs&lt;FullComment&gt;(CXC);
+00381 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FC)
+00382 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00383 
+00384 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;CXC.TranslationUnit;
+00385 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU-&gt;CommentToXML)
+00386 &#32;&#32;&#32;&#32;TU-&gt;CommentToXML&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;clang::index::CommentToXMLConverter();
+00387 
+00388 &#32;&#32;SmallString&lt;1024&gt;&#32;HTML;
+00389 &#32;&#32;TU-&gt;CommentToXML
+00390 &#32;&#32;&#32;&#32;&#32;&#32;-&gt;convertCommentToHTML(FC,&#32;HTML,&#32;cxtu::getASTUnit(TU)-&gt;getASTContext());
+00391 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(HTML.str());
+00392 }
+00393 
+<anchor xml:id="__c_x_comment_8cpp_source_1l00394"/><link linkend="__c_x_comment_8cpp_1a024ac8f00dd56924c7dbaa7994c2934c">00394</link> CXString&#32;<link linkend="__c_x_comment_8cpp_1a024ac8f00dd56924c7dbaa7994c2934c">clang_FullComment_getAsXML</link>(CXComment&#32;CXC)&#32;{
+00395 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FullComment&#32;*FC&#32;=&#32;getASTNodeAs&lt;FullComment&gt;(CXC);
+00396 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FC)
+00397 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00398 
+00399 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;CXC.TranslationUnit;
+00400 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU-&gt;CommentToXML)
+00401 &#32;&#32;&#32;&#32;TU-&gt;CommentToXML&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;clang::index::CommentToXMLConverter();
+00402 
+00403 &#32;&#32;SmallString&lt;1024&gt;&#32;XML;
+00404 &#32;&#32;TU-&gt;CommentToXML
+00405 &#32;&#32;&#32;&#32;&#32;&#32;-&gt;convertCommentToXML(FC,&#32;XML,&#32;cxtu::getASTUnit(TU)-&gt;getASTContext());
+00406 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(XML.str());
+00407 }
+00408 
+</programlisting></section>

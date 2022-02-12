@@ -1,0 +1,237 @@
+\hypertarget{_c_index_u_s_rs_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+CIndex\+USRs.cpp File Reference}
+\label{_c_index_u_s_rs_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexUSRs.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexUSRs.cpp}}
+{\ttfamily \#include \char`\"{}CIndexer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXCursor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXString.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXTranslation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Index/\+USRGeneration.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Lex/\+Preprocessing\+Record.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Small\+String.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_ae603480d6cea9e6b8e4a3bc927c1f43b}{clang\+\_\+get\+Cursor\+USR}} (CXCursor C)
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_a0a694bd3222726fa935bec5d6c6ffa74}{clang\+\_\+construct\+USR\+\_\+\+Obj\+CIvar}} (const char $\ast$name, CXString class\+USR)
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_a57441154398db67af15555136489c8da}{clang\+\_\+construct\+USR\+\_\+\+Obj\+CMethod}} (const char $\ast$name, unsigned is\+Instance\+Method, CXString class\+USR)
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_afa75d3cdc7f1246aa196336006b6b17e}{clang\+\_\+construct\+USR\+\_\+\+Obj\+CClass}} (const char $\ast$name)
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_ad9eadd6627e168000a1d8a0a487f04ec}{clang\+\_\+construct\+USR\+\_\+\+Obj\+CProtocol}} (const char $\ast$name)
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_a100f21ca740fca2384413c0e8fbb26ba}{clang\+\_\+construct\+USR\+\_\+\+Obj\+CCategory}} (const char $\ast$class\+\_\+name, const char $\ast$category\+\_\+name)
+\item 
+CXString \mbox{\hyperlink{_c_index_u_s_rs_8cpp_a06209d1976eb61cf961c047c4ceb0ee4}{clang\+\_\+construct\+USR\+\_\+\+Obj\+CProperty}} (const char $\ast$property, CXString class\+USR)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_a100f21ca740fca2384413c0e8fbb26ba}\label{_c_index_u_s_rs_8cpp_a100f21ca740fca2384413c0e8fbb26ba}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_constructUSR\_ObjCCategory@{clang\_constructUSR\_ObjCCategory}}
+\index{clang\_constructUSR\_ObjCCategory@{clang\_constructUSR\_ObjCCategory}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_constructUSR\_ObjCCategory()}{clang\_constructUSR\_ObjCCategory()}}
+{\footnotesize\ttfamily CXString clang\+\_\+construct\+USR\+\_\+\+Obj\+CCategory (\begin{DoxyParamCaption}\item[{const char $\ast$}]{class\+\_\+name,  }\item[{const char $\ast$}]{category\+\_\+name }\end{DoxyParamCaption})}
+
+
+
+Definition at line 124 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{125                                                                     \{}
+\DoxyCodeLine{126   SmallString<128> Buf(getUSRSpacePrefix());}
+\DoxyCodeLine{127   llvm::raw\_svector\_ostream OS(Buf);}
+\DoxyCodeLine{128   generateUSRForObjCCategory(class\_name, category\_name, OS);}
+\DoxyCodeLine{129   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{130 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Dup().
+
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_afa75d3cdc7f1246aa196336006b6b17e}\label{_c_index_u_s_rs_8cpp_afa75d3cdc7f1246aa196336006b6b17e}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_constructUSR\_ObjCClass@{clang\_constructUSR\_ObjCClass}}
+\index{clang\_constructUSR\_ObjCClass@{clang\_constructUSR\_ObjCClass}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_constructUSR\_ObjCClass()}{clang\_constructUSR\_ObjCClass()}}
+{\footnotesize\ttfamily CXString clang\+\_\+construct\+USR\+\_\+\+Obj\+CClass (\begin{DoxyParamCaption}\item[{const char $\ast$}]{name }\end{DoxyParamCaption})}
+
+
+
+Definition at line 110 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{110                                                         \{}
+\DoxyCodeLine{111   SmallString<128> Buf(getUSRSpacePrefix());}
+\DoxyCodeLine{112   llvm::raw\_svector\_ostream OS(Buf);}
+\DoxyCodeLine{113   generateUSRForObjCClass(name, OS);}
+\DoxyCodeLine{114   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{115 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Dup().
+
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_a0a694bd3222726fa935bec5d6c6ffa74}\label{_c_index_u_s_rs_8cpp_a0a694bd3222726fa935bec5d6c6ffa74}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_constructUSR\_ObjCIvar@{clang\_constructUSR\_ObjCIvar}}
+\index{clang\_constructUSR\_ObjCIvar@{clang\_constructUSR\_ObjCIvar}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_constructUSR\_ObjCIvar()}{clang\_constructUSR\_ObjCIvar()}}
+{\footnotesize\ttfamily CXString clang\+\_\+construct\+USR\+\_\+\+Obj\+CIvar (\begin{DoxyParamCaption}\item[{const char $\ast$}]{name,  }\item[{CXString}]{class\+USR }\end{DoxyParamCaption})}
+
+
+
+Definition at line 92 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{92                                                                           \{}
+\DoxyCodeLine{93   SmallString<128> Buf(getUSRSpacePrefix());}
+\DoxyCodeLine{94   llvm::raw\_svector\_ostream OS(Buf);}
+\DoxyCodeLine{95   OS << extractUSRSuffix(\mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(classUSR));}
+\DoxyCodeLine{96   generateUSRForObjCIvar(name, OS);}
+\DoxyCodeLine{97   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{98 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_a57441154398db67af15555136489c8da}\label{_c_index_u_s_rs_8cpp_a57441154398db67af15555136489c8da}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_constructUSR\_ObjCMethod@{clang\_constructUSR\_ObjCMethod}}
+\index{clang\_constructUSR\_ObjCMethod@{clang\_constructUSR\_ObjCMethod}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_constructUSR\_ObjCMethod()}{clang\_constructUSR\_ObjCMethod()}}
+{\footnotesize\ttfamily CXString clang\+\_\+construct\+USR\+\_\+\+Obj\+CMethod (\begin{DoxyParamCaption}\item[{const char $\ast$}]{name,  }\item[{unsigned}]{is\+Instance\+Method,  }\item[{CXString}]{class\+USR }\end{DoxyParamCaption})}
+
+
+
+Definition at line 100 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{102                                                           \{}
+\DoxyCodeLine{103   SmallString<128> Buf(getUSRSpacePrefix());}
+\DoxyCodeLine{104   llvm::raw\_svector\_ostream OS(Buf);}
+\DoxyCodeLine{105   OS << extractUSRSuffix(\mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(classUSR));}
+\DoxyCodeLine{106   generateUSRForObjCMethod(name, isInstanceMethod, OS);}
+\DoxyCodeLine{107   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{108 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_a06209d1976eb61cf961c047c4ceb0ee4}\label{_c_index_u_s_rs_8cpp_a06209d1976eb61cf961c047c4ceb0ee4}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_constructUSR\_ObjCProperty@{clang\_constructUSR\_ObjCProperty}}
+\index{clang\_constructUSR\_ObjCProperty@{clang\_constructUSR\_ObjCProperty}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_constructUSR\_ObjCProperty()}{clang\_constructUSR\_ObjCProperty()}}
+{\footnotesize\ttfamily CXString clang\+\_\+construct\+USR\+\_\+\+Obj\+CProperty (\begin{DoxyParamCaption}\item[{const char $\ast$}]{property,  }\item[{CXString}]{class\+USR }\end{DoxyParamCaption})}
+
+
+
+Definition at line 132 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{133                                                             \{}
+\DoxyCodeLine{134   SmallString<128> Buf(getUSRSpacePrefix());}
+\DoxyCodeLine{135   llvm::raw\_svector\_ostream OS(Buf);}
+\DoxyCodeLine{136   OS << extractUSRSuffix(\mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(classUSR));}
+\DoxyCodeLine{137   generateUSRForObjCProperty(property, \textcolor{comment}{/*isClassProp=*/}\textcolor{keyword}{false}, OS);}
+\DoxyCodeLine{138   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{139 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_ad9eadd6627e168000a1d8a0a487f04ec}\label{_c_index_u_s_rs_8cpp_ad9eadd6627e168000a1d8a0a487f04ec}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_constructUSR\_ObjCProtocol@{clang\_constructUSR\_ObjCProtocol}}
+\index{clang\_constructUSR\_ObjCProtocol@{clang\_constructUSR\_ObjCProtocol}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_constructUSR\_ObjCProtocol()}{clang\_constructUSR\_ObjCProtocol()}}
+{\footnotesize\ttfamily CXString clang\+\_\+construct\+USR\+\_\+\+Obj\+CProtocol (\begin{DoxyParamCaption}\item[{const char $\ast$}]{name }\end{DoxyParamCaption})}
+
+
+
+Definition at line 117 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{117                                                            \{}
+\DoxyCodeLine{118   SmallString<128> Buf(getUSRSpacePrefix());}
+\DoxyCodeLine{119   llvm::raw\_svector\_ostream OS(Buf);}
+\DoxyCodeLine{120   generateUSRForObjCProtocol(name, OS);}
+\DoxyCodeLine{121   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{122 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Dup().
+
+\mbox{\Hypertarget{_c_index_u_s_rs_8cpp_ae603480d6cea9e6b8e4a3bc927c1f43b}\label{_c_index_u_s_rs_8cpp_ae603480d6cea9e6b8e4a3bc927c1f43b}} 
+\index{CIndexUSRs.cpp@{CIndexUSRs.cpp}!clang\_getCursorUSR@{clang\_getCursorUSR}}
+\index{clang\_getCursorUSR@{clang\_getCursorUSR}!CIndexUSRs.cpp@{CIndexUSRs.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCursorUSR()}{clang\_getCursorUSR()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Cursor\+USR (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 38 of file CIndex\+USRs.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{38                                         \{}
+\DoxyCodeLine{39   \textcolor{keyword}{const} CXCursorKind \&K = \mbox{\hyperlink{_c_index_8cpp_a88e594fe730830706a0b7cff796eaedf}{clang\_getCursorKind}}(C);}
+\DoxyCodeLine{40 }
+\DoxyCodeLine{41   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(K)) \{}
+\DoxyCodeLine{42     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{43     \textcolor{keywordflow}{if} (!D)}
+\DoxyCodeLine{44       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{45 }
+\DoxyCodeLine{46     CXTranslationUnit TU = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C);}
+\DoxyCodeLine{47     \textcolor{keywordflow}{if} (!TU)}
+\DoxyCodeLine{48       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{49 }
+\DoxyCodeLine{50     \mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf}{cxstring::CXStringBuf}} *buf = \mbox{\hyperlink{namespaceclang_1_1cxstring_ad1ccb52527d7a42e4ad5c3e1f6af9907}{cxstring::getCXStringBuf}}(TU);}
+\DoxyCodeLine{51     \textcolor{keywordflow}{if} (!buf)}
+\DoxyCodeLine{52       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{53 }
+\DoxyCodeLine{54     \textcolor{keywordtype}{bool} Ignore = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a70c40817415cbc686e998bde4fe2e16e}{cxcursor::getDeclCursorUSR}}(D, buf-\/>\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf_a54c757e75ae022f0206c53f0e64044f8}{Data}});}
+\DoxyCodeLine{55     \textcolor{keywordflow}{if} (Ignore) \{}
+\DoxyCodeLine{56       buf-\/>\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf_add7775f4003b4bfbb5c470976ef73485}{dispose}}();}
+\DoxyCodeLine{57       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{58     \}}
+\DoxyCodeLine{59 }
+\DoxyCodeLine{60     \textcolor{comment}{// Return the C-\/string, but don't make a copy since it is already in}}
+\DoxyCodeLine{61     \textcolor{comment}{// the string buffer.}}
+\DoxyCodeLine{62     buf-\/>\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf_a54c757e75ae022f0206c53f0e64044f8}{Data}}.push\_back(\textcolor{charliteral}{'\(\backslash\)0'});}
+\DoxyCodeLine{63     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a4ea867311d5651a36d2dfa1f1258638c}{createCXString}}(buf);}
+\DoxyCodeLine{64   \}}
+\DoxyCodeLine{65 }
+\DoxyCodeLine{66   \textcolor{keywordflow}{if} (K == CXCursor\_MacroDefinition) \{}
+\DoxyCodeLine{67     CXTranslationUnit TU = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C);}
+\DoxyCodeLine{68     \textcolor{keywordflow}{if} (!TU)}
+\DoxyCodeLine{69       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{70 }
+\DoxyCodeLine{71     \mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf}{cxstring::CXStringBuf}} *buf = \mbox{\hyperlink{namespaceclang_1_1cxstring_ad1ccb52527d7a42e4ad5c3e1f6af9907}{cxstring::getCXStringBuf}}(TU);}
+\DoxyCodeLine{72     \textcolor{keywordflow}{if} (!buf)}
+\DoxyCodeLine{73       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{74 }
+\DoxyCodeLine{75     \textcolor{keywordtype}{bool} Ignore = generateUSRForMacro(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a62254c8ae8eca4c0ca0f2d2a659e7d80}{cxcursor::getCursorMacroDefinition}}(C),}
+\DoxyCodeLine{76                                       cxtu::getASTUnit(TU)-\/>getSourceManager(),}
+\DoxyCodeLine{77                                       buf-\/>\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf_a54c757e75ae022f0206c53f0e64044f8}{Data}});}
+\DoxyCodeLine{78     \textcolor{keywordflow}{if} (Ignore) \{}
+\DoxyCodeLine{79       buf-\/>\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf_add7775f4003b4bfbb5c470976ef73485}{dispose}}();}
+\DoxyCodeLine{80       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{81     \}}
+\DoxyCodeLine{82 }
+\DoxyCodeLine{83     \textcolor{comment}{// Return the C-\/string, but don't make a copy since it is already in}}
+\DoxyCodeLine{84     \textcolor{comment}{// the string buffer.}}
+\DoxyCodeLine{85     buf-\/>\mbox{\hyperlink{structclang_1_1cxstring_1_1_c_x_string_buf_a54c757e75ae022f0206c53f0e64044f8}{Data}}.push\_back(\textcolor{charliteral}{'\(\backslash\)0'});}
+\DoxyCodeLine{86     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a4ea867311d5651a36d2dfa1f1258638c}{createCXString}}(buf);}
+\DoxyCodeLine{87   \}}
+\DoxyCodeLine{88 }
+\DoxyCodeLine{89   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{90 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Cursor\+Kind(), clang\+\_\+is\+Declaration(), clang\+::cxstring\+::create\+Empty(), clang\+::cxstring\+::\+CXString\+Buf\+::\+Data, clang\+::cxstring\+::\+CXString\+Buf\+::dispose(), clang\+::cxcursor\+::get\+Cursor\+Decl(), clang\+::cxcursor\+::get\+Cursor\+TU(), clang\+::cxstring\+::get\+CXString\+Buf(), and clang\+::cxcursor\+::get\+Decl\+Cursor\+USR().
+

@@ -1,0 +1,200 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_cc1gen__reproducer__main_8cpp_source" xml:lang="en-US">
+<title>cc1gen_reproducer_main.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/driver/cc1gen_reproducer_main.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;cc1gen_reproducer_main.cpp&#32;-&#32;Clang&#32;reproducer&#32;generator&#32;&#32;----------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;is&#32;the&#32;entry&#32;point&#32;to&#32;the&#32;clang&#32;-cc1gen-reproducer&#32;functionality,&#32;which</emphasis>
+00010 <emphasis role="comment">//&#32;generates&#32;reproducers&#32;for&#32;invocations&#32;for&#32;clang-based&#32;tools.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Diagnostic.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Compilation.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Driver.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/ArrayRef.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/STLExtras.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Host.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/TargetSelect.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/VirtualFileSystem.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/YAMLTraits.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00026 
+00027 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00028 
+00029 <emphasis role="keyword">namespace&#32;</emphasis>{
+00030 
+00031 <emphasis role="keyword">struct&#32;</emphasis>UnsavedFileHash&#32;{
+00032 &#32;&#32;std::string&#32;Name;
+00033 &#32;&#32;std::string&#32;MD5;
+00034 };
+00035 
+00036 <emphasis role="keyword">struct&#32;</emphasis>ClangInvocationInfo&#32;{
+00037 &#32;&#32;std::string&#32;Toolchain;
+00038 &#32;&#32;std::string&#32;LibclangOperation;
+00039 &#32;&#32;std::string&#32;LibclangOptions;
+00040 &#32;&#32;std::vector&lt;std::string&gt;&#32;Arguments;
+00041 &#32;&#32;std::vector&lt;std::string&gt;&#32;InvocationArguments;
+00042 &#32;&#32;std::vector&lt;UnsavedFileHash&gt;&#32;UnsavedFileHashes;
+00043 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Dump&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00044 };
+00045 
+00046 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00047 
+00048 LLVM_YAML_IS_SEQUENCE_VECTOR(UnsavedFileHash)
+00049 
+00050 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>&#32;{
+00051 <emphasis role="keyword">namespace&#32;</emphasis>yaml&#32;{
+00052 
+<anchor xml:id="_cc1gen__reproducer__main_8cpp_source_1l00053"/><link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_unsaved_file_hash_01_4">00053</link> <emphasis role="keyword">template</emphasis>&#32;&lt;&gt;&#32;<emphasis role="keyword">struct&#32;</emphasis>MappingTraits&lt;UnsavedFileHash&gt;&#32;{
+<anchor xml:id="_cc1gen__reproducer__main_8cpp_source_1l00054"/><link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_unsaved_file_hash_01_4_1aece36db87ad4f755c8f269bb0f4a09bc">00054</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_unsaved_file_hash_01_4_1aece36db87ad4f755c8f269bb0f4a09bc">mapping</link>(IO&#32;&amp;IO,&#32;UnsavedFileHash&#32;&amp;Info)&#32;{
+00055 &#32;&#32;&#32;&#32;IO.mapRequired(<emphasis role="stringliteral">&quot;name&quot;</emphasis>,&#32;Info.Name);
+00056 &#32;&#32;&#32;&#32;IO.mapRequired(<emphasis role="stringliteral">&quot;md5&quot;</emphasis>,&#32;Info.MD5);
+00057 &#32;&#32;}
+00058 };
+00059 
+<anchor xml:id="_cc1gen__reproducer__main_8cpp_source_1l00060"/><link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_clang_invocation_info_01_4">00060</link> <emphasis role="keyword">template</emphasis>&#32;&lt;&gt;&#32;<emphasis role="keyword">struct&#32;</emphasis>MappingTraits&lt;ClangInvocationInfo&gt;&#32;{
+<anchor xml:id="_cc1gen__reproducer__main_8cpp_source_1l00061"/><link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_clang_invocation_info_01_4_1a352ffb352af2a656e893afdc5ad91f56">00061</link> &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_structllvm_1_1yaml_1_1_mapping_traits_3_01_clang_invocation_info_01_4_1a352ffb352af2a656e893afdc5ad91f56">mapping</link>(IO&#32;&amp;IO,&#32;ClangInvocationInfo&#32;&amp;Info)&#32;{
+00062 &#32;&#32;&#32;&#32;IO.mapRequired(<emphasis role="stringliteral">&quot;toolchain&quot;</emphasis>,&#32;Info.Toolchain);
+00063 &#32;&#32;&#32;&#32;IO.mapOptional(<emphasis role="stringliteral">&quot;libclang.operation&quot;</emphasis>,&#32;Info.LibclangOperation);
+00064 &#32;&#32;&#32;&#32;IO.mapOptional(<emphasis role="stringliteral">&quot;libclang.opts&quot;</emphasis>,&#32;Info.LibclangOptions);
+00065 &#32;&#32;&#32;&#32;IO.mapRequired(<emphasis role="stringliteral">&quot;args&quot;</emphasis>,&#32;Info.Arguments);
+00066 &#32;&#32;&#32;&#32;IO.mapOptional(<emphasis role="stringliteral">&quot;invocation-args&quot;</emphasis>,&#32;Info.InvocationArguments);
+00067 &#32;&#32;&#32;&#32;IO.mapOptional(<emphasis role="stringliteral">&quot;unsaved_file_hashes&quot;</emphasis>,&#32;Info.UnsavedFileHashes);
+00068 &#32;&#32;}
+00069 };
+00070 
+00071 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;yaml</emphasis>
+00072 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;llvm</emphasis>
+00073 
+00074 <emphasis role="keyword">static</emphasis>&#32;std::string&#32;generateReproducerMetaInfo(<emphasis role="keyword">const</emphasis>&#32;ClangInvocationInfo&#32;&amp;Info)&#32;{
+00075 &#32;&#32;std::string&#32;Result;
+00076 &#32;&#32;llvm::raw_string_ostream&#32;OS(Result);
+00077 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;{&apos;</emphasis>;
+00078 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;NeedComma&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00079 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;EmitKey&#32;=&#32;[&amp;](StringRef&#32;Key)&#32;{
+00080 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NeedComma)
+00081 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>;
+00082 &#32;&#32;&#32;&#32;NeedComma&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00083 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>&#32;&lt;&lt;&#32;Key&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;:&#32;&quot;</emphasis>;
+00084 &#32;&#32;};
+00085 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;EmitStringKey&#32;=&#32;[&amp;](StringRef&#32;Key,&#32;StringRef&#32;Value)&#32;{
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Value.empty())
+00087 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00088 &#32;&#32;&#32;&#32;EmitKey(Key);
+00089 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>&#32;&lt;&lt;&#32;Value&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00090 &#32;&#32;};
+00091 &#32;&#32;EmitStringKey(<emphasis role="stringliteral">&quot;libclang.operation&quot;</emphasis>,&#32;Info.LibclangOperation);
+00092 &#32;&#32;EmitStringKey(<emphasis role="stringliteral">&quot;libclang.opts&quot;</emphasis>,&#32;Info.LibclangOptions);
+00093 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Info.InvocationArguments.empty())&#32;{
+00094 &#32;&#32;&#32;&#32;EmitKey(<emphasis role="stringliteral">&quot;invocation-args&quot;</emphasis>);
+00095 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;[&apos;</emphasis>;
+00096 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Arg&#32;:&#32;llvm::enumerate(Info.InvocationArguments))&#32;{
+00097 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Arg.index())
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00099 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>&#32;&lt;&lt;&#32;Arg.value()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00100 &#32;&#32;&#32;&#32;}
+00101 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;]&apos;</emphasis>;
+00102 &#32;&#32;}
+00103 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;}&apos;</emphasis>;
+00104 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Compare&#32;unsaved&#32;file&#32;hashes&#32;and&#32;report&#32;mismatch&#32;in&#32;the&#32;reproducer.</emphasis>
+00105 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Info.Dump)
+00106 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;REPRODUCER&#32;METAINFO:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;OS.str()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00107 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::move(OS.str());
+00108 }
+00109 
+00111 <emphasis role="keyword">static</emphasis>&#32;llvm::Optional&lt;driver::Driver::CompilationDiagnosticReport&gt;
+00112 generateReproducerForInvocationArguments(ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Argv,
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ClangInvocationInfo&#32;&amp;Info)&#32;{
+00114 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>driver;
+00115 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;TargetAndMode&#32;=&#32;ToolChain::getTargetAndModeFromProgramName(Argv[0]);
+00116 
+00117 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions;
+00118 
+00119 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagID(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00120 &#32;&#32;DiagnosticsEngine&#32;Diags(DiagID,&#32;&amp;*DiagOpts,&#32;<emphasis role="keyword">new</emphasis>&#32;IgnoringDiagConsumer());
+00121 &#32;&#32;ProcessWarningOptions(Diags,&#32;*DiagOpts,&#32;<emphasis role="comment">/*ReportDiags=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00122 &#32;&#32;Driver&#32;TheDriver(Argv[0],&#32;llvm::sys::getDefaultTargetTriple(),&#32;Diags);
+00123 &#32;&#32;TheDriver.setTargetAndMode(TargetAndMode);
+00124 
+00125 &#32;&#32;std::unique_ptr&lt;Compilation&gt;&#32;C(TheDriver.BuildCompilation(Argv));
+00126 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(C&#32;&amp;&amp;&#32;!C-&gt;containsError())&#32;{
+00127 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;J&#32;:&#32;C-&gt;getJobs())&#32;{
+00128 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;Command&#32;*Cmd&#32;=&#32;dyn_cast&lt;Command&gt;(&amp;J))&#32;{
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Driver::CompilationDiagnosticReport&#32;Report;
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TheDriver.generateCompilationDiagnostics(
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;*C,&#32;*Cmd,&#32;generateReproducerMetaInfo(Info),&#32;&amp;Report);
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Report;
+00133 &#32;&#32;&#32;&#32;&#32;&#32;}
+00134 &#32;&#32;&#32;&#32;}
+00135 &#32;&#32;}
+00136 
+00137 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00138 }
+00139 
+00140 std::string&#32;<link linkend="_cc1gen__reproducer__main_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;CanonicalPrefixes);
+00141 
+00142 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printReproducerInformation(
+00143 &#32;&#32;&#32;&#32;llvm::raw_ostream&#32;&amp;OS,&#32;<emphasis role="keyword">const</emphasis>&#32;ClangInvocationInfo&#32;&amp;Info,
+00144 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;driver::Driver::CompilationDiagnosticReport&#32;&amp;Report)&#32;{
+00145 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;REPRODUCER:\n&quot;</emphasis>;
+00146 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;{\n&quot;</emphasis>;
+00147 &#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(&quot;files&quot;:[)&quot;;</emphasis>
+00148 <emphasis role="stringliteral">&#32;&#32;</emphasis><emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;File&#32;:&#32;llvm::enumerate(Report.TemporaryFiles))&#32;{
+00149 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(File.index())
+00150 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00151 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>&#32;&lt;&lt;&#32;File.value()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00152 &#32;&#32;}
+00153 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\n}\n&quot;</emphasis>;
+00154 }
+00155 
+<anchor xml:id="_cc1gen__reproducer__main_8cpp_source_1l00156"/><link linkend="_cc1gen__reproducer__main_8cpp_1a27f0fa14a18bd4a9c735d321f74779d9">00156</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_cc1gen__reproducer__main_8cpp_1a27f0fa14a18bd4a9c735d321f74779d9">cc1gen_reproducer_main</link>(ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Argv,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Argv0,
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr)&#32;{
+00158 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Argv.size()&#32;&lt;&#32;1)&#32;{
+00159 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;missing&#32;invocation&#32;file\n&quot;</emphasis>;
+00160 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00161 &#32;&#32;}
+00162 &#32;&#32;<emphasis role="comment">//&#32;Parse&#32;the&#32;invocation&#32;descriptor.</emphasis>
+00163 &#32;&#32;StringRef&#32;Input&#32;=&#32;Argv[0];
+00164 &#32;&#32;llvm::ErrorOr&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt;&#32;Buffer&#32;=
+00165 &#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFile(Input,&#32;<emphasis role="comment">/*IsText=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00166 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Buffer)&#32;{
+00167 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;failed&#32;to&#32;read&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Input&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;Buffer.getError().message()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00169 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00170 &#32;&#32;}
+00171 &#32;&#32;llvm::yaml::Input&#32;YAML(Buffer.get()-&gt;getBuffer());
+00172 &#32;&#32;ClangInvocationInfo&#32;InvocationInfo;
+00173 &#32;&#32;YAML&#32;&gt;&gt;&#32;InvocationInfo;
+00174 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Argv.size()&#32;&gt;&#32;1&#32;&amp;&amp;&#32;Argv[1]&#32;==&#32;StringRef(<emphasis role="stringliteral">&quot;-v&quot;</emphasis>))
+00175 &#32;&#32;&#32;&#32;InvocationInfo.Dump&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00176 
+00177 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;an&#32;invocation&#32;that&#32;will&#32;produce&#32;the&#32;reproducer.</emphasis>
+00178 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;DriverArgs;
+00179 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Arg&#32;:&#32;InvocationInfo.Arguments)
+00180 &#32;&#32;&#32;&#32;DriverArgs.push_back(Arg.c_str());
+00181 &#32;&#32;std::string&#32;Path&#32;=&#32;<link linkend="_cc1gen__reproducer__main_8cpp_1a4ee7e45503dac4f1b4f3604b3c4d8875">GetExecutablePath</link>(Argv0,&#32;<emphasis role="comment">/*CanonicalPrefixes=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00182 &#32;&#32;DriverArgs[0]&#32;=&#32;Path.c_str();
+00183 &#32;&#32;llvm::Optional&lt;driver::Driver::CompilationDiagnosticReport&gt;&#32;Report&#32;=
+00184 &#32;&#32;&#32;&#32;&#32;&#32;generateReproducerForInvocationArguments(DriverArgs,&#32;InvocationInfo);
+00185 
+00186 &#32;&#32;<emphasis role="comment">//&#32;Emit&#32;the&#32;information&#32;about&#32;the&#32;reproduce&#32;files&#32;to&#32;stdout.</emphasis>
+00187 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;Result&#32;=&#32;1;
+00188 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Report)&#32;{
+00189 &#32;&#32;&#32;&#32;printReproducerInformation(llvm::outs(),&#32;InvocationInfo,&#32;*Report);
+00190 &#32;&#32;&#32;&#32;Result&#32;=&#32;0;
+00191 &#32;&#32;}
+00192 
+00193 &#32;&#32;<emphasis role="comment">//&#32;Remove&#32;the&#32;input&#32;file.</emphasis>
+00194 &#32;&#32;llvm::sys::fs::remove(Input);
+00195 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00196 }
+</programlisting></section>

@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_core__main_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/c-index-test/core_main.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/c-index-test/core_main.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/AST/Mangle.h&quot;
+#include &quot;clang/Basic/LangOptions.h&quot;
+#include &quot;clang/CodeGen/ObjectFilePCHContainerOperations.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Frontend/CompilerInvocation.h&quot;
+#include &quot;clang/Frontend/FrontendAction.h&quot;
+#include &quot;clang/Index/IndexDataConsumer.h&quot;
+#include &quot;clang/Index/IndexingAction.h&quot;
+#include &quot;clang/Index/USRGeneration.h&quot;
+#include &quot;clang/Lex/Preprocessor.h&quot;
+#include &quot;clang/Serialization/ASTReader.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/PrettyStackTrace.h&quot;
+#include &quot;llvm/Support/Program.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/StringSaver.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+</programlisting><simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespaceoptions">options</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link> (int argc, const char **argv)</para>
+</listitem>
+            <listitem><para>int <link linkend="_core__main_8cpp_1abf8b8cca4d3659c057fd2ab49afb69be">indextest_perform_shell_execution</link> (const char *command_line)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005"/>    <section>
+    <title>indextest_core_main()</title>
+<indexterm><primary>indextest_core_main</primary><secondary>core_main.cpp</secondary></indexterm>
+<indexterm><primary>core_main.cpp</primary><secondary>indextest_core_main</secondary></indexterm>
+<para><computeroutput>int indextest_core_main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_core__main_8cpp_source_1l00330">330</link> of file <link linkend="_core__main_8cpp_source">core_main.cpp</link>.</para>
+<programlisting>00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00331 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0]);
+00332 &#32;&#32;PrettyStackTraceProgram&#32;X(argc,&#32;argv);
+00333 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link>;
+00334 &#32;&#32;std::string&#32;Executable&#32;=&#32;llvm::sys::fs::getMainExecutable(argv[0],&#32;MainAddr);
+00335 
+00336 &#32;&#32;assert(argv[1]&#32;==&#32;StringRef(<emphasis role="stringliteral">&quot;core&quot;</emphasis>));
+00337 &#32;&#32;++argv;
+00338 &#32;&#32;--argc;
+00339 
+00340 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;CompArgs;
+00341 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**DoubleDash&#32;=&#32;std::find(argv,&#32;argv&#32;+&#32;argc,&#32;StringRef(<emphasis role="stringliteral">&quot;--&quot;</emphasis>));
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DoubleDash&#32;!=&#32;argv&#32;+&#32;argc)&#32;{
+00343 &#32;&#32;&#32;&#32;CompArgs&#32;=&#32;std::vector&lt;const&#32;char&#32;*&gt;(DoubleDash&#32;+&#32;1,&#32;argv&#32;+&#32;argc);
+00344 &#32;&#32;&#32;&#32;argc&#32;=&#32;DoubleDash&#32;-&#32;argv;
+00345 &#32;&#32;}
+00346 
+00347 &#32;&#32;cl::HideUnrelatedOptions(options::IndexTestCoreCategory);
+00348 &#32;&#32;cl::ParseCommandLineOptions(argc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;index-test-core&quot;</emphasis>);
+00349 
+00350 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(options::Action&#32;==&#32;ActionType::None)&#32;{
+00351 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;action&#32;required;&#32;pass&#32;&apos;-help&apos;&#32;for&#32;options\n&quot;</emphasis>;
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00353 &#32;&#32;}
+00354 
+00355 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(options::Action&#32;==&#32;ActionType::PrintSourceSymbols)&#32;{
+00356 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!options::ModuleFilePath.empty())&#32;{
+00357 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;printSourceSymbolsFromModule(options::ModuleFilePath,
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::ModuleFormat);
+00359 &#32;&#32;&#32;&#32;}
+00360 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CompArgs.empty())&#32;{
+00361 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;missing&#32;compiler&#32;args;&#32;pass&#32;&apos;--&#32;&lt;compiler&#32;arguments&gt;&apos;\n&quot;</emphasis>;
+00362 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00363 &#32;&#32;&#32;&#32;}
+00364 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;printSourceSymbols(Executable.c_str(),&#32;CompArgs,
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::DumpModuleImports,
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::IncludeLocals,&#32;options::IgnoreMacros);
+00367 &#32;&#32;}
+00368 
+00369 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00370 }
+</programlisting><para>
+References <link linkend="_core__main_8cpp_source_1l00330">indextest_core_main()</link>.</para>
+<para>
+Referenced by <link linkend="_core__main_8cpp_source_1l00330">indextest_core_main()</link>.</para>
+    </section><anchor xml:id="_core__main_8cpp_1abf8b8cca4d3659c057fd2ab49afb69be"/>    <section>
+    <title>indextest_perform_shell_execution()</title>
+<indexterm><primary>indextest_perform_shell_execution</primary><secondary>core_main.cpp</secondary></indexterm>
+<indexterm><primary>core_main.cpp</primary><secondary>indextest_perform_shell_execution</secondary></indexterm>
+<para><computeroutput>int indextest_perform_shell_execution (const char * command_line)</computeroutput></para><para>
+Definition at line <link linkend="_core__main_8cpp_source_1l00376">376</link> of file <link linkend="_core__main_8cpp_source">core_main.cpp</link>.</para>
+<programlisting>00376 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00377 &#32;&#32;BumpPtrAllocator&#32;Alloc;
+00378 &#32;&#32;llvm::StringSaver&#32;Saver(Alloc);
+00379 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;Args;
+00380 &#32;&#32;llvm::cl::TokenizeGNUCommandLine(command_line,&#32;Saver,&#32;Args);
+00381 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Program&#32;=&#32;llvm::sys::findProgramByName(Args[0]);
+00382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;ec&#32;=&#32;Program.getError())&#32;{
+00383 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;command&#32;not&#32;found:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[0]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00384 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ec.value();
+00385 &#32;&#32;}
+00386 &#32;&#32;SmallVector&lt;StringRef,&#32;8&gt;&#32;execArgs(Args.begin(),&#32;Args.end());
+00387 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::ExecuteAndWait(*Program,&#32;execArgs);
+00388 }
+</programlisting></section>
+</section>
+</section>

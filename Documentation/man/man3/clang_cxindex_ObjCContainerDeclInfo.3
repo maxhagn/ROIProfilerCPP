@@ -1,0 +1,173 @@
+.TH "clang::cxindex::ObjCContainerDeclInfo" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxindex::ObjCContainerDeclInfo
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXIndexDataConsumer\&.h>\fP
+.PP
+Inherits \fBclang::cxindex::DeclInfo\fP\&.
+.PP
+Inherited by \fBclang::cxindex::ObjCCategoryDeclInfo\fP, \fBclang::cxindex::ObjCInterfaceDeclInfo\fP, and \fBclang::cxindex::ObjCProtocolDeclInfo\fP\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBDInfoKind\fP { \fBInfo_Decl\fP, \fBInfo_ObjCContainer\fP, \fBInfo_ObjCInterface\fP, \fBInfo_ObjCProtocol\fP, \fBInfo_ObjCCategory\fP, \fBInfo_ObjCProperty\fP, \fBInfo_CXXClass\fP }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBObjCContainerDeclInfo\fP (bool isForwardRef, bool isRedeclaration, bool isImplementation)"
+.br
+.ti -1c
+.RI "\fBObjCContainerDeclInfo\fP (\fBDInfoKind\fP K, bool isForwardRef, bool isRedeclaration, bool isImplementation)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static bool \fBclassof\fP (const \fBDeclInfo\fP *D)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "CXIdxObjCContainerDeclInfo \fBObjCContDeclInfo\fP"
+.br
+.ti -1c
+.RI "\fBDInfoKind\fP \fBKind\fP"
+.br
+.ti -1c
+.RI "\fBEntityInfo\fP \fBEntInfo\fP"
+.br
+.ti -1c
+.RI "\fBContainerInfo\fP \fBSemanticContainer\fP"
+.br
+.ti -1c
+.RI "\fBContainerInfo\fP \fBLexicalContainer\fP"
+.br
+.ti -1c
+.RI "\fBContainerInfo\fP \fBDeclAsContainer\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 109 of file CXIndexDataConsumer\&.h\&.
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBclang::cxindex::DeclInfo::DInfoKind\fP\fC [inherited]\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIInfo_Decl \fP\fP
+.TP
+\fB\fIInfo_ObjCContainer \fP\fP
+.TP
+\fB\fIInfo_ObjCInterface \fP\fP
+.TP
+\fB\fIInfo_ObjCProtocol \fP\fP
+.TP
+\fB\fIInfo_ObjCCategory \fP\fP
+.TP
+\fB\fIInfo_ObjCProperty \fP\fP
+.TP
+\fB\fIInfo_CXXClass \fP\fP
+.PP
+Definition at line 66 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+66                  {
+67     Info_Decl,
+68 
+69     Info_ObjCContainer,
+70       Info_ObjCInterface,
+71       Info_ObjCProtocol,
+72       Info_ObjCCategory,
+73 
+74     Info_ObjCProperty,
+75 
+76     Info_CXXClass
+77   };
+.fi
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxindex::ObjCContainerDeclInfo::ObjCContainerDeclInfo (bool isForwardRef, bool isRedeclaration, bool isImplementation)\fC [inline]\fP"
+
+.PP
+Definition at line 112 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+115     : DeclInfo(Info_ObjCContainer, isRedeclaration,
+116                /*isDefinition=*/!isForwardRef, /*isContainer=*/!isForwardRef) {
+117     init(isForwardRef, isImplementation);
+118   }
+.fi
+.SS "clang::cxindex::ObjCContainerDeclInfo::ObjCContainerDeclInfo (\fBDInfoKind\fP K, bool isForwardRef, bool isRedeclaration, bool isImplementation)\fC [inline]\fP"
+
+.PP
+Definition at line 119 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+123     : DeclInfo(K, isRedeclaration, /*isDefinition=*/!isForwardRef,
+124                /*isContainer=*/!isForwardRef) {
+125     init(isForwardRef, isImplementation);
+126   }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "static bool clang::cxindex::ObjCContainerDeclInfo::classof (const \fBDeclInfo\fP * D)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 128 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+128                                          {
+129     return Info_ObjCContainer <= D->Kind && D->Kind <= Info_ObjCCategory;
+130   }
+.fi
+.PP
+References clang::cxindex::DeclInfo::Info_ObjCCategory, clang::cxindex::DeclInfo::Info_ObjCContainer, and clang::cxindex::DeclInfo::Kind\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "\fBContainerInfo\fP clang::cxindex::DeclInfo::DeclAsContainer\fC [inherited]\fP"
+
+.PP
+Definition at line 84 of file CXIndexDataConsumer\&.h\&.
+.SS "\fBEntityInfo\fP clang::cxindex::DeclInfo::EntInfo\fC [inherited]\fP"
+
+.PP
+Definition at line 81 of file CXIndexDataConsumer\&.h\&.
+.SS "\fBDInfoKind\fP clang::cxindex::DeclInfo::Kind\fC [inherited]\fP"
+
+.PP
+Definition at line 79 of file CXIndexDataConsumer\&.h\&.
+.PP
+Referenced by classof(), clang::cxindex::ObjCInterfaceDeclInfo::classof(), clang::cxindex::ObjCProtocolDeclInfo::classof(), clang::cxindex::ObjCCategoryDeclInfo::classof(), clang::cxindex::ObjCPropertyDeclInfo::classof(), and clang::cxindex::CXXClassDeclInfo::classof()\&.
+.SS "\fBContainerInfo\fP clang::cxindex::DeclInfo::LexicalContainer\fC [inherited]\fP"
+
+.PP
+Definition at line 83 of file CXIndexDataConsumer\&.h\&.
+.SS "CXIdxObjCContainerDeclInfo clang::cxindex::ObjCContainerDeclInfo::ObjCContDeclInfo"
+
+.PP
+Definition at line 110 of file CXIndexDataConsumer\&.h\&.
+.PP
+Referenced by clang::cxindex::CXIndexDataConsumer::handleObjCCategory(), clang::cxindex::CXIndexDataConsumer::handleObjCCategoryImpl(), and clang::cxindex::CXIndexDataConsumer::handleObjCInterface()\&.
+.SS "\fBContainerInfo\fP clang::cxindex::DeclInfo::SemanticContainer\fC [inherited]\fP"
+
+.PP
+Definition at line 82 of file CXIndexDataConsumer\&.h\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

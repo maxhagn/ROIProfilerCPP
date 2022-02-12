@@ -1,0 +1,140 @@
+.TH "libear.Configure" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libear.Configure
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits object\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self, toolset)"
+.br
+.ti -1c
+.RI "def \fBcheck_function_exists\fP (self, function, name)"
+.br
+.ti -1c
+.RI "def \fBcheck_symbol_exists\fP (self, symbol, include, name)"
+.br
+.ti -1c
+.RI "def \fBwrite_by_template\fP (self, template, output)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBctx\fP"
+.br
+.ti -1c
+.RI "\fBresults\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 162 of file __init__\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def libear\&.Configure\&.__init__ ( self,  toolset)"
+
+.PP
+Definition at line 163 of file __init__\&.py\&.
+.PP
+.nf
+163     def __init__(self, toolset):
+164         self\&.ctx = toolset
+165         self\&.results = {'APPLE': sys\&.platform == 'darwin'}
+166 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def libear\&.Configure\&.check_function_exists ( self,  function,  name)"
+
+.PP
+Definition at line 180 of file __init__\&.py\&.
+.PP
+.nf
+180     def check_function_exists(self, function, name):
+181         template = "int FUNCTION(); int main() { return FUNCTION(); }"
+182         source = template\&.replace("FUNCTION", function)
+183 
+184         logging\&.debug('Checking function %s', function)
+185         found = self\&._try_to_compile_and_link(source)
+186         logging\&.debug('Checking function %s -- %s', function,
+187                       'found' if found else 'not found')
+188         self\&.results\&.update({name: found})
+189 
+.fi
+.PP
+References libear\&.Configure\&._try_to_compile_and_link(), and libear\&.Configure\&.results\&.
+.SS "def libear\&.Configure\&.check_symbol_exists ( self,  symbol,  include,  name)"
+
+.PP
+Definition at line 190 of file __init__\&.py\&.
+.PP
+.nf
+190     def check_symbol_exists(self, symbol, include, name):
+191         template = """#include <INCLUDE>
+192                       int main() { return ((int*)(&SYMBOL))[0]; }"""
+193         source = template\&.replace('INCLUDE', include)\&.replace("SYMBOL", symbol)
+194 
+195         logging\&.debug('Checking symbol %s', symbol)
+196         found = self\&._try_to_compile_and_link(source)
+197         logging\&.debug('Checking symbol %s -- %s', symbol,
+198                       'found' if found else 'not found')
+199         self\&.results\&.update({name: found})
+200 
+.fi
+.PP
+References libear\&.Configure\&._try_to_compile_and_link(), and libear\&.Configure\&.results\&.
+.SS "def libear\&.Configure\&.write_by_template ( self,  template,  output)"
+
+.PP
+Definition at line 201 of file __init__\&.py\&.
+.PP
+.nf
+201     def write_by_template(self, template, output):
+202         def transform(line, definitions):
+203 
+204             pattern = re\&.compile(r'^#cmakedefine\s+(\S+)')
+205             m = pattern\&.match(line)
+206             if m:
+207                 key = m\&.group(1)
+208                 if key not in definitions or not definitions[key]:
+209                     return '/* #undef {0} */{1}'\&.format(key, os\&.linesep)
+210                 else:
+211                     return '#define {0}{1}'\&.format(key, os\&.linesep)
+212             return line
+213 
+214         with open(template, 'r') as src_handle:
+215             logging\&.debug('Writing config to %s', output)
+216             with open(output, 'w') as dst_handle:
+217                 for line in src_handle:
+218                     dst_handle\&.write(transform(line, self\&.results))
+219 
+220 
+.fi
+.PP
+References startfile\&.open(), and libear\&.Configure\&.results\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "libear\&.Configure\&.ctx"
+
+.PP
+Definition at line 164 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release()\&.
+.SS "libear\&.Configure\&.results"
+
+.PP
+Definition at line 165 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.Configure\&.check_function_exists(), libear\&.Configure\&.check_symbol_exists(), and libear\&.Configure\&.write_by_template()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

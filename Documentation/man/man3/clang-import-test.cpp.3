@@ -1,0 +1,138 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-import-test/clang-import-test.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-import-test/clang-import-test.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/AST/ASTContext\&.h'\fP
+.br
+\fC#include 'clang/AST/ASTImporter\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclObjC\&.h'\fP
+.br
+\fC#include 'clang/AST/ExternalASTMerger\&.h'\fP
+.br
+\fC#include 'clang/Basic/Builtins\&.h'\fP
+.br
+\fC#include 'clang/Basic/FileManager\&.h'\fP
+.br
+\fC#include 'clang/Basic/IdentifierTable\&.h'\fP
+.br
+\fC#include 'clang/Basic/SourceLocation\&.h'\fP
+.br
+\fC#include 'clang/Basic/TargetInfo\&.h'\fP
+.br
+\fC#include 'clang/Basic/TargetOptions\&.h'\fP
+.br
+\fC#include 'clang/CodeGen/ModuleBuilder\&.h'\fP
+.br
+\fC#include 'clang/Driver/Types\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTConsumers\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Frontend/MultiplexConsumer\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticBuffer\&.h'\fP
+.br
+\fC#include 'clang/Lex/Lexer\&.h'\fP
+.br
+\fC#include 'clang/Lex/Preprocessor\&.h'\fP
+.br
+\fC#include 'clang/Parse/ParseAST\&.h'\fP
+.br
+\fC#include 'llvm/IR/LLVMContext\&.h'\fP
+.br
+\fC#include 'llvm/IR/Module\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/Error\&.h'\fP
+.br
+\fC#include 'llvm/Support/Host\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include <memory>\fP
+.br
+\fC#include <string>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBinit_convenience::TestDiagnosticConsumer\fP"
+.br
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBinit_convenience\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "std::unique_ptr< CompilerInstance > \fBinit_convenience::BuildCompilerInstance\fP ()"
+.br
+.ti -1c
+.RI "std::unique_ptr< ASTContext > \fBinit_convenience::BuildASTContext\fP (CompilerInstance &CI, SelectorTable &ST, Builtin::Context &BC)"
+.br
+.ti -1c
+.RI "std::unique_ptr< CodeGenerator > \fBinit_convenience::BuildCodeGen\fP (CompilerInstance &CI, llvm::LLVMContext &LLVMCtx)"
+.br
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 356 of file clang\-import\-test\&.cpp\&.
+.PP
+.nf
+356                                       {
+357   const bool DisableCrashReporting = true;
+358   llvm::sys::PrintStackTraceOnErrorSignal(argv[0], DisableCrashReporting);
+359   llvm::cl::ParseCommandLineOptions(argc, argv);
+360   std::vector<CIAndOrigins> ImportCIs;
+361   for (auto I : Imports) {
+362     llvm::Expected<CIAndOrigins> ImportCI = Parse(I, {}, false, false);
+363     if (auto E = ImportCI\&.takeError()) {
+364       llvm::errs() << "error: " << llvm::toString(std::move(E)) << "\n";
+365       exit(-1);
+366     }
+367     ImportCIs\&.push_back(std::move(*ImportCI));
+368   }
+369   std::vector<CIAndOrigins> IndirectCIs;
+370   if (!Direct || UseOrigins) {
+371     for (auto &ImportCI : ImportCIs) {
+372       CIAndOrigins IndirectCI = BuildIndirect(ImportCI);
+373       IndirectCIs\&.push_back(std::move(IndirectCI));
+374     }
+375   }
+376   if (UseOrigins)
+377     for (auto &ImportCI : ImportCIs)
+378       IndirectCIs\&.push_back(std::move(ImportCI));
+379   llvm::Expected<CIAndOrigins> ExpressionCI =
+380       Parse(Expression, (Direct && !UseOrigins) ? ImportCIs : IndirectCIs,
+381             DumpAST, DumpIR);
+382   if (auto E = ExpressionCI\&.takeError()) {
+383     llvm::errs() << "error: " << llvm::toString(std::move(E)) << "\n";
+384     exit(-1);
+385   }
+386   Forget(*ExpressionCI, (Direct && !UseOrigins) ? ImportCIs : IndirectCIs);
+387   return 0;
+388 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

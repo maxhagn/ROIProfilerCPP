@@ -1,0 +1,64 @@
+.TH "LLVM.ClangFormat.OptionPageGrid.FilenameConverter" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+LLVM.ClangFormat.OptionPageGrid.FilenameConverter
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits TypeConverter\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "override bool \fBCanConvertFrom\fP (ITypeDescriptorContext context, Type sourceType)"
+.br
+.ti -1c
+.RI "override object \fBConvertFrom\fP (ITypeDescriptorContext context, System\&.Globalization\&.CultureInfo culture, object \fBvalue\fP)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 109 of file ClangFormatPackage\&.cs\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "override bool LLVM\&.ClangFormat\&.OptionPageGrid\&.FilenameConverter\&.CanConvertFrom (ITypeDescriptorContext context, Type sourceType)\fC [inline]\fP"
+
+.PP
+Definition at line 111 of file ClangFormatPackage\&.cs\&.
+.PP
+.nf
+112             {
+113                 if (sourceType == typeof(string))
+114                     return true;
+115 
+116                 return base\&.CanConvertFrom(context, sourceType);
+117             }
+.fi
+.SS "override object LLVM\&.ClangFormat\&.OptionPageGrid\&.FilenameConverter\&.ConvertFrom (ITypeDescriptorContext context, System\&.Globalization\&.CultureInfo culture, object value)\fC [inline]\fP"
+
+.PP
+Definition at line 119 of file ClangFormatPackage\&.cs\&.
+.PP
+.nf
+120             {
+121                 string s = value as string;
+122                 if (s == null)
+123                     return base\&.ConvertFrom(context, culture, value);
+124 
+125                 // Check if string contains quotes\&. On Windows, file names cannot contain quotes\&.
+126                 // We do not accept them however to avoid hard-to-debug problems\&.
+127                 // A quote in user input would end the parameter quote and so break the command invocation\&.
+128                 if (s\&.IndexOf('\"') != -1)
+129                     throw new NotSupportedException("Filename cannot contain quotes");
+130 
+131                 return value;
+132             }
+.fi
+.PP
+References value()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

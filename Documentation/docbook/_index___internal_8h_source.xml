@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__index___internal_8h_source" xml:lang="en-US">
+<title>Index_Internal.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/Index_Internal.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXString.h&#32;-&#32;Routines&#32;for&#32;manipulating&#32;CXStrings&#32;-------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXStrings.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_INDEX_INTERNAL_H</emphasis>
+00014 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_INDEX_INTERNAL_H</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00017 
+00018 <emphasis role="preprocessor">#ifndef&#32;__has_feature</emphasis>
+<anchor xml:id="__index___internal_8h_source_1l00019"/><link linkend="__index___internal_8h_1af989845e24678c452b9222afdac95e7f">00019</link> <emphasis role="preprocessor">#define&#32;__has_feature(x)&#32;0</emphasis>
+00020 <emphasis role="preprocessor">#endif</emphasis>
+00021 
+00022 <emphasis role="preprocessor">#if&#32;__has_feature(blocks)</emphasis>
+00023 
+00024 <emphasis role="preprocessor">#define&#32;INVOKE_BLOCK2(block,&#32;arg1,&#32;arg2)&#32;block(arg1,&#32;arg2)</emphasis>
+00025 
+00026 <emphasis role="preprocessor">#else</emphasis>
+00027 <emphasis role="comment">//&#32;If&#32;we&#32;are&#32;compiled&#32;with&#32;a&#32;compiler&#32;that&#32;doesn&apos;t&#32;have&#32;native&#32;blocks&#32;support,</emphasis>
+00028 <emphasis role="comment">//&#32;define&#32;and&#32;call&#32;the&#32;block&#32;manually.&#32;</emphasis>
+00029 
+<anchor xml:id="__index___internal_8h_source_1l00030"/><link linkend="__index___internal_8h_1ac0a2b80018865726a593e344012872b5">00030</link> <emphasis role="preprocessor">#define&#32;INVOKE_BLOCK2(block,&#32;arg1,&#32;arg2)&#32;block-&gt;invoke(block,&#32;arg1,&#32;arg2)</emphasis>
+00031 
+<anchor xml:id="__index___internal_8h_source_1l00032"/><link linkend="_struct___c_x_cursor_and_range_visitor_block">00032</link> <emphasis role="keyword">typedef</emphasis>&#32;<emphasis role="keyword">struct&#32;</emphasis><link linkend="_struct___c_x_cursor_and_range_visitor_block">_CXCursorAndRangeVisitorBlock</link>&#32;{
+<anchor xml:id="__index___internal_8h_source_1l00033"/><link linkend="_struct___c_x_cursor_and_range_visitor_block_1a46bd083220b53ea0370809d2a68d82e7">00033</link> &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*<link linkend="_struct___c_x_cursor_and_range_visitor_block_1a46bd083220b53ea0370809d2a68d82e7">isa</link>;
+<anchor xml:id="__index___internal_8h_source_1l00034"/><link linkend="_struct___c_x_cursor_and_range_visitor_block_1a04f60cdd62684069765dd8dc90ff3935">00034</link> &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_struct___c_x_cursor_and_range_visitor_block_1a04f60cdd62684069765dd8dc90ff3935">flags</link>;
+<anchor xml:id="__index___internal_8h_source_1l00035"/><link linkend="_struct___c_x_cursor_and_range_visitor_block_1a0159923f7e71151aa8d8b0825ee69662">00035</link> &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_struct___c_x_cursor_and_range_visitor_block_1a790c2f94104e00ecb8801f3afbe36407">reserved</link>;
+00036 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXVisitorResult&#32;(*<link linkend="_struct___c_x_cursor_and_range_visitor_block_1a0159923f7e71151aa8d8b0825ee69662">invoke</link>)(<link linkend="_struct___c_x_cursor_and_range_visitor_block">_CXCursorAndRangeVisitorBlock</link>&#32;*,
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursor,&#32;CXSourceRange);
+<anchor xml:id="__index___internal_8h_source_1l00038"/><link linkend="__index___internal_8h_1a7ecf674b2986737e29df0f5e88dbf83b">00038</link> }&#32;*<link linkend="__index___internal_8h_1a7ecf674b2986737e29df0f5e88dbf83b">CXCursorAndRangeVisitorBlock</link>;
+00039 
+00040 <emphasis role="preprocessor">#endif&#32;</emphasis><emphasis role="comment">//&#32;!__has_feature(blocks)</emphasis>
+00041 
+<anchor xml:id="__index___internal_8h_source_1l00043"/><link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2">00043</link> <emphasis role="keyword">enum</emphasis>&#32;<link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2">RangeComparisonResult</link>&#32;{
+<anchor xml:id="__index___internal_8h_source_1l00045"/><link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2a87e2eee30c9b5a3c2108f2128413157a">00045</link> &#32;&#32;<link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2a87e2eee30c9b5a3c2108f2128413157a">RangeOverlap</link>,
+00046 
+<anchor xml:id="__index___internal_8h_source_1l00048"/><link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2a1626bf1782f58fe2a2bf082c4c30e850">00048</link> &#32;&#32;<link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2a1626bf1782f58fe2a2bf082c4c30e850">RangeBefore</link>,
+00049 
+00051 &#32;&#32;<link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2a7540aa4ebed8662d6f41ec33073611a0">RangeAfter</link>
+<anchor xml:id="__index___internal_8h_source_1l00052"/><link linkend="__index___internal_8h_1afca6208bdc188ac29b169260314b7af2a7540aa4ebed8662d6f41ec33073611a0">00052</link> };
+00053 
+00054 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

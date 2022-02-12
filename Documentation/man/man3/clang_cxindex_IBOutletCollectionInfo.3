@@ -1,0 +1,119 @@
+.TH "clang::cxindex::IBOutletCollectionInfo" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxindex::IBOutletCollectionInfo
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CXIndexDataConsumer\&.h>\fP
+.PP
+Inherits \fBclang::cxindex::AttrInfo\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBIBOutletCollectionInfo\fP (CXCursor C, CXIdxLoc Loc, const Attr *\fBA\fP)"
+.br
+.ti -1c
+.RI "\fBIBOutletCollectionInfo\fP (const \fBIBOutletCollectionInfo\fP &other)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static bool \fBclassof\fP (const \fBAttrInfo\fP *\fBA\fP)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBEntityInfo\fP \fBClassInfo\fP"
+.br
+.ti -1c
+.RI "CXIdxIBOutletCollectionAttrInfo \fBIBCollInfo\fP"
+.br
+.ti -1c
+.RI "const Attr * \fBA\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 222 of file CXIndexDataConsumer\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxindex::IBOutletCollectionInfo::IBOutletCollectionInfo (CXCursor C, CXIdxLoc Loc, const Attr * A)\fC [inline]\fP"
+
+.PP
+Definition at line 226 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+226                                                                   :
+227     AttrInfo(CXIdxAttr_IBOutletCollection, C, Loc, A) {
+228     assert(C\&.kind == CXCursor_IBOutletCollectionAttr);
+229     IBCollInfo\&.objcClass = nullptr;
+230   }
+.fi
+.PP
+References IBCollInfo\&.
+.SS "IBOutletCollectionInfo::IBOutletCollectionInfo (const \fBIBOutletCollectionInfo\fP & other)"
+
+.PP
+Definition at line 265 of file CXIndexDataConsumer\&.cpp\&.
+.PP
+.nf
+267   : AttrInfo(CXIdxAttr_IBOutletCollection, other\&.cursor, other\&.loc, other\&.A) {
+268 
+269   IBCollInfo\&.attrInfo = this;
+270   IBCollInfo\&.classCursor = other\&.IBCollInfo\&.classCursor;
+271   IBCollInfo\&.classLoc = other\&.IBCollInfo\&.classLoc;
+272   if (other\&.IBCollInfo\&.objcClass) {
+273     ClassInfo = other\&.ClassInfo;
+274     IBCollInfo\&.objcClass = &ClassInfo;
+275   } else
+276     IBCollInfo\&.objcClass = nullptr;
+277 }
+.fi
+.PP
+References ClassInfo, and IBCollInfo\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "static bool clang::cxindex::IBOutletCollectionInfo::classof (const \fBAttrInfo\fP * A)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 234 of file CXIndexDataConsumer\&.h\&.
+.PP
+.nf
+234                                          {
+235     return A->kind == CXIdxAttr_IBOutletCollection;
+236   }
+.fi
+.PP
+References clang::cxindex::AttrInfo::A\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "const Attr* clang::cxindex::AttrInfo::A\fC [inherited]\fP"
+
+.PP
+Definition at line 212 of file CXIndexDataConsumer\&.h\&.
+.PP
+Referenced by clang::cxindex::AttrInfo::AttrInfo(), clang::cxindex::AttrListInfo::AttrListInfo(), and classof()\&.
+.SS "\fBEntityInfo\fP clang::cxindex::IBOutletCollectionInfo::ClassInfo"
+
+.PP
+Definition at line 223 of file CXIndexDataConsumer\&.h\&.
+.PP
+Referenced by clang::cxindex::AttrListInfo::AttrListInfo(), and IBOutletCollectionInfo()\&.
+.SS "CXIdxIBOutletCollectionAttrInfo clang::cxindex::IBOutletCollectionInfo::IBCollInfo"
+
+.PP
+Definition at line 224 of file CXIndexDataConsumer\&.h\&.
+.PP
+Referenced by clang::cxindex::AttrListInfo::AttrListInfo(), and IBOutletCollectionInfo()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

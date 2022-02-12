@@ -1,0 +1,455 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_format_package_8cs_source" xml:lang="en-US">
+<title>ClangFormatPackage.cs</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format-vs/ClangFormat/ClangFormatPackage.cs</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;ClangFormatPackages.cs&#32;-&#32;VSPackage&#32;for&#32;clang-format&#32;------*-&#32;C#&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;class&#32;contains&#32;a&#32;VS&#32;extension&#32;package&#32;that&#32;runs&#32;clang-format&#32;over&#32;a</emphasis>
+00010 <emphasis role="comment">//&#32;selection&#32;in&#32;a&#32;VS&#32;text&#32;editor.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="keyword">using</emphasis>&#32;EnvDTE;
+00015 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Shell;
+00016 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Shell.Interop;
+00017 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Text;
+00018 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Text.Editor;
+00019 <emphasis role="keyword">using</emphasis>&#32;System;
+00020 <emphasis role="keyword">using</emphasis>&#32;System.Collections;
+00021 <emphasis role="keyword">using</emphasis>&#32;System.ComponentModel;
+00022 <emphasis role="keyword">using</emphasis>&#32;System.ComponentModel.Design;
+00023 <emphasis role="keyword">using</emphasis>&#32;System.IO;
+00024 <emphasis role="keyword">using</emphasis>&#32;System.Runtime.InteropServices;
+00025 <emphasis role="keyword">using</emphasis>&#32;System.Xml.Linq;
+00026 <emphasis role="keyword">using</emphasis>&#32;System.Linq;
+00027 <emphasis role="keyword">using</emphasis>&#32;System.Text;
+00028 
+<anchor xml:id="__clang_format_package_8cs_source_1l00029"/><link linkend="_namespace_l_l_v_m">00029</link> <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespace_l_l_v_m_1_1_clang_format">LLVM.ClangFormat</link>
+00030 {
+00031 &#32;&#32;&#32;&#32;[ClassInterface(ClassInterfaceType.AutoDual)]
+00032 &#32;&#32;&#32;&#32;[CLSCompliant(<emphasis role="keyword">false</emphasis>),&#32;ComVisible(<emphasis role="keyword">true</emphasis>)]
+<anchor xml:id="__clang_format_package_8cs_source_1l00033"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">00033</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">OptionPageGrid</link>&#32;:&#32;DialogPage
+00034 &#32;&#32;&#32;&#32;{
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;assumeFilename&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;fallbackStyle&#32;=&#32;<emphasis role="stringliteral">&quot;LLVM&quot;</emphasis>;
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;sortIncludes&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;style&#32;=&#32;<emphasis role="stringliteral">&quot;file&quot;</emphasis>;
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;formatOnSave&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;formatOnSaveFileExtensions&#32;=
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.c;.cpp;.cxx;.cc;.tli;.tlh;.h;.hh;.hpp;.hxx;.hh;.inl;&quot;</emphasis>&#32;+
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.java;.js;.ts;.m;.mm;.proto;.protodevel;.td&quot;</emphasis>;
+00043 
+<anchor xml:id="__clang_format_package_8cs_source_1l00044"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1af273d6f6f7c1118b13139756a825df95">00044</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">OptionPageGrid</link>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1af273d6f6f7c1118b13139756a825df95">Clone</link>()
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Use&#32;MemberwiseClone&#32;to&#32;copy&#32;value&#32;types.</emphasis>
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;clone&#32;=&#32;(<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">OptionPageGrid</link>)MemberwiseClone();
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;clone;
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00050 
+<anchor xml:id="__clang_format_package_8cs_source_1l00051"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter">00051</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter">StyleConverter</link>&#32;:&#32;TypeConverter
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+<anchor xml:id="__clang_format_package_8cs_source_1l00053"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae489a03768512d9cd33b0aebd1308d94">00053</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">protected</emphasis>&#32;ArrayList&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae489a03768512d9cd33b0aebd1308d94">values</link>;
+<anchor xml:id="__clang_format_package_8cs_source_1l00054"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1a2aa652185c08a69f985aaacdc4bfc7ed">00054</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1a2aa652185c08a69f985aaacdc4bfc7ed">StyleConverter</link>()
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Initializes&#32;the&#32;standard&#32;values&#32;list&#32;with&#32;defaults.</emphasis>
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae489a03768512d9cd33b0aebd1308d94">values</link>&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;ArrayList(<emphasis role="keyword">new</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>[]&#32;{&#32;<emphasis role="stringliteral">&quot;file&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Chromium&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Google&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;LLVM&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Mozilla&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;WebKit&quot;</emphasis>&#32;});
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00059 
+<anchor xml:id="__clang_format_package_8cs_source_1l00060"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1aa49d870c1a3461747290bbb6289ee004">00060</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1aa49d870c1a3461747290bbb6289ee004">GetStandardValuesSupported</link>(ITypeDescriptorContext&#32;context)
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00064 
+<anchor xml:id="__clang_format_package_8cs_source_1l00065"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1a612ce2127b786c70e44286faae17c03a">00065</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;StandardValuesCollection&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1a612ce2127b786c70e44286faae17c03a">GetStandardValues</link>(ITypeDescriptorContext&#32;context)
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;StandardValuesCollection(<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae489a03768512d9cd33b0aebd1308d94">values</link>);
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00069 
+<anchor xml:id="__clang_format_package_8cs_source_1l00070"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1a5c17d92080cf246d9498016d8731eb67">00070</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1a5c17d92080cf246d9498016d8731eb67">CanConvertFrom</link>(ITypeDescriptorContext&#32;context,&#32;Type&#32;sourceType)
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(sourceType&#32;==&#32;typeof(<emphasis role="keywordtype">string</emphasis>))
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00074 
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;base.CanConvertFrom(context,&#32;sourceType);
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00077 
+<anchor xml:id="__clang_format_package_8cs_source_1l00078"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae8af383078bc6fc09c9cc7e0635a79ff">00078</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;<emphasis role="keywordtype">object</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae8af383078bc6fc09c9cc7e0635a79ff">ConvertFrom</link>(ITypeDescriptorContext&#32;context,&#32;System.Globalization.CultureInfo&#32;culture,&#32;<emphasis role="keywordtype">object</emphasis>&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>)
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;s&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>&#32;as&#32;string;
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(s&#32;==&#32;<emphasis role="keyword">null</emphasis>)
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;base.ConvertFrom(context,&#32;culture,&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>);
+00083 
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00087 
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Category(<emphasis role="stringliteral">&quot;Format&#32;Options&quot;</emphasis>)]
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[DisplayName(<emphasis role="stringliteral">&quot;Style&quot;</emphasis>)]
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Description(<emphasis role="stringliteral">&quot;Coding&#32;style,&#32;currently&#32;supports:\n&quot;</emphasis>&#32;+
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;-&#32;Predefined&#32;styles&#32;(&apos;LLVM&apos;,&#32;&apos;Google&apos;,&#32;&apos;Chromium&apos;,&#32;&apos;Mozilla&apos;,&#32;&apos;WebKit&apos;).\n&quot;</emphasis>&#32;+
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;-&#32;&apos;file&apos;&#32;to&#32;search&#32;for&#32;a&#32;YAML&#32;.clang-format&#32;or&#32;_clang-format\n&quot;</emphasis>&#32;+
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;configuration&#32;file.\n&quot;</emphasis>&#32;+
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;-&#32;A&#32;YAML&#32;configuration&#32;snippet.\n\n&quot;</emphasis>&#32;+
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&apos;File&apos;:\n&quot;</emphasis>&#32;+
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Searches&#32;for&#32;a&#32;.clang-format&#32;or&#32;_clang-format&#32;configuration&#32;file\n&quot;</emphasis>&#32;+
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;in&#32;the&#32;source&#32;file&apos;s&#32;directory&#32;and&#32;its&#32;parents.\n\n&quot;</emphasis>&#32;+
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;YAML&#32;configuration&#32;snippet:\n&quot;</emphasis>&#32;+
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;The&#32;content&#32;of&#32;a&#32;.clang-format&#32;configuration&#32;file,&#32;as&#32;string.\n&quot;</emphasis>&#32;+
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;Example:&#32;&apos;{BasedOnStyle:&#32;\&quot;LLVM\&quot;,&#32;IndentWidth:&#32;8}&apos;\n\n&quot;</emphasis>&#32;+
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;See&#32;also:&#32;http://clang.llvm.org/docs/ClangFormatStyleOptions.html.&quot;</emphasis>)]
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[TypeConverter(typeof(StyleConverter))]
+<anchor xml:id="__clang_format_package_8cs_source_1l00103"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1ac98400d09e4a9eea17d9e82ed53ab37e">00103</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1ac98400d09e4a9eea17d9e82ed53ab37e">Style</link>
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">get</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;style;&#32;}
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">set</emphasis>&#32;{&#32;style&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;&#32;}
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00108 
+<anchor xml:id="__clang_format_package_8cs_source_1l00109"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_filename_converter">00109</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;sealed&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_filename_converter">FilenameConverter</link>&#32;:&#32;TypeConverter
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+<anchor xml:id="__clang_format_package_8cs_source_1l00111"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_filename_converter_1a719ee41a066f96c096bcb31e247aa25f">00111</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_filename_converter_1a719ee41a066f96c096bcb31e247aa25f">CanConvertFrom</link>(ITypeDescriptorContext&#32;context,&#32;Type&#32;sourceType)
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(sourceType&#32;==&#32;typeof(<emphasis role="keywordtype">string</emphasis>))
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00115 
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;base.CanConvertFrom(context,&#32;sourceType);
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00118 
+<anchor xml:id="__clang_format_package_8cs_source_1l00119"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_filename_converter_1a257e2fcf86d2d36a2dfe355c0becbc66">00119</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;<emphasis role="keywordtype">object</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_filename_converter_1a257e2fcf86d2d36a2dfe355c0becbc66">ConvertFrom</link>(ITypeDescriptorContext&#32;context,&#32;System.Globalization.CultureInfo&#32;culture,&#32;<emphasis role="keywordtype">object</emphasis>&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>)
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;s&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>&#32;as&#32;string;
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(s&#32;==&#32;<emphasis role="keyword">null</emphasis>)
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;base.ConvertFrom(context,&#32;culture,&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>);
+00124 
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;string&#32;contains&#32;quotes.&#32;On&#32;Windows,&#32;file&#32;names&#32;cannot&#32;contain&#32;quotes.</emphasis>
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;do&#32;not&#32;accept&#32;them&#32;however&#32;to&#32;avoid&#32;hard-to-debug&#32;problems.</emphasis>
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;A&#32;quote&#32;in&#32;user&#32;input&#32;would&#32;end&#32;the&#32;parameter&#32;quote&#32;and&#32;so&#32;break&#32;the&#32;command&#32;invocation.</emphasis>
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(s.IndexOf(<emphasis role="charliteral">&apos;\&quot;&apos;</emphasis>)&#32;!=&#32;-1)
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">throw</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;NotSupportedException(<emphasis role="stringliteral">&quot;Filename&#32;cannot&#32;contain&#32;quotes&quot;</emphasis>);
+00130 
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00134 
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Category(<emphasis role="stringliteral">&quot;Format&#32;Options&quot;</emphasis>)]
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[DisplayName(<emphasis role="stringliteral">&quot;Assume&#32;Filename&quot;</emphasis>)]
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Description(<emphasis role="stringliteral">&quot;When&#32;reading&#32;from&#32;stdin,&#32;clang-format&#32;assumes&#32;this&#32;&quot;</emphasis>&#32;+
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;filename&#32;to&#32;look&#32;for&#32;a&#32;style&#32;config&#32;file&#32;(with&#32;&apos;file&apos;&#32;style)&#32;&quot;</emphasis>&#32;+
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;and&#32;to&#32;determine&#32;the&#32;language.&quot;</emphasis>)]
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[TypeConverter(typeof(FilenameConverter))]
+<anchor xml:id="__clang_format_package_8cs_source_1l00141"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1ac01fd11e0e583cb0933097e77446e425">00141</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1ac01fd11e0e583cb0933097e77446e425">AssumeFilename</link>
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">get</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;assumeFilename;&#32;}
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">set</emphasis>&#32;{&#32;assumeFilename&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;&#32;}
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00146 
+<anchor xml:id="__clang_format_package_8cs_source_1l00147"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_fallback_style_converter">00147</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;sealed&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_fallback_style_converter">FallbackStyleConverter</link>&#32;:&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter">StyleConverter</link>
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+<anchor xml:id="__clang_format_package_8cs_source_1l00149"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_fallback_style_converter_1aed92f8d9f199da16b15767eaaa6e789e">00149</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_fallback_style_converter_1aed92f8d9f199da16b15767eaaa6e789e">FallbackStyleConverter</link>()
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Add&#32;&quot;none&quot;&#32;to&#32;the&#32;list&#32;of&#32;styles.</emphasis>
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1_1_style_converter_1ae489a03768512d9cd33b0aebd1308d94">values</link>.Insert(0,&#32;<emphasis role="stringliteral">&quot;none&quot;</emphasis>);
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00155 
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Category(<emphasis role="stringliteral">&quot;Format&#32;Options&quot;</emphasis>)]
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[DisplayName(<emphasis role="stringliteral">&quot;Fallback&#32;Style&quot;</emphasis>)]
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Description(<emphasis role="stringliteral">&quot;The&#32;name&#32;of&#32;the&#32;predefined&#32;style&#32;used&#32;as&#32;a&#32;fallback&#32;in&#32;case&#32;clang-format&#32;&quot;</emphasis>&#32;+
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;is&#32;invoked&#32;with&#32;&apos;file&apos;&#32;style,&#32;but&#32;can&#32;not&#32;find&#32;the&#32;configuration&#32;file.\n&quot;</emphasis>&#32;+
+00160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Use&#32;&apos;none&apos;&#32;fallback&#32;style&#32;to&#32;skip&#32;formatting.&quot;</emphasis>)]
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[TypeConverter(typeof(FallbackStyleConverter))]
+<anchor xml:id="__clang_format_package_8cs_source_1l00162"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a6f7479fba98055f1d0bd0c4c1779bc01">00162</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a6f7479fba98055f1d0bd0c4c1779bc01">FallbackStyle</link>
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">get</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;fallbackStyle;&#32;}
+00165 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">set</emphasis>&#32;{&#32;fallbackStyle&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;&#32;}
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00167 
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Category(<emphasis role="stringliteral">&quot;Format&#32;Options&quot;</emphasis>)]
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[DisplayName(<emphasis role="stringliteral">&quot;Sort&#32;includes&quot;</emphasis>)]
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Description(<emphasis role="stringliteral">&quot;Sort&#32;touched&#32;include&#32;lines.\n\n&quot;</emphasis>&#32;+
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;See&#32;also:&#32;http://clang.llvm.org/docs/ClangFormat.html.&quot;</emphasis>)]
+<anchor xml:id="__clang_format_package_8cs_source_1l00172"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a46555c3ac363f27a988e6df4a0f1635d">00172</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a46555c3ac363f27a988e6df4a0f1635d">SortIncludes</link>
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">get</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;sortIncludes;&#32;}
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">set</emphasis>&#32;{&#32;sortIncludes&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;&#32;}
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00177 
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Category(<emphasis role="stringliteral">&quot;Format&#32;On&#32;Save&quot;</emphasis>)]
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[DisplayName(<emphasis role="stringliteral">&quot;Enable&quot;</emphasis>)]
+00180 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Description(<emphasis role="stringliteral">&quot;Enable&#32;running&#32;clang-format&#32;when&#32;modified&#32;files&#32;are&#32;saved.&#32;&quot;</emphasis>&#32;+
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Will&#32;only&#32;format&#32;if&#32;Style&#32;is&#32;found&#32;(ignores&#32;Fallback&#32;Style).&quot;</emphasis>
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;)]
+<anchor xml:id="__clang_format_package_8cs_source_1l00183"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a0bf8bc9bf7f969ba595bfa0c861a5f18">00183</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a0bf8bc9bf7f969ba595bfa0c861a5f18">FormatOnSave</link>
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00185 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">get</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;formatOnSave;&#32;}
+00186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">set</emphasis>&#32;{&#32;formatOnSave&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;&#32;}
+00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00188 
+00189 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Category(<emphasis role="stringliteral">&quot;Format&#32;On&#32;Save&quot;</emphasis>)]
+00190 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[DisplayName(<emphasis role="stringliteral">&quot;File&#32;extensions&quot;</emphasis>)]
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[Description(<emphasis role="stringliteral">&quot;When&#32;formatting&#32;on&#32;save,&#32;clang-format&#32;will&#32;be&#32;applied&#32;only&#32;to&#32;&quot;</emphasis>&#32;+
+00192 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;files&#32;with&#32;these&#32;extensions.&quot;</emphasis>)]
+<anchor xml:id="__clang_format_package_8cs_source_1l00193"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a3098fea0ecc40dc5b9b4bea46e06a43b">00193</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a3098fea0ecc40dc5b9b4bea46e06a43b">FormatOnSaveFileExtensions</link>
+00194 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">get</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;formatOnSaveFileExtensions;&#32;}
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">set</emphasis>&#32;{&#32;formatOnSaveFileExtensions&#32;=&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>;&#32;}
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00198 &#32;&#32;&#32;&#32;}
+00199 
+00200 &#32;&#32;&#32;&#32;[PackageRegistration(UseManagedResourcesOnly&#32;=&#32;<emphasis role="keyword">true</emphasis>)]
+00201 &#32;&#32;&#32;&#32;[InstalledProductRegistration(<emphasis role="stringliteral">&quot;#110&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;#112&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;1.0&quot;</emphasis>,&#32;IconResourceID&#32;=&#32;400)]
+00202 &#32;&#32;&#32;&#32;[ProvideMenuResource(<emphasis role="stringliteral">&quot;Menus.ctmenu&quot;</emphasis>,&#32;1)]
+00203 &#32;&#32;&#32;&#32;[ProvideAutoLoad(UIContextGuids80.SolutionExists)]&#32;<emphasis role="comment">//&#32;Load&#32;package&#32;on&#32;solution&#32;load</emphasis>
+00204 &#32;&#32;&#32;&#32;[Guid(GuidList.guidClangFormatPkgString)]
+00205 &#32;&#32;&#32;&#32;[ProvideOptionPage(typeof(OptionPageGrid),&#32;<emphasis role="stringliteral">&quot;LLVM/Clang&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;ClangFormat&quot;</emphasis>,&#32;0,&#32;0,&#32;<emphasis role="keyword">true</emphasis>)]
+<anchor xml:id="__clang_format_package_8cs_source_1l00206"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_clang_format_package">00206</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;sealed&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_clang_format_package">ClangFormatPackage</link>&#32;:&#32;Package
+00207 &#32;&#32;&#32;&#32;{
+00208 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;#region&#32;Package&#32;Members</emphasis>
+00209 
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RunningDocTableEventsDispatcher&#32;_runningDocTableEventsDispatcher;
+00211 
+<anchor xml:id="__clang_format_package_8cs_source_1l00212"/><link linkend="_class_l_l_v_m_1_1_clang_format_1_1_clang_format_package_1a2ae81e564a8f7f9d9fba7d0b0b0993db">00212</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">protected</emphasis>&#32;<emphasis role="keyword">override</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_clang_format_package_1a2ae81e564a8f7f9d9fba7d0b0b0993db">Initialize</link>()
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;base.Initialize();
+00215 
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_runningDocTableEventsDispatcher&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;RunningDocTableEventsDispatcher(<emphasis role="keyword">this</emphasis>);
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_runningDocTableEventsDispatcher.BeforeSave&#32;+=&#32;OnBeforeSave;
+00218 
+00219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;commandService&#32;=&#32;GetService(typeof(IMenuCommandService))&#32;as&#32;OleMenuCommandService;
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(commandService&#32;!=&#32;<emphasis role="keyword">null</emphasis>)
+00221 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00222 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;menuCommandID&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;CommandID(GuidList.guidClangFormatCmdSet,&#32;(<emphasis role="keywordtype">int</emphasis>)PkgCmdIDList.cmdidClangFormatSelection);
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;menuItem&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;MenuCommand(MenuItemCallback,&#32;menuCommandID);
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;commandService.AddCommand(menuItem);
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00227 
+00228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;menuCommandID&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;CommandID(GuidList.guidClangFormatCmdSet,&#32;(<emphasis role="keywordtype">int</emphasis>)PkgCmdIDList.cmdidClangFormatDocument);
+00230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;menuItem&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;MenuCommand(MenuItemCallback,&#32;menuCommandID);
+00231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;commandService.AddCommand(menuItem);
+00232 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00233 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00234 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00235 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;#endregion</emphasis>
+00236 
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">OptionPageGrid</link>&#32;GetUserOptions()
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">OptionPageGrid</link>)GetDialogPage(typeof(<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid">OptionPageGrid</link>));
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00241 
+00242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;MenuItemCallback(<emphasis role="keywordtype">object</emphasis>&#32;sender,&#32;EventArgs&#32;args)
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;mc&#32;=&#32;sender&#32;as&#32;System.ComponentModel.Design.MenuCommand;
+00245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(mc&#32;==&#32;<emphasis role="keyword">null</emphasis>)
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00247 
+00248 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(mc.CommandID.ID)
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>)PkgCmdIDList.cmdidClangFormatSelection:
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FormatSelection(GetUserOptions());
+00252 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00253 
+00254 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>)PkgCmdIDList.cmdidClangFormatDocument:
+00255 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FormatDocument(GetUserOptions());
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00259 
+00260 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;FileHasExtension(<emphasis role="keywordtype">string</emphasis>&#32;filePath,&#32;<emphasis role="keywordtype">string</emphasis>&#32;fileExtensions)
+00261 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00262 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;extensions&#32;=&#32;fileExtensions.ToLower().Split(<emphasis role="keyword">new</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>[]&#32;{&#32;<emphasis role="charliteral">&apos;;&apos;</emphasis>&#32;},&#32;StringSplitOptions.RemoveEmptyEntries);
+00263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;extensions.Contains(Path.GetExtension(filePath).ToLower());
+00264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00265 
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;OnBeforeSave(<emphasis role="keywordtype">object</emphasis>&#32;sender,&#32;Document&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>)
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;<link linkend="_namespaceoptions">options</link>&#32;=&#32;GetUserOptions();
+00269 
+00270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceoptions">options</link>.FormatOnSave)
+00271 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00272 
+00273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FileHasExtension(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>.FullName,&#32;<link linkend="_namespaceoptions">options</link>.FormatOnSaveFileExtensions))
+00274 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00275 
+00276 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Vsix.IsDocumentDirty(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>))
+00277 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00278 
+00279 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;optionsWithNoFallbackStyle&#32;=&#32;GetUserOptions().<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1af273d6f6f7c1118b13139756a825df95">Clone</link>();
+00280 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;optionsWithNoFallbackStyle.<link linkend="_class_l_l_v_m_1_1_clang_format_1_1_option_page_grid_1a6f7479fba98055f1d0bd0c4c1779bc01">FallbackStyle</link>&#32;=&#32;<emphasis role="stringliteral">&quot;none&quot;</emphasis>;
+00281 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FormatDocument(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>,&#32;optionsWithNoFallbackStyle);
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00283 
+00287 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;FormatSelection(OptionPageGrid&#32;<link linkend="_namespaceoptions">options</link>)
+00288 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00289 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IWpfTextView&#32;view&#32;=&#32;Vsix.GetCurrentView();
+00290 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(view&#32;==&#32;<emphasis role="keyword">null</emphasis>)
+00291 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&apos;re&#32;not&#32;in&#32;a&#32;text&#32;view.</emphasis>
+00292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;text&#32;=&#32;view.TextBuffer.CurrentSnapshot.GetText();
+00294 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;start&#32;=&#32;view.Selection.Start.Position.GetContainingLine().Start.Position;
+00295 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;end&#32;=&#32;view.Selection.End.Position.GetContainingLine().End.Position;
+00296 
+00297 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;clang-format&#32;doesn&apos;t&#32;support&#32;formatting&#32;a&#32;range&#32;that&#32;starts&#32;at&#32;the&#32;end</emphasis>
+00298 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;of&#32;the&#32;file.</emphasis>
+00299 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(start&#32;&gt;=&#32;text.Length&#32;&amp;&amp;&#32;text.Length&#32;&gt;&#32;0)
+00300 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;start&#32;=&#32;text.Length&#32;-&#32;1;
+00301 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;path&#32;=&#32;Vsix.GetDocumentParent(view);
+00302 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;filePath&#32;=&#32;Vsix.GetDocumentPath(view);
+00303 
+00304 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RunClangFormatAndApplyReplacements(text,&#32;start,&#32;end,&#32;path,&#32;filePath,&#32;<link linkend="_namespaceoptions">options</link>,&#32;view);
+00305 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00306 
+00310 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;FormatDocument(OptionPageGrid&#32;<link linkend="_namespaceoptions">options</link>)
+00311 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00312 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FormatView(Vsix.GetCurrentView(),&#32;<link linkend="_namespaceoptions">options</link>);
+00313 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00314 
+00315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;FormatDocument(Document&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>,&#32;OptionPageGrid&#32;<link linkend="_namespaceoptions">options</link>)
+00316 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FormatView(Vsix.GetDocumentView(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>),&#32;<link linkend="_namespaceoptions">options</link>);
+00318 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00319 
+00320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;FormatView(IWpfTextView&#32;view,&#32;OptionPageGrid&#32;<link linkend="_namespaceoptions">options</link>)
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00322 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(view&#32;==&#32;<emphasis role="keyword">null</emphasis>)
+00323 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&apos;re&#32;not&#32;in&#32;a&#32;text&#32;view.</emphasis>
+00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00325 
+00326 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;filePath&#32;=&#32;Vsix.GetDocumentPath(view);
+00327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;path&#32;=&#32;Path.GetDirectoryName(filePath);
+00328 
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;text&#32;=&#32;view.TextBuffer.CurrentSnapshot.GetText();
+00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!text.EndsWith(Environment.NewLine))
+00331 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;view.TextBuffer.Insert(view.TextBuffer.CurrentSnapshot.Length,&#32;Environment.NewLine);
+00333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;text&#32;+=&#32;Environment.NewLine;
+00334 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00335 
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RunClangFormatAndApplyReplacements(text,&#32;0,&#32;text.Length,&#32;path,&#32;filePath,&#32;<link linkend="_namespaceoptions">options</link>,&#32;view);
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00338 
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;RunClangFormatAndApplyReplacements(<emphasis role="keywordtype">string</emphasis>&#32;text,&#32;<emphasis role="keywordtype">int</emphasis>&#32;start,&#32;<emphasis role="keywordtype">int</emphasis>&#32;end,&#32;<emphasis role="keywordtype">string</emphasis>&#32;path,&#32;<emphasis role="keywordtype">string</emphasis>&#32;filePath,&#32;OptionPageGrid&#32;<link linkend="_namespaceoptions">options</link>,&#32;IWpfTextView&#32;view)
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>
+00342 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;replacements&#32;=&#32;RunClangFormat(text,&#32;start,&#32;end,&#32;path,&#32;filePath,&#32;<link linkend="_namespaceoptions">options</link>);
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ApplyClangFormatReplacements(replacements,&#32;view);
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00346 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">catch</emphasis>&#32;(Exception&#32;e)
+00347 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00348 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;uiShell&#32;=&#32;(IVsUIShell)GetService(typeof(SVsUIShell));
+00349 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;<emphasis role="keywordtype">id</emphasis>&#32;=&#32;Guid.Empty;
+00350 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;result;
+00351 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;uiShell.ShowMessageBox(
+00352 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;ref&#32;<emphasis role="keywordtype">id</emphasis>,
+00353 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Error&#32;while&#32;running&#32;clang-format:&quot;</emphasis>,
+00354 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;e.Message,
+00355 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>.Empty,&#32;0,
+00356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OLEMSGBUTTON.OLEMSGBUTTON_OK,
+00357 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST,
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OLEMSGICON.OLEMSGICON_INFO,
+00359 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;out&#32;result);
+00360 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00362 
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;RunClangFormat(<emphasis role="keywordtype">string</emphasis>&#32;text,&#32;<emphasis role="keywordtype">int</emphasis>&#32;start,&#32;<emphasis role="keywordtype">int</emphasis>&#32;end,&#32;<emphasis role="keywordtype">string</emphasis>&#32;path,&#32;<emphasis role="keywordtype">string</emphasis>&#32;filePath,&#32;OptionPageGrid&#32;<link linkend="_namespaceoptions">options</link>)
+00369 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;vsixPath&#32;=&#32;Path.GetDirectoryName(
+00371 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;typeof(ClangFormatPackage).Assembly.Location);
+00372 
+00373 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;System.Diagnostics.Process&#32;process&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;System.Diagnostics.Process();
+00374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.UseShellExecute&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00375 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.FileName&#32;=&#32;vsixPath&#32;+&#32;<emphasis role="stringliteral">&quot;\\clang-format.exe&quot;</emphasis>;
+00376 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>[]&#32;chars&#32;=&#32;text.ToCharArray();
+00377 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;offset&#32;=&#32;Encoding.UTF8.GetByteCount(chars,&#32;0,&#32;start);
+00378 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;length&#32;=&#32;Encoding.UTF8.GetByteCount(chars,&#32;0,&#32;end)&#32;-&#32;offset;
+00379 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Poor&#32;man&apos;s&#32;escaping&#32;-&#32;this&#32;will&#32;not&#32;work&#32;when&#32;quotes&#32;are&#32;already&#32;escaped</emphasis>
+00380 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;in&#32;the&#32;input&#32;(but&#32;we&#32;don&apos;t&#32;need&#32;more).</emphasis>
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;<link linkend="_namespaceclang-format-sublime_1afb746fb3e7a3601b15024ae2549492ae">style</link>&#32;=&#32;<link linkend="_namespaceoptions">options</link>.Style.Replace(<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\\\&quot;&quot;</emphasis>);
+00382 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;fallbackStyle&#32;=&#32;<link linkend="_namespaceoptions">options</link>.FallbackStyle.Replace(<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\\\&quot;&quot;</emphasis>);
+00383 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.Arguments&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;-offset&#32;&quot;</emphasis>&#32;+&#32;offset&#32;+
+00384 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;-length&#32;&quot;</emphasis>&#32;+&#32;length&#32;+
+00385 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;-output-replacements-xml&#32;&quot;</emphasis>&#32;+
+00386 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;-style&#32;\&quot;&quot;</emphasis>&#32;+&#32;<link linkend="_namespaceclang-format-sublime_1afb746fb3e7a3601b15024ae2549492ae">style</link>&#32;+&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>&#32;+
+00387 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;-fallback-style&#32;\&quot;&quot;</emphasis>&#32;+&#32;fallbackStyle&#32;+&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>;
+00388 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_namespaceoptions">options</link>.SortIncludes)
+00389 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.Arguments&#32;+=&#32;<emphasis role="stringliteral">&quot;&#32;-sort-includes&#32;&quot;</emphasis>;
+00390 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;assumeFilename&#32;=&#32;<link linkend="_namespaceoptions">options</link>.AssumeFilename;
+00391 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keywordtype">string</emphasis>.IsNullOrEmpty(assumeFilename))
+00392 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;assumeFilename&#32;=&#32;filePath;
+00393 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<emphasis role="keywordtype">string</emphasis>.IsNullOrEmpty(assumeFilename))
+00394 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.Arguments&#32;+=&#32;<emphasis role="stringliteral">&quot;&#32;-assume-filename&#32;\&quot;&quot;</emphasis>&#32;+&#32;assumeFilename&#32;+&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>;
+00395 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.CreateNoWindow&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00396 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.RedirectStandardInput&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00397 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.RedirectStandardOutput&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00398 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.RedirectStandardError&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00399 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(path&#32;!=&#32;<emphasis role="keyword">null</emphasis>)
+00400 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.StartInfo.WorkingDirectory&#32;=&#32;path;
+00401 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;have&#32;to&#32;be&#32;careful&#32;when&#32;communicating&#32;via&#32;standard&#32;input&#32;/&#32;output,</emphasis>
+00402 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;as&#32;writes&#32;to&#32;the&#32;buffers&#32;will&#32;block&#32;until&#32;they&#32;are&#32;read&#32;from&#32;the&#32;other&#32;side.</emphasis>
+00403 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Thus,&#32;we:</emphasis>
+00404 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;1.&#32;Start&#32;the&#32;process&#32;-&#32;clang-format.exe&#32;will&#32;start&#32;to&#32;read&#32;the&#32;input&#32;from&#32;the</emphasis>
+00405 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;standard&#32;input.</emphasis>
+00406 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>
+00407 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00408 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.Start();
+00409 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00410 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">catch</emphasis>&#32;(Exception&#32;e)
+00411 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00412 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">throw</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;Exception(
+00413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Cannot&#32;execute&#32;&quot;</emphasis>&#32;+&#32;process.StartInfo.FileName&#32;+&#32;<emphasis role="stringliteral">&quot;.\n\&quot;&quot;</emphasis>&#32;+&#32;
+00414 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;e.Message&#32;+&#32;<emphasis role="stringliteral">&quot;\&quot;.\nPlease&#32;make&#32;sure&#32;it&#32;is&#32;on&#32;the&#32;PATH.&quot;</emphasis>);
+00415 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00416 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;2.&#32;We&#32;write&#32;everything&#32;to&#32;the&#32;standard&#32;output&#32;-&#32;this&#32;cannot&#32;block,&#32;as&#32;clang-format</emphasis>
+00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;reads&#32;the&#32;full&#32;standard&#32;input&#32;before&#32;analyzing&#32;it&#32;without&#32;writing&#32;anything&#32;to&#32;the</emphasis>
+00418 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;standard&#32;output.</emphasis>
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StreamWriter&#32;utf8Writer&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;StreamWriter(process.StandardInput.BaseStream,&#32;<emphasis role="keyword">new</emphasis>&#32;UTF8Encoding(<emphasis role="keyword">false</emphasis>));
+00420 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;utf8Writer.Write(text);
+00421 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;3.&#32;We&#32;notify&#32;clang-format&#32;that&#32;the&#32;input&#32;is&#32;done&#32;-&#32;after&#32;this&#32;point&#32;clang-format</emphasis>
+00422 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;will&#32;start&#32;analyzing&#32;the&#32;input&#32;and&#32;eventually&#32;write&#32;the&#32;output.</emphasis>
+00423 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;utf8Writer.Close();
+00424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;4.&#32;We&#32;must&#32;read&#32;clang-format&apos;s&#32;output&#32;before&#32;waiting&#32;for&#32;it&#32;to&#32;exit;&#32;clang-format</emphasis>
+00425 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;will&#32;close&#32;the&#32;channel&#32;by&#32;exiting.</emphasis>
+00426 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;output&#32;=&#32;process.StandardOutput.ReadToEnd();
+00427 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;5.&#32;clang-format&#32;is&#32;done,&#32;wait&#32;until&#32;it&#32;is&#32;fully&#32;shut&#32;down.</emphasis>
+00428 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;process.WaitForExit();
+00429 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(process.ExitCode&#32;!=&#32;0)
+00430 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00431 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;If&#32;clang-format&#32;writes&#32;enough&#32;to&#32;the&#32;standard&#32;error&#32;stream&#32;to&#32;block,</emphasis>
+00432 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;we&#32;will&#32;never&#32;reach&#32;this&#32;point;&#32;instead,&#32;read&#32;the&#32;standard&#32;error&#32;asynchronously.</emphasis>
+00433 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">throw</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;Exception(process.StandardError.ReadToEnd());
+00434 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;output;
+00436 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00437 
+00441 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;ApplyClangFormatReplacements(<emphasis role="keywordtype">string</emphasis>&#32;replacements,&#32;IWpfTextView&#32;view)
+00442 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00443 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;clang-format&#32;returns&#32;no&#32;replacements&#32;if&#32;input&#32;text&#32;is&#32;empty</emphasis>
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(replacements.Length&#32;==&#32;0)
+00445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00446 
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;text&#32;=&#32;view.TextBuffer.CurrentSnapshot.GetText();
+00448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">byte</emphasis>[]&#32;bytes&#32;=&#32;Encoding.UTF8.GetBytes(text);
+00449 
+00450 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;root&#32;=&#32;XElement.Parse(replacements);
+00451 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;edit&#32;=&#32;view.TextBuffer.CreateEdit();
+00452 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">foreach</emphasis>&#32;(XElement&#32;replacement&#32;<emphasis role="keywordflow">in</emphasis>&#32;root.Descendants(<emphasis role="stringliteral">&quot;replacement&quot;</emphasis>))
+00453 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00454 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;offset&#32;=&#32;<emphasis role="keywordtype">int</emphasis>.Parse(replacement.Attribute(<emphasis role="stringliteral">&quot;offset&quot;</emphasis>).Value);
+00455 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;length&#32;=&#32;<emphasis role="keywordtype">int</emphasis>.Parse(replacement.Attribute(<emphasis role="stringliteral">&quot;length&quot;</emphasis>).Value);
+00456 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;span&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;Span(
+00457 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Encoding.UTF8.GetCharCount(bytes,&#32;0,&#32;offset),
+00458 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Encoding.UTF8.GetCharCount(bytes,&#32;offset,&#32;length));
+00459 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;edit.Replace(span,&#32;replacement.Value);
+00460 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00461 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;edit.Apply();
+00462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00463 &#32;&#32;&#32;&#32;}
+00464 }
+</programlisting></section>

@@ -1,0 +1,69 @@
+.TH "clang::cxloc" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxloc
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXSourceRange \fBtranslateSourceRange\fP (const SourceManager &SM, const LangOptions &LangOpts, const CharSourceRange &R)"
+.br
+.ti -1c
+.RI "CharSourceRange \fBtranslateCXRangeToCharRange\fP (CXSourceRange R)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CharSourceRange clang::cxloc::translateCXRangeToCharRange (CXSourceRange R)"
+Translates CXSourceRange to CharSourceRange\&. The semantics of \fCR\fP are: R\&.begin_int_data is first character of the range\&. R\&.end_int_data is one character past the end of the range\&. 
+.PP
+Definition at line 167 of file CIndex\&.cpp\&.
+.PP
+.nf
+167                                                                   {
+168   return CharSourceRange::getCharRange(
+169       SourceLocation::getFromRawEncoding(R\&.begin_int_data),
+170       SourceLocation::getFromRawEncoding(R\&.end_int_data));
+171 }
+.fi
+.PP
+Referenced by clang_CXRewriter_removeText(), and clang_CXRewriter_replaceText()\&.
+.SS "CXSourceRange clang::cxloc::translateSourceRange (const SourceManager & SM, const LangOptions & LangOpts, const CharSourceRange & R)"
+Translate a Clang source range into a CIndex source range\&.
+.PP
+Clang internally represents ranges where the end location points to the start of the token at the end\&. However, for external clients it is more useful to have a CXSourceRange be a proper half-open interval\&. This routine does the appropriate translation\&. 
+.PP
+Definition at line 143 of file CIndex\&.cpp\&.
+.PP
+.nf
+145                                                                     {
+146   // We want the last character in this location, so we will adjust the
+147   // location accordingly\&.
+148   SourceLocation EndLoc = R\&.getEnd();
+149   bool IsTokenRange = R\&.isTokenRange();
+150   if (EndLoc\&.isValid() && EndLoc\&.isMacroID() &&
+151       !SM\&.isMacroArgExpansion(EndLoc)) {
+152     CharSourceRange Expansion = SM\&.getExpansionRange(EndLoc);
+153     EndLoc = Expansion\&.getEnd();
+154     IsTokenRange = Expansion\&.isTokenRange();
+155   }
+156   if (IsTokenRange && EndLoc\&.isValid()) {
+157     unsigned Length =
+158         Lexer::MeasureTokenLength(SM\&.getSpellingLoc(EndLoc), SM, LangOpts);
+159     EndLoc = EndLoc\&.getLocWithOffset(Length);
+160   }
+161 
+162   CXSourceRange Result = {
+163       {&SM, &LangOpts}, R\&.getBegin()\&.getRawEncoding(), EndLoc\&.getRawEncoding()};
+164   return Result;
+165 }
+.fi
+.PP
+Referenced by clang_Cursor_getCommentRange(), clang_Cursor_getSpellingNameRange(), clang_getCompletionFixIt(), clang_getCursorReferenceNameRange(), clang::CXStoredDiagnostic::getFixIt(), and clang::CXStoredDiagnostic::getRange()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,711 @@
+\hypertarget{_c_index_code_completion_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+CIndex\+Code\+Completion.cpp File Reference}
+\label{_c_index_code_completion_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexCodeCompletion.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexCodeCompletion.cpp}}
+{\ttfamily \#include \char`\"{}CIndexer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CIndex\+Diagnostic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CLog.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXCursor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXSource\+Location.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXString.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXTranslation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+Obj\+C.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Type.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+File\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Source\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Sema/\+Code\+Complete\+Consumer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Sema/\+Sema.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Small\+String.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+String\+Extras.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Crash\+Recovery\+Context.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Format\+Variadic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Memory\+Buffer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Program.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Timer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$atomic$>$}\newline
+{\ttfamily \#include $<$cstdio$>$}\newline
+{\ttfamily \#include $<$cstdlib$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+enum CXCompletion\+Chunk\+Kind \mbox{\hyperlink{_c_index_code_completion_8cpp_a6ce9754f88dc96e3628a7e479976c4e7}{clang\+\_\+get\+Completion\+Chunk\+Kind}} (CXCompletion\+String completion\+\_\+string, unsigned chunk\+\_\+number)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_a374f74c7bf629362e8da626775301a00}{clang\+\_\+get\+Completion\+Chunk\+Text}} (CXCompletion\+String completion\+\_\+string, unsigned chunk\+\_\+number)
+\item 
+CXCompletion\+String \mbox{\hyperlink{_c_index_code_completion_8cpp_a50babc07437ed1bd140ed2580b7d84b4}{clang\+\_\+get\+Completion\+Chunk\+Completion\+String}} (CXCompletion\+String completion\+\_\+string, unsigned chunk\+\_\+number)
+\item 
+unsigned \mbox{\hyperlink{_c_index_code_completion_8cpp_a075fc2a04c95b00ccadf6ccc0ab5b91d}{clang\+\_\+get\+Num\+Completion\+Chunks}} (CXCompletion\+String completion\+\_\+string)
+\item 
+unsigned \mbox{\hyperlink{_c_index_code_completion_8cpp_ab31f7dbd962ec8e8cb586bb5e3c78276}{clang\+\_\+get\+Completion\+Priority}} (CXCompletion\+String completion\+\_\+string)
+\item 
+enum CXAvailability\+Kind \mbox{\hyperlink{_c_index_code_completion_8cpp_a705e9a4bdd5077e49d5a787fe913aeda}{clang\+\_\+get\+Completion\+Availability}} (CXCompletion\+String completion\+\_\+string)
+\item 
+unsigned \mbox{\hyperlink{_c_index_code_completion_8cpp_a8ab31cf1861905f7599d87eb48649c2c}{clang\+\_\+get\+Completion\+Num\+Annotations}} (CXCompletion\+String completion\+\_\+string)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_ae2edaae1f93d1b09d474ae8446172037}{clang\+\_\+get\+Completion\+Annotation}} (CXCompletion\+String completion\+\_\+string, unsigned annotation\+\_\+number)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_a7255187a485b3364cd0956ccc8a21ba7}{clang\+\_\+get\+Completion\+Parent}} (CXCompletion\+String completion\+\_\+string, CXCursor\+Kind $\ast$kind)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_a583af69f4c45ceea22b0aacbaebfae23}{clang\+\_\+get\+Completion\+Brief\+Comment}} (CXCompletion\+String completion\+\_\+string)
+\item 
+unsigned \mbox{\hyperlink{_c_index_code_completion_8cpp_a2a27263ad8d1070172cea3be70b4d8b9}{clang\+\_\+get\+Completion\+Num\+Fix\+Its}} (CXCode\+Complete\+Results $\ast$results, unsigned completion\+\_\+index)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_a53d507b63fce804bcd705197ef5eda7a}{clang\+\_\+get\+Completion\+Fix\+It}} (CXCode\+Complete\+Results $\ast$results, unsigned completion\+\_\+index, unsigned fixit\+\_\+index, CXSource\+Range $\ast$replacement\+\_\+range)
+\item 
+CXCode\+Complete\+Results $\ast$ \mbox{\hyperlink{_c_index_code_completion_8cpp_aa00452b93a381eacef696b538f19ca6e}{clang\+\_\+code\+Complete\+At}} (CXTranslation\+Unit TU, const char $\ast$complete\+\_\+filename, unsigned complete\+\_\+line, unsigned complete\+\_\+column, struct CXUnsaved\+File $\ast$unsaved\+\_\+files, unsigned num\+\_\+unsaved\+\_\+files, unsigned options)
+\item 
+unsigned \mbox{\hyperlink{_c_index_code_completion_8cpp_a6cf74c52d33527eeee0b2bd27ef69044}{clang\+\_\+default\+Code\+Complete\+Options}} (void)
+\item 
+void \mbox{\hyperlink{_c_index_code_completion_8cpp_ab33453b1d11a0d7c68ccf5c2f3f55bb3}{clang\+\_\+dispose\+Code\+Complete\+Results}} (CXCode\+Complete\+Results $\ast$Results\+In)
+\item 
+unsigned \mbox{\hyperlink{_c_index_code_completion_8cpp_aaa0ec260d3ad875615930d0c009e5dba}{clang\+\_\+code\+Complete\+Get\+Num\+Diagnostics}} (CXCode\+Complete\+Results $\ast$Results\+In)
+\item 
+CXDiagnostic \mbox{\hyperlink{_c_index_code_completion_8cpp_a2889b7f63ecab662d464c9c64921f4de}{clang\+\_\+code\+Complete\+Get\+Diagnostic}} (CXCode\+Complete\+Results $\ast$Results\+In, unsigned Index)
+\item 
+unsigned long long \mbox{\hyperlink{_c_index_code_completion_8cpp_afc1d7645383b816cb5e62253b85f9b7c}{clang\+\_\+code\+Complete\+Get\+Contexts}} (CXCode\+Complete\+Results $\ast$Results\+In)
+\item 
+enum CXCursor\+Kind \mbox{\hyperlink{_c_index_code_completion_8cpp_a6d5d24395b436aaedf13984af8f19afa}{clang\+\_\+code\+Complete\+Get\+Container\+Kind}} (CXCode\+Complete\+Results $\ast$Results\+In, unsigned $\ast$Is\+Incomplete)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_aa7fdf1ceb18aed68b458ebd05f5aa6c5}{clang\+\_\+code\+Complete\+Get\+Container\+USR}} (CXCode\+Complete\+Results $\ast$Results\+In)
+\item 
+CXString \mbox{\hyperlink{_c_index_code_completion_8cpp_a1cee18661b755d3b0b6ee3b44630033f}{clang\+\_\+code\+Complete\+Get\+Obj\+CSelector}} (CXCode\+Complete\+Results $\ast$Results\+In)
+\item 
+void \mbox{\hyperlink{_c_index_code_completion_8cpp_a15ff3b3f6b97479e2516f3e4993a9baa}{clang\+\_\+sort\+Code\+Completion\+Results}} (CXCompletion\+Result $\ast$Results, unsigned Num\+Results)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_aa00452b93a381eacef696b538f19ca6e}\label{_c_index_code_completion_8cpp_aa00452b93a381eacef696b538f19ca6e}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteAt@{clang\_codeCompleteAt}}
+\index{clang\_codeCompleteAt@{clang\_codeCompleteAt}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteAt()}{clang\_codeCompleteAt()}}
+{\footnotesize\ttfamily CXCode\+Complete\+Results$\ast$ clang\+\_\+code\+Complete\+At (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU,  }\item[{const char $\ast$}]{complete\+\_\+filename,  }\item[{unsigned}]{complete\+\_\+line,  }\item[{unsigned}]{complete\+\_\+column,  }\item[{struct CXUnsaved\+File $\ast$}]{unsaved\+\_\+files,  }\item[{unsigned}]{num\+\_\+unsaved\+\_\+files,  }\item[{unsigned}]{options }\end{DoxyParamCaption})}
+
+
+
+Definition at line 851 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{857                                                               \{}
+\DoxyCodeLine{858   \mbox{\hyperlink{_c_log_8h_a24474e48ce7e218f17ae9353103470d8}{LOG\_FUNC\_SECTION}} \{}
+\DoxyCodeLine{859     *Log << TU << \textcolor{charliteral}{' '}}
+\DoxyCodeLine{860          << complete\_filename << \textcolor{charliteral}{':'} << complete\_line << \textcolor{charliteral}{':'} << complete\_column;}
+\DoxyCodeLine{861   \}}
+\DoxyCodeLine{862 }
+\DoxyCodeLine{863   \textcolor{keywordflow}{if} (num\_unsaved\_files \&\& !unsaved\_files)}
+\DoxyCodeLine{864     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{865 }
+\DoxyCodeLine{866   CXCodeCompleteResults *result;}
+\DoxyCodeLine{867   \textcolor{keyword}{auto} CodeCompleteAtImpl = [=, \&result]() \{}
+\DoxyCodeLine{868     result = clang\_codeCompleteAt\_Impl(}
+\DoxyCodeLine{869         TU, complete\_filename, complete\_line, complete\_column,}
+\DoxyCodeLine{870         llvm::makeArrayRef(unsaved\_files, num\_unsaved\_files), \mbox{\hyperlink{namespaceoptions}{options}});}
+\DoxyCodeLine{871   \};}
+\DoxyCodeLine{872 }
+\DoxyCodeLine{873   llvm::CrashRecoveryContext CRC;}
+\DoxyCodeLine{874 }
+\DoxyCodeLine{875   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{namespaceclang_af866b018fe401ae941a367429bdd4c9a}{RunSafely}}(CRC, CodeCompleteAtImpl)) \{}
+\DoxyCodeLine{876     fprintf(stderr, \textcolor{stringliteral}{"{}libclang: crash detected in code completion\(\backslash\)n"{}});}
+\DoxyCodeLine{877     cxtu::getASTUnit(TU)-\/>setUnsafeToFree(\textcolor{keyword}{true});}
+\DoxyCodeLine{878     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{879   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}LIBCLANG\_RESOURCE\_USAGE"{}}))}
+\DoxyCodeLine{880     \mbox{\hyperlink{namespaceclang_aa969857ada50e5f302f7127c78a63018}{PrintLibclangResourceUsage}}(TU);}
+\DoxyCodeLine{881 }
+\DoxyCodeLine{882   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{883 \}}
+
+\end{DoxyCode}
+
+
+References LOG\+\_\+\+FUNC\+\_\+\+SECTION.
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a6d5d24395b436aaedf13984af8f19afa}\label{_c_index_code_completion_8cpp_a6d5d24395b436aaedf13984af8f19afa}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteGetContainerKind@{clang\_codeCompleteGetContainerKind}}
+\index{clang\_codeCompleteGetContainerKind@{clang\_codeCompleteGetContainerKind}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteGetContainerKind()}{clang\_codeCompleteGetContainerKind()}}
+{\footnotesize\ttfamily enum CXCursor\+Kind clang\+\_\+code\+Complete\+Get\+Container\+Kind (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In,  }\item[{unsigned $\ast$}]{Is\+Incomplete }\end{DoxyParamCaption})}
+
+
+
+Definition at line 926 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{937                                                                              \{}
+\DoxyCodeLine{938   AllocatedCXCodeCompleteResults *Results =}
+\DoxyCodeLine{939     \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults *\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{940   \textcolor{keywordflow}{if} (!Results)}
+\DoxyCodeLine{941     \textcolor{keywordflow}{return} CXCursor\_InvalidCode;}
+\DoxyCodeLine{942 }
+\DoxyCodeLine{943   \textcolor{keywordflow}{if} (IsIncomplete != \textcolor{keyword}{nullptr}) \{}
+\DoxyCodeLine{944     *IsIncomplete = Results-\/>ContainerIsIncomplete;}
+\DoxyCodeLine{945   \}}
+\DoxyCodeLine{946   }
+\DoxyCodeLine{947   \textcolor{keywordflow}{return} Results-\/>ContainerKind;}
+\DoxyCodeLine{948 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_aa7fdf1ceb18aed68b458ebd05f5aa6c5}\label{_c_index_code_completion_8cpp_aa7fdf1ceb18aed68b458ebd05f5aa6c5}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteGetContainerUSR@{clang\_codeCompleteGetContainerUSR}}
+\index{clang\_codeCompleteGetContainerUSR@{clang\_codeCompleteGetContainerUSR}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteGetContainerUSR()}{clang\_codeCompleteGetContainerUSR()}}
+{\footnotesize\ttfamily CXString clang\+\_\+code\+Complete\+Get\+Container\+USR (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In }\end{DoxyParamCaption})}
+
+
+
+Definition at line 950 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{950                                                                              \{}
+\DoxyCodeLine{951   AllocatedCXCodeCompleteResults *Results =}
+\DoxyCodeLine{952     \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults *\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{953   \textcolor{keywordflow}{if} (!Results)}
+\DoxyCodeLine{954     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{955 }
+\DoxyCodeLine{956   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(Results-\/>ContainerUSR.c\_str());}
+\DoxyCodeLine{957 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_afc1d7645383b816cb5e62253b85f9b7c}\label{_c_index_code_completion_8cpp_afc1d7645383b816cb5e62253b85f9b7c}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteGetContexts@{clang\_codeCompleteGetContexts}}
+\index{clang\_codeCompleteGetContexts@{clang\_codeCompleteGetContexts}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteGetContexts()}{clang\_codeCompleteGetContexts()}}
+{\footnotesize\ttfamily unsigned long long clang\+\_\+code\+Complete\+Get\+Contexts (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In }\end{DoxyParamCaption})}
+
+
+
+Definition at line 926 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{926                                                                 \{}
+\DoxyCodeLine{927   AllocatedCXCodeCompleteResults *Results}
+\DoxyCodeLine{928     = \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults*\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{929   \textcolor{keywordflow}{if} (!Results)}
+\DoxyCodeLine{930     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{931   }
+\DoxyCodeLine{932   \textcolor{keywordflow}{return} Results-\/>Contexts;}
+\DoxyCodeLine{933 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a2889b7f63ecab662d464c9c64921f4de}\label{_c_index_code_completion_8cpp_a2889b7f63ecab662d464c9c64921f4de}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteGetDiagnostic@{clang\_codeCompleteGetDiagnostic}}
+\index{clang\_codeCompleteGetDiagnostic@{clang\_codeCompleteGetDiagnostic}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteGetDiagnostic()}{clang\_codeCompleteGetDiagnostic()}}
+{\footnotesize\ttfamily CXDiagnostic clang\+\_\+code\+Complete\+Get\+Diagnostic (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In,  }\item[{unsigned}]{Index }\end{DoxyParamCaption})}
+
+
+
+Definition at line 909 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{910                                                 \{}
+\DoxyCodeLine{911   AllocatedCXCodeCompleteResults *Results}
+\DoxyCodeLine{912     = \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults*\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{913   \textcolor{keywordflow}{if} (!Results || Index >= Results-\/>Diagnostics.size())}
+\DoxyCodeLine{914     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{915 }
+\DoxyCodeLine{916   \mbox{\hyperlink{structclang_1_1_c_x_stored_diagnostic}{CXStoredDiagnostic}} *Diag = Results-\/>DiagnosticsWrappers[Index].get();}
+\DoxyCodeLine{917   \textcolor{keywordflow}{if} (!Diag)}
+\DoxyCodeLine{918     Diag = (Results-\/>DiagnosticsWrappers[Index] =}
+\DoxyCodeLine{919                 std::make\_unique<CXStoredDiagnostic>(}
+\DoxyCodeLine{920                     Results-\/>Diagnostics[Index], Results-\/>LangOpts))}
+\DoxyCodeLine{921                .\mbox{\hyperlink{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}{get}}();}
+\DoxyCodeLine{922   \textcolor{keywordflow}{return} Diag;}
+\DoxyCodeLine{923 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_aaa0ec260d3ad875615930d0c009e5dba}\label{_c_index_code_completion_8cpp_aaa0ec260d3ad875615930d0c009e5dba}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteGetNumDiagnostics@{clang\_codeCompleteGetNumDiagnostics}}
+\index{clang\_codeCompleteGetNumDiagnostics@{clang\_codeCompleteGetNumDiagnostics}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteGetNumDiagnostics()}{clang\_codeCompleteGetNumDiagnostics()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+code\+Complete\+Get\+Num\+Diagnostics (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In }\end{DoxyParamCaption})}
+
+
+
+Definition at line 899 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{899                                                                       \{}
+\DoxyCodeLine{900   AllocatedCXCodeCompleteResults *Results}
+\DoxyCodeLine{901     = \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults*\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{902   \textcolor{keywordflow}{if} (!Results)}
+\DoxyCodeLine{903     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{904 }
+\DoxyCodeLine{905   \textcolor{keywordflow}{return} Results-\/>Diagnostics.size();}
+\DoxyCodeLine{906 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a1cee18661b755d3b0b6ee3b44630033f}\label{_c_index_code_completion_8cpp_a1cee18661b755d3b0b6ee3b44630033f}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_codeCompleteGetObjCSelector@{clang\_codeCompleteGetObjCSelector}}
+\index{clang\_codeCompleteGetObjCSelector@{clang\_codeCompleteGetObjCSelector}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_codeCompleteGetObjCSelector()}{clang\_codeCompleteGetObjCSelector()}}
+{\footnotesize\ttfamily CXString clang\+\_\+code\+Complete\+Get\+Obj\+CSelector (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In }\end{DoxyParamCaption})}
+
+
+
+Definition at line 960 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{960                                                                              \{}
+\DoxyCodeLine{961   AllocatedCXCodeCompleteResults *Results =}
+\DoxyCodeLine{962     \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults *\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{963   \textcolor{keywordflow}{if} (!Results)}
+\DoxyCodeLine{964     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{965   }
+\DoxyCodeLine{966   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(Results-\/>Selector);}
+\DoxyCodeLine{967 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a6cf74c52d33527eeee0b2bd27ef69044}\label{_c_index_code_completion_8cpp_a6cf74c52d33527eeee0b2bd27ef69044}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_defaultCodeCompleteOptions@{clang\_defaultCodeCompleteOptions}}
+\index{clang\_defaultCodeCompleteOptions@{clang\_defaultCodeCompleteOptions}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_defaultCodeCompleteOptions()}{clang\_defaultCodeCompleteOptions()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+default\+Code\+Complete\+Options (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 885 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{885                                                 \{}
+\DoxyCodeLine{886   \textcolor{keywordflow}{return} CXCodeComplete\_IncludeMacros;}
+\DoxyCodeLine{887 \}}
+
+\end{DoxyCode}
+
+
+Referenced by perform\+\_\+code\+\_\+completion().
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_ab33453b1d11a0d7c68ccf5c2f3f55bb3}\label{_c_index_code_completion_8cpp_ab33453b1d11a0d7c68ccf5c2f3f55bb3}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_disposeCodeCompleteResults@{clang\_disposeCodeCompleteResults}}
+\index{clang\_disposeCodeCompleteResults@{clang\_disposeCodeCompleteResults}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_disposeCodeCompleteResults()}{clang\_disposeCodeCompleteResults()}}
+{\footnotesize\ttfamily void clang\+\_\+dispose\+Code\+Complete\+Results (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{Results\+In }\end{DoxyParamCaption})}
+
+
+
+Definition at line 889 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{889                                                                         \{}
+\DoxyCodeLine{890   \textcolor{keywordflow}{if} (!ResultsIn)}
+\DoxyCodeLine{891     \textcolor{keywordflow}{return};}
+\DoxyCodeLine{892 }
+\DoxyCodeLine{893   AllocatedCXCodeCompleteResults *Results}
+\DoxyCodeLine{894     = \textcolor{keyword}{static\_cast<}AllocatedCXCodeCompleteResults*\textcolor{keyword}{>}(ResultsIn);}
+\DoxyCodeLine{895   \textcolor{keyword}{delete} Results;}
+\DoxyCodeLine{896 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_ae2edaae1f93d1b09d474ae8446172037}\label{_c_index_code_completion_8cpp_ae2edaae1f93d1b09d474ae8446172037}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionAnnotation@{clang\_getCompletionAnnotation}}
+\index{clang\_getCompletionAnnotation@{clang\_getCompletionAnnotation}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionAnnotation()}{clang\_getCompletionAnnotation()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Completion\+Annotation (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string,  }\item[{unsigned}]{annotation\+\_\+number }\end{DoxyParamCaption})}
+
+
+
+Definition at line 210 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{211                                                                    \{}
+\DoxyCodeLine{212   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{213   \textcolor{keywordflow}{return} CCStr ? \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(CCStr-\/>getAnnotation(annotation\_number))}
+\DoxyCodeLine{214                : cxstring::\mbox{\hyperlink{namespaceclang_1_1cxstring_a8684a35d52ccb8c623144db89a0205e1}{createNull}}();}
+\DoxyCodeLine{215 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Null(), and clang\+::cxstring\+::create\+Ref().
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a705e9a4bdd5077e49d5a787fe913aeda}\label{_c_index_code_completion_8cpp_a705e9a4bdd5077e49d5a787fe913aeda}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionAvailability@{clang\_getCompletionAvailability}}
+\index{clang\_getCompletionAvailability@{clang\_getCompletionAvailability}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionAvailability()}{clang\_getCompletionAvailability()}}
+{\footnotesize\ttfamily enum CXAvailability\+Kind clang\+\_\+get\+Completion\+Availability (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string }\end{DoxyParamCaption})}
+
+
+
+Definition at line 192 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{198                                                                       \{}
+\DoxyCodeLine{199   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{200   \textcolor{keywordflow}{return} CCStr? \textcolor{keyword}{static\_cast<}CXAvailabilityKind\textcolor{keyword}{>}(CCStr-\/>getAvailability())}
+\DoxyCodeLine{201               : CXAvailability\_Available;}
+\DoxyCodeLine{202 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a583af69f4c45ceea22b0aacbaebfae23}\label{_c_index_code_completion_8cpp_a583af69f4c45ceea22b0aacbaebfae23}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionBriefComment@{clang\_getCompletionBriefComment}}
+\index{clang\_getCompletionBriefComment@{clang\_getCompletionBriefComment}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionBriefComment()}{clang\_getCompletionBriefComment()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Completion\+Brief\+Comment (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string }\end{DoxyParamCaption})}
+
+
+
+Definition at line 231 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{231                                                                       \{}
+\DoxyCodeLine{232   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{233 }
+\DoxyCodeLine{234   \textcolor{keywordflow}{if} (!CCStr)}
+\DoxyCodeLine{235     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8684a35d52ccb8c623144db89a0205e1}{cxstring::createNull}}();}
+\DoxyCodeLine{236 }
+\DoxyCodeLine{237   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(CCStr-\/>getBriefComment());}
+\DoxyCodeLine{238 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Null(), and clang\+::cxstring\+::create\+Ref().
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a50babc07437ed1bd140ed2580b7d84b4}\label{_c_index_code_completion_8cpp_a50babc07437ed1bd140ed2580b7d84b4}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionChunkCompletionString@{clang\_getCompletionChunkCompletionString}}
+\index{clang\_getCompletionChunkCompletionString@{clang\_getCompletionChunkCompletionString}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionChunkCompletionString()}{clang\_getCompletionChunkCompletionString()}}
+{\footnotesize\ttfamily CXCompletion\+String clang\+\_\+get\+Completion\+Chunk\+Completion\+String (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string,  }\item[{unsigned}]{chunk\+\_\+number }\end{DoxyParamCaption})}
+
+
+
+Definition at line 150 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{151                                                                 \{}
+\DoxyCodeLine{152   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{153   \textcolor{keywordflow}{if} (!CCStr || chunk\_number >= CCStr-\/>size())}
+\DoxyCodeLine{154     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{155 }
+\DoxyCodeLine{156   \textcolor{keywordflow}{switch} ((*CCStr)[chunk\_number].Kind) \{}
+\DoxyCodeLine{157   \textcolor{keywordflow}{case} CodeCompletionString::CK\_TypedText:}
+\DoxyCodeLine{158   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Text:}
+\DoxyCodeLine{159   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Placeholder:}
+\DoxyCodeLine{160   \textcolor{keywordflow}{case} CodeCompletionString::CK\_CurrentParameter:}
+\DoxyCodeLine{161   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Informative:}
+\DoxyCodeLine{162   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftParen:}
+\DoxyCodeLine{163   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightParen:}
+\DoxyCodeLine{164   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftBracket:}
+\DoxyCodeLine{165   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightBracket:}
+\DoxyCodeLine{166   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftBrace:}
+\DoxyCodeLine{167   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightBrace:}
+\DoxyCodeLine{168   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftAngle:}
+\DoxyCodeLine{169   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightAngle:}
+\DoxyCodeLine{170   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Comma:}
+\DoxyCodeLine{171   \textcolor{keywordflow}{case} CodeCompletionString::CK\_ResultType:}
+\DoxyCodeLine{172   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Colon:}
+\DoxyCodeLine{173   \textcolor{keywordflow}{case} CodeCompletionString::CK\_SemiColon:}
+\DoxyCodeLine{174   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Equal:}
+\DoxyCodeLine{175   \textcolor{keywordflow}{case} CodeCompletionString::CK\_HorizontalSpace:}
+\DoxyCodeLine{176   \textcolor{keywordflow}{case} CodeCompletionString::CK\_VerticalSpace:}
+\DoxyCodeLine{177     \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{178 }
+\DoxyCodeLine{179   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Optional:}
+\DoxyCodeLine{180     \textcolor{comment}{// Note: treated as an empty text block.}}
+\DoxyCodeLine{181     \textcolor{keywordflow}{return} (*CCStr)[chunk\_number].Optional;}
+\DoxyCodeLine{182   \}}
+\DoxyCodeLine{183 }
+\DoxyCodeLine{184   llvm\_unreachable(\textcolor{stringliteral}{"{}Invalid CompletionKind!"{}});}
+\DoxyCodeLine{185 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a6ce9754f88dc96e3628a7e479976c4e7}\label{_c_index_code_completion_8cpp_a6ce9754f88dc96e3628a7e479976c4e7}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionChunkKind@{clang\_getCompletionChunkKind}}
+\index{clang\_getCompletionChunkKind@{clang\_getCompletionChunkKind}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionChunkKind()}{clang\_getCompletionChunkKind()}}
+{\footnotesize\ttfamily enum CXCompletion\+Chunk\+Kind clang\+\_\+get\+Completion\+Chunk\+Kind (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string,  }\item[{unsigned}]{chunk\+\_\+number }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{58                                                     \{}
+\DoxyCodeLine{59   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{60   \textcolor{keywordflow}{if} (!CCStr || chunk\_number >= CCStr-\/>size())}
+\DoxyCodeLine{61     \textcolor{keywordflow}{return} CXCompletionChunk\_Text;}
+\DoxyCodeLine{62 }
+\DoxyCodeLine{63   \textcolor{keywordflow}{switch} ((*CCStr)[chunk\_number].Kind) \{}
+\DoxyCodeLine{64   \textcolor{keywordflow}{case} CodeCompletionString::CK\_TypedText:}
+\DoxyCodeLine{65     \textcolor{keywordflow}{return} CXCompletionChunk\_TypedText;}
+\DoxyCodeLine{66   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Text:}
+\DoxyCodeLine{67     \textcolor{keywordflow}{return} CXCompletionChunk\_Text;}
+\DoxyCodeLine{68   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Optional:}
+\DoxyCodeLine{69     \textcolor{keywordflow}{return} CXCompletionChunk\_Optional;}
+\DoxyCodeLine{70   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Placeholder:}
+\DoxyCodeLine{71     \textcolor{keywordflow}{return} CXCompletionChunk\_Placeholder;}
+\DoxyCodeLine{72   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Informative:}
+\DoxyCodeLine{73     \textcolor{keywordflow}{return} CXCompletionChunk\_Informative;}
+\DoxyCodeLine{74   \textcolor{keywordflow}{case} CodeCompletionString::CK\_ResultType:}
+\DoxyCodeLine{75     \textcolor{keywordflow}{return} CXCompletionChunk\_ResultType;}
+\DoxyCodeLine{76   \textcolor{keywordflow}{case} CodeCompletionString::CK\_CurrentParameter:}
+\DoxyCodeLine{77     \textcolor{keywordflow}{return} CXCompletionChunk\_CurrentParameter;}
+\DoxyCodeLine{78   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftParen:}
+\DoxyCodeLine{79     \textcolor{keywordflow}{return} CXCompletionChunk\_LeftParen;}
+\DoxyCodeLine{80   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightParen:}
+\DoxyCodeLine{81     \textcolor{keywordflow}{return} CXCompletionChunk\_RightParen;}
+\DoxyCodeLine{82   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftBracket:}
+\DoxyCodeLine{83     \textcolor{keywordflow}{return} CXCompletionChunk\_LeftBracket;}
+\DoxyCodeLine{84   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightBracket:}
+\DoxyCodeLine{85     \textcolor{keywordflow}{return} CXCompletionChunk\_RightBracket;}
+\DoxyCodeLine{86   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftBrace:}
+\DoxyCodeLine{87     \textcolor{keywordflow}{return} CXCompletionChunk\_LeftBrace;}
+\DoxyCodeLine{88   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightBrace:}
+\DoxyCodeLine{89     \textcolor{keywordflow}{return} CXCompletionChunk\_RightBrace;}
+\DoxyCodeLine{90   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftAngle:}
+\DoxyCodeLine{91     \textcolor{keywordflow}{return} CXCompletionChunk\_LeftAngle;}
+\DoxyCodeLine{92   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightAngle:}
+\DoxyCodeLine{93     \textcolor{keywordflow}{return} CXCompletionChunk\_RightAngle;}
+\DoxyCodeLine{94   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Comma:}
+\DoxyCodeLine{95     \textcolor{keywordflow}{return} CXCompletionChunk\_Comma;}
+\DoxyCodeLine{96   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Colon:}
+\DoxyCodeLine{97     \textcolor{keywordflow}{return} CXCompletionChunk\_Colon;}
+\DoxyCodeLine{98   \textcolor{keywordflow}{case} CodeCompletionString::CK\_SemiColon:}
+\DoxyCodeLine{99     \textcolor{keywordflow}{return} CXCompletionChunk\_SemiColon;}
+\DoxyCodeLine{100   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Equal:}
+\DoxyCodeLine{101     \textcolor{keywordflow}{return} CXCompletionChunk\_Equal;}
+\DoxyCodeLine{102   \textcolor{keywordflow}{case} CodeCompletionString::CK\_HorizontalSpace:}
+\DoxyCodeLine{103     \textcolor{keywordflow}{return} CXCompletionChunk\_HorizontalSpace;}
+\DoxyCodeLine{104   \textcolor{keywordflow}{case} CodeCompletionString::CK\_VerticalSpace:}
+\DoxyCodeLine{105     \textcolor{keywordflow}{return} CXCompletionChunk\_VerticalSpace;}
+\DoxyCodeLine{106   \}}
+\DoxyCodeLine{107 }
+\DoxyCodeLine{108   llvm\_unreachable(\textcolor{stringliteral}{"{}Invalid CompletionKind!"{}});}
+\DoxyCodeLine{109 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a374f74c7bf629362e8da626775301a00}\label{_c_index_code_completion_8cpp_a374f74c7bf629362e8da626775301a00}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionChunkText@{clang\_getCompletionChunkText}}
+\index{clang\_getCompletionChunkText@{clang\_getCompletionChunkText}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionChunkText()}{clang\_getCompletionChunkText()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Completion\+Chunk\+Text (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string,  }\item[{unsigned}]{chunk\+\_\+number }\end{DoxyParamCaption})}
+
+
+
+Definition at line 111 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{112                                                              \{}
+\DoxyCodeLine{113   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{114   \textcolor{keywordflow}{if} (!CCStr || chunk\_number >= CCStr-\/>size())}
+\DoxyCodeLine{115     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8684a35d52ccb8c623144db89a0205e1}{cxstring::createNull}}();}
+\DoxyCodeLine{116 }
+\DoxyCodeLine{117   \textcolor{keywordflow}{switch} ((*CCStr)[chunk\_number].Kind) \{}
+\DoxyCodeLine{118   \textcolor{keywordflow}{case} CodeCompletionString::CK\_TypedText:}
+\DoxyCodeLine{119   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Text:}
+\DoxyCodeLine{120   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Placeholder:}
+\DoxyCodeLine{121   \textcolor{keywordflow}{case} CodeCompletionString::CK\_CurrentParameter:}
+\DoxyCodeLine{122   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Informative:}
+\DoxyCodeLine{123   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftParen:}
+\DoxyCodeLine{124   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightParen:}
+\DoxyCodeLine{125   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftBracket:}
+\DoxyCodeLine{126   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightBracket:}
+\DoxyCodeLine{127   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftBrace:}
+\DoxyCodeLine{128   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightBrace:}
+\DoxyCodeLine{129   \textcolor{keywordflow}{case} CodeCompletionString::CK\_LeftAngle:}
+\DoxyCodeLine{130   \textcolor{keywordflow}{case} CodeCompletionString::CK\_RightAngle:}
+\DoxyCodeLine{131   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Comma:}
+\DoxyCodeLine{132   \textcolor{keywordflow}{case} CodeCompletionString::CK\_ResultType:}
+\DoxyCodeLine{133   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Colon:}
+\DoxyCodeLine{134   \textcolor{keywordflow}{case} CodeCompletionString::CK\_SemiColon:}
+\DoxyCodeLine{135   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Equal:}
+\DoxyCodeLine{136   \textcolor{keywordflow}{case} CodeCompletionString::CK\_HorizontalSpace:}
+\DoxyCodeLine{137   \textcolor{keywordflow}{case} CodeCompletionString::CK\_VerticalSpace:}
+\DoxyCodeLine{138     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}((*CCStr)[chunk\_number].Text);}
+\DoxyCodeLine{139       }
+\DoxyCodeLine{140   \textcolor{keywordflow}{case} CodeCompletionString::CK\_Optional:}
+\DoxyCodeLine{141     \textcolor{comment}{// Note: treated as an empty text block.}}
+\DoxyCodeLine{142     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{143   \}}
+\DoxyCodeLine{144 }
+\DoxyCodeLine{145   llvm\_unreachable(\textcolor{stringliteral}{"{}Invalid CodeCompletionString Kind!"{}});}
+\DoxyCodeLine{146 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Empty(), clang\+::cxstring\+::create\+Null(), and clang\+::cxstring\+::create\+Ref().
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a53d507b63fce804bcd705197ef5eda7a}\label{_c_index_code_completion_8cpp_a53d507b63fce804bcd705197ef5eda7a}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionFixIt@{clang\_getCompletionFixIt}}
+\index{clang\_getCompletionFixIt@{clang\_getCompletionFixIt}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionFixIt()}{clang\_getCompletionFixIt()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Completion\+Fix\+It (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{results,  }\item[{unsigned}]{completion\+\_\+index,  }\item[{unsigned}]{fixit\+\_\+index,  }\item[{CXSource\+Range $\ast$}]{replacement\+\_\+range }\end{DoxyParamCaption})}
+
+
+
+Definition at line 322 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{325                                                                     \{}
+\DoxyCodeLine{326   AllocatedCXCodeCompleteResults *allocated\_results = (AllocatedCXCodeCompleteResults *)results;}
+\DoxyCodeLine{327 }
+\DoxyCodeLine{328   \textcolor{keywordflow}{if} (!allocated\_results || allocated\_results-\/>FixItsVector.size() <= completion\_index) \{}
+\DoxyCodeLine{329     \textcolor{keywordflow}{if} (replacement\_range)}
+\DoxyCodeLine{330       *replacement\_range = \mbox{\hyperlink{_c_x_source_location_8cpp_afadb1a95ce51366407cf6c363299a17f}{clang\_getNullRange}}();}
+\DoxyCodeLine{331     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8684a35d52ccb8c623144db89a0205e1}{cxstring::createNull}}();}
+\DoxyCodeLine{332   \}}
+\DoxyCodeLine{333 }
+\DoxyCodeLine{334   ArrayRef<FixItHint> FixIts = allocated\_results-\/>FixItsVector[completion\_index];}
+\DoxyCodeLine{335   \textcolor{keywordflow}{if} (FixIts.size() <= fixit\_index) \{}
+\DoxyCodeLine{336     \textcolor{keywordflow}{if} (replacement\_range)}
+\DoxyCodeLine{337       *replacement\_range = \mbox{\hyperlink{_c_x_source_location_8cpp_afadb1a95ce51366407cf6c363299a17f}{clang\_getNullRange}}();}
+\DoxyCodeLine{338     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8684a35d52ccb8c623144db89a0205e1}{cxstring::createNull}}();}
+\DoxyCodeLine{339   \}}
+\DoxyCodeLine{340 }
+\DoxyCodeLine{341   \textcolor{keyword}{const} FixItHint \&FixIt = FixIts[fixit\_index];}
+\DoxyCodeLine{342   \textcolor{keywordflow}{if} (replacement\_range) \{}
+\DoxyCodeLine{343     *replacement\_range = \mbox{\hyperlink{namespaceclang_1_1cxloc_a39d02b462b1f3233518f01951d83d035}{cxloc::translateSourceRange}}(}
+\DoxyCodeLine{344         *allocated\_results-\/>SourceMgr, allocated\_results-\/>LangOpts,}
+\DoxyCodeLine{345         FixIt.RemoveRange);}
+\DoxyCodeLine{346   \}}
+\DoxyCodeLine{347 }
+\DoxyCodeLine{348   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(FixIt.CodeToInsert.c\_str());}
+\DoxyCodeLine{349 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Null\+Range(), clang\+::cxstring\+::create\+Null(), clang\+::cxstring\+::create\+Ref(), and clang\+::cxloc\+::translate\+Source\+Range().
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a8ab31cf1861905f7599d87eb48649c2c}\label{_c_index_code_completion_8cpp_a8ab31cf1861905f7599d87eb48649c2c}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionNumAnnotations@{clang\_getCompletionNumAnnotations}}
+\index{clang\_getCompletionNumAnnotations@{clang\_getCompletionNumAnnotations}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionNumAnnotations()}{clang\_getCompletionNumAnnotations()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+get\+Completion\+Num\+Annotations (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string }\end{DoxyParamCaption})}
+
+
+
+Definition at line 204 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{205 \{}
+\DoxyCodeLine{206   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{207   \textcolor{keywordflow}{return} CCStr ? CCStr-\/>getAnnotationCount() : 0;}
+\DoxyCodeLine{208 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a2a27263ad8d1070172cea3be70b4d8b9}\label{_c_index_code_completion_8cpp_a2a27263ad8d1070172cea3be70b4d8b9}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionNumFixIts@{clang\_getCompletionNumFixIts}}
+\index{clang\_getCompletionNumFixIts@{clang\_getCompletionNumFixIts}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionNumFixIts()}{clang\_getCompletionNumFixIts()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+get\+Completion\+Num\+Fix\+Its (\begin{DoxyParamCaption}\item[{CXCode\+Complete\+Results $\ast$}]{results,  }\item[{unsigned}]{completion\+\_\+index }\end{DoxyParamCaption})}
+
+
+
+Definition at line 312 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{313                                                                  \{}
+\DoxyCodeLine{314   AllocatedCXCodeCompleteResults *allocated\_results = (AllocatedCXCodeCompleteResults *)results;}
+\DoxyCodeLine{315 }
+\DoxyCodeLine{316   \textcolor{keywordflow}{if} (!allocated\_results || allocated\_results-\/>FixItsVector.size() <= completion\_index)}
+\DoxyCodeLine{317     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{318 }
+\DoxyCodeLine{319   \textcolor{keywordflow}{return} \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{unsigned}\textcolor{keyword}{>}(allocated\_results-\/>FixItsVector[completion\_index].size());}
+\DoxyCodeLine{320 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a7255187a485b3364cd0956ccc8a21ba7}\label{_c_index_code_completion_8cpp_a7255187a485b3364cd0956ccc8a21ba7}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionParent@{clang\_getCompletionParent}}
+\index{clang\_getCompletionParent@{clang\_getCompletionParent}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionParent()}{clang\_getCompletionParent()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Completion\+Parent (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string,  }\item[{CXCursor\+Kind $\ast$}]{kind }\end{DoxyParamCaption})}
+
+
+
+Definition at line 218 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{219                                               \{}
+\DoxyCodeLine{220   \textcolor{keywordflow}{if} (kind)}
+\DoxyCodeLine{221     *kind = CXCursor\_NotImplemented;}
+\DoxyCodeLine{222   }
+\DoxyCodeLine{223   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{224   \textcolor{keywordflow}{if} (!CCStr)}
+\DoxyCodeLine{225     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8684a35d52ccb8c623144db89a0205e1}{cxstring::createNull}}();}
+\DoxyCodeLine{226   }
+\DoxyCodeLine{227   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(CCStr-\/>getParentContextName());}
+\DoxyCodeLine{228 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Null(), and clang\+::cxstring\+::create\+Ref().
+
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_ab31f7dbd962ec8e8cb586bb5e3c78276}\label{_c_index_code_completion_8cpp_ab31f7dbd962ec8e8cb586bb5e3c78276}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getCompletionPriority@{clang\_getCompletionPriority}}
+\index{clang\_getCompletionPriority@{clang\_getCompletionPriority}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionPriority()}{clang\_getCompletionPriority()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+get\+Completion\+Priority (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string }\end{DoxyParamCaption})}
+
+
+
+Definition at line 192 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{192                                                                            \{}
+\DoxyCodeLine{193   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{194   \textcolor{keywordflow}{return} CCStr? CCStr-\/>getPriority() : unsigned(CCP\_Unlikely);}
+\DoxyCodeLine{195 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a075fc2a04c95b00ccadf6ccc0ab5b91d}\label{_c_index_code_completion_8cpp_a075fc2a04c95b00ccadf6ccc0ab5b91d}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_getNumCompletionChunks@{clang\_getNumCompletionChunks}}
+\index{clang\_getNumCompletionChunks@{clang\_getNumCompletionChunks}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getNumCompletionChunks()}{clang\_getNumCompletionChunks()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+get\+Num\+Completion\+Chunks (\begin{DoxyParamCaption}\item[{CXCompletion\+String}]{completion\+\_\+string }\end{DoxyParamCaption})}
+
+
+
+Definition at line 187 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{187                                                                             \{}
+\DoxyCodeLine{188   CodeCompletionString *CCStr = (CodeCompletionString *)completion\_string;}
+\DoxyCodeLine{189   \textcolor{keywordflow}{return} CCStr? CCStr-\/>size() : 0;}
+\DoxyCodeLine{190 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_code_completion_8cpp_a15ff3b3f6b97479e2516f3e4993a9baa}\label{_c_index_code_completion_8cpp_a15ff3b3f6b97479e2516f3e4993a9baa}} 
+\index{CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}!clang\_sortCodeCompletionResults@{clang\_sortCodeCompletionResults}}
+\index{clang\_sortCodeCompletionResults@{clang\_sortCodeCompletionResults}!CIndexCodeCompletion.cpp@{CIndexCodeCompletion.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_sortCodeCompletionResults()}{clang\_sortCodeCompletionResults()}}
+{\footnotesize\ttfamily void clang\+\_\+sort\+Code\+Completion\+Results (\begin{DoxyParamCaption}\item[{CXCompletion\+Result $\ast$}]{Results,  }\item[{unsigned}]{Num\+Results }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1041 of file CIndex\+Code\+Completion.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1042                                                           \{}
+\DoxyCodeLine{1043   std::stable\_sort(Results, Results + NumResults, OrderCompletionResults());}
+\DoxyCodeLine{1044 \}}
+
+\end{DoxyCode}

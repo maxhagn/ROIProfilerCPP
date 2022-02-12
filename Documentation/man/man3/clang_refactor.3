@@ -1,0 +1,55 @@
+.TH "clang::refactor" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::refactor
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBTestSelectionRange\fP"
+.br
+.ti -1c
+.RI "struct \fBTestSelectionRangesInFile\fP"
+.br
+.RI "A set of test selection ranges specified in one file\&. "
+.ti -1c
+.RI "class \fBClangRefactorToolConsumerInterface\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "Optional< \fBTestSelectionRangesInFile\fP > \fBfindTestSelectionRanges\fP (StringRef Filename)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "Optional< \fBTestSelectionRangesInFile\fP > clang::refactor::findTestSelectionRanges (StringRef Filename)"
+Extracts the grouped selection ranges from the file that's specified in the -selection=test:<filename> option\&.
+.PP
+The grouped ranges are specified in comments using the following syntax: 'range' [ group-name ] '=' [ '+' starting-column-offset ] [ '->' '+' ending-line-offset ':' ending-column-position ]
+.PP
+The selection range is then computed from this command by taking the ending location of the comment, and adding 'starting-column-offset' to the column for that location\&. That location in turns becomes the whole selection range, unless 'ending-line-offset' and 'ending-column-position' are specified\&. If they are specified, then the ending location of the selection range is the starting location's line + 'ending-line-offset' and the 'ending-column-position' column\&.
+.PP
+All selection ranges in one group are expected to produce the same refactoring result\&.
+.PP
+When testing, zero is returned from clang-refactor even when a group produces an initiation error, which is different from normal invocation that returns a non-zero value\&. This is done on purpose, to ensure that group consistency checks can return non-zero, but still print the output of the group\&. So even if a test matches the output of group, it will still fail because clang-refactor should return zero on exit when the group results are consistent\&.
+.PP
+\fBReturns\fP
+.RS 4
+None on failure (errors are emitted to stderr), or a set of grouped source ranges in the given file otherwise\&. 
+.RE
+.PP
+
+.PP
+Definition at line 295 of file TestSupport\&.cpp\&.
+.PP
+References libscanbuild\&.report::comment()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

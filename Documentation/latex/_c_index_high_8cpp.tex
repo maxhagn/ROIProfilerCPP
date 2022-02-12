@@ -1,0 +1,196 @@
+\hypertarget{_c_index_high_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+CIndex\+High.cpp File Reference}
+\label{_c_index_high_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexHigh.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexHigh.cpp}}
+{\ttfamily \#include \char`\"{}Cursor\+Visitor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CLog.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXCursor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXSource\+Location.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXTranslation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+Obj\+C.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Compiler.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXResult \mbox{\hyperlink{_c_index_high_8cpp_a6b21283c57156038f976fb60e3f268c2}{clang\+\_\+find\+References\+In\+File}} (CXCursor cursor, CXFile file, CXCursor\+And\+Range\+Visitor visitor)
+\item 
+CXResult \mbox{\hyperlink{_c_index_high_8cpp_a152126673cad4e1f7f0fb80eb8e2044d}{clang\+\_\+find\+Includes\+In\+File}} (CXTranslation\+Unit TU, CXFile file, CXCursor\+And\+Range\+Visitor visitor)
+\item 
+CXResult \mbox{\hyperlink{_c_index_high_8cpp_a76deaf432db9e0e8b5480435ef25761e}{clang\+\_\+find\+References\+In\+File\+With\+Block}} (CXCursor cursor, CXFile file, \mbox{\hyperlink{_index___internal_8h_a7ecf674b2986737e29df0f5e88dbf83b}{CXCursor\+And\+Range\+Visitor\+Block}} block)
+\item 
+CXResult \mbox{\hyperlink{_c_index_high_8cpp_a0362005a5a487c97584f724b3964a65b}{clang\+\_\+find\+Includes\+In\+File\+With\+Block}} (CXTranslation\+Unit TU, CXFile file, \mbox{\hyperlink{_index___internal_8h_a7ecf674b2986737e29df0f5e88dbf83b}{CXCursor\+And\+Range\+Visitor\+Block}} block)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_c_index_high_8cpp_a152126673cad4e1f7f0fb80eb8e2044d}\label{_c_index_high_8cpp_a152126673cad4e1f7f0fb80eb8e2044d}} 
+\index{CIndexHigh.cpp@{CIndexHigh.cpp}!clang\_findIncludesInFile@{clang\_findIncludesInFile}}
+\index{clang\_findIncludesInFile@{clang\_findIncludesInFile}!CIndexHigh.cpp@{CIndexHigh.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_findIncludesInFile()}{clang\_findIncludesInFile()}}
+{\footnotesize\ttfamily CXResult clang\+\_\+find\+Includes\+In\+File (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU,  }\item[{CXFile}]{file,  }\item[{CXCursor\+And\+Range\+Visitor}]{visitor }\end{DoxyParamCaption})}
+
+
+
+Definition at line 478 of file CIndex\+High.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{479                                                               \{}
+\DoxyCodeLine{480   \textcolor{keywordflow}{if} (cxtu::isNotUsableTU(TU)) \{}
+\DoxyCodeLine{481     \mbox{\hyperlink{_c_x_translation_unit_8h_a4ec17e6e03ea0baf73e27802eae36106}{LOG\_BAD\_TU}}(TU);}
+\DoxyCodeLine{482     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{483   \}}
+\DoxyCodeLine{484 }
+\DoxyCodeLine{485   \mbox{\hyperlink{namespaceclang_1_1cxindex_a404a46a001568431816a6c375e7cd810}{LogRef}} Log = Logger::make(\_\_func\_\_);}
+\DoxyCodeLine{486   \textcolor{keywordflow}{if} (!file) \{}
+\DoxyCodeLine{487     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{488       *Log << \textcolor{stringliteral}{"{}Null file"{}};}
+\DoxyCodeLine{489     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{490   \}}
+\DoxyCodeLine{491   \textcolor{keywordflow}{if} (!visitor.visit) \{}
+\DoxyCodeLine{492     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{493       *Log << \textcolor{stringliteral}{"{}Null visitor"{}};}
+\DoxyCodeLine{494     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{495   \}}
+\DoxyCodeLine{496 }
+\DoxyCodeLine{497   \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{498     *Log << TU << \textcolor{stringliteral}{"{} @"{}} << \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const }FileEntry *\textcolor{keyword}{>}(file);}
+\DoxyCodeLine{499 }
+\DoxyCodeLine{500   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);}
+\DoxyCodeLine{501   \textcolor{keywordflow}{if} (!CXXUnit)}
+\DoxyCodeLine{502     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{503 }
+\DoxyCodeLine{504   ASTUnit::ConcurrencyCheck Check(*CXXUnit);}
+\DoxyCodeLine{505 }
+\DoxyCodeLine{506   \textcolor{keywordflow}{if} (findIncludesInFile(TU, \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const }FileEntry *\textcolor{keyword}{>}(file), visitor))}
+\DoxyCodeLine{507     \textcolor{keywordflow}{return} CXResult\_VisitBreak;}
+\DoxyCodeLine{508   \textcolor{keywordflow}{return} CXResult\_Success;}
+\DoxyCodeLine{509 \}}
+
+\end{DoxyCode}
+
+
+References LOG\+\_\+\+BAD\+\_\+\+TU.
+
+\mbox{\Hypertarget{_c_index_high_8cpp_a0362005a5a487c97584f724b3964a65b}\label{_c_index_high_8cpp_a0362005a5a487c97584f724b3964a65b}} 
+\index{CIndexHigh.cpp@{CIndexHigh.cpp}!clang\_findIncludesInFileWithBlock@{clang\_findIncludesInFileWithBlock}}
+\index{clang\_findIncludesInFileWithBlock@{clang\_findIncludesInFileWithBlock}!CIndexHigh.cpp@{CIndexHigh.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_findIncludesInFileWithBlock()}{clang\_findIncludesInFileWithBlock()}}
+{\footnotesize\ttfamily CXResult clang\+\_\+find\+Includes\+In\+File\+With\+Block (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU,  }\item[{CXFile}]{file,  }\item[{\mbox{\hyperlink{_index___internal_8h_a7ecf674b2986737e29df0f5e88dbf83b}{CXCursor\+And\+Range\+Visitor\+Block}}}]{block }\end{DoxyParamCaption})}
+
+
+
+Definition at line 526 of file CIndex\+High.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{528                                                                                \{}
+\DoxyCodeLine{529   CXCursorAndRangeVisitor visitor = \{ block,}
+\DoxyCodeLine{530                                       block ? \_visitCursorAndRange : \textcolor{keyword}{nullptr} \};}
+\DoxyCodeLine{531   \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_index_high_8cpp_a152126673cad4e1f7f0fb80eb8e2044d}{clang\_findIncludesInFile}}(TU, file, visitor);}
+\DoxyCodeLine{532 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_high_8cpp_a6b21283c57156038f976fb60e3f268c2}\label{_c_index_high_8cpp_a6b21283c57156038f976fb60e3f268c2}} 
+\index{CIndexHigh.cpp@{CIndexHigh.cpp}!clang\_findReferencesInFile@{clang\_findReferencesInFile}}
+\index{clang\_findReferencesInFile@{clang\_findReferencesInFile}!CIndexHigh.cpp@{CIndexHigh.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_findReferencesInFile()}{clang\_findReferencesInFile()}}
+{\footnotesize\ttfamily CXResult clang\+\_\+find\+References\+In\+File (\begin{DoxyParamCaption}\item[{CXCursor}]{cursor,  }\item[{CXFile}]{file,  }\item[{CXCursor\+And\+Range\+Visitor}]{visitor }\end{DoxyParamCaption})}
+
+
+
+Definition at line 409 of file CIndex\+High.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{410                                                                      \{}
+\DoxyCodeLine{411   \mbox{\hyperlink{namespaceclang_1_1cxindex_a404a46a001568431816a6c375e7cd810}{LogRef}} Log = Logger::make(\_\_func\_\_);}
+\DoxyCodeLine{412 }
+\DoxyCodeLine{413   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_x_cursor_8cpp_af734553e3bac74a4a1f6f7450513cf0f}{clang\_Cursor\_isNull}}(cursor)) \{}
+\DoxyCodeLine{414     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{415       *Log << \textcolor{stringliteral}{"{}Null cursor"{}};}
+\DoxyCodeLine{416     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{417   \}}
+\DoxyCodeLine{418   \textcolor{keywordflow}{if} (cursor.kind == CXCursor\_NoDeclFound) \{}
+\DoxyCodeLine{419     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{420       *Log << \textcolor{stringliteral}{"{}Got CXCursor\_NoDeclFound"{}};}
+\DoxyCodeLine{421     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{422   \}}
+\DoxyCodeLine{423   \textcolor{keywordflow}{if} (!file) \{}
+\DoxyCodeLine{424     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{425       *Log << \textcolor{stringliteral}{"{}Null file"{}};}
+\DoxyCodeLine{426     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{427   \}}
+\DoxyCodeLine{428   \textcolor{keywordflow}{if} (!visitor.visit) \{}
+\DoxyCodeLine{429     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{430       *Log << \textcolor{stringliteral}{"{}Null visitor"{}};}
+\DoxyCodeLine{431     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{432   \}}
+\DoxyCodeLine{433 }
+\DoxyCodeLine{434   \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{435     *Log << cursor << \textcolor{stringliteral}{"{} @"{}} << \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const }FileEntry *\textcolor{keyword}{>}(file);}
+\DoxyCodeLine{436 }
+\DoxyCodeLine{437   ASTUnit *CXXUnit = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a68c106f7bebde4f72b0fe7f6f67e8f29}{cxcursor::getCursorASTUnit}}(cursor);}
+\DoxyCodeLine{438   \textcolor{keywordflow}{if} (!CXXUnit)}
+\DoxyCodeLine{439     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{440 }
+\DoxyCodeLine{441   ASTUnit::ConcurrencyCheck Check(*CXXUnit);}
+\DoxyCodeLine{442 }
+\DoxyCodeLine{443   \textcolor{keywordflow}{if} (cursor.kind == CXCursor\_MacroDefinition ||}
+\DoxyCodeLine{444       cursor.kind == CXCursor\_MacroExpansion) \{}
+\DoxyCodeLine{445     \textcolor{keywordflow}{if} (findMacroRefsInFile(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(cursor),}
+\DoxyCodeLine{446                             cursor,}
+\DoxyCodeLine{447                             \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const }FileEntry *\textcolor{keyword}{>}(file),}
+\DoxyCodeLine{448                             visitor))}
+\DoxyCodeLine{449       \textcolor{keywordflow}{return} CXResult\_VisitBreak;}
+\DoxyCodeLine{450     \textcolor{keywordflow}{return} CXResult\_Success;}
+\DoxyCodeLine{451   \}}
+\DoxyCodeLine{452 }
+\DoxyCodeLine{453   \textcolor{comment}{// We are interested in semantics of identifiers so for C++ constructor exprs}}
+\DoxyCodeLine{454   \textcolor{comment}{// prefer type references, e.g.:}}
+\DoxyCodeLine{455   \textcolor{comment}{//}}
+\DoxyCodeLine{456   \textcolor{comment}{//  return MyStruct();}}
+\DoxyCodeLine{457   \textcolor{comment}{//}}
+\DoxyCodeLine{458   \textcolor{comment}{// for 'MyStruct' we'll have a cursor pointing at the constructor decl but}}
+\DoxyCodeLine{459   \textcolor{comment}{// we are actually interested in the type declaration.}}
+\DoxyCodeLine{460   cursor = \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa5198a2a166b25337d2c20917d3d28ce}{cxcursor::getTypeRefCursor}}(cursor);}
+\DoxyCodeLine{461 }
+\DoxyCodeLine{462   CXCursor refCursor = \mbox{\hyperlink{_c_index_8cpp_ab26fc466345d015d7f9d418080166dc7}{clang\_getCursorReferenced}}(cursor);}
+\DoxyCodeLine{463 }
+\DoxyCodeLine{464   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(refCursor.kind)) \{}
+\DoxyCodeLine{465     \textcolor{keywordflow}{if} (Log)}
+\DoxyCodeLine{466       *Log << \textcolor{stringliteral}{"{}cursor is not referencing a declaration"{}};}
+\DoxyCodeLine{467     \textcolor{keywordflow}{return} CXResult\_Invalid;}
+\DoxyCodeLine{468   \}}
+\DoxyCodeLine{469 }
+\DoxyCodeLine{470   \textcolor{keywordflow}{if} (findIdRefsInFile(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(cursor),}
+\DoxyCodeLine{471                        refCursor,}
+\DoxyCodeLine{472                        \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const }FileEntry *\textcolor{keyword}{>}(file),}
+\DoxyCodeLine{473                        visitor))}
+\DoxyCodeLine{474     \textcolor{keywordflow}{return} CXResult\_VisitBreak;}
+\DoxyCodeLine{475   \textcolor{keywordflow}{return} CXResult\_Success;}
+\DoxyCodeLine{476 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+\+Cursor\+\_\+is\+Null(), and clang\+::cxcursor\+::get\+Cursor\+ASTUnit().
+
+\mbox{\Hypertarget{_c_index_high_8cpp_a76deaf432db9e0e8b5480435ef25761e}\label{_c_index_high_8cpp_a76deaf432db9e0e8b5480435ef25761e}} 
+\index{CIndexHigh.cpp@{CIndexHigh.cpp}!clang\_findReferencesInFileWithBlock@{clang\_findReferencesInFileWithBlock}}
+\index{clang\_findReferencesInFileWithBlock@{clang\_findReferencesInFileWithBlock}!CIndexHigh.cpp@{CIndexHigh.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_findReferencesInFileWithBlock()}{clang\_findReferencesInFileWithBlock()}}
+{\footnotesize\ttfamily CXResult clang\+\_\+find\+References\+In\+File\+With\+Block (\begin{DoxyParamCaption}\item[{CXCursor}]{cursor,  }\item[{CXFile}]{file,  }\item[{\mbox{\hyperlink{_index___internal_8h_a7ecf674b2986737e29df0f5e88dbf83b}{CXCursor\+And\+Range\+Visitor\+Block}}}]{block }\end{DoxyParamCaption})}
+
+
+
+Definition at line 518 of file CIndex\+High.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{520                                                                                \{}
+\DoxyCodeLine{521   CXCursorAndRangeVisitor visitor = \{ block,}
+\DoxyCodeLine{522                                       block ? \_visitCursorAndRange : \textcolor{keyword}{nullptr} \};}
+\DoxyCodeLine{523   \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_index_high_8cpp_a6b21283c57156038f976fb60e3f268c2}{clang\_findReferencesInFile}}(cursor, file, visitor);}
+\DoxyCodeLine{524 \}}
+
+\end{DoxyCode}

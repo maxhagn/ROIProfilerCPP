@@ -1,0 +1,62 @@
+\hypertarget{_c_index_inclusion_stack_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+CIndex\+Inclusion\+Stack.cpp File Reference}
+\label{_c_index_inclusion_stack_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexInclusionStack.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexInclusionStack.cpp}}
+{\ttfamily \#include \char`\"{}CIndexer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXSource\+Location.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXTranslation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+Visitor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{_c_index_inclusion_stack_8cpp_a46a93eb16ff8f277bb63cbbe5d70d3ae}{clang\+\_\+get\+Inclusions}} (CXTranslation\+Unit TU, CXInclusion\+Visitor CB, CXClient\+Data client\+Data)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_c_index_inclusion_stack_8cpp_a46a93eb16ff8f277bb63cbbe5d70d3ae}\label{_c_index_inclusion_stack_8cpp_a46a93eb16ff8f277bb63cbbe5d70d3ae}} 
+\index{CIndexInclusionStack.cpp@{CIndexInclusionStack.cpp}!clang\_getInclusions@{clang\_getInclusions}}
+\index{clang\_getInclusions@{clang\_getInclusions}!CIndexInclusionStack.cpp@{CIndexInclusionStack.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getInclusions()}{clang\_getInclusions()}}
+{\footnotesize\ttfamily void clang\+\_\+get\+Inclusions (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU,  }\item[{CXInclusion\+Visitor}]{CB,  }\item[{CXClient\+Data}]{client\+Data }\end{DoxyParamCaption})}
+
+
+
+Definition at line 69 of file CIndex\+Inclusion\+Stack.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{70                                                   \{}
+\DoxyCodeLine{71   \textcolor{keywordflow}{if} (cxtu::isNotUsableTU(TU)) \{}
+\DoxyCodeLine{72     \mbox{\hyperlink{_c_x_translation_unit_8h_a4ec17e6e03ea0baf73e27802eae36106}{LOG\_BAD\_TU}}(TU);}
+\DoxyCodeLine{73     \textcolor{keywordflow}{return};}
+\DoxyCodeLine{74   \}}
+\DoxyCodeLine{75 }
+\DoxyCodeLine{76   SourceManager \&SM = cxtu::getASTUnit(TU)-\/>getSourceManager();}
+\DoxyCodeLine{77   \textcolor{keyword}{const} \textcolor{keywordtype}{unsigned} n =  SM.local\_sloc\_entry\_size();}
+\DoxyCodeLine{78 }
+\DoxyCodeLine{79   \textcolor{comment}{// In the case where all the SLocEntries are in an external source, traverse}}
+\DoxyCodeLine{80   \textcolor{comment}{// those SLocEntries as well.  This is the case where we are looking}}
+\DoxyCodeLine{81   \textcolor{comment}{// at the inclusion stack of an AST/PCH file. Also, if we are not looking at}}
+\DoxyCodeLine{82   \textcolor{comment}{// a AST/PCH file, but this file has a pre-\/compiled preamble, we also need}}
+\DoxyCodeLine{83   \textcolor{comment}{// to look in that file.}}
+\DoxyCodeLine{84   \textcolor{keywordflow}{if} (n == 1 || SM.getPreambleFileID().isValid()) \{}
+\DoxyCodeLine{85     getInclusions(\textcolor{comment}{/*IsLocal=*/}\textcolor{keyword}{false}, SM.loaded\_sloc\_entry\_size(), TU, CB,}
+\DoxyCodeLine{86                   clientData);}
+\DoxyCodeLine{87   \}}
+\DoxyCodeLine{88 }
+\DoxyCodeLine{89   \textcolor{comment}{// Not a PCH/AST file. Note, if there is a preamble, it could still be that}}
+\DoxyCodeLine{90   \textcolor{comment}{// there are \#includes in this file (e.g. for any include after the first}}
+\DoxyCodeLine{91   \textcolor{comment}{// declaration).}}
+\DoxyCodeLine{92   \textcolor{keywordflow}{if} (n != 1)}
+\DoxyCodeLine{93     getInclusions(\textcolor{comment}{/*IsLocal=*/}\textcolor{keyword}{true}, n, TU, CB, clientData);}
+\DoxyCodeLine{94 \}}
+
+\end{DoxyCode}
+
+
+References LOG\+\_\+\+BAD\+\_\+\+TU.
+
+
+
+Referenced by Print\+Inclusion\+Stack().
+

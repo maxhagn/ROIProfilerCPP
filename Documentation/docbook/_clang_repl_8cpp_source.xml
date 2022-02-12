@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_repl_8cpp_source" xml:lang="en-US">
+<title>ClangRepl.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-repl/ClangRepl.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===---&#32;tools/clang-repl/ClangRepl.cpp&#32;-&#32;clang-repl&#32;-&#32;the&#32;Clang&#32;REPL&#32;-----===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;&#32;This&#32;file&#32;implements&#32;a&#32;REPL&#32;tool&#32;on&#32;top&#32;of&#32;clang.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Diagnostic.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/FrontendDiagnostic.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Interpreter/Interpreter.h&quot;</emphasis>
+00017 
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ExecutionEngine/Orc/LLJIT.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/LineEditor/LineEditor.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ManagedStatic.h&quot;</emphasis>&#32;<emphasis role="comment">//&#32;llvm_shutdown</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/TargetSelect.h&quot;</emphasis>&#32;<emphasis role="comment">//&#32;llvm::Initialize*</emphasis>
+00024 
+00025 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::list&lt;std::string&gt;
+00026 &#32;&#32;&#32;&#32;ClangArgs(<emphasis role="stringliteral">&quot;Xcc&quot;</emphasis>,&#32;llvm::cl::ZeroOrMore,
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;Argument&#32;to&#32;pass&#32;to&#32;the&#32;CompilerInvocation&quot;</emphasis>),
+00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::CommaSeparated);
+00029 <emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;bool&gt;&#32;OptHostSupportsJit(<emphasis role="stringliteral">&quot;host-supports-jit&quot;</emphasis>,
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::Hidden);
+00031 
+00032 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;LLVMErrorHandler(<emphasis role="keywordtype">void</emphasis>&#32;*UserData,&#32;<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;Message,
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;GenCrashDiag)&#32;{
+00034 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Diags&#32;=&#32;*<emphasis role="keyword">static_cast&lt;</emphasis>clang::DiagnosticsEngine&#32;*<emphasis role="keyword">&gt;</emphasis>(UserData);
+00035 
+00036 &#32;&#32;Diags.Report(clang::diag::err_fe_error_backend)&#32;&lt;&lt;&#32;Message;
+00037 
+00038 &#32;&#32;<emphasis role="comment">//&#32;Run&#32;the&#32;interrupt&#32;handlers&#32;to&#32;make&#32;sure&#32;any&#32;special&#32;cleanups&#32;get&#32;done,&#32;in</emphasis>
+00039 &#32;&#32;<emphasis role="comment">//&#32;particular&#32;that&#32;we&#32;remove&#32;files&#32;registered&#32;with&#32;RemoveFileOnSignal.</emphasis>
+00040 &#32;&#32;llvm::sys::RunInterruptHandlers();
+00041 
+00042 &#32;&#32;<emphasis role="comment">//&#32;We&#32;cannot&#32;recover&#32;from&#32;llvm&#32;errors.&#32;&#32;When&#32;reporting&#32;a&#32;fatal&#32;error,&#32;exit</emphasis>
+00043 &#32;&#32;<emphasis role="comment">//&#32;with&#32;status&#32;70&#32;to&#32;generate&#32;crash&#32;diagnostics.&#32;&#32;For&#32;BSD&#32;systems&#32;this&#32;is</emphasis>
+00044 &#32;&#32;<emphasis role="comment">//&#32;defined&#32;as&#32;an&#32;internal&#32;software&#32;error.&#32;Otherwise,&#32;exit&#32;with&#32;status&#32;1.</emphasis>
+00045 
+00046 &#32;&#32;exit(GenCrashDiag&#32;?&#32;70&#32;:&#32;1);
+00047 }
+00048 
+<anchor xml:id="__clang_repl_8cpp_source_1l00049"/><link linkend="__clang_repl_8cpp_1aa40b8256f877190e9a1f1223ce18ad16">00049</link> llvm::ExitOnError&#32;<link linkend="__clang_repl_8cpp_1aa40b8256f877190e9a1f1223ce18ad16">ExitOnErr</link>;
+<anchor xml:id="__clang_repl_8cpp_source_1l00050"/><link linkend="__clang_repl_8cpp_1a217dbf8b442f20279ea00b898af96f52">00050</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_repl_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00051 &#32;&#32;<link linkend="__clang_repl_8cpp_1aa40b8256f877190e9a1f1223ce18ad16">ExitOnErr</link>.setBanner(<emphasis role="stringliteral">&quot;clang-repl:&#32;&quot;</emphasis>);
+00052 &#32;&#32;llvm::cl::ParseCommandLineOptions(argc,&#32;argv);
+00053 
+00054 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;ClangArgv(ClangArgs.size());
+00055 &#32;&#32;std::transform(ClangArgs.begin(),&#32;ClangArgs.end(),&#32;ClangArgv.begin(),
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[](<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;s)&#32;-&gt;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*&#32;{&#32;return&#32;s.data();&#32;});
+00057 &#32;&#32;llvm::InitializeNativeTarget();
+00058 &#32;&#32;llvm::InitializeNativeTargetAsmPrinter();
+00059 
+00060 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OptHostSupportsJit)&#32;{
+00061 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;J&#32;=&#32;llvm::orc::LLJITBuilder().create();
+00062 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(J)
+00063 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;true\n&quot;</emphasis>;
+00064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00065 &#32;&#32;&#32;&#32;&#32;&#32;llvm::consumeError(J.takeError());
+00066 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;false\n&quot;</emphasis>;
+00067 &#32;&#32;&#32;&#32;}
+00068 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00069 &#32;&#32;}
+00070 
+00071 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Investigate&#32;if&#32;we&#32;could&#32;use&#32;runToolOnCodeWithArgs&#32;from&#32;tooling.&#32;It</emphasis>
+00072 &#32;&#32;<emphasis role="comment">//&#32;can&#32;replace&#32;the&#32;boilerplate&#32;code&#32;for&#32;creation&#32;of&#32;the&#32;compiler&#32;instance.</emphasis>
+00073 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CI&#32;=&#32;<link linkend="__clang_repl_8cpp_1aa40b8256f877190e9a1f1223ce18ad16">ExitOnErr</link>(clang::IncrementalCompilerBuilder::create(ClangArgv));
+00074 
+00075 &#32;&#32;<emphasis role="comment">//&#32;Set&#32;an&#32;error&#32;handler,&#32;so&#32;that&#32;any&#32;LLVM&#32;backend&#32;diagnostics&#32;go&#32;through&#32;our</emphasis>
+00076 &#32;&#32;<emphasis role="comment">//&#32;error&#32;handler.</emphasis>
+00077 &#32;&#32;llvm::install_fatal_error_handler(LLVMErrorHandler,
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(&amp;CI-&gt;getDiagnostics()));
+00079 
+00080 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Interp&#32;=&#32;<link linkend="__clang_repl_8cpp_1aa40b8256f877190e9a1f1223ce18ad16">ExitOnErr</link>(clang::Interpreter::create(std::move(CI)));
+00081 &#32;&#32;llvm::LineEditor&#32;LE(<emphasis role="stringliteral">&quot;clang-repl&quot;</emphasis>);
+00082 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Add&#32;LE.setListCompleter</emphasis>
+00083 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(llvm::Optional&lt;std::string&gt;&#32;Line&#32;=&#32;LE.readLine())&#32;{
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(*Line&#32;==&#32;<emphasis role="stringliteral">&quot;quit&quot;</emphasis>)
+00085 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00086 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;Err&#32;=&#32;Interp-&gt;ParseAndExecute(*Line))
+00087 &#32;&#32;&#32;&#32;&#32;&#32;llvm::logAllUnhandledErrors(std::move(Err),&#32;llvm::errs(),&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>);
+00088 &#32;&#32;}
+00089 
+00090 &#32;&#32;<emphasis role="comment">//&#32;Our&#32;error&#32;handler&#32;depends&#32;on&#32;the&#32;Diagnostics&#32;object,&#32;which&#32;we&apos;re</emphasis>
+00091 &#32;&#32;<emphasis role="comment">//&#32;potentially&#32;about&#32;to&#32;delete.&#32;Uninstall&#32;the&#32;handler&#32;now&#32;so&#32;that&#32;any</emphasis>
+00092 &#32;&#32;<emphasis role="comment">//&#32;later&#32;errors&#32;use&#32;the&#32;default&#32;handling&#32;behavior&#32;instead.</emphasis>
+00093 &#32;&#32;llvm::remove_fatal_error_handler();
+00094 
+00095 &#32;&#32;llvm::llvm_shutdown();
+00096 
+00097 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00098 }
+</programlisting></section>

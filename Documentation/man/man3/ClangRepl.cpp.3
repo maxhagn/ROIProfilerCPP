@@ -1,0 +1,114 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-repl/ClangRepl.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-repl/ClangRepl.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Diagnostic\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Frontend/FrontendDiagnostic\&.h'\fP
+.br
+\fC#include 'clang/Interpreter/Interpreter\&.h'\fP
+.br
+\fC#include 'llvm/ExecutionEngine/Orc/LLJIT\&.h'\fP
+.br
+\fC#include 'llvm/LineEditor/LineEditor\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/ManagedStatic\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "llvm::ExitOnError \fBExitOnErr\fP"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 50 of file ClangRepl\&.cpp\&.
+.PP
+.nf
+50                                       {
+51   ExitOnErr\&.setBanner("clang-repl: ");
+52   llvm::cl::ParseCommandLineOptions(argc, argv);
+53 
+54   std::vector<const char *> ClangArgv(ClangArgs\&.size());
+55   std::transform(ClangArgs\&.begin(), ClangArgs\&.end(), ClangArgv\&.begin(),
+56                  [](const std::string &s) -> const char * { return s\&.data(); });
+57   llvm::InitializeNativeTarget();
+58   llvm::InitializeNativeTargetAsmPrinter();
+59 
+60   if (OptHostSupportsJit) {
+61     auto J = llvm::orc::LLJITBuilder()\&.create();
+62     if (J)
+63       llvm::outs() << "true\n";
+64     else {
+65       llvm::consumeError(J\&.takeError());
+66       llvm::outs() << "false\n";
+67     }
+68     return 0;
+69   }
+70 
+71   // FIXME: Investigate if we could use runToolOnCodeWithArgs from tooling\&. It
+72   // can replace the boilerplate code for creation of the compiler instance\&.
+73   auto CI = ExitOnErr(clang::IncrementalCompilerBuilder::create(ClangArgv));
+74 
+75   // Set an error handler, so that any LLVM backend diagnostics go through our
+76   // error handler\&.
+77   llvm::install_fatal_error_handler(LLVMErrorHandler,
+78                                     static_cast<void *>(&CI->getDiagnostics()));
+79 
+80   auto Interp = ExitOnErr(clang::Interpreter::create(std::move(CI)));
+81   llvm::LineEditor LE("clang-repl");
+82   // FIXME: Add LE\&.setListCompleter
+83   while (llvm::Optional<std::string> Line = LE\&.readLine()) {
+84     if (*Line == "quit")
+85       break;
+86     if (auto Err = Interp->ParseAndExecute(*Line))
+87       llvm::logAllUnhandledErrors(std::move(Err), llvm::errs(), "error: ");
+88   }
+89 
+90   // Our error handler depends on the Diagnostics object, which we're
+91   // potentially about to delete\&. Uninstall the handler now so that any
+92   // later errors use the default handling behavior instead\&.
+93   llvm::remove_fatal_error_handler();
+94 
+95   llvm::llvm_shutdown();
+96 
+97   return 0;
+98 }
+.fi
+.PP
+References ExitOnErr\&.
+.SH "Variable Documentation"
+.PP 
+.SS "llvm::ExitOnError ExitOnErr"
+
+.PP
+Definition at line 49 of file ClangRepl\&.cpp\&.
+.PP
+Referenced by main()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

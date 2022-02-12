@@ -1,0 +1,86 @@
+\hypertarget{_clang_check_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/check/\+Clang\+Check.cpp File Reference}
+\label{_clang_check_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/check/ClangCheck.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/check/ClangCheck.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+AST/\+ASTConsumer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Code\+Gen/\+Object\+File\+PCHContainer\+Operations.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTConsumers.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Rewrite/\+Frontend/\+Fix\+It\+Rewriter.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Rewrite/\+Frontend/\+Frontend\+Actions.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Static\+Analyzer/\+Frontend/\+Frontend\+Actions.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Common\+Options\+Parser.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Syntax/\+Build\+Tree.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Syntax/\+Tokens.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Syntax/\+Tree.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Tooling.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+STLExtras.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Option/\+Opt\+Table.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Path.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Target\+Select.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_check_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_check_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_check_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangCheck.cpp@{ClangCheck.cpp}!main@{main}}
+\index{main@{main}!ClangCheck.cpp@{ClangCheck.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 188 of file Clang\+Check.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{188                                       \{}
+\DoxyCodeLine{189   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{190 }
+\DoxyCodeLine{191   \textcolor{comment}{// Initialize targets for clang module support.}}
+\DoxyCodeLine{192   llvm::InitializeAllTargets();}
+\DoxyCodeLine{193   llvm::InitializeAllTargetMCs();}
+\DoxyCodeLine{194   llvm::InitializeAllAsmPrinters();}
+\DoxyCodeLine{195   llvm::InitializeAllAsmParsers();}
+\DoxyCodeLine{196 }
+\DoxyCodeLine{197   \textcolor{keyword}{auto} ExpectedParser =}
+\DoxyCodeLine{198       CommonOptionsParser::create(argc, argv, ClangCheckCategory);}
+\DoxyCodeLine{199   \textcolor{keywordflow}{if} (!ExpectedParser) \{}
+\DoxyCodeLine{200     llvm::errs() << ExpectedParser.takeError();}
+\DoxyCodeLine{201     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{202   \}}
+\DoxyCodeLine{203   CommonOptionsParser \&OptionsParser = ExpectedParser.get();}
+\DoxyCodeLine{204   ClangTool Tool(OptionsParser.getCompilations(),}
+\DoxyCodeLine{205                  OptionsParser.getSourcePathList());}
+\DoxyCodeLine{206 }
+\DoxyCodeLine{207   \textcolor{comment}{// Clear adjusters because -\/fsyntax-\/only is inserted by the default chain.}}
+\DoxyCodeLine{208   Tool.clearArgumentsAdjusters();}
+\DoxyCodeLine{209   Tool.appendArgumentsAdjuster(getClangStripOutputAdjuster());}
+\DoxyCodeLine{210   Tool.appendArgumentsAdjuster(getClangStripDependencyFileAdjuster());}
+\DoxyCodeLine{211 }
+\DoxyCodeLine{212   \textcolor{comment}{// Running the analyzer requires -\/-\/analyze. Other modes can work with the}}
+\DoxyCodeLine{213   \textcolor{comment}{// -\/fsyntax-\/only option.}}
+\DoxyCodeLine{214   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(}
+\DoxyCodeLine{215       Analyze ? \textcolor{stringliteral}{"{}-\/-\/analyze"{}} : \textcolor{stringliteral}{"{}-\/fsyntax-\/only"{}}, ArgumentInsertPosition::BEGIN));}
+\DoxyCodeLine{216 }
+\DoxyCodeLine{217   ClangCheckActionFactory CheckFactory;}
+\DoxyCodeLine{218   std::unique\_ptr<FrontendActionFactory> FrontendFactory;}
+\DoxyCodeLine{219 }
+\DoxyCodeLine{220   \textcolor{comment}{// Choose the correct factory based on the selected mode.}}
+\DoxyCodeLine{221   \textcolor{keywordflow}{if} (Analyze)}
+\DoxyCodeLine{222     FrontendFactory = newFrontendActionFactory<clang::ento::AnalysisAction>();}
+\DoxyCodeLine{223   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (Fixit)}
+\DoxyCodeLine{224     FrontendFactory = newFrontendActionFactory<ClangCheckFixItAction>();}
+\DoxyCodeLine{225   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (SyntaxTreeDump || TokensDump)}
+\DoxyCodeLine{226     FrontendFactory = newFrontendActionFactory<DumpSyntaxTree>();}
+\DoxyCodeLine{227   \textcolor{keywordflow}{else}}
+\DoxyCodeLine{228     FrontendFactory = newFrontendActionFactory(\&CheckFactory);}
+\DoxyCodeLine{229 }
+\DoxyCodeLine{230   \textcolor{keywordflow}{return} Tool.run(FrontendFactory.get());}
+\DoxyCodeLine{231 \}}
+
+\end{DoxyCode}

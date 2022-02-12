@@ -1,0 +1,404 @@
+.TH "clang::cxindex::Logger" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxindex::Logger
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CLog\&.h>\fP
+.PP
+Inherits RefCountedBase< Logger >\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBLogger\fP (llvm::StringRef name, bool trace)"
+.br
+.ti -1c
+.RI "\fB~Logger\fP ()"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (CXTranslationUnit)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (const FileEntry *FE)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (CXSourceLocation)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (CXSourceRange)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (CXString)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (llvm::StringRef Str)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (const char *Str)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (unsigned long N)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (long N)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (unsigned int N)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (int N)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (char C)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (unsigned char C)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (signed char C)"
+.br
+.ti -1c
+.RI "\fBLogger\fP & \fBoperator<<\fP (const llvm::format_object_base &Fmt)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static const char * \fBgetEnvVar\fP ()"
+.br
+.ti -1c
+.RI "static bool \fBisLoggingEnabled\fP ()"
+.br
+.ti -1c
+.RI "static bool \fBisStackTracingEnabled\fP ()"
+.br
+.ti -1c
+.RI "static \fBLogRef\fP \fBmake\fP (llvm::StringRef name, bool trace=\fBisStackTracingEnabled\fP())"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Collects logging output and writes it to stderr when it's destructed\&. Common use case: 
+.PP
+.nf
+if (LogRef Log = Logger::make(__func__)) {
+  *Log << "stuff";
+}
+
+.fi
+.PP
+ 
+.PP
+Definition at line 40 of file CLog\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxindex::Logger::Logger (llvm::StringRef name, bool trace)\fC [inline]\fP, \fC [explicit]\fP"
+
+.PP
+Definition at line 63 of file CLog\&.h\&.
+.PP
+.nf
+64       : Name(std::string(name)), Trace(trace), LogOS(Msg) {}
+.fi
+.PP
+Referenced by make()\&.
+.SS "cxindex::Logger::~Logger ()"
+
+.PP
+Definition at line 9189 of file CIndex\&.cpp\&.
+.PP
+.nf
+9189                        {
+9190   std::lock_guard<std::mutex> L(*LoggingMutex);
+9191 
+9192   static llvm::TimeRecord sBeginTR = llvm::TimeRecord::getCurrentTime();
+9193 
+9194   raw_ostream &OS = llvm::errs();
+9195   OS << "[libclang:" << Name << ':';
+9196 
+9197 #ifdef USE_DARWIN_THREADS
+9198   // TODO: Portability\&.
+9199   mach_port_t tid = pthread_mach_thread_np(pthread_self());
+9200   OS << tid << ':';
+9201 #endif
+9202 
+9203   llvm::TimeRecord TR = llvm::TimeRecord::getCurrentTime();
+9204   OS << llvm::format("%7\&.4f] ", TR\&.getWallTime() - sBeginTR\&.getWallTime());
+9205   OS << Msg << '\n';
+9206 
+9207   if (Trace) {
+9208     llvm::sys::PrintStackTrace(OS);
+9209     OS << "--------------------------------------------------\n";
+9210   }
+9211 }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "static const char* clang::cxindex::Logger::getEnvVar ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 46 of file CLog\&.h\&.
+.PP
+.nf
+46                                  {
+47     static const char *sCachedVar = ::getenv("LIBCLANG_LOGGING");
+48     return sCachedVar;
+49   }
+.fi
+.PP
+Referenced by isLoggingEnabled(), and isStackTracingEnabled()\&.
+.SS "static bool clang::cxindex::Logger::isLoggingEnabled ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 50 of file CLog\&.h\&.
+.PP
+.nf
+50 { return getEnvVar() != nullptr; }
+.fi
+.PP
+References getEnvVar()\&.
+.PP
+Referenced by make()\&.
+.SS "static bool clang::cxindex::Logger::isStackTracingEnabled ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 51 of file CLog\&.h\&.
+.PP
+.nf
+51                                       {
+52     if (const char *EnvOpt = Logger::getEnvVar())
+53       return llvm::StringRef(EnvOpt) == "2";
+54     return false;
+55   }
+.fi
+.PP
+References getEnvVar()\&.
+.SS "static \fBLogRef\fP clang::cxindex::Logger::make (llvm::StringRef name, bool trace = \fC\fBisStackTracingEnabled\fP()\fP)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 56 of file CLog\&.h\&.
+.PP
+.nf
+57                                                            {
+58     if (isLoggingEnabled())
+59       return new Logger(name, trace);
+60     return nullptr;
+61   }
+.fi
+.PP
+References isLoggingEnabled(), and Logger()\&.
+.PP
+Referenced by clang_getLocation()\&.
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (char C)\fC [inline]\fP"
+
+.PP
+Definition at line 83 of file CLog\&.h\&.
+.PP
+.nf
+83 { LogOS << C; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (const char * Str)\fC [inline]\fP"
+
+.PP
+Definition at line 74 of file CLog\&.h\&.
+.PP
+.nf
+74                                       {
+75     if (Str)
+76       LogOS << Str;
+77     return *this;
+78   }
+.fi
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (const FileEntry * FE)"
+
+.PP
+Definition at line 9127 of file CIndex\&.cpp\&.
+.PP
+.nf
+9127                                                      {
+9128   *this << FE->getName();
+9129   return *this;
+9130 }
+.fi
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (const llvm::format_object_base & Fmt)"
+
+.PP
+Definition at line 9182 of file CIndex\&.cpp\&.
+.PP
+.nf
+9182                                                                    {
+9183   LogOS << Fmt;
+9184   return *this;
+9185 }
+.fi
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (CXCursor cursor)"
+
+.PP
+Definition at line 9132 of file CIndex\&.cpp\&.
+.PP
+.nf
+9132                                                  {
+9133   CXString cursorName = clang_getCursorDisplayName(cursor);
+9134   *this << cursorName << "@" << clang_getCursorLocation(cursor);
+9135   clang_disposeString(cursorName);
+9136   return *this;
+9137 }
+.fi
+.PP
+References clang_disposeString(), clang_getCursorDisplayName(), and clang_getCursorLocation()\&.
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (CXSourceLocation Loc)"
+
+.PP
+Definition at line 9139 of file CIndex\&.cpp\&.
+.PP
+.nf
+9139                                                       {
+9140   CXFile File;
+9141   unsigned Line, Column;
+9142   clang_getFileLocation(Loc, &File, &Line, &Column, nullptr);
+9143   CXString FileName = clang_getFileName(File);
+9144   *this << llvm::format("(%s:%d:%d)", clang_getCString(FileName), Line, Column);
+9145   clang_disposeString(FileName);
+9146   return *this;
+9147 }
+.fi
+.PP
+References clang_getFileLocation(), and clang_getFileName()\&.
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (CXSourceRange range)"
+
+.PP
+Definition at line 9149 of file CIndex\&.cpp\&.
+.PP
+.nf
+9149                                                      {
+9150   CXSourceLocation BLoc = clang_getRangeStart(range);
+9151   CXSourceLocation ELoc = clang_getRangeEnd(range);
+9152 
+9153   CXFile BFile;
+9154   unsigned BLine, BColumn;
+9155   clang_getFileLocation(BLoc, &BFile, &BLine, &BColumn, nullptr);
+9156 
+9157   CXFile EFile;
+9158   unsigned ELine, EColumn;
+9159   clang_getFileLocation(ELoc, &EFile, &ELine, &EColumn, nullptr);
+9160 
+9161   CXString BFileName = clang_getFileName(BFile);
+9162   if (BFile == EFile) {
+9163     *this << llvm::format("[%s %d:%d-%d:%d]", clang_getCString(BFileName),
+9164                           BLine, BColumn, ELine, EColumn);
+9165   } else {
+9166     CXString EFileName = clang_getFileName(EFile);
+9167     *this << llvm::format("[%s:%d:%d - ", clang_getCString(BFileName), BLine,
+9168                           BColumn)
+9169           << llvm::format("%s:%d:%d]", clang_getCString(EFileName), ELine,
+9170                           EColumn);
+9171     clang_disposeString(EFileName);
+9172   }
+9173   clang_disposeString(BFileName);
+9174   return *this;
+9175 }
+.fi
+.PP
+References clang_getFileLocation(), clang_getFileName(), clang_getRangeEnd(), and clang_getRangeStart()\&.
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (CXString Str)"
+
+.PP
+Definition at line 9177 of file CIndex\&.cpp\&.
+.PP
+.nf
+9177                                               {
+9178   *this << clang_getCString(Str);
+9179   return *this;
+9180 }
+.fi
+.PP
+References clang_getCString()\&.
+.SS "\fBLogger\fP & cxindex::Logger::operator<< (CXTranslationUnit TU)"
+
+.PP
+Definition at line 9113 of file CIndex\&.cpp\&.
+.PP
+.nf
+9113                                                       {
+9114   if (TU) {
+9115     if (ASTUnit *Unit = cxtu::getASTUnit(TU)) {
+9116       LogOS << '<' << Unit->getMainFileName() << '>';
+9117       if (Unit->isMainFileAST())
+9118         LogOS << " (" << Unit->getASTFileName() << ')';
+9119       return *this;
+9120     }
+9121   } else {
+9122     LogOS << "<NULL TU>";
+9123   }
+9124   return *this;
+9125 }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (int N)\fC [inline]\fP"
+
+.PP
+Definition at line 82 of file CLog\&.h\&.
+.PP
+.nf
+82 { LogOS << N; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (llvm::StringRef Str)\fC [inline]\fP"
+
+.PP
+Definition at line 73 of file CLog\&.h\&.
+.PP
+.nf
+73 { LogOS << Str; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (long N)\fC [inline]\fP"
+
+.PP
+Definition at line 80 of file CLog\&.h\&.
+.PP
+.nf
+80 { LogOS << N ; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (signed char C)\fC [inline]\fP"
+
+.PP
+Definition at line 85 of file CLog\&.h\&.
+.PP
+.nf
+85 { LogOS << C; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (unsigned char C)\fC [inline]\fP"
+
+.PP
+Definition at line 84 of file CLog\&.h\&.
+.PP
+.nf
+84 { LogOS << C; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (unsigned int N)\fC [inline]\fP"
+
+.PP
+Definition at line 81 of file CLog\&.h\&.
+.PP
+.nf
+81 { LogOS << N; return *this; }
+.fi
+.SS "\fBLogger\fP& clang::cxindex::Logger::operator<< (unsigned long N)\fC [inline]\fP"
+
+.PP
+Definition at line 79 of file CLog\&.h\&.
+.PP
+.nf
+79 { LogOS << N; return *this; }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

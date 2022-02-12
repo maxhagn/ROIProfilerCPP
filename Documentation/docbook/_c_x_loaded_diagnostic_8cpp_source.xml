@@ -1,0 +1,398 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_loaded_diagnostic_8cpp_source" xml:lang="en-US">
+<title>CXLoadedDiagnostic.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXLoadedDiagnostic.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;CXLoadedDiagnostic.cpp&#32;-&#32;Handling&#32;of&#32;persisent&#32;diags&#32;----*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;Implements&#32;handling&#32;of&#32;persisent&#32;diagnostics.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_loaded_diagnostic_8h">CXLoadedDiagnostic.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Diagnostic.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/FileManager.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/SerializedDiagnosticReader.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/SerializedDiagnostics.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/STLExtras.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringRef.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/Twine.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Bitstream/BitstreamReader.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00025 
+00026 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00027 
+00028 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00029 <emphasis role="comment">//&#32;Extend&#32;CXDiagnosticSetImpl&#32;which&#32;contains&#32;strings&#32;for&#32;diagnostics.</emphasis>
+00030 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00031 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00032"/><link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">00032</link> <emphasis role="keyword">typedef</emphasis>&#32;llvm::DenseMap&lt;unsigned,&#32;const&#32;char&#32;*&gt;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>;
+00033 
+00034 <emphasis role="keyword">namespace&#32;</emphasis>{
+00035 <emphasis role="keyword">class&#32;</emphasis>CXLoadedDiagnosticSetImpl&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;{
+00036 <emphasis role="keyword">public</emphasis>:
+00037 &#32;&#32;CXLoadedDiagnosticSetImpl()&#32;:&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>(<emphasis role="keyword">true</emphasis>),&#32;FakeFiles(FO)&#32;{}
+00038 &#32;&#32;~CXLoadedDiagnosticSetImpl()<emphasis role="keyword">&#32;override&#32;</emphasis>{}
+00039 
+00040 &#32;&#32;llvm::BumpPtrAllocator&#32;Alloc;
+00041 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>&#32;Categories;
+00042 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>&#32;WarningFlags;
+00043 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a43f230387ba6f0bf2e696b6029b136bb">Strings</link>&#32;FileNames;
+00044 &#32;&#32;
+00045 &#32;&#32;FileSystemOptions&#32;FO;
+00046 &#32;&#32;FileManager&#32;FakeFiles;
+00047 &#32;&#32;llvm::DenseMap&lt;unsigned,&#32;const&#32;FileEntry&#32;*&gt;&#32;Files;
+00048 
+00050 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*copyString(StringRef&#32;Blob)&#32;{
+00051 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*mem&#32;=&#32;Alloc.Allocate&lt;<emphasis role="keywordtype">char</emphasis>&gt;(Blob.size()&#32;+&#32;1);
+00052 &#32;&#32;&#32;&#32;memcpy(mem,&#32;Blob.data(),&#32;Blob.size());
+00053 &#32;&#32;&#32;&#32;mem[Blob.size()]&#32;=&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>;
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;mem;
+00055 &#32;&#32;}
+00056 };
+00057 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00058 
+00059 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00060 <emphasis role="comment">//&#32;Cleanup.</emphasis>
+00061 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00062 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00063"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a2fbb7a1695c7ddfecbce8c6e6ccbe2bf">00063</link> <link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a2fbb7a1695c7ddfecbce8c6e6ccbe2bf">CXLoadedDiagnostic::~CXLoadedDiagnostic</link>()&#32;{}
+00064 
+00065 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00066 <emphasis role="comment">//&#32;Public&#32;CXLoadedDiagnostic&#32;methods.</emphasis>
+00067 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00068 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00069"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a6f93075048fc3575fdf1d028ee0d45dd">00069</link> CXDiagnosticSeverity&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a6f93075048fc3575fdf1d028ee0d45dd">CXLoadedDiagnostic::getSeverity</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00070 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Fail&#32;more&#32;softly&#32;if&#32;the&#32;diagnostic&#32;level&#32;is&#32;unknown?</emphasis>
+00071 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;severityAsLevel&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>serialized_diags::Level<emphasis role="keyword">&gt;</emphasis>(<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a57570d2ac4e62ce4c0840c56db450120">severity</link>);
+00072 &#32;&#32;assert(<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a57570d2ac4e62ce4c0840c56db450120">severity</link>&#32;==&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">unsigned</emphasis><emphasis role="keyword">&gt;</emphasis>(severityAsLevel)&#32;&amp;&amp;
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;unknown&#32;serialized&#32;diagnostic&#32;level&quot;</emphasis>);
+00074 
+00075 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(severityAsLevel)&#32;{
+00076 <emphasis role="preprocessor">#define&#32;CASE(X)&#32;case&#32;serialized_diags::X:&#32;return&#32;CXDiagnostic_##X;</emphasis>
+00077 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a72fdc082560f7761ef5dd4e0b6efd0ad">CASE</link>(Ignored)
+00078 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a72fdc082560f7761ef5dd4e0b6efd0ad">CASE</link>(Note)
+00079 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a72fdc082560f7761ef5dd4e0b6efd0ad">CASE</link>(Warning)
+00080 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a72fdc082560f7761ef5dd4e0b6efd0ad">CASE</link>(Error)
+00081 &#32;&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a72fdc082560f7761ef5dd4e0b6efd0ad">CASE</link>(Fatal)
+00082 <emphasis role="preprocessor">#undef&#32;CASE</emphasis>
+00083 &#32;&#32;<emphasis role="comment">//&#32;The&#32;&apos;Remark&apos;&#32;level&#32;isn&apos;t&#32;represented&#32;in&#32;the&#32;stable&#32;API.</emphasis>
+00084 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;serialized_diags::Remark:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXDiagnostic_Warning;
+00085 &#32;&#32;}
+00086 &#32;&#32;
+00087 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;diagnostic&#32;level&quot;</emphasis>);
+00088 }
+00089 
+00090 <emphasis role="keyword">static</emphasis>&#32;CXSourceLocation&#32;makeLocation(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">CXLoadedDiagnostic::Location</link>&#32;*DLoc)&#32;{
+00091 &#32;&#32;<emphasis role="comment">//&#32;The&#32;lowest&#32;bit&#32;of&#32;ptr_data[0]&#32;is&#32;always&#32;set&#32;to&#32;1&#32;to&#32;indicate&#32;this</emphasis>
+00092 &#32;&#32;<emphasis role="comment">//&#32;is&#32;a&#32;persistent&#32;diagnostic.</emphasis>
+00093 &#32;&#32;uintptr_t&#32;V&#32;=&#32;(uintptr_t)&#32;DLoc;
+00094 &#32;&#32;V&#32;|=&#32;0x1;
+00095 &#32;&#32;CXSourceLocation&#32;Loc&#32;=&#32;{&#32;{&#32;&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;V,&#32;<emphasis role="keyword">nullptr</emphasis>&#32;},&#32;0&#32;};
+00096 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Loc;
+00097 }&#32;&#32;
+00098 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00099"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1af8351a8c6ff232e82ac58432d440194b">00099</link> CXSourceLocation&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1af8351a8c6ff232e82ac58432d440194b">CXLoadedDiagnostic::getLocation</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00100 &#32;&#32;<emphasis role="comment">//&#32;The&#32;lowest&#32;bit&#32;of&#32;ptr_data[0]&#32;is&#32;always&#32;set&#32;to&#32;1&#32;to&#32;indicate&#32;this</emphasis>
+00101 &#32;&#32;<emphasis role="comment">//&#32;is&#32;a&#32;persistent&#32;diagnostic.</emphasis>
+00102 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;makeLocation(&amp;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1aa5a1348035eb432b38aeb73a1ce69ed8">DiagLoc</link>);
+00103 }
+00104 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00105"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a4f6c0b425afa599a837958dea19d5edd">00105</link> CXString&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a4f6c0b425afa599a837958dea19d5edd">CXLoadedDiagnostic::getSpelling</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00106 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a318a6fd22942d00ea8ebc9203a432718">Spelling</link>);
+00107 }
+00108 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00109"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a5bfd490e9b9b3c8244c0168249031fad">00109</link> CXString&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a5bfd490e9b9b3c8244c0168249031fad">CXLoadedDiagnostic::getDiagnosticOption</link>(CXString&#32;*Disable)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00110 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1adbdc8150bfbb677803cdb32c7a8750b6">DiagOption</link>.empty())
+00111 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00112 
+00113 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;possibly&#32;refactor&#32;with&#32;logic&#32;in&#32;CXStoredDiagnostic.</emphasis>
+00114 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Disable)
+00115 &#32;&#32;&#32;&#32;*Disable&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>((Twine(<emphasis role="stringliteral">&quot;-Wno-&quot;</emphasis>)&#32;+&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1adbdc8150bfbb677803cdb32c7a8750b6">DiagOption</link>).str());
+00116 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>((Twine(<emphasis role="stringliteral">&quot;-W&quot;</emphasis>)&#32;+&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1adbdc8150bfbb677803cdb32c7a8750b6">DiagOption</link>).str());
+00117 }
+00118 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00119"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a3c54fb1ddeadaea6ea08696865267018">00119</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a3c54fb1ddeadaea6ea08696865267018">CXLoadedDiagnostic::getCategory</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00120 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1aee1cb04e4cbc5bb4461068d24b4e4631">category</link>;
+00121 }
+00122 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00123"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a4ee4446a2717375a88811bda8eb6dca5">00123</link> CXString&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a4ee4446a2717375a88811bda8eb6dca5">CXLoadedDiagnostic::getCategoryText</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00124 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a5039e5fa930900130479e374f35f7148">CategoryText</link>);
+00125 }
+00126 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00127"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1abc268da8fbd76ad5b94c733f76baa463">00127</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1abc268da8fbd76ad5b94c733f76baa463">CXLoadedDiagnostic::getNumRanges</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00128 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a2296d7468a318e380b94c7cffc67c736">Ranges</link>.size();
+00129 }
+00130 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00131"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1aed464b92b9a60863af495242983f6763">00131</link> CXSourceRange&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1aed464b92b9a60863af495242983f6763">CXLoadedDiagnostic::getRange</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;Range)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00132 &#32;&#32;assert(Range&#32;&lt;&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a2296d7468a318e380b94c7cffc67c736">Ranges</link>.size());
+00133 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a2296d7468a318e380b94c7cffc67c736">Ranges</link>[Range];
+00134 }
+00135 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00136"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a24271e8676870afd1c75d6ee1133396e">00136</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a24271e8676870afd1c75d6ee1133396e">CXLoadedDiagnostic::getNumFixIts</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00137 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a11446ee269ed4ceff36c4aa7ee513f44">FixIts</link>.size();
+00138 }
+00139 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00140"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1ada416d8f7f3bb37084c7f70f693be795">00140</link> CXString&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1ada416d8f7f3bb37084c7f70f693be795">CXLoadedDiagnostic::getFixIt</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;FixIt,
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSourceRange&#32;*ReplacementRange)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00142 &#32;&#32;assert(FixIt&#32;&lt;&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a11446ee269ed4ceff36c4aa7ee513f44">FixIts</link>.size());
+00143 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReplacementRange)
+00144 &#32;&#32;&#32;&#32;*ReplacementRange&#32;=&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a11446ee269ed4ceff36c4aa7ee513f44">FixIts</link>[FixIt].first;
+00145 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a11446ee269ed4ceff36c4aa7ee513f44">FixIts</link>[FixIt].second);
+00146 }
+00147 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00148"/><link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a62abf6e0788b0c0656a3054fd7c3b82d">00148</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a62abf6e0788b0c0656a3054fd7c3b82d">CXLoadedDiagnostic::decodeLocation</link>(CXSourceLocation&#32;location,
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXFile&#32;*file,
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;*line,
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;*column,
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;*offset)&#32;{
+00153 &#32;&#32;
+00154 &#32;&#32;
+00155 &#32;&#32;<emphasis role="comment">//&#32;CXSourceLocation&#32;consists&#32;of&#32;the&#32;following&#32;fields:</emphasis>
+00156 &#32;&#32;<emphasis role="comment">//</emphasis>
+00157 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;void&#32;*ptr_data[2];</emphasis>
+00158 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;unsigned&#32;int_data;</emphasis>
+00159 &#32;&#32;<emphasis role="comment">//</emphasis>
+00160 &#32;&#32;<emphasis role="comment">//&#32;The&#32;lowest&#32;bit&#32;of&#32;ptr_data[0]&#32;is&#32;always&#32;set&#32;to&#32;1&#32;to&#32;indicate&#32;this</emphasis>
+00161 &#32;&#32;<emphasis role="comment">//&#32;is&#32;a&#32;persistent&#32;diagnostic.</emphasis>
+00162 &#32;&#32;<emphasis role="comment">//</emphasis>
+00163 &#32;&#32;<emphasis role="comment">//&#32;For&#32;now,&#32;do&#32;the&#32;unoptimized&#32;approach&#32;and&#32;store&#32;the&#32;data&#32;in&#32;a&#32;side</emphasis>
+00164 &#32;&#32;<emphasis role="comment">//&#32;data&#32;structure.&#32;&#32;We&#32;can&#32;optimize&#32;this&#32;case&#32;later.</emphasis>
+00165 &#32;&#32;
+00166 &#32;&#32;uintptr_t&#32;V&#32;=&#32;(uintptr_t)&#32;location.ptr_data[0];
+00167 &#32;&#32;assert((V&#32;&amp;&#32;0x1)&#32;==&#32;1);
+00168 &#32;&#32;V&#32;&amp;=&#32;~(uintptr_t)1;
+00169 &#32;&#32;
+00170 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">Location</link>&#32;&amp;Loc&#32;=&#32;*((<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">Location</link>*)V);
+00171 &#32;&#32;
+00172 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(file)
+00173 &#32;&#32;&#32;&#32;*file&#32;=&#32;Loc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1a401a4f58b55e0fba9890560f1caedecb">file</link>;&#32;&#32;
+00174 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(line)
+00175 &#32;&#32;&#32;&#32;*line&#32;=&#32;Loc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1a095ba60e43bab8d11c3eb7401f9448a3">line</link>;
+00176 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(column)
+00177 &#32;&#32;&#32;&#32;*column&#32;=&#32;Loc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1ab064e683b0b5cac415fb2030ef3c3d1c">column</link>;
+00178 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(offset)
+00179 &#32;&#32;&#32;&#32;*offset&#32;=&#32;Loc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1adeafcd730c18384910a81e31c330e929">offset</link>;
+00180 }
+00181 
+00182 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00183 <emphasis role="comment">//&#32;Deserialize&#32;diagnostics.</emphasis>
+00184 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00185 
+00186 <emphasis role="keyword">namespace&#32;</emphasis>{
+00187 <emphasis role="keyword">class&#32;</emphasis>DiagLoader&#32;:&#32;serialized_diags::SerializedDiagnosticReader&#32;{
+00188 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXLoadDiag_Error&#32;*error;
+00189 &#32;&#32;CXString&#32;*errorString;
+00190 &#32;&#32;std::unique_ptr&lt;CXLoadedDiagnosticSetImpl&gt;&#32;TopDiags;
+00191 &#32;&#32;SmallVector&lt;std::unique_ptr&lt;CXLoadedDiagnostic&gt;,&#32;8&gt;&#32;CurrentDiags;
+00192 
+00193 &#32;&#32;std::error_code&#32;reportBad(<emphasis role="keyword">enum</emphasis>&#32;CXLoadDiag_Error&#32;code,&#32;llvm::StringRef&#32;err)&#32;{
+00194 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(error)
+00195 &#32;&#32;&#32;&#32;&#32;&#32;*error&#32;=&#32;code;
+00196 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(errorString)
+00197 &#32;&#32;&#32;&#32;&#32;&#32;*errorString&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(err);
+00198 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;serialized_diags::SDError::HandlerFailed;
+00199 &#32;&#32;}
+00200 &#32;&#32;
+00201 &#32;&#32;std::error_code&#32;reportInvalidFile(llvm::StringRef&#32;err)&#32;{
+00202 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reportBad(CXLoadDiag_InvalidFile,&#32;err);
+00203 &#32;&#32;}
+00204 
+00205 &#32;&#32;std::error_code&#32;readRange(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;SDStart,
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;SDEnd,
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSourceRange&#32;&amp;SR);
+00208 
+00209 &#32;&#32;std::error_code&#32;readLocation(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;SDLoc,
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">CXLoadedDiagnostic::Location</link>&#32;&amp;LoadedLoc);
+00211 
+00212 <emphasis role="keyword">protected</emphasis>:
+00213 &#32;&#32;std::error_code&#32;visitStartOfDiagnostic()&#32;<emphasis role="keyword">override</emphasis>;
+00214 &#32;&#32;std::error_code&#32;visitEndOfDiagnostic()&#32;<emphasis role="keyword">override</emphasis>;
+00215 
+00216 &#32;&#32;std::error_code&#32;visitCategoryRecord(<emphasis role="keywordtype">unsigned</emphasis>&#32;ID,&#32;StringRef&#32;Name)&#32;<emphasis role="keyword">override</emphasis>;
+00217 
+00218 &#32;&#32;std::error_code&#32;visitDiagFlagRecord(<emphasis role="keywordtype">unsigned</emphasis>&#32;ID,&#32;StringRef&#32;Name)&#32;<emphasis role="keyword">override</emphasis>;
+00219 
+00220 &#32;&#32;std::error_code&#32;visitDiagnosticRecord(
+00221 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Severity,&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;Location,
+00222 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Category,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Flag,&#32;StringRef&#32;Message)&#32;<emphasis role="keyword">override</emphasis>;
+00223 
+00224 &#32;&#32;std::error_code&#32;visitFilenameRecord(<emphasis role="keywordtype">unsigned</emphasis>&#32;ID,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Size,
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Timestamp,
+00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;Name)&#32;<emphasis role="keyword">override</emphasis>;
+00227 
+00228 &#32;&#32;std::error_code&#32;visitFixitRecord(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;Start,
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;End,
+00230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;CodeToInsert)&#32;<emphasis role="keyword">override</emphasis>;
+00231 
+00232 &#32;&#32;std::error_code
+00233 &#32;&#32;visitSourceRangeRecord(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;Start,
+00234 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;End)&#32;<emphasis role="keyword">override</emphasis>;
+00235 
+00236 <emphasis role="keyword">public</emphasis>:
+00237 &#32;&#32;DiagLoader(<emphasis role="keyword">enum</emphasis>&#32;CXLoadDiag_Error&#32;*e,&#32;CXString&#32;*es)
+00238 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;SerializedDiagnosticReader(),&#32;error(e),&#32;errorString(es)&#32;{
+00239 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(error)
+00240 &#32;&#32;&#32;&#32;&#32;&#32;*error&#32;=&#32;CXLoadDiag_None;
+00241 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(errorString)
+00242 &#32;&#32;&#32;&#32;&#32;&#32;*errorString&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00243 &#32;&#32;}
+00244 
+00245 &#32;&#32;CXDiagnosticSet&#32;load(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file);
+00246 };
+00247 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00248 
+00249 CXDiagnosticSet&#32;DiagLoader::load(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file)&#32;{
+00250 &#32;&#32;TopDiags&#32;=&#32;std::make_unique&lt;CXLoadedDiagnosticSetImpl&gt;();
+00251 
+00252 &#32;&#32;std::error_code&#32;EC&#32;=&#32;readDiagnostics(file);
+00253 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00254 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(EC.value())&#32;{
+00255 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">int</emphasis><emphasis role="keyword">&gt;</emphasis>(serialized_diags::SDError::HandlerFailed):
+00256 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&apos;ve&#32;already&#32;reported&#32;the&#32;problem.</emphasis>
+00257 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">int</emphasis><emphasis role="keyword">&gt;</emphasis>(serialized_diags::SDError::CouldNotLoad):
+00259 &#32;&#32;&#32;&#32;&#32;&#32;reportBad(CXLoadDiag_CannotLoad,&#32;EC.message());
+00260 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00261 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00262 &#32;&#32;&#32;&#32;&#32;&#32;reportInvalidFile(EC.message());
+00263 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00264 &#32;&#32;&#32;&#32;}
+00265 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00266 &#32;&#32;}
+00267 
+00268 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(CXDiagnosticSet)TopDiags.release();
+00269 }
+00270 
+00271 std::error_code
+00272 DiagLoader::readLocation(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;SDLoc,
+00273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">CXLoadedDiagnostic::Location</link>&#32;&amp;LoadedLoc)&#32;{
+00274 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;FileID&#32;=&#32;SDLoc.FileID;
+00275 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileID&#32;==&#32;0)
+00276 &#32;&#32;&#32;&#32;LoadedLoc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1a401a4f58b55e0fba9890560f1caedecb">file</link>&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00277 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00278 &#32;&#32;&#32;&#32;LoadedLoc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1a401a4f58b55e0fba9890560f1caedecb">file</link>&#32;=&#32;<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(TopDiags-&gt;Files[FileID]);
+00279 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LoadedLoc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1a401a4f58b55e0fba9890560f1caedecb">file</link>)
+00280 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reportInvalidFile(<emphasis role="stringliteral">&quot;Corrupted&#32;file&#32;entry&#32;in&#32;source&#32;location&quot;</emphasis>);
+00281 &#32;&#32;}
+00282 &#32;&#32;LoadedLoc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1a095ba60e43bab8d11c3eb7401f9448a3">line</link>&#32;=&#32;SDLoc.Line;
+00283 &#32;&#32;LoadedLoc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1ab064e683b0b5cac415fb2030ef3c3d1c">column</link>&#32;=&#32;SDLoc.Col;
+00284 &#32;&#32;LoadedLoc.<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location_1adeafcd730c18384910a81e31c330e929">offset</link>&#32;=&#32;SDLoc.Offset;
+00285 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00286 }
+00287 
+00288 std::error_code
+00289 DiagLoader::readRange(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;SDStart,
+00290 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;SDEnd,
+00291 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSourceRange&#32;&amp;SR)&#32;{
+00292 &#32;&#32;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">CXLoadedDiagnostic::Location</link>&#32;*Start,&#32;*End;
+00293 &#32;&#32;Start&#32;=&#32;TopDiags-&gt;Alloc.Allocate&lt;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">CXLoadedDiagnostic::Location</link>&gt;();
+00294 &#32;&#32;End&#32;=&#32;TopDiags-&gt;Alloc.Allocate&lt;<link linkend="_structclang_1_1_c_x_loaded_diagnostic_1_1_location">CXLoadedDiagnostic::Location</link>&gt;();
+00295 
+00296 &#32;&#32;std::error_code&#32;EC;
+00297 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((EC&#32;=&#32;readLocation(SDStart,&#32;*Start)))
+00298 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EC;
+00299 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((EC&#32;=&#32;readLocation(SDEnd,&#32;*End)))
+00300 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EC;
+00301 &#32;&#32;
+00302 &#32;&#32;CXSourceLocation&#32;startLoc&#32;=&#32;makeLocation(Start);
+00303 &#32;&#32;CXSourceLocation&#32;endLoc&#32;=&#32;makeLocation(End);
+00304 &#32;&#32;SR&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1a6d436a40e815644209860de3f1416210">clang_getRange</link>(startLoc,&#32;endLoc);
+00305 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00306 }
+00307 
+00308 std::error_code&#32;DiagLoader::visitStartOfDiagnostic()&#32;{
+00309 &#32;&#32;CurrentDiags.push_back(std::make_unique&lt;CXLoadedDiagnostic&gt;());
+00310 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00311 }
+00312 
+00313 std::error_code&#32;DiagLoader::visitEndOfDiagnostic()&#32;{
+00314 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;D&#32;=&#32;CurrentDiags.pop_back_val();
+00315 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CurrentDiags.empty())
+00316 &#32;&#32;&#32;&#32;TopDiags-&gt;appendDiagnostic(std::move(D));
+00317 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00318 &#32;&#32;&#32;&#32;CurrentDiags.back()-&gt;getChildDiagnostics().appendDiagnostic(std::move(D));
+00319 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00320 }
+00321 
+00322 std::error_code&#32;DiagLoader::visitCategoryRecord(<emphasis role="keywordtype">unsigned</emphasis>&#32;ID,&#32;StringRef&#32;Name)&#32;{
+00323 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Why&#32;do&#32;we&#32;care&#32;about&#32;long&#32;strings?</emphasis>
+00324 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Name.size()&#32;&gt;&#32;65536)
+00325 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reportInvalidFile(<emphasis role="stringliteral">&quot;Out-of-bounds&#32;string&#32;in&#32;category&quot;</emphasis>);
+00326 &#32;&#32;TopDiags-&gt;Categories[ID]&#32;=&#32;TopDiags-&gt;copyString(Name);
+00327 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00328 }
+00329 
+00330 std::error_code&#32;DiagLoader::visitDiagFlagRecord(<emphasis role="keywordtype">unsigned</emphasis>&#32;ID,&#32;StringRef&#32;Name)&#32;{
+00331 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Why&#32;do&#32;we&#32;care&#32;about&#32;long&#32;strings?</emphasis>
+00332 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Name.size()&#32;&gt;&#32;65536)
+00333 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reportInvalidFile(<emphasis role="stringliteral">&quot;Out-of-bounds&#32;string&#32;in&#32;warning&#32;flag&quot;</emphasis>);
+00334 &#32;&#32;TopDiags-&gt;WarningFlags[ID]&#32;=&#32;TopDiags-&gt;copyString(Name);
+00335 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00336 }
+00337 
+00338 std::error_code&#32;DiagLoader::visitFilenameRecord(<emphasis role="keywordtype">unsigned</emphasis>&#32;ID,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Size,
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Timestamp,
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;Name)&#32;{
+00341 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Why&#32;do&#32;we&#32;care&#32;about&#32;long&#32;strings?</emphasis>
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Name.size()&#32;&gt;&#32;65536)
+00343 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reportInvalidFile(<emphasis role="stringliteral">&quot;Out-of-bounds&#32;string&#32;in&#32;filename&quot;</emphasis>);
+00344 &#32;&#32;TopDiags-&gt;FileNames[ID]&#32;=&#32;TopDiags-&gt;copyString(Name);
+00345 &#32;&#32;TopDiags-&gt;Files[ID]&#32;=
+00346 &#32;&#32;&#32;&#32;&#32;&#32;TopDiags-&gt;FakeFiles.getVirtualFile(Name,&#32;Size,&#32;Timestamp);
+00347 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00348 }
+00349 
+00350 std::error_code
+00351 DiagLoader::visitSourceRangeRecord(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;Start,
+00352 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;End)&#32;{
+00353 &#32;&#32;CXSourceRange&#32;SR;
+00354 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;readRange(Start,&#32;End,&#32;SR))
+00355 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EC;
+00356 &#32;&#32;CurrentDiags.back()-&gt;Ranges.push_back(SR);
+00357 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00358 }
+00359 
+00360 std::error_code
+00361 DiagLoader::visitFixitRecord(<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;Start,
+00362 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;End,
+00363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;CodeToInsert)&#32;{
+00364 &#32;&#32;CXSourceRange&#32;SR;
+00365 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;readRange(Start,&#32;End,&#32;SR))
+00366 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EC;
+00367 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Why&#32;do&#32;we&#32;care&#32;about&#32;long&#32;strings?</emphasis>
+00368 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CodeToInsert.size()&#32;&gt;&#32;65536)
+00369 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;reportInvalidFile(<emphasis role="stringliteral">&quot;Out-of-bounds&#32;string&#32;in&#32;FIXIT&quot;</emphasis>);
+00370 &#32;&#32;CurrentDiags.back()-&gt;FixIts.push_back(
+00371 &#32;&#32;&#32;&#32;&#32;&#32;std::make_pair(SR,&#32;TopDiags-&gt;copyString(CodeToInsert)));
+00372 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00373 }
+00374 
+00375 std::error_code&#32;DiagLoader::visitDiagnosticRecord(
+00376 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Severity,&#32;<emphasis role="keyword">const</emphasis>&#32;serialized_diags::Location&#32;&amp;Location,
+00377 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Category,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Flag,&#32;StringRef&#32;Message)&#32;{
+00378 &#32;&#32;<link linkend="_classclang_1_1_c_x_loaded_diagnostic">CXLoadedDiagnostic</link>&#32;&amp;D&#32;=&#32;*CurrentDiags.back();
+00379 &#32;&#32;D.<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a57570d2ac4e62ce4c0840c56db450120">severity</link>&#32;=&#32;Severity;
+00380 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;readLocation(Location,&#32;D.<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1aa5a1348035eb432b38aeb73a1ce69ed8">DiagLoc</link>))
+00381 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EC;
+00382 &#32;&#32;D.<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1aee1cb04e4cbc5bb4461068d24b4e4631">category</link>&#32;=&#32;Category;
+00383 &#32;&#32;D.<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1adbdc8150bfbb677803cdb32c7a8750b6">DiagOption</link>&#32;=&#32;Flag&#32;?&#32;TopDiags-&gt;WarningFlags[Flag]&#32;:&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00384 &#32;&#32;D.<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a5039e5fa930900130479e374f35f7148">CategoryText</link>&#32;=&#32;Category&#32;?&#32;TopDiags-&gt;Categories[Category]&#32;:&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00385 &#32;&#32;D.<link linkend="_classclang_1_1_c_x_loaded_diagnostic_1a318a6fd22942d00ea8ebc9203a432718">Spelling</link>&#32;=&#32;TopDiags-&gt;copyString(Message);
+00386 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::error_code();
+00387 }
+00388 
+<anchor xml:id="__c_x_loaded_diagnostic_8cpp_source_1l00389"/><link linkend="__c_x_loaded_diagnostic_8cpp_1a46a35c93cdedc31028100374d7856c8b">00389</link> CXDiagnosticSet&#32;<link linkend="__c_x_loaded_diagnostic_8cpp_1a46a35c93cdedc31028100374d7856c8b">clang_loadDiagnostics</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,
+00390 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXLoadDiag_Error&#32;*error,
+00391 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;*errorString)&#32;{
+00392 &#32;&#32;DiagLoader&#32;L(error,&#32;errorString);
+00393 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;L.load(file);
+00394 }
+</programlisting></section>

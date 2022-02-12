@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_format_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-format/ClangFormat.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format/ClangFormat.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Basic/Diagnostic.h&quot;
+#include &quot;clang/Basic/DiagnosticOptions.h&quot;
+#include &quot;clang/Basic/FileManager.h&quot;
+#include &quot;clang/Basic/SourceManager.h&quot;
+#include &quot;clang/Basic/Version.h&quot;
+#include &quot;clang/Format/Format.h&quot;
+#include &quot;clang/Rewrite/Core/Rewriter.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/InitLLVM.h&quot;
+#include &quot;llvm/Support/Process.h&quot;
+</programlisting><simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespaceclang">clang</link></para>
+
+<para>-rename </para>
+</listitem>
+            <listitem><para> <link linkend="_namespaceclang_1_1format">clang::format</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_format_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+
+<para>This file implements a clang-format tool that automatically formats (fragments of) C++ code. </para>
+<para>
+Definition in file <link linkend="__clang_format_8cpp_source">ClangFormat.cpp</link>.</para>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_format_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangFormat.cpp</secondary></indexterm>
+<indexterm><primary>ClangFormat.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_format_8cpp_source_1l00512">512</link> of file <link linkend="__clang_format_8cpp_source">ClangFormat.cpp</link>.</para>
+<programlisting>00512 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00513 &#32;&#32;llvm::InitLLVM&#32;X(argc,&#32;argv);
+00514 
+00515 &#32;&#32;cl::HideUnrelatedOptions(ClangFormatCategory);
+00516 
+00517 &#32;&#32;cl::SetVersionPrinter(PrintVersion);
+00518 &#32;&#32;cl::ParseCommandLineOptions(
+00519 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,
+00520 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;A&#32;tool&#32;to&#32;format&#32;C/C++/Java/JavaScript/JSON/Objective-C/Protobuf/C#&#32;&quot;</emphasis>
+00521 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;code.\n\n&quot;</emphasis>
+00522 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;If&#32;no&#32;arguments&#32;are&#32;specified,&#32;it&#32;formats&#32;the&#32;code&#32;from&#32;standard&#32;input\n&quot;</emphasis>
+00523 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;and&#32;writes&#32;the&#32;result&#32;to&#32;the&#32;standard&#32;output.\n&quot;</emphasis>
+00524 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;If&#32;&lt;file&gt;s&#32;are&#32;given,&#32;it&#32;reformats&#32;the&#32;files.&#32;If&#32;-i&#32;is&#32;specified\n&quot;</emphasis>
+00525 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;together&#32;with&#32;&lt;file&gt;s,&#32;the&#32;files&#32;are&#32;edited&#32;in-place.&#32;Otherwise,&#32;the\n&quot;</emphasis>
+00526 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;result&#32;is&#32;written&#32;to&#32;the&#32;standard&#32;output.\n&quot;</emphasis>);
+00527 
+00528 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Help)&#32;{
+00529 &#32;&#32;&#32;&#32;cl::PrintHelpMessage();
+00530 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00531 &#32;&#32;}
+00532 
+00533 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DumpConfig)&#32;{
+00534 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;dumpConfig();
+00535 &#32;&#32;}
+00536 
+00537 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Error&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00538 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileNames.empty())&#32;{
+00539 &#32;&#32;&#32;&#32;Error&#32;=&#32;clang::format::format(<emphasis role="stringliteral">&quot;-&quot;</emphasis>);
+00540 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error&#32;?&#32;1&#32;:&#32;0;
+00541 &#32;&#32;}
+00542 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FileNames.size()&#32;!=&#32;1&#32;&amp;&amp;
+00543 &#32;&#32;&#32;&#32;&#32;&#32;(!Offsets.empty()&#32;||&#32;!Lengths.empty()&#32;||&#32;!LineRanges.empty()))&#32;{
+00544 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-offset,&#32;-length&#32;and&#32;-lines&#32;can&#32;only&#32;be&#32;used&#32;for&#32;&quot;</emphasis>
+00545 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;single&#32;file.\n&quot;</emphasis>;
+00546 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00547 &#32;&#32;}
+00548 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;FileName&#32;:&#32;FileNames)&#32;{
+00549 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Verbose)
+00550 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Formatting&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;FileName&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00551 &#32;&#32;&#32;&#32;Error&#32;|=&#32;clang::format::format(FileName);
+00552 &#32;&#32;}
+00553 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error&#32;?&#32;1&#32;:&#32;0;
+00554 }
+</programlisting></section>
+</section>
+</section>

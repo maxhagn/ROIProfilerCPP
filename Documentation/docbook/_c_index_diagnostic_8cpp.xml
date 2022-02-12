@@ -1,0 +1,484 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_diagnostic_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexDiagnostic.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexDiagnostic.cpp</primary></indexterm>
+<programlisting>#include &quot;CIndexDiagnostic.h&quot;
+#include &quot;CIndexer.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;CXSourceLocation.h&quot;
+#include &quot;CXString.h&quot;
+#include &quot;clang/Basic/DiagnosticOptions.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Frontend/DiagnosticRenderer.h&quot;
+#include &quot;llvm/ADT/SmallString.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>unsigned <link linkend="__c_index_diagnostic_8cpp_1ac312148831b9a3031a36a0825e26a870">clang_getNumDiagnostics</link> (CXTranslationUnit Unit)</para>
+</listitem>
+            <listitem><para>CXDiagnostic <link linkend="__c_index_diagnostic_8cpp_1a8357ec474218706cbc792732a54e3dfd">clang_getDiagnostic</link> (CXTranslationUnit Unit, unsigned Index)</para>
+</listitem>
+            <listitem><para>CXDiagnosticSet <link linkend="__c_index_diagnostic_8cpp_1a01fef60398b711267499e2eabd58806e">clang_getDiagnosticSetFromTU</link> (CXTranslationUnit Unit)</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_index_diagnostic_8cpp_1a11aa4e77bf15f80d846a2216afbe8726">clang_disposeDiagnostic</link> (CXDiagnostic Diagnostic)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_diagnostic_8cpp_1a3ed169ee4a472764c11724cc7768e6eb">clang_formatDiagnostic</link> (CXDiagnostic Diagnostic, unsigned Options)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_diagnostic_8cpp_1a1db1e7c1136fd6d171f47d0b7d4f8bd9">clang_defaultDiagnosticDisplayOptions</link> ()</para>
+</listitem>
+            <listitem><para>enum CXDiagnosticSeverity <link linkend="__c_index_diagnostic_8cpp_1a4acc9ff12cb403c96d56e87359dfc7c7">clang_getDiagnosticSeverity</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>CXSourceLocation <link linkend="__c_index_diagnostic_8cpp_1a1e0502917ec39f222133358991a1dd0a">clang_getDiagnosticLocation</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_diagnostic_8cpp_1a72908dcfbd7b25addc6f7e1feeeb5bc1">clang_getDiagnosticSpelling</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_diagnostic_8cpp_1ade154c72df0d1abe125b8b0e4dd568ba">clang_getDiagnosticOption</link> (CXDiagnostic Diag, CXString *Disable)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_diagnostic_8cpp_1a68d5c32c3758b97516ef20caf0e7f6f9">clang_getDiagnosticCategory</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_diagnostic_8cpp_1acb9f635f76147914684cbf651906d9cb">clang_getDiagnosticCategoryName</link> (unsigned Category)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_diagnostic_8cpp_1a0428e5b9db207a1495c9300f7cbeff4c">clang_getDiagnosticCategoryText</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_diagnostic_8cpp_1a82fa973404e60cc1868e66b59f354064">clang_getDiagnosticNumRanges</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>CXSourceRange <link linkend="__c_index_diagnostic_8cpp_1a385c57af0c0b7bac661157a769254556">clang_getDiagnosticRange</link> (CXDiagnostic Diag, unsigned Range)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_diagnostic_8cpp_1a328fab9bb901e108adb1b5ec5f3ed748">clang_getDiagnosticNumFixIts</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_index_diagnostic_8cpp_1a3038a0534d19be1e8f0adc11373b3c69">clang_getDiagnosticFixIt</link> (CXDiagnostic Diag, unsigned FixIt, CXSourceRange *ReplacementRange)</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_index_diagnostic_8cpp_1a0b2786b08bcfa94c6aebdb68249fcd85">clang_disposeDiagnosticSet</link> (CXDiagnosticSet Diags)</para>
+</listitem>
+            <listitem><para>CXDiagnostic <link linkend="__c_index_diagnostic_8cpp_1acc45fefa1e17eade2d10177d4ff77851">clang_getDiagnosticInSet</link> (CXDiagnosticSet Diags, unsigned Index)</para>
+</listitem>
+            <listitem><para>CXDiagnosticSet <link linkend="__c_index_diagnostic_8cpp_1abca973dc6f01b106edd47a39f480dd8f">clang_getChildDiagnostics</link> (CXDiagnostic Diag)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_index_diagnostic_8cpp_1a9861abba19ec80dae4db68998828261d">clang_getNumDiagnosticsInSet</link> (CXDiagnosticSet Diags)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__c_index_diagnostic_8cpp_1a1db1e7c1136fd6d171f47d0b7d4f8bd9"/>    <section>
+    <title>clang_defaultDiagnosticDisplayOptions()</title>
+<indexterm><primary>clang_defaultDiagnosticDisplayOptions</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_defaultDiagnosticDisplayOptions</secondary></indexterm>
+<para><computeroutput>unsigned clang_defaultDiagnosticDisplayOptions ( )</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00361">361</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00362 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXDiagnostic_DisplaySourceLocation&#32;|&#32;CXDiagnostic_DisplayColumn&#32;|
+00363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXDiagnostic_DisplayOption;
+00364 }
+</programlisting><para>
+Referenced by <link linkend="__c_index_8cpp_source_1l08994">clang::cxindex::printDiagsToStderr()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a11aa4e77bf15f80d846a2216afbe8726"/>    <section>
+    <title>clang_disposeDiagnostic()</title>
+<indexterm><primary>clang_disposeDiagnostic</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_disposeDiagnostic</secondary></indexterm>
+<para><computeroutput>void clang_disposeDiagnostic (CXDiagnostic Diagnostic)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00236">236</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00236 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00237 &#32;&#32;<emphasis role="comment">//&#32;No-op.&#32;&#32;Kept&#32;as&#32;a&#32;legacy&#32;API.&#32;&#32;CXDiagnostics&#32;are&#32;now&#32;managed</emphasis>
+00238 &#32;&#32;<emphasis role="comment">//&#32;by&#32;the&#32;enclosing&#32;CXDiagnosticSet.</emphasis>
+00239 }
+</programlisting>    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a0b2786b08bcfa94c6aebdb68249fcd85"/>    <section>
+    <title>clang_disposeDiagnosticSet()</title>
+<indexterm><primary>clang_disposeDiagnosticSet</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_disposeDiagnosticSet</secondary></indexterm>
+<para><computeroutput>void clang_disposeDiagnosticSet (CXDiagnosticSet Diags)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00441">441</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00441 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00442 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diags))&#32;{
+00443 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;isExternallyManaged())
+00444 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;D;
+00445 &#32;&#32;}
+00446 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01257">PrintDiagnostics()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a3ed169ee4a472764c11724cc7768e6eb"/>    <section>
+    <title>clang_formatDiagnostic()</title>
+<indexterm><primary>clang_formatDiagnostic</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_formatDiagnostic</secondary></indexterm>
+<para><computeroutput>CXString clang_formatDiagnostic (CXDiagnostic Diagnostic, unsigned Options)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00241">241</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00242 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Diagnostic)
+00243 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00244 
+00245 &#32;&#32;CXDiagnosticSeverity&#32;Severity&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a4acc9ff12cb403c96d56e87359dfc7c7">clang_getDiagnosticSeverity</link>(Diagnostic);
+00246 
+00247 &#32;&#32;SmallString&lt;256&gt;&#32;Str;
+00248 &#32;&#32;llvm::raw_svector_ostream&#32;Out(Str);
+00249 &#32;&#32;
+00250 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;CXDiagnostic_DisplaySourceLocation)&#32;{
+00251 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Print&#32;source&#32;location&#32;(file:line),&#32;along&#32;with&#32;optional&#32;column</emphasis>
+00252 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;and&#32;source&#32;ranges.</emphasis>
+00253 &#32;&#32;&#32;&#32;CXFile&#32;File;
+00254 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Line,&#32;Column;
+00255 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_index_diagnostic_8cpp_1a1e0502917ec39f222133358991a1dd0a">clang_getDiagnosticLocation</link>(Diagnostic),
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;File,&#32;&amp;Line,&#32;&amp;Column,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(File)&#32;{
+00258 &#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;FName&#32;=&#32;<link linkend="__c_index_8cpp_1a263c34f5782353186990b2c990d648fc">clang_getFileName</link>(File);
+00259 &#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(FName)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>&#32;&lt;&lt;&#32;Line&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>;
+00260 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(FName);
+00261 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;CXDiagnostic_DisplayColumn)
+00262 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;Column&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>;
+00263 
+00264 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;CXDiagnostic_DisplaySourceRanges)&#32;{
+00265 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;N&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a82fa973404e60cc1868e66b59f354064">clang_getDiagnosticNumRanges</link>(Diagnostic);
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;PrintedRange&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;!=&#32;N;&#32;++I)&#32;{
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXFile&#32;StartFile,&#32;EndFile;
+00269 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSourceRange&#32;Range&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a385c57af0c0b7bac661157a769254556">clang_getDiagnosticRange</link>(Diagnostic,&#32;I);
+00270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00271 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;StartLine,&#32;StartColumn,&#32;EndLine,&#32;EndColumn;
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_x_source_location_8cpp_1a14a10dd8d9a4069c4fc1a7be62f58874">clang_getRangeStart</link>(Range),
+00273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;StartFile,&#32;&amp;StartLine,&#32;&amp;StartColumn,
+00274 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">nullptr</emphasis>);
+00275 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_x_source_location_8cpp_1a146c4bda0251ee320dc6e4b1b3fbb919">clang_getRangeEnd</link>(Range),
+00276 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;EndFile,&#32;&amp;EndLine,&#32;&amp;EndColumn,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00277 
+00278 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StartFile&#32;!=&#32;EndFile&#32;||&#32;StartFile&#32;!=&#32;File)
+00279 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00280 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00281 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;{&quot;</emphasis>&#32;&lt;&lt;&#32;StartLine&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>&#32;&lt;&lt;&#32;StartColumn&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;EndLine&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>&#32;&lt;&lt;&#32;EndColumn&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}&quot;</emphasis>;
+00283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintedRange&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00284 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00285 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(PrintedRange)
+00286 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&quot;</emphasis>;
+00287 &#32;&#32;&#32;&#32;&#32;&#32;}
+00288 &#32;&#32;&#32;&#32;&#32;&#32;
+00289 &#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>;
+00290 &#32;&#32;&#32;&#32;}
+00291 &#32;&#32;}
+00292 
+00293 &#32;&#32;<emphasis role="comment">/*&#32;Print&#32;warning/error/etc.&#32;*/</emphasis>
+00294 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(Severity)&#32;{
+00295 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXDiagnostic_Ignored:&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;impossible&quot;</emphasis>);
+00296 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXDiagnostic_Note:&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;note:&#32;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00297 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXDiagnostic_Warning:&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;warning:&#32;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00298 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXDiagnostic_Error:&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00299 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXDiagnostic_Fatal:&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;fatal&#32;error:&#32;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00300 &#32;&#32;}
+00301 
+00302 &#32;&#32;CXString&#32;Text&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a72908dcfbd7b25addc6f7e1feeeb5bc1">clang_getDiagnosticSpelling</link>(Diagnostic);
+00303 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(Text))
+00304 &#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(Text);
+00305 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00306 &#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;no&#32;diagnostic&#32;text&gt;&quot;</emphasis>;
+00307 &#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(Text);
+00308 &#32;&#32;
+00309 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;(CXDiagnostic_DisplayOption&#32;|&#32;CXDiagnostic_DisplayCategoryId&#32;|
+00310 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXDiagnostic_DisplayCategoryName))&#32;{
+00311 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;NeedBracket&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00312 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;NeedComma&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00313 
+00314 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;CXDiagnostic_DisplayOption)&#32;{
+00315 &#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;OptionName&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1ade154c72df0d1abe125b8b0e4dd568ba">clang_getDiagnosticOption</link>(Diagnostic,&#32;<emphasis role="keyword">nullptr</emphasis>);
+00316 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*OptionText&#32;=&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(OptionName))&#32;{
+00317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OptionText[0])&#32;{
+00318 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;[&quot;</emphasis>&#32;&lt;&lt;&#32;OptionText;
+00319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NeedBracket&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NeedComma&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00322 &#32;&#32;&#32;&#32;&#32;&#32;}
+00323 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(OptionName);
+00324 &#32;&#32;&#32;&#32;}
+00325 &#32;&#32;&#32;&#32;
+00326 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;(CXDiagnostic_DisplayCategoryId&#32;|&#32;
+00327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXDiagnostic_DisplayCategoryName))&#32;{
+00328 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;CategoryID&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a68d5c32c3758b97516ef20caf0e7f6f9">clang_getDiagnosticCategory</link>(Diagnostic))&#32;{
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;CXDiagnostic_DisplayCategoryId)&#32;{
+00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NeedBracket)
+00331 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;[&quot;</emphasis>;
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NeedComma)
+00333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>;
+00334 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;CategoryID;
+00335 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NeedBracket&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NeedComma&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00338 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Options&#32;&amp;&#32;CXDiagnostic_DisplayCategoryName)&#32;{
+00340 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;CategoryName&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a0428e5b9db207a1495c9300f7cbeff4c">clang_getDiagnosticCategoryText</link>(Diagnostic);
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NeedBracket)
+00342 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;[&quot;</emphasis>;
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NeedComma)
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>;
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(CategoryName);
+00346 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NeedBracket&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00347 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NeedComma&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00348 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(CategoryName);
+00349 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00350 &#32;&#32;&#32;&#32;&#32;&#32;}
+00351 &#32;&#32;&#32;&#32;}
+00352 
+00353 &#32;&#32;&#32;&#32;(void)&#32;NeedComma;&#32;<emphasis role="comment">//&#32;Silence&#32;dead&#32;store&#32;warning.</emphasis>
+00354 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!NeedBracket)
+00355 &#32;&#32;&#32;&#32;&#32;&#32;Out&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]&quot;</emphasis>;
+00356 &#32;&#32;}
+00357 &#32;&#32;
+00358 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(Out.str());
+00359 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01189">PrintDiagnostic()</link>, and <link linkend="__c_index_8cpp_source_1l08994">clang::cxindex::printDiagsToStderr()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1abca973dc6f01b106edd47a39f480dd8f"/>    <section>
+    <title>clang_getChildDiagnostics()</title>
+<indexterm><primary>clang_getChildDiagnostics</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getChildDiagnostics</secondary></indexterm>
+<para><computeroutput>CXDiagnosticSet clang_getChildDiagnostics (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00456">456</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00456 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00457 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))&#32;{
+00458 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;&amp;ChildDiags&#32;=&#32;D-&gt;getChildDiagnostics();
+00459 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ChildDiags.<link linkend="_classclang_1_1_c_x_diagnostic_set_impl_1a3d0cc12fe17cca790dc0d16a9cf9b9b7">empty</link>()&#32;?&#32;nullptr&#32;:&#32;(CXDiagnosticSet)&#32;&amp;ChildDiags;
+00460 &#32;&#32;}
+00461 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00462 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8h_source_1l00047">clang::CXDiagnosticSetImpl::empty()</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01246">PrintDiagnosticSet()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a8357ec474218706cbc792732a54e3dfd"/>    <section>
+    <title>clang_getDiagnostic()</title>
+<indexterm><primary>clang_getDiagnostic</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnostic</secondary></indexterm>
+<para><computeroutput>CXDiagnostic clang_getDiagnostic (CXTranslationUnit Unit, unsigned Index)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00209">209</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00210 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(Unit))&#32;{
+00211 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(Unit);
+00212 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00213 &#32;&#32;}
+00214 
+00215 &#32;&#32;CXDiagnosticSet&#32;D&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a01fef60398b711267499e2eabd58806e">clang_getDiagnosticSetFromTU</link>(Unit);
+00216 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00217 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00218 
+00219 &#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*Diags&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>*<emphasis role="keyword">&gt;</emphasis>(D);
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Index&#32;&gt;=&#32;Diags-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl_1a4f8dbf6c6514ec1fdf340268f50409cb">getNumDiagnostics</link>())
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00222 
+00223 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Diags-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl_1a9394b1033650346808f1adb6ee947819">getDiagnostic</link>(Index);
+00224 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8cpp_source_1l00226">clang_getDiagnosticSetFromTU()</link>, <link linkend="__c_index_diagnostic_8h_source_1l00040">clang::CXDiagnosticSetImpl::getDiagnostic()</link>, <link linkend="__c_index_diagnostic_8h_source_1l00036">clang::CXDiagnosticSetImpl::getNumDiagnostics()</link>, and <link linkend="__c_x_translation_unit_8h_source_1l00063">LOG_BAD_TU</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a68d5c32c3758b97516ef20caf0e7f6f9"/>    <section>
+    <title>clang_getDiagnosticCategory()</title>
+<indexterm><primary>clang_getDiagnosticCategory</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticCategory</secondary></indexterm>
+<para><computeroutput>unsigned clang_getDiagnosticCategory (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00394">394</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00394 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00395 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00396 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getCategory();
+00397 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00398 }
+</programlisting>    </section><anchor xml:id="__c_index_diagnostic_8cpp_1acb9f635f76147914684cbf651906d9cb"/>    <section>
+    <title>clang_getDiagnosticCategoryName()</title>
+<indexterm><primary>clang_getDiagnosticCategoryName</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticCategoryName</secondary></indexterm>
+<para><computeroutput>CXString clang_getDiagnosticCategoryName (unsigned Category)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00400">400</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00400 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00401 &#32;&#32;<emphasis role="comment">//&#32;Kept&#32;for&#32;backward&#32;compatibility.</emphasis>
+00402 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(DiagnosticIDs::getCategoryNameFromID(Category));
+00403 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a0428e5b9db207a1495c9300f7cbeff4c"/>    <section>
+    <title>clang_getDiagnosticCategoryText()</title>
+<indexterm><primary>clang_getDiagnosticCategoryText</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticCategoryText</secondary></indexterm>
+<para><computeroutput>CXString clang_getDiagnosticCategoryText (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00405">405</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00405 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00406 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00407 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getCategoryText();
+00408 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00409 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a3038a0534d19be1e8f0adc11373b3c69"/>    <section>
+    <title>clang_getDiagnosticFixIt()</title>
+<indexterm><primary>clang_getDiagnosticFixIt</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticFixIt</secondary></indexterm>
+<para><computeroutput>CXString clang_getDiagnosticFixIt (CXDiagnostic Diag, unsigned FixIt, CXSourceRange * ReplacementRange)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00430">430</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00431 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00432 &#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag);
+00433 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D&#32;||&#32;FixIt&#32;&gt;=&#32;D-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_impl_1ab80ce934006ca4fb0f9d531586b9162e">getNumFixIts</link>())&#32;{
+00434 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReplacementRange)
+00435 &#32;&#32;&#32;&#32;&#32;&#32;*ReplacementRange&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1afadb1a95ce51366407cf6c363299a17f">clang_getNullRange</link>();
+00436 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00437 &#32;&#32;}
+00438 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_impl_1aa1e009fc05ec6c332234dbf3ec1b03a6">getFixIt</link>(FixIt,&#32;ReplacementRange);
+00439 }
+</programlisting><para>
+References <link linkend="__c_x_source_location_8cpp_source_1l00052">clang_getNullRange()</link>, <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>, <link linkend="_classclang_1_1_c_x_diagnostic_impl_1aa1e009fc05ec6c332234dbf3ec1b03a6">clang::CXDiagnosticImpl::getFixIt()</link>, and <link linkend="_classclang_1_1_c_x_diagnostic_impl_1ab80ce934006ca4fb0f9d531586b9162e">clang::CXDiagnosticImpl::getNumFixIts()</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01189">PrintDiagnostic()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1acc45fefa1e17eade2d10177d4ff77851"/>    <section>
+    <title>clang_getDiagnosticInSet()</title>
+<indexterm><primary>clang_getDiagnosticInSet</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticInSet</secondary></indexterm>
+<para><computeroutput>CXDiagnostic clang_getDiagnosticInSet (CXDiagnosticSet Diags, unsigned Index)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00448">448</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00449 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00450 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>*<emphasis role="keyword">&gt;</emphasis>(Diags))
+00451 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Index&#32;&lt;&#32;D-&gt;getNumDiagnostics())
+00452 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getDiagnostic(Index);
+00453 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00454 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01246">PrintDiagnosticSet()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a1e0502917ec39f222133358991a1dd0a"/>    <section>
+    <title>clang_getDiagnosticLocation()</title>
+<indexterm><primary>clang_getDiagnosticLocation</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticLocation</secondary></indexterm>
+<para><computeroutput>CXSourceLocation clang_getDiagnosticLocation (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00372">372</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00372 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00373 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00374 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getLocation();
+00375 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_source_location_8cpp_1a20bb1e9a72e2c16fbcb21958f0648947">clang_getNullLocation</link>();
+00376 }
+</programlisting><para>
+References <link linkend="__c_x_source_location_8cpp_source_1l00041">clang_getNullLocation()</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01189">PrintDiagnostic()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a328fab9bb901e108adb1b5ec5f3ed748"/>    <section>
+    <title>clang_getDiagnosticNumFixIts()</title>
+<indexterm><primary>clang_getDiagnosticNumFixIts</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticNumFixIts</secondary></indexterm>
+<para><computeroutput>unsigned clang_getDiagnosticNumFixIts (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00424">424</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00425 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00426 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getNumFixIts();
+00427 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00428 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01189">PrintDiagnostic()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a82fa973404e60cc1868e66b59f354064"/>    <section>
+    <title>clang_getDiagnosticNumRanges()</title>
+<indexterm><primary>clang_getDiagnosticNumRanges</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticNumRanges</secondary></indexterm>
+<para><computeroutput>unsigned clang_getDiagnosticNumRanges (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00411">411</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00411 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00412 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00413 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getNumRanges();
+00414 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00415 }
+</programlisting>    </section><anchor xml:id="__c_index_diagnostic_8cpp_1ade154c72df0d1abe125b8b0e4dd568ba"/>    <section>
+    <title>clang_getDiagnosticOption()</title>
+<indexterm><primary>clang_getDiagnosticOption</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticOption</secondary></indexterm>
+<para><computeroutput>CXString clang_getDiagnosticOption (CXDiagnostic Diag, CXString * Disable)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00384">384</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00384 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00385 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Disable)
+00386 &#32;&#32;&#32;&#32;*Disable&#32;=&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00387 
+00388 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00389 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getDiagnosticOption(Disable);
+00390 
+00391 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00392 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a385c57af0c0b7bac661157a769254556"/>    <section>
+    <title>clang_getDiagnosticRange()</title>
+<indexterm><primary>clang_getDiagnosticRange</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticRange</secondary></indexterm>
+<para><computeroutput>CXSourceRange clang_getDiagnosticRange (CXDiagnostic Diag, unsigned Range)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00417">417</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00418 &#32;&#32;<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag);&#32;&#32;
+00419 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D&#32;||&#32;Range&#32;&gt;=&#32;D-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_impl_1add19591d7940fda585a6a69f87b927d8">getNumRanges</link>())
+00420 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_source_location_8cpp_1afadb1a95ce51366407cf6c363299a17f">clang_getNullRange</link>();
+00421 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_impl_1a49fc85b074cacc4e1c44dd7c6b540e53">getRange</link>(Range);
+00422 }
+</programlisting><para>
+References <link linkend="__c_x_source_location_8cpp_source_1l00052">clang_getNullRange()</link>, <link linkend="_classclang_1_1_c_x_diagnostic_impl_1add19591d7940fda585a6a69f87b927d8">clang::CXDiagnosticImpl::getNumRanges()</link>, and <link linkend="_classclang_1_1_c_x_diagnostic_impl_1a49fc85b074cacc4e1c44dd7c6b540e53">clang::CXDiagnosticImpl::getRange()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a01fef60398b711267499e2eabd58806e"/>    <section>
+    <title>clang_getDiagnosticSetFromTU()</title>
+<indexterm><primary>clang_getDiagnosticSetFromTU</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticSetFromTU</secondary></indexterm>
+<para><computeroutput>CXDiagnosticSet clang_getDiagnosticSetFromTU (CXTranslationUnit Unit)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00226">226</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00227 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(Unit))&#32;{
+00228 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(Unit);
+00229 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00230 &#32;&#32;}
+00231 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!cxtu::getASTUnit(Unit))
+00232 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00233 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CXDiagnostic<emphasis role="keyword">&gt;</emphasis>(<link linkend="_namespaceclang_1_1cxdiag_1a02bce7e16b9a44d64657a2b5f1419351">lazyCreateDiags</link>(Unit));
+00234 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8cpp_source_1l00149">clang::cxdiag::lazyCreateDiags()</link>, and <link linkend="__c_x_translation_unit_8h_source_1l00063">LOG_BAD_TU</link>.</para>
+<para>
+Referenced by <link linkend="__c_index_diagnostic_8cpp_source_1l00209">clang_getDiagnostic()</link>, and <link linkend="_c-index-test_8c_source_1l01257">PrintDiagnostics()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a4acc9ff12cb403c96d56e87359dfc7c7"/>    <section>
+    <title>clang_getDiagnosticSeverity()</title>
+<indexterm><primary>clang_getDiagnosticSeverity</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticSeverity</secondary></indexterm>
+<para><computeroutput>enum CXDiagnosticSeverity clang_getDiagnosticSeverity (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00361">361</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00367 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00368 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getSeverity();
+00369 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXDiagnostic_Ignored;
+00370 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01189">PrintDiagnostic()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a72908dcfbd7b25addc6f7e1feeeb5bc1"/>    <section>
+    <title>clang_getDiagnosticSpelling()</title>
+<indexterm><primary>clang_getDiagnosticSpelling</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getDiagnosticSpelling</secondary></indexterm>
+<para><computeroutput>CXString clang_getDiagnosticSpelling (CXDiagnostic Diag)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00378">378</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00378 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00379 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_impl">CXDiagnosticImpl</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Diag))
+00380 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getSpelling();
+00381 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00382 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1ac312148831b9a3031a36a0825e26a870"/>    <section>
+    <title>clang_getNumDiagnostics()</title>
+<indexterm><primary>clang_getNumDiagnostics</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getNumDiagnostics</secondary></indexterm>
+<para><computeroutput>unsigned clang_getNumDiagnostics (CXTranslationUnit Unit)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00199">199</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00200 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(Unit))&#32;{
+00201 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(Unit);
+00202 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00203 &#32;&#32;}
+00204 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!cxtu::getASTUnit(Unit))
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00206 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxdiag_1a02bce7e16b9a44d64657a2b5f1419351">lazyCreateDiags</link>(Unit,&#32;<emphasis role="comment">/*checkIfChanged=*/</emphasis><emphasis role="keyword">true</emphasis>)-&gt;<link linkend="_classclang_1_1_c_x_diagnostic_set_impl_1a4f8dbf6c6514ec1fdf340268f50409cb">getNumDiagnostics</link>();
+00207 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8h_source_1l00036">clang::CXDiagnosticSetImpl::getNumDiagnostics()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00149">clang::cxdiag::lazyCreateDiags()</link>, and <link linkend="__c_x_translation_unit_8h_source_1l00063">LOG_BAD_TU</link>.</para>
+    </section><anchor xml:id="__c_index_diagnostic_8cpp_1a9861abba19ec80dae4db68998828261d"/>    <section>
+    <title>clang_getNumDiagnosticsInSet()</title>
+<indexterm><primary>clang_getNumDiagnosticsInSet</primary><secondary>CIndexDiagnostic.cpp</secondary></indexterm>
+<indexterm><primary>CIndexDiagnostic.cpp</primary><secondary>clang_getNumDiagnosticsInSet</secondary></indexterm>
+<para><computeroutput>unsigned clang_getNumDiagnosticsInSet (CXDiagnosticSet Diags)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_diagnostic_8cpp_source_1l00464">464</link> of file <link linkend="__c_index_diagnostic_8cpp_source">CIndexDiagnostic.cpp</link>.</para>
+<programlisting>00464 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00465 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>&#32;*D&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1_c_x_diagnostic_set_impl">CXDiagnosticSetImpl</link>*<emphasis role="keyword">&gt;</emphasis>(Diags))
+00466 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;getNumDiagnostics();
+00467 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00468 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01246">PrintDiagnosticSet()</link>.</para>
+</section>
+</section>
+</section>

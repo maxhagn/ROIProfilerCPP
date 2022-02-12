@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__running_doc_table_events_dispatcher_8cs_source" xml:lang="en-US">
+<title>RunningDocTableEventsDispatcher.cs</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format-vs/ClangFormat/RunningDocTableEventsDispatcher.cs</primary></indexterm>
+<programlisting>00001 <emphasis role="keyword">using</emphasis>&#32;EnvDTE;
+00002 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio;
+00003 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Shell;
+00004 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Shell.Interop;
+00005 <emphasis role="keyword">using</emphasis>&#32;System.Linq;
+00006 &#32;&#32;&#32;&#32;
+00007 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespace_l_l_v_m_1_1_clang_format">LLVM.ClangFormat</link>
+00008 {
+00009 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Exposes&#32;event&#32;sources&#32;for&#32;IVsRunningDocTableEvents3&#32;events.</emphasis>
+00010 &#32;&#32;&#32;&#32;<emphasis role="keyword">internal</emphasis>&#32;sealed&#32;<emphasis role="keyword">class&#32;</emphasis>RunningDocTableEventsDispatcher&#32;:&#32;IVsRunningDocTableEvents3
+00011 &#32;&#32;&#32;&#32;{
+00012 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;RunningDocumentTable&#32;_runningDocumentTable;
+00013 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;DTE&#32;_dte;
+00014 
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;delegate&#32;<emphasis role="keywordtype">void</emphasis>&#32;OnBeforeSaveHander(<emphasis role="keywordtype">object</emphasis>&#32;sender,&#32;Document&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>);
+00016 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">event</emphasis>&#32;OnBeforeSaveHander&#32;BeforeSave;
+00017 
+00018 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;RunningDocTableEventsDispatcher(Package&#32;package)
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_runningDocumentTable&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;RunningDocumentTable(package);
+00021 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_runningDocumentTable.Advise(<emphasis role="keyword">this</emphasis>);
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;_dte&#32;=&#32;(DTE)Package.GetGlobalService(typeof(DTE));
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00024 
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnAfterAttributeChange(uint&#32;docCookie,&#32;uint&#32;grfAttribs)
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00029 
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnAfterAttributeChangeEx(uint&#32;docCookie,&#32;uint&#32;grfAttribs,&#32;IVsHierarchy&#32;pHierOld,&#32;uint&#32;itemidOld,&#32;<emphasis role="keywordtype">string</emphasis>&#32;pszMkDocumentOld,&#32;IVsHierarchy&#32;pHierNew,&#32;uint&#32;itemidNew,&#32;<emphasis role="keywordtype">string</emphasis>&#32;pszMkDocumentNew)
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00034 
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnAfterDocumentWindowHide(uint&#32;docCookie,&#32;IVsWindowFrame&#32;pFrame)
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00039 
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnAfterFirstDocumentLock(uint&#32;docCookie,&#32;uint&#32;dwRDTLockType,&#32;uint&#32;dwReadLocksRemaining,&#32;uint&#32;dwEditLocksRemaining)
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00044 
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnAfterSave(uint&#32;docCookie)
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00049 
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnBeforeDocumentWindowShow(uint&#32;docCookie,&#32;<emphasis role="keywordtype">int</emphasis>&#32;fFirstShow,&#32;IVsWindowFrame&#32;pFrame)
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00054 
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnBeforeLastDocumentUnlock(uint&#32;docCookie,&#32;uint&#32;dwRDTLockType,&#32;uint&#32;dwReadLocksRemaining,&#32;uint&#32;dwEditLocksRemaining)
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00059 
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;OnBeforeSave(uint&#32;docCookie)
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(BeforeSave&#32;!=&#32;<emphasis role="keyword">null</emphasis>)
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>&#32;=&#32;FindDocumentByCookie(docCookie);
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>&#32;!=&#32;<emphasis role="keyword">null</emphasis>)&#32;<emphasis role="comment">//&#32;Not&#32;sure&#32;why&#32;this&#32;happens&#32;sometimes</emphasis>
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;BeforeSave(<emphasis role="keyword">this</emphasis>,&#32;FindDocumentByCookie(docCookie));
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VSConstants.S_OK;
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00072 
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>&#32;Document&#32;FindDocumentByCookie(uint&#32;docCookie)
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;documentInfo&#32;=&#32;_runningDocumentTable.GetDocumentInfo(docCookie);
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;_dte.Documents.Cast&lt;Document&gt;().FirstOrDefault(doc&#32;=&gt;&#32;doc.FullName&#32;==&#32;documentInfo.Moniker);
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00078 &#32;&#32;&#32;&#32;}
+00079 }
+</programlisting></section>

@@ -1,0 +1,78 @@
+.TH "tests.unit.test_clang.ClangGetArgumentsTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_clang.ClangGetArgumentsTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_get_clang_arguments\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_get_clang_arguments_fails\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_get_clang_arguments_fails_badly\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 22 of file test_clang\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_clang\&.ClangGetArgumentsTest\&.test_get_clang_arguments ( self)"
+
+.PP
+Definition at line 23 of file test_clang\&.py\&.
+.PP
+.nf
+23     def test_get_clang_arguments(self):
+24         with libear\&.TemporaryDirectory() as tmpdir:
+25             filename = os\&.path\&.join(tmpdir, 'test\&.c')
+26             with open(filename, 'w') as handle:
+27                 handle\&.write('')
+28 
+29             result = sut\&.get_arguments(
+30                 ['clang', '-c', filename, '-DNDEBUG', '-Dvar="this is it"'],
+31                 tmpdir)
+32 
+33             self\&.assertTrue('NDEBUG' in result)
+34             self\&.assertTrue('var="this is it"' in result)
+35 
+.fi
+.PP
+References startfile\&.open(), and libear\&.TemporaryDirectory()\&.
+.SS "def tests\&.unit\&.test_clang\&.ClangGetArgumentsTest\&.test_get_clang_arguments_fails ( self)"
+
+.PP
+Definition at line 36 of file test_clang\&.py\&.
+.PP
+.nf
+36     def test_get_clang_arguments_fails(self):
+37         with self\&.assertRaises(Exception):
+38             sut\&.get_arguments(['clang', '-x', 'c', 'notexist\&.c'], '\&.')
+39 
+.fi
+.SS "def tests\&.unit\&.test_clang\&.ClangGetArgumentsTest\&.test_get_clang_arguments_fails_badly ( self)"
+
+.PP
+Definition at line 40 of file test_clang\&.py\&.
+.PP
+.nf
+40     def test_get_clang_arguments_fails_badly(self):
+41         with self\&.assertRaises(OSError):
+42             sut\&.get_arguments(['notexist'], '\&.')
+43 
+44 
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

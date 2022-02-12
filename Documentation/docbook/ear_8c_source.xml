@@ -1,0 +1,592 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_ear_8c_source" xml:lang="en-US">
+<title>ear.c</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libear/ear.c</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">/*&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 <emphasis role="comment">*/</emphasis>
+00006 
+00021 <emphasis role="comment">//&#32;NOLINTNEXTLINE</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;config.h&quot;</emphasis>
+00023 
+00024 <emphasis role="preprocessor">#include&#32;&lt;dlfcn.h&gt;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&lt;pthread.h&gt;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&lt;stdarg.h&gt;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&lt;stddef.h&gt;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&lt;stdio.h&gt;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&lt;stdlib.h&gt;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&lt;string.h&gt;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&lt;unistd.h&gt;</emphasis>
+00032 
+00033 <emphasis role="preprocessor">#if&#32;defined&#32;HAVE_POSIX_SPAWN&#32;||&#32;defined&#32;HAVE_POSIX_SPAWNP</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&lt;spawn.h&gt;</emphasis>
+00035 <emphasis role="preprocessor">#endif</emphasis>
+00036 
+00037 <emphasis role="preprocessor">#if&#32;defined&#32;HAVE_NSGETENVIRON</emphasis>
+00038 <emphasis role="preprocessor">#include&#32;&lt;crt_externs.h&gt;</emphasis>
+00039 <emphasis role="preprocessor">#else</emphasis>
+00040 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**<link linkend="_ear_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link>;
+00041 <emphasis role="preprocessor">#endif</emphasis>
+00042 
+<anchor xml:id="_ear_8c_source_1l00043"/><link linkend="_ear_8c_1a5115e8a1e6e4df1f94053f3c242ce90a">00043</link> <emphasis role="preprocessor">#define&#32;ENV_OUTPUT&#32;&quot;INTERCEPT_BUILD_TARGET_DIR&quot;</emphasis>
+00044 <emphasis role="preprocessor">#ifdef&#32;APPLE</emphasis>
+00045 <emphasis role="preprocessor">#define&#32;ENV_FLAT&#32;&quot;DYLD_FORCE_FLAT_NAMESPACE&quot;</emphasis>
+00046 <emphasis role="preprocessor">#define&#32;ENV_PRELOAD&#32;&quot;DYLD_INSERT_LIBRARIES&quot;</emphasis>
+00047 <emphasis role="preprocessor">#define&#32;ENV_SIZE&#32;3</emphasis>
+00048 <emphasis role="preprocessor">#else</emphasis>
+<anchor xml:id="_ear_8c_source_1l00049"/><link linkend="_ear_8c_1a9dbd1fc3669ce86869300a2079bb4896">00049</link> <emphasis role="preprocessor">#define&#32;ENV_PRELOAD&#32;&quot;LD_PRELOAD&quot;</emphasis>
+<anchor xml:id="_ear_8c_source_1l00050"/><link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">00050</link> <emphasis role="preprocessor">#define&#32;ENV_SIZE&#32;2</emphasis>
+00051 <emphasis role="preprocessor">#endif</emphasis>
+00052 
+<anchor xml:id="_ear_8c_source_1l00053"/><link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">00053</link> <emphasis role="preprocessor">#define&#32;DLSYM(TYPE_,&#32;VAR_,&#32;SYMBOL_)&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00054 <emphasis role="preprocessor">&#32;&#32;union&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00055 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;void&#32;*from;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00056 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;TYPE_&#32;to;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00057 <emphasis role="preprocessor">&#32;&#32;}&#32;cast;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00058 <emphasis role="preprocessor">&#32;&#32;if&#32;(0&#32;==&#32;(cast.from&#32;=&#32;dlsym(RTLD_NEXT,&#32;SYMBOL_)))&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\</emphasis>
+00059 <emphasis role="preprocessor">&#32;&#32;&#32;&#32;perror(&quot;bear:&#32;dlsym&quot;</emphasis>);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00060 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00061 &#32;&#32;}&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+00062 &#32;&#32;TYPE_&#32;const&#32;VAR_&#32;=&#32;cast.to;
+00063 
+<anchor xml:id="_ear_8c_source_1l00064"/><link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">00064</link> <emphasis role="keyword">typedef</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>[<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>];
+00065 
+00066 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;bear_capture_env_t(<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env);
+00067 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;bear_reset_env_t(<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env);
+00068 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;bear_release_env_t(<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env);
+00069 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_update_environment(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[],
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env);
+00071 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_update_environ(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**in,&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*key,
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>);
+00073 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**bear_get_environment();
+00074 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;bear_report_call(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*fun,&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]);
+00075 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_strings_build(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*arg,&#32;va_list&#32;*ap);
+00076 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_strings_copy(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;in);
+00077 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_strings_append(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**in,&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*e);
+00078 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;bear_strings_length(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*in);
+00079 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;bear_strings_release(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**);
+00080 
+00081 <emphasis role="keyword">static</emphasis>&#32;<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;env_names&#32;=&#32;{<link linkend="_ear_8c_1a5115e8a1e6e4df1f94053f3c242ce90a">ENV_OUTPUT</link>,&#32;<link linkend="_ear_8c_1a9dbd1fc3669ce86869300a2079bb4896">ENV_PRELOAD</link>
+00082 <emphasis role="preprocessor">#ifdef&#32;ENV_FLAT</emphasis>
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;,
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ENV_FLAT
+00085 <emphasis role="preprocessor">#endif</emphasis>
+00086 };
+00087 
+00088 <emphasis role="keyword">static</emphasis>&#32;<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;initial_env&#32;=&#32;{0,&#32;0
+00089 <emphasis role="preprocessor">#ifdef&#32;ENV_FLAT</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;,
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0
+00092 <emphasis role="preprocessor">#endif</emphasis>
+00093 };
+00094 
+00095 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;initialized&#32;=&#32;0;
+00096 <emphasis role="keyword">static</emphasis>&#32;pthread_mutex_t&#32;mutex&#32;=&#32;PTHREAD_MUTEX_INITIALIZER;
+00097 
+00098 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;on_load(<emphasis role="keywordtype">void</emphasis>)&#32;__attribute__((constructor));
+00099 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;on_unload(<emphasis role="keywordtype">void</emphasis>)&#32;__attribute__((destructor));
+00100 
+00101 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVE</emphasis>
+00102 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execve(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]);
+00104 <emphasis role="preprocessor">#endif</emphasis>
+00105 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP</emphasis>
+00106 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execvp(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]);
+00107 <emphasis role="preprocessor">#endif</emphasis>
+00108 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVPE</emphasis>
+00109 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execvpe(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]);
+00111 <emphasis role="preprocessor">#endif</emphasis>
+00112 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP2</emphasis>
+00113 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execvP(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*search_path,
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]);
+00115 <emphasis role="preprocessor">#endif</emphasis>
+00116 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECT</emphasis>
+00117 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_exect(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[]);
+00118 <emphasis role="preprocessor">#endif</emphasis>
+00119 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWN</emphasis>
+00120 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_posix_spawn(pid_t&#32;*restrict&#32;pid,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict&#32;path,
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*file_actions,
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict&#32;attrp,
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[restrict],
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[restrict]);
+00125 <emphasis role="preprocessor">#endif</emphasis>
+00126 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWNP</emphasis>
+00127 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_posix_spawnp(pid_t&#32;*restrict&#32;pid,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict&#32;file,
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*file_actions,
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict&#32;attrp,
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[restrict],
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[restrict]);
+00132 <emphasis role="preprocessor">#endif</emphasis>
+00133 
+00134 <emphasis role="comment">/*&#32;Initialization&#32;method&#32;to&#32;Captures&#32;the&#32;relevant&#32;environment&#32;variables.</emphasis>
+00135 <emphasis role="comment">&#32;*/</emphasis>
+00136 
+00137 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;on_load(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00138 &#32;&#32;pthread_mutex_lock(&amp;mutex);
+00139 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!initialized)
+00140 &#32;&#32;&#32;&#32;initialized&#32;=&#32;bear_capture_env_t(&amp;initial_env);
+00141 &#32;&#32;pthread_mutex_unlock(&amp;mutex);
+00142 }
+00143 
+00144 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;on_unload(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00145 &#32;&#32;pthread_mutex_lock(&amp;mutex);
+00146 &#32;&#32;bear_release_env_t(&amp;initial_env);
+00147 &#32;&#32;initialized&#32;=&#32;0;
+00148 &#32;&#32;pthread_mutex_unlock(&amp;mutex);
+00149 }
+00150 
+00151 <emphasis role="comment">/*&#32;These&#32;are&#32;the&#32;methods&#32;we&#32;are&#32;try&#32;to&#32;hijack.</emphasis>
+00152 <emphasis role="comment">&#32;*/</emphasis>
+00153 
+00154 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVE</emphasis>
+00155 <emphasis role="keywordtype">int</emphasis>&#32;execve(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[])&#32;{
+00156 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00157 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_execve(path,&#32;argv,&#32;envp);
+00158 }
+00159 <emphasis role="preprocessor">#endif</emphasis>
+00160 
+00161 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECV</emphasis>
+00162 <emphasis role="preprocessor">#ifndef&#32;HAVE_EXECVE</emphasis>
+00163 <emphasis role="preprocessor">#error&#32;can&#32;not&#32;implement&#32;execv&#32;without&#32;execve</emphasis>
+00164 <emphasis role="preprocessor">#endif</emphasis>
+00165 <emphasis role="keywordtype">int</emphasis>&#32;execv(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00166 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00167 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*envp&#32;=&#32;bear_get_environment();
+00168 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_execve(path,&#32;argv,&#32;envp);
+00169 }
+00170 <emphasis role="preprocessor">#endif</emphasis>
+00171 
+00172 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVPE</emphasis>
+00173 <emphasis role="keywordtype">int</emphasis>&#32;execvpe(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[])&#32;{
+00174 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00175 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_execvpe(file,&#32;argv,&#32;envp);
+00176 }
+00177 <emphasis role="preprocessor">#endif</emphasis>
+00178 
+00179 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP</emphasis>
+00180 <emphasis role="keywordtype">int</emphasis>&#32;execvp(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00181 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00182 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_execvp(file,&#32;argv);
+00183 }
+00184 <emphasis role="preprocessor">#endif</emphasis>
+00185 
+00186 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP2</emphasis>
+00187 <emphasis role="keywordtype">int</emphasis>&#32;execvP(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*search_path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00188 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00189 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_execvP(file,&#32;search_path,&#32;argv);
+00190 }
+00191 <emphasis role="preprocessor">#endif</emphasis>
+00192 
+00193 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECT</emphasis>
+00194 <emphasis role="keywordtype">int</emphasis>&#32;exect(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[])&#32;{
+00195 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00196 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_exect(path,&#32;argv,&#32;envp);
+00197 }
+00198 <emphasis role="preprocessor">#endif</emphasis>
+00199 
+00200 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECL</emphasis>
+00201 <emphasis role="preprocessor">#ifndef&#32;HAVE_EXECVE</emphasis>
+00202 <emphasis role="preprocessor">#error&#32;can&#32;not&#32;implement&#32;execl&#32;without&#32;execve</emphasis>
+00203 <emphasis role="preprocessor">#endif</emphasis>
+00204 <emphasis role="keywordtype">int</emphasis>&#32;execl(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*arg,&#32;...)&#32;{
+00205 &#32;&#32;va_list&#32;args;
+00206 &#32;&#32;va_start(args,&#32;arg);
+00207 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**argv&#32;=&#32;bear_strings_build(arg,&#32;&amp;args);
+00208 &#32;&#32;va_end(args);
+00209 
+00210 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00211 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*envp&#32;=&#32;bear_get_environment();
+00212 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;call_execve(path,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv,&#32;envp);
+00213 
+00214 &#32;&#32;bear_strings_release(argv);
+00215 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00216 }
+00217 <emphasis role="preprocessor">#endif</emphasis>
+00218 
+00219 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLP</emphasis>
+00220 <emphasis role="preprocessor">#ifndef&#32;HAVE_EXECVP</emphasis>
+00221 <emphasis role="preprocessor">#error&#32;can&#32;not&#32;implement&#32;execlp&#32;without&#32;execvp</emphasis>
+00222 <emphasis role="preprocessor">#endif</emphasis>
+00223 <emphasis role="keywordtype">int</emphasis>&#32;execlp(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*arg,&#32;...)&#32;{
+00224 &#32;&#32;va_list&#32;args;
+00225 &#32;&#32;va_start(args,&#32;arg);
+00226 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**argv&#32;=&#32;bear_strings_build(arg,&#32;&amp;args);
+00227 &#32;&#32;va_end(args);
+00228 
+00229 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00230 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;call_execvp(file,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00231 
+00232 &#32;&#32;bear_strings_release(argv);
+00233 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00234 }
+00235 <emphasis role="preprocessor">#endif</emphasis>
+00236 
+00237 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECLE</emphasis>
+00238 <emphasis role="preprocessor">#ifndef&#32;HAVE_EXECVE</emphasis>
+00239 <emphasis role="preprocessor">#error&#32;can&#32;not&#32;implement&#32;execle&#32;without&#32;execve</emphasis>
+00240 <emphasis role="preprocessor">#endif</emphasis>
+00241 <emphasis role="comment">//&#32;int&#32;execle(const&#32;char&#32;*path,&#32;const&#32;char&#32;*arg,&#32;...,&#32;char&#32;*&#32;const&#32;envp[]);</emphasis>
+00242 <emphasis role="keywordtype">int</emphasis>&#32;execle(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*arg,&#32;...)&#32;{
+00243 &#32;&#32;va_list&#32;args;
+00244 &#32;&#32;va_start(args,&#32;arg);
+00245 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**argv&#32;=&#32;bear_strings_build(arg,&#32;&amp;args);
+00246 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**envp&#32;=&#32;va_arg(args,&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**);
+00247 &#32;&#32;va_end(args);
+00248 
+00249 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00250 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=
+00251 &#32;&#32;&#32;&#32;&#32;&#32;call_execve(path,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)envp);
+00252 
+00253 &#32;&#32;bear_strings_release(argv);
+00254 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00255 }
+00256 <emphasis role="preprocessor">#endif</emphasis>
+00257 
+00258 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWN</emphasis>
+00259 <emphasis role="keywordtype">int</emphasis>&#32;posix_spawn(pid_t&#32;*restrict&#32;pid,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict&#32;path,
+00260 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*file_actions,
+00261 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict&#32;attrp,
+00262 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[restrict],&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[restrict])&#32;{
+00263 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00264 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_posix_spawn(pid,&#32;path,&#32;file_actions,&#32;attrp,&#32;argv,&#32;envp);
+00265 }
+00266 <emphasis role="preprocessor">#endif</emphasis>
+00267 
+00268 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWNP</emphasis>
+00269 <emphasis role="keywordtype">int</emphasis>&#32;posix_spawnp(pid_t&#32;*restrict&#32;pid,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict&#32;file,
+00270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*file_actions,
+00271 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict&#32;attrp,
+00272 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[restrict],&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[restrict])&#32;{
+00273 &#32;&#32;bear_report_call(__func__,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)argv);
+00274 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;call_posix_spawnp(pid,&#32;file,&#32;file_actions,&#32;attrp,&#32;argv,&#32;envp);
+00275 }
+00276 <emphasis role="preprocessor">#endif</emphasis>
+00277 
+00278 <emphasis role="comment">/*&#32;These&#32;are&#32;the&#32;methods&#32;which&#32;forward&#32;the&#32;call&#32;to&#32;the&#32;standard&#32;implementation.</emphasis>
+00279 <emphasis role="comment">&#32;*/</emphasis>
+00280 
+00281 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVE</emphasis>
+00282 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execve(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],
+00283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[])&#32;{
+00284 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*);
+00285 
+00286 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;execve&quot;</emphasis>);
+00287 
+00288 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;menvp&#32;=&#32;bear_update_environment(envp,&#32;&amp;initial_env);
+00289 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;(*fp)(path,&#32;argv,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)menvp);
+00290 &#32;&#32;bear_strings_release(menvp);
+00291 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00292 }
+00293 <emphasis role="preprocessor">#endif</emphasis>
+00294 
+00295 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVPE</emphasis>
+00296 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execvpe(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],
+00297 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[])&#32;{
+00298 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*);
+00299 
+00300 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;execvpe&quot;</emphasis>);
+00301 
+00302 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;menvp&#32;=&#32;bear_update_environment(envp,&#32;&amp;initial_env);
+00303 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;(*fp)(file,&#32;argv,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)menvp);
+00304 &#32;&#32;bear_strings_release(menvp);
+00305 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00306 }
+00307 <emphasis role="preprocessor">#endif</emphasis>
+00308 
+00309 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP</emphasis>
+00310 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execvp(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00311 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[]);
+00312 
+00313 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;execvp&quot;</emphasis>);
+00314 
+00315 &#32;&#32;<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;current_env;
+00316 &#32;&#32;bear_capture_env_t(&amp;current_env);
+00317 &#32;&#32;bear_reset_env_t(&amp;initial_env);
+00318 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;(*fp)(file,&#32;argv);
+00319 &#32;&#32;bear_reset_env_t(&amp;current_env);
+00320 &#32;&#32;bear_release_env_t(&amp;current_env);
+00321 
+00322 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00323 }
+00324 <emphasis role="preprocessor">#endif</emphasis>
+00325 
+00326 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECVP2</emphasis>
+00327 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_execvP(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*file,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*search_path,
+00328 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00329 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*);
+00330 
+00331 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;execvP&quot;</emphasis>);
+00332 
+00333 &#32;&#32;<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;current_env;
+00334 &#32;&#32;bear_capture_env_t(&amp;current_env);
+00335 &#32;&#32;bear_reset_env_t(&amp;initial_env);
+00336 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;(*fp)(file,&#32;search_path,&#32;argv);
+00337 &#32;&#32;bear_reset_env_t(&amp;current_env);
+00338 &#32;&#32;bear_release_env_t(&amp;current_env);
+00339 
+00340 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00341 }
+00342 <emphasis role="preprocessor">#endif</emphasis>
+00343 
+00344 <emphasis role="preprocessor">#ifdef&#32;HAVE_EXECT</emphasis>
+00345 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_exect(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*path,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[],
+00346 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[])&#32;{
+00347 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*);
+00348 
+00349 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;exect&quot;</emphasis>);
+00350 
+00351 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;menvp&#32;=&#32;bear_update_environment(envp,&#32;&amp;initial_env);
+00352 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;(*fp)(path,&#32;argv,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*)menvp);
+00353 &#32;&#32;bear_strings_release(menvp);
+00354 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00355 }
+00356 <emphasis role="preprocessor">#endif</emphasis>
+00357 
+00358 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWN</emphasis>
+00359 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_posix_spawn(pid_t&#32;*restrict&#32;pid,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict&#32;path,
+00360 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*file_actions,
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict&#32;attrp,
+00362 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[restrict],
+00363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[restrict])&#32;{
+00364 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(pid_t&#32;*restrict,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict,
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*,
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*restrict,
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*restrict);
+00368 
+00369 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;posix_spawn&quot;</emphasis>);
+00370 
+00371 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;menvp&#32;=&#32;bear_update_environment(envp,&#32;&amp;initial_env);
+00372 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=
+00373 &#32;&#32;&#32;&#32;&#32;&#32;(*fp)(pid,&#32;path,&#32;file_actions,&#32;attrp,&#32;argv,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*restrict)menvp);
+00374 &#32;&#32;bear_strings_release(menvp);
+00375 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00376 }
+00377 <emphasis role="preprocessor">#endif</emphasis>
+00378 
+00379 <emphasis role="preprocessor">#ifdef&#32;HAVE_POSIX_SPAWNP</emphasis>
+00380 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;call_posix_spawnp(pid_t&#32;*restrict&#32;pid,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict&#32;file,
+00381 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*file_actions,
+00382 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict&#32;attrp,
+00383 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[restrict],
+00384 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[restrict])&#32;{
+00385 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;int&#32;(*func)(pid_t&#32;*restrict,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*restrict,
+00386 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawn_file_actions_t&#32;*,
+00387 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;posix_spawnattr_t&#32;*restrict,&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*restrict,
+00388 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*restrict);
+00389 
+00390 &#32;&#32;<link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(func,&#32;fp,&#32;<emphasis role="stringliteral">&quot;posix_spawnp&quot;</emphasis>);
+00391 
+00392 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;menvp&#32;=&#32;bear_update_environment(envp,&#32;&amp;initial_env);
+00393 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;result&#32;=
+00394 &#32;&#32;&#32;&#32;&#32;&#32;(*fp)(pid,&#32;file,&#32;file_actions,&#32;attrp,&#32;argv,&#32;(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*restrict)menvp);
+00395 &#32;&#32;bear_strings_release(menvp);
+00396 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00397 }
+00398 <emphasis role="preprocessor">#endif</emphasis>
+00399 
+00400 <emphasis role="comment">/*&#32;this&#32;method&#32;is&#32;to&#32;write&#32;log&#32;about&#32;the&#32;process&#32;creation.&#32;*/</emphasis>
+00401 
+00402 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;bear_report_call(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*fun,&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;argv[])&#32;{
+00403 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a307b2d7b862024676bdb2673d5595776">GS</link>&#32;=&#32;0x1d;
+00404 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a70509b5a32754857d53f0392c87c9277">RS</link>&#32;=&#32;0x1e;
+00405 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1aefa6b23a1094176aebd5b22501cd30c7">US</link>&#32;=&#32;0x1f;
+00406 
+00407 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!initialized)
+00408 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00409 
+00410 &#32;&#32;pthread_mutex_lock(&amp;mutex);
+00411 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*cwd&#32;=&#32;getcwd(NULL,&#32;0);
+00412 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;cwd)&#32;{
+00413 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;getcwd&quot;</emphasis>);
+00414 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00415 &#32;&#32;}
+00416 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;out_dir&#32;=&#32;initial_env[0];
+00417 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;path_max_length&#32;=&#32;strlen(out_dir)&#32;+&#32;32;
+00418 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;filename[path_max_length];
+00419 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(-1&#32;==
+00420 &#32;&#32;&#32;&#32;&#32;&#32;snprintf(filename,&#32;path_max_length,&#32;<emphasis role="stringliteral">&quot;%s/%d.cmd&quot;</emphasis>,&#32;out_dir,&#32;getpid()))&#32;{
+00421 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;snprintf&quot;</emphasis>);
+00422 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00423 &#32;&#32;}
+00424 &#32;&#32;FILE&#32;*fd&#32;=&#32;fopen(filename,&#32;<emphasis role="stringliteral">&quot;a+&quot;</emphasis>);
+00425 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;fd)&#32;{
+00426 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;fopen&quot;</emphasis>);
+00427 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00428 &#32;&#32;}
+00429 &#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;%d%c&quot;</emphasis>,&#32;getpid(),&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a70509b5a32754857d53f0392c87c9277">RS</link>);
+00430 &#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;%d%c&quot;</emphasis>,&#32;getppid(),&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a70509b5a32754857d53f0392c87c9277">RS</link>);
+00431 &#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;%s%c&quot;</emphasis>,&#32;fun,&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a70509b5a32754857d53f0392c87c9277">RS</link>);
+00432 &#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;%s%c&quot;</emphasis>,&#32;cwd,&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a70509b5a32754857d53f0392c87c9277">RS</link>);
+00433 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;argc&#32;=&#32;bear_strings_length(argv);
+00434 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">size_t</emphasis>&#32;it&#32;=&#32;0;&#32;it&#32;&lt;&#32;argc;&#32;++it)&#32;{
+00435 &#32;&#32;&#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;%s%c&quot;</emphasis>,&#32;argv[it],&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1aefa6b23a1094176aebd5b22501cd30c7">US</link>);
+00436 &#32;&#32;}
+00437 &#32;&#32;fprintf(fd,&#32;<emphasis role="stringliteral">&quot;%c&quot;</emphasis>,&#32;<link linkend="_namespacelibscanbuild_1_1intercept_1a307b2d7b862024676bdb2673d5595776">GS</link>);
+00438 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(fclose(fd))&#32;{
+00439 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;fclose&quot;</emphasis>);
+00440 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00441 &#32;&#32;}
+00442 &#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)cwd);
+00443 &#32;&#32;pthread_mutex_unlock(&amp;mutex);
+00444 }
+00445 
+00446 <emphasis role="comment">/*&#32;update&#32;environment&#32;assure&#32;that&#32;chilren&#32;processes&#32;will&#32;copy&#32;the&#32;desired</emphasis>
+00447 <emphasis role="comment">&#32;*&#32;behaviour&#32;*/</emphasis>
+00448 
+00449 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;bear_capture_env_t(<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env)&#32;{
+00450 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;status&#32;=&#32;1;
+00451 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">size_t</emphasis>&#32;it&#32;=&#32;0;&#32;it&#32;&lt;&#32;<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>;&#32;++it)&#32;{
+00452 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;env_value&#32;=&#32;getenv(env_names[it]);
+00453 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;env_copy&#32;=&#32;(env_value)&#32;?&#32;strdup(env_value)&#32;:&#32;env_value;
+00454 &#32;&#32;&#32;&#32;(*env)[it]&#32;=&#32;env_copy;
+00455 &#32;&#32;&#32;&#32;status&#32;&amp;=&#32;(env_copy)&#32;?&#32;1&#32;:&#32;0;
+00456 &#32;&#32;}
+00457 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;status;
+00458 }
+00459 
+00460 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;bear_reset_env_t(<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env)&#32;{
+00461 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;status&#32;=&#32;1;
+00462 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">size_t</emphasis>&#32;it&#32;=&#32;0;&#32;it&#32;&lt;&#32;<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>;&#32;++it)&#32;{
+00463 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((*env)[it])&#32;{
+00464 &#32;&#32;&#32;&#32;&#32;&#32;setenv(env_names[it],&#32;(*env)[it],&#32;1);
+00465 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00466 &#32;&#32;&#32;&#32;&#32;&#32;unsetenv(env_names[it]);
+00467 &#32;&#32;&#32;&#32;}
+00468 &#32;&#32;}
+00469 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;status;
+00470 }
+00471 
+00472 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;bear_release_env_t(<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env)&#32;{
+00473 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">size_t</emphasis>&#32;it&#32;=&#32;0;&#32;it&#32;&lt;&#32;<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>;&#32;++it)&#32;{
+00474 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)(*env)[it]);
+00475 &#32;&#32;&#32;&#32;(*env)[it]&#32;=&#32;0;
+00476 &#32;&#32;}
+00477 }
+00478 
+00479 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_update_environment(<emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;envp[],
+00480 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>&#32;*env)&#32;{
+00481 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**result&#32;=&#32;bear_strings_copy((<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**)envp);
+00482 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">size_t</emphasis>&#32;it&#32;=&#32;0;&#32;it&#32;&lt;&#32;<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>&#32;&amp;&amp;&#32;(*env)[it];&#32;++it)
+00483 &#32;&#32;&#32;&#32;result&#32;=&#32;bear_update_environ(result,&#32;env_names[it],&#32;(*env)[it]);
+00484 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00485 }
+00486 
+00487 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_update_environ(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*envs[],&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*key,
+00488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>)&#32;{
+00489 &#32;&#32;<emphasis role="comment">//&#32;find&#32;the&#32;key&#32;if&#32;it&apos;s&#32;there</emphasis>
+00490 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;key_length&#32;=&#32;strlen(key);
+00491 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**it&#32;=&#32;envs;
+00492 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;(it)&#32;&amp;&amp;&#32;(*it);&#32;++it)&#32;{
+00493 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((0&#32;==&#32;strncmp(*it,&#32;key,&#32;key_length))&#32;&amp;&amp;&#32;(strlen(*it)&#32;&gt;&#32;key_length)&#32;&amp;&amp;
+00494 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(<emphasis role="charliteral">&apos;=&apos;</emphasis>&#32;==&#32;(*it)[key_length]))
+00495 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00496 &#32;&#32;}
+00497 &#32;&#32;<emphasis role="comment">//&#32;allocate&#32;a&#32;environment&#32;entry</emphasis>
+00498 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;value_length&#32;=&#32;strlen(<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>);
+00499 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;env_length&#32;=&#32;key_length&#32;+&#32;value_length&#32;+&#32;2;
+00500 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*env&#32;=&#32;malloc(env_length);
+00501 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;env)&#32;{
+00502 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;malloc&#32;[in&#32;env_update]&quot;</emphasis>);
+00503 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00504 &#32;&#32;}
+00505 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(-1&#32;==&#32;snprintf(env,&#32;env_length,&#32;<emphasis role="stringliteral">&quot;%s=%s&quot;</emphasis>,&#32;key,&#32;<link linkend="_broken-one_8c_1a1978c72fde3abc53afc1a6d53ef29553">value</link>))&#32;{
+00506 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;snprintf&quot;</emphasis>);
+00507 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00508 &#32;&#32;}
+00509 &#32;&#32;<emphasis role="comment">//&#32;replace&#32;or&#32;append&#32;the&#32;environment&#32;entry</emphasis>
+00510 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(it&#32;&amp;&amp;&#32;*it)&#32;{
+00511 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)*it);
+00512 &#32;&#32;&#32;&#32;*it&#32;=&#32;env;
+00513 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;envs;
+00514 &#32;&#32;}
+00515 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;bear_strings_append(envs,&#32;env);
+00516 }
+00517 
+00518 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**bear_get_environment()&#32;{
+00519 <emphasis role="preprocessor">#if&#32;defined&#32;HAVE_NSGETENVIRON</emphasis>
+00520 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*_NSGetEnviron();
+00521 <emphasis role="preprocessor">#else</emphasis>
+00522 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_ear_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link>;
+00523 <emphasis role="preprocessor">#endif</emphasis>
+00524 }
+00525 
+00526 <emphasis role="comment">/*&#32;util&#32;methods&#32;to&#32;deal&#32;with&#32;string&#32;arrays.&#32;environment&#32;and&#32;process&#32;arguments</emphasis>
+00527 <emphasis role="comment">&#32;*&#32;are&#32;both&#32;represented&#32;as&#32;string&#32;arrays.&#32;*/</emphasis>
+00528 
+00529 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_strings_build(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;arg,&#32;va_list&#32;*args)&#32;{
+00530 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**result&#32;=&#32;0;
+00531 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;size&#32;=&#32;0;
+00532 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*it&#32;=&#32;arg;&#32;it;&#32;it&#32;=&#32;va_arg(*args,&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*))&#32;{
+00533 &#32;&#32;&#32;&#32;result&#32;=&#32;realloc(result,&#32;(size&#32;+&#32;1)&#32;*&#32;<emphasis role="keyword">sizeof</emphasis>(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*));
+00534 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;result)&#32;{
+00535 &#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;realloc&quot;</emphasis>);
+00536 &#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00537 &#32;&#32;&#32;&#32;}
+00538 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*copy&#32;=&#32;strdup(it);
+00539 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;copy)&#32;{
+00540 &#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;strdup&quot;</emphasis>);
+00541 &#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00542 &#32;&#32;&#32;&#32;}
+00543 &#32;&#32;&#32;&#32;result[size++]&#32;=&#32;copy;
+00544 &#32;&#32;}
+00545 &#32;&#32;result&#32;=&#32;realloc(result,&#32;(size&#32;+&#32;1)&#32;*&#32;<emphasis role="keyword">sizeof</emphasis>(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*));
+00546 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;result)&#32;{
+00547 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;realloc&quot;</emphasis>);
+00548 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00549 &#32;&#32;}
+00550 &#32;&#32;result[size++]&#32;=&#32;0;
+00551 
+00552 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00553 }
+00554 
+00555 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_strings_copy(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;in)&#32;{
+00556 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;size&#32;=&#32;bear_strings_length(in);
+00557 
+00558 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;result&#32;=&#32;malloc((size&#32;+&#32;1)&#32;*&#32;<emphasis role="keyword">sizeof</emphasis>(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*));
+00559 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;result)&#32;{
+00560 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;malloc&quot;</emphasis>);
+00561 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00562 &#32;&#32;}
+00563 
+00564 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**out_it&#32;=&#32;result;
+00565 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*in_it&#32;=&#32;in;&#32;(in_it)&#32;&amp;&amp;&#32;(*in_it);&#32;++in_it,&#32;++out_it)&#32;{
+00566 &#32;&#32;&#32;&#32;*out_it&#32;=&#32;strdup(*in_it);
+00567 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;*out_it)&#32;{
+00568 &#32;&#32;&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;strdup&quot;</emphasis>);
+00569 &#32;&#32;&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00570 &#32;&#32;&#32;&#32;}
+00571 &#32;&#32;}
+00572 &#32;&#32;*out_it&#32;=&#32;0;
+00573 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00574 }
+00575 
+00576 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**bear_strings_append(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**<emphasis role="keyword">const</emphasis>&#32;in,
+00577 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;e)&#32;{
+00578 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;size&#32;=&#32;bear_strings_length(in);
+00579 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**result&#32;=&#32;realloc(in,&#32;(size&#32;+&#32;2)&#32;*&#32;<emphasis role="keyword">sizeof</emphasis>(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*));
+00580 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(0&#32;==&#32;result)&#32;{
+00581 &#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;realloc&quot;</emphasis>);
+00582 &#32;&#32;&#32;&#32;exit(EXIT_FAILURE);
+00583 &#32;&#32;}
+00584 &#32;&#32;result[size++]&#32;=&#32;e;
+00585 &#32;&#32;result[size++]&#32;=&#32;0;
+00586 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00587 }
+00588 
+00589 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;bear_strings_length(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;in)&#32;{
+00590 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;result&#32;=&#32;0;
+00591 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*it&#32;=&#32;in;&#32;(it)&#32;&amp;&amp;&#32;(*it);&#32;++it)
+00592 &#32;&#32;&#32;&#32;++result;
+00593 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00594 }
+00595 
+00596 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;bear_strings_release(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;**in)&#32;{
+00597 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">char</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;*<emphasis role="keyword">const</emphasis>&#32;*it&#32;=&#32;in;&#32;(it)&#32;&amp;&amp;&#32;(*it);&#32;++it)&#32;{
+00598 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)*it);
+00599 &#32;&#32;}
+00600 &#32;&#32;free((<emphasis role="keywordtype">void</emphasis>&#32;*)in);
+00601 }
+</programlisting></section>

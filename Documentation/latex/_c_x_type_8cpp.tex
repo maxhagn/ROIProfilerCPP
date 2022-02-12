@@ -1,0 +1,2017 @@
+\hypertarget{_c_x_type_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+CXType.cpp File Reference}
+\label{_c_x_type_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CXType.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CXType.cpp}}
+{\ttfamily \#include \char`\"{}CIndexer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXCursor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXString.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXTranslation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXType.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+Obj\+C.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+Template.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Expr.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Type.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Address\+Spaces.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Open\+CLImage\+Types.\+def\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Open\+CLExtension\+Types.\+def\char`\"{}}\newline
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}{BTCASE}}(K)~case Builtin\+Type\+::\+K\+: return CXType\+\_\+\#\#K
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_a115028e350b8253973a4fedd9d0f309a}{IMAGE\+\_\+\+TYPE}}(Img\+Type,  Id,  Singleton\+Id,  Access,  Suffix)~\mbox{\hyperlink{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}{BTCASE}}(Id);
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_a2b91f4921f0c62fb259ff5fb8b6418db}{EXT\+\_\+\+OPAQUE\+\_\+\+TYPE}}(Ext\+Type,  Id,  Ext)~\mbox{\hyperlink{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}{BTCASE}}(Id);
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_a038c9d59247f2bb96487d2cb9e76d194}{TKCASE}}(K)~case Type\+::\+K\+: return CXType\+\_\+\#\#K
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(X)~case CXType\+\_\+\#\#X\+: s = \char`\"{}\char`\"{}  \#X  \char`\"{}\char`\"{}; break
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_a115028e350b8253973a4fedd9d0f309a}{IMAGE\+\_\+\+TYPE}}(Img\+Type,  Id,  Singleton\+Id,  Access,  Suffix)~\mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Id);
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_a5b3b75a224d735f0a0e119919afc304e}{EXT\+\_\+\+OPAQUE\+\_\+\+TYPE}}(Ext\+TYpe,  Id,  Ext)~\mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Id);
+\item 
+\#define \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X)~case CC\+\_\+\#\#X\+: return CXCalling\+Conv\+\_\+\#\#X
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a1d3670bea8f0f8660f74bc3e4dee10a0}{clang\+\_\+get\+Cursor\+Type}} (CXCursor C)
+\item 
+CXString \mbox{\hyperlink{_c_x_type_8cpp_ae144228507fed08fdf97002f5308071d}{clang\+\_\+get\+Type\+Spelling}} (CXType CT)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_af08ffb81b29dce8ca5ff8b99cb706deb}{clang\+\_\+get\+Typedef\+Decl\+Underlying\+Type}} (CXCursor C)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a0c10944f37aaec842a04659121da28b2}{clang\+\_\+get\+Enum\+Decl\+Integer\+Type}} (CXCursor C)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_a1897c1f756e7ed639d7d1ffee5066c25}{clang\+\_\+get\+Enum\+Constant\+Decl\+Value}} (CXCursor C)
+\item 
+unsigned long long \mbox{\hyperlink{_c_x_type_8cpp_a97de04ea9715be200d226087b60a796a}{clang\+\_\+get\+Enum\+Constant\+Decl\+Unsigned\+Value}} (CXCursor C)
+\item 
+int \mbox{\hyperlink{_c_x_type_8cpp_a720ee0d2442993bd23d7ba1fa34ca374}{clang\+\_\+get\+Field\+Decl\+Bit\+Width}} (CXCursor C)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a3d8480e82fc0cdc770e5ecd3c88ffad7}{clang\+\_\+get\+Canonical\+Type}} (CXType CT)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a9f8de21d82490d6adfead30e8ab7ca57}{clang\+\_\+is\+Const\+Qualified\+Type}} (CXType CT)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a9edd8308096b8adf1a91d49468bf18f9}{clang\+\_\+is\+Volatile\+Qualified\+Type}} (CXType CT)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a0beb494915a15b4f221ae61e499e311e}{clang\+\_\+is\+Restrict\+Qualified\+Type}} (CXType CT)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a65b502fe553dabb9582c5aa10da5a9fc}{clang\+\_\+get\+Address\+Space}} (CXType CT)
+\item 
+CXString \mbox{\hyperlink{_c_x_type_8cpp_a4475ab93785a2d30a971699f155181de}{clang\+\_\+get\+Typedef\+Name}} (CXType CT)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a5ad5de5325d0345ebe292115f8fdb9ff}{clang\+\_\+get\+Pointee\+Type}} (CXType CT)
+\item 
+CXCursor \mbox{\hyperlink{_c_x_type_8cpp_af7b6b47bb98865b91a02e148f87062a2}{clang\+\_\+get\+Type\+Declaration}} (CXType CT)
+\item 
+CXString \mbox{\hyperlink{_c_x_type_8cpp_a7bb1a114f09f7b616a229a8bb874f2f1}{clang\+\_\+get\+Type\+Kind\+Spelling}} (enum CXType\+Kind K)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a7ceafcd317a03fdb13d31e708d683727}{clang\+\_\+equal\+Types}} (CXType A, CXType B)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a4ada1a674d06a4a97b62897346203630}{clang\+\_\+is\+Function\+Type\+Variadic}} (CXType X)
+\item 
+CXCalling\+Conv \mbox{\hyperlink{_c_x_type_8cpp_ab050b099d5a745525d55c742015e5654}{clang\+\_\+get\+Function\+Type\+Calling\+Conv}} (CXType X)
+\item 
+int \mbox{\hyperlink{_c_x_type_8cpp_abff38235356b94f7499b8c0ca03a5038}{clang\+\_\+get\+Num\+Arg\+Types}} (CXType X)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a54ccdb2063c903b11496879cd6f33d59}{clang\+\_\+get\+Arg\+Type}} (CXType X, unsigned i)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_aeb3044184b6d432dc24b2888cb5a128d}{clang\+\_\+get\+Result\+Type}} (CXType X)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a3e8642f2689daf6b729dac3ad81db410}{clang\+\_\+get\+Cursor\+Result\+Type}} (CXCursor C)
+\item 
+int \mbox{\hyperlink{_c_x_type_8cpp_a618f00fa0a0702acfaf14b26a34b7872}{clang\+\_\+get\+Exception\+Specification\+Type}} (CXType X)
+\item 
+int \mbox{\hyperlink{_c_x_type_8cpp_aa7a61ee6661341b92168dbc5719e2e3f}{clang\+\_\+get\+Cursor\+Exception\+Specification\+Type}} (CXCursor C)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a89492eaf65d3f961105efeaca6bb1472}{clang\+\_\+is\+PODType}} (CXType X)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_acb9c5b8e9a189fecd28edc44ae4a5af7}{clang\+\_\+get\+Element\+Type}} (CXType CT)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_a629dce96297870b004f11f13cdf80587}{clang\+\_\+get\+Num\+Elements}} (CXType CT)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a88895017ed0b49f87cf51b7ddcb766d8}{clang\+\_\+get\+Array\+Element\+Type}} (CXType CT)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_ab8acb48329181181fdc049eed1c36ac1}{clang\+\_\+get\+Array\+Size}} (CXType CT)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_a1d48d1f5eb9425cbec89c0f7df0f9595}{clang\+\_\+\+Type\+\_\+get\+Align\+Of}} (CXType T)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a3b837c0aca38e1bd67b7b5ca5d8fdc22}{clang\+\_\+\+Type\+\_\+get\+Class\+Type}} (CXType CT)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_ae439d580b183e40c09a0cc66f6fa36bf}{clang\+\_\+\+Type\+\_\+get\+Size\+Of}} (CXType T)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_a16773a0dbf5bedf922396c5c518ae99a}{clang\+\_\+\+Type\+\_\+get\+Offset\+Of}} (CXType PT, const char $\ast$S)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_afc3f56965d3cd31c19be04e7994935eb}{clang\+\_\+\+Type\+\_\+get\+Modified\+Type}} (CXType CT)
+\item 
+long long \mbox{\hyperlink{_c_x_type_8cpp_adb233758f93452b97bdb65ff556f1d9f}{clang\+\_\+\+Cursor\+\_\+get\+Offset\+Of\+Field}} (CXCursor C)
+\item 
+enum CXRef\+Qualifier\+Kind \mbox{\hyperlink{_c_x_type_8cpp_a8641fd362da41b0b80ca4a77f1fb2f07}{clang\+\_\+\+Type\+\_\+get\+CXXRef\+Qualifier}} (CXType T)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a326884cca3b3b7ce06519086cbac4f62}{clang\+\_\+\+Cursor\+\_\+is\+Bit\+Field}} (CXCursor C)
+\item 
+CXString \mbox{\hyperlink{_c_x_type_8cpp_a10620b12f7206cd16be3d49b950871c8}{clang\+\_\+get\+Decl\+Obj\+CType\+Encoding}} (CXCursor C)
+\item 
+int \mbox{\hyperlink{_c_x_type_8cpp_a90316726b7e7461002955339e55ca245}{clang\+\_\+\+Type\+\_\+get\+Num\+Template\+Arguments}} (CXType CT)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a7efab9a1ff4b7be8e852a53c5f4d73e6}{clang\+\_\+\+Type\+\_\+get\+Template\+Argument\+As\+Type}} (CXType CT, unsigned index)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a4c3cddecb5a3ffa2fd4cc6a286f9294a}{clang\+\_\+\+Type\+\_\+get\+Obj\+CObject\+Base\+Type}} (CXType CT)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_aecb9336722f2659b827e344c7ce05b45}{clang\+\_\+\+Type\+\_\+get\+Num\+Obj\+CProtocol\+Refs}} (CXType CT)
+\item 
+CXCursor \mbox{\hyperlink{_c_x_type_8cpp_a4eb677cf3bfc7179baacc4ffa4790569}{clang\+\_\+\+Type\+\_\+get\+Obj\+CProtocol\+Decl}} (CXType CT, unsigned i)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a77806a063adec1d4727afff9af0db813}{clang\+\_\+\+Type\+\_\+get\+Num\+Obj\+CType\+Args}} (CXType CT)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_affbafbb6555c318338011747fc1f4831}{clang\+\_\+\+Type\+\_\+get\+Obj\+CType\+Arg}} (CXType CT, unsigned i)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_abe81959d9ff1a1cfb80c2688bac4e861}{clang\+\_\+\+Type\+\_\+visit\+Fields}} (CXType PT, CXField\+Visitor visitor, CXClient\+Data client\+\_\+data)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a2790eda169a41be2e5f48dc18fd2c3a2}{clang\+\_\+\+Cursor\+\_\+is\+Anonymous}} (CXCursor C)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_ae3de9b7cbeb188589802559d7b286146}{clang\+\_\+\+Cursor\+\_\+is\+Anonymous\+Record\+Decl}} (CXCursor C)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_a54bbdc8598317cca8992bb8eb7bf725c}{clang\+\_\+\+Cursor\+\_\+is\+Inline\+Namespace}} (CXCursor C)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a9c60d244ec189fd2dc6077e74c5731c9}{clang\+\_\+\+Type\+\_\+get\+Named\+Type}} (CXType CT)
+\item 
+unsigned \mbox{\hyperlink{_c_x_type_8cpp_ad08f909487f3043b05527b86dc79c56b}{clang\+\_\+\+Type\+\_\+is\+Transparent\+Tag\+Typedef}} (CXType TT)
+\item 
+enum CXType\+Nullability\+Kind \mbox{\hyperlink{_c_x_type_8cpp_aa41af4571d69c09d88b3fde3886e1ed4}{clang\+\_\+\+Type\+\_\+get\+Nullability}} (CXType CT)
+\item 
+CXType \mbox{\hyperlink{_c_x_type_8cpp_a897416ad1979f589bb01359b3a31e354}{clang\+\_\+\+Type\+\_\+get\+Value\+Type}} (CXType CT)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Macro Definition Documentation}
+\mbox{\Hypertarget{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}\label{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}} 
+\index{CXType.cpp@{CXType.cpp}!BTCASE@{BTCASE}}
+\index{BTCASE@{BTCASE}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{BTCASE}{BTCASE}}
+{\footnotesize\ttfamily \#define BTCASE(\begin{DoxyParamCaption}\item[{}]{K }\end{DoxyParamCaption})~case Builtin\+Type\+::\+K\+: return CXType\+\_\+\#\#K}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a2b91f4921f0c62fb259ff5fb8b6418db}\label{_c_x_type_8cpp_a2b91f4921f0c62fb259ff5fb8b6418db}} 
+\index{CXType.cpp@{CXType.cpp}!EXT\_OPAQUE\_TYPE@{EXT\_OPAQUE\_TYPE}}
+\index{EXT\_OPAQUE\_TYPE@{EXT\_OPAQUE\_TYPE}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{EXT\_OPAQUE\_TYPE}{EXT\_OPAQUE\_TYPE}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \#define EXT\+\_\+\+OPAQUE\+\_\+\+TYPE(\begin{DoxyParamCaption}\item[{}]{Ext\+Type,  }\item[{}]{Id,  }\item[{}]{Ext }\end{DoxyParamCaption})~\mbox{\hyperlink{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}{BTCASE}}(Id);}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a5b3b75a224d735f0a0e119919afc304e}\label{_c_x_type_8cpp_a5b3b75a224d735f0a0e119919afc304e}} 
+\index{CXType.cpp@{CXType.cpp}!EXT\_OPAQUE\_TYPE@{EXT\_OPAQUE\_TYPE}}
+\index{EXT\_OPAQUE\_TYPE@{EXT\_OPAQUE\_TYPE}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{EXT\_OPAQUE\_TYPE}{EXT\_OPAQUE\_TYPE}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \#define EXT\+\_\+\+OPAQUE\+\_\+\+TYPE(\begin{DoxyParamCaption}\item[{}]{Ext\+TYpe,  }\item[{}]{Id,  }\item[{}]{Ext }\end{DoxyParamCaption})~\mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Id);}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a115028e350b8253973a4fedd9d0f309a}\label{_c_x_type_8cpp_a115028e350b8253973a4fedd9d0f309a}} 
+\index{CXType.cpp@{CXType.cpp}!IMAGE\_TYPE@{IMAGE\_TYPE}}
+\index{IMAGE\_TYPE@{IMAGE\_TYPE}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{IMAGE\_TYPE}{IMAGE\_TYPE}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \#define IMAGE\+\_\+\+TYPE(\begin{DoxyParamCaption}\item[{}]{Img\+Type,  }\item[{}]{Id,  }\item[{}]{Singleton\+Id,  }\item[{}]{Access,  }\item[{}]{Suffix }\end{DoxyParamCaption})~\mbox{\hyperlink{_c_x_type_8cpp_a8368b1f249bfe69199e6afd6ea97fd05}{BTCASE}}(Id);}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a115028e350b8253973a4fedd9d0f309a}\label{_c_x_type_8cpp_a115028e350b8253973a4fedd9d0f309a}} 
+\index{CXType.cpp@{CXType.cpp}!IMAGE\_TYPE@{IMAGE\_TYPE}}
+\index{IMAGE\_TYPE@{IMAGE\_TYPE}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{IMAGE\_TYPE}{IMAGE\_TYPE}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \#define IMAGE\+\_\+\+TYPE(\begin{DoxyParamCaption}\item[{}]{Img\+Type,  }\item[{}]{Id,  }\item[{}]{Singleton\+Id,  }\item[{}]{Access,  }\item[{}]{Suffix }\end{DoxyParamCaption})~\mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Id);}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}\label{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}} 
+\index{CXType.cpp@{CXType.cpp}!TCALLINGCONV@{TCALLINGCONV}}
+\index{TCALLINGCONV@{TCALLINGCONV}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{TCALLINGCONV}{TCALLINGCONV}}
+{\footnotesize\ttfamily \#define TCALLINGCONV(\begin{DoxyParamCaption}\item[{}]{X }\end{DoxyParamCaption})~case CC\+\_\+\#\#X\+: return CXCalling\+Conv\+\_\+\#\#X}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a038c9d59247f2bb96487d2cb9e76d194}\label{_c_x_type_8cpp_a038c9d59247f2bb96487d2cb9e76d194}} 
+\index{CXType.cpp@{CXType.cpp}!TKCASE@{TKCASE}}
+\index{TKCASE@{TKCASE}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{TKCASE}{TKCASE}}
+{\footnotesize\ttfamily \#define TKCASE(\begin{DoxyParamCaption}\item[{}]{K }\end{DoxyParamCaption})~case Type\+::\+K\+: return CXType\+\_\+\#\#K}
+
+\mbox{\Hypertarget{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}\label{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}} 
+\index{CXType.cpp@{CXType.cpp}!TKIND@{TKIND}}
+\index{TKIND@{TKIND}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{TKIND}{TKIND}}
+{\footnotesize\ttfamily \#define TKIND(\begin{DoxyParamCaption}\item[{}]{X }\end{DoxyParamCaption})~case CXType\+\_\+\#\#X\+: s = \char`\"{}\char`\"{}  \#X  \char`\"{}\char`\"{}; break}
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_c_x_type_8cpp_adb233758f93452b97bdb65ff556f1d9f}\label{_c_x_type_8cpp_adb233758f93452b97bdb65ff556f1d9f}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Cursor\_getOffsetOfField@{clang\_Cursor\_getOffsetOfField}}
+\index{clang\_Cursor\_getOffsetOfField@{clang\_Cursor\_getOffsetOfField}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Cursor\_getOffsetOfField()}{clang\_Cursor\_getOffsetOfField()}}
+{\footnotesize\ttfamily long long clang\+\_\+\+Cursor\+\_\+get\+Offset\+Of\+Field (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1054 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1054                                                     \{}
+\DoxyCodeLine{1055   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{1056     \textcolor{comment}{// we need to validate the parent type}}
+\DoxyCodeLine{1057     CXCursor PC = \mbox{\hyperlink{_c_index_8cpp_a114663793af87aa65d983a8514db6b43}{clang\_getCursorSemanticParent}}(C);}
+\DoxyCodeLine{1058     CXType PT = \mbox{\hyperlink{_c_x_type_8cpp_a1d3670bea8f0f8660f74bc3e4dee10a0}{clang\_getCursorType}}(PC);}
+\DoxyCodeLine{1059     \textcolor{keywordtype}{long} \textcolor{keywordtype}{long} Error = validateFieldParentType(PC,PT);}
+\DoxyCodeLine{1060     \textcolor{keywordflow}{if} (Error < 0)}
+\DoxyCodeLine{1061       \textcolor{keywordflow}{return} Error;}
+\DoxyCodeLine{1062     \textcolor{comment}{// proceed with the offset calculation}}
+\DoxyCodeLine{1063     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{1064     ASTContext \&Ctx = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a9f29c286f26b3cf616331c7e6554d373}{cxcursor::getCursorContext}}(C);}
+\DoxyCodeLine{1065     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FieldDecl *FD = dyn\_cast\_or\_null<FieldDecl>(D))}
+\DoxyCodeLine{1066       \textcolor{keywordflow}{return} Ctx.getFieldOffset(FD);}
+\DoxyCodeLine{1067     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} IndirectFieldDecl *IFD = dyn\_cast\_or\_null<IndirectFieldDecl>(D))}
+\DoxyCodeLine{1068       \textcolor{keywordflow}{return} Ctx.getFieldOffset(IFD);}
+\DoxyCodeLine{1069   \}}
+\DoxyCodeLine{1070   \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{1071 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Cursor\+Semantic\+Parent(), clang\+\_\+get\+Cursor\+Type(), and clang\+\_\+is\+Declaration().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a2790eda169a41be2e5f48dc18fd2c3a2}\label{_c_x_type_8cpp_a2790eda169a41be2e5f48dc18fd2c3a2}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Cursor\_isAnonymous@{clang\_Cursor\_isAnonymous}}
+\index{clang\_Cursor\_isAnonymous@{clang\_Cursor\_isAnonymous}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Cursor\_isAnonymous()}{clang\_Cursor\_isAnonymous()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Cursor\+\_\+is\+Anonymous (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1256 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1256                                              \{}
+\DoxyCodeLine{1257   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{1258     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1259   \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{1260   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} NamespaceDecl *ND = dyn\_cast\_or\_null<NamespaceDecl>(D)) \{}
+\DoxyCodeLine{1261     \textcolor{keywordflow}{return} ND-\/>isAnonymousNamespace();}
+\DoxyCodeLine{1262   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} TagDecl *TD = dyn\_cast\_or\_null<TagDecl>(D)) \{}
+\DoxyCodeLine{1263     \textcolor{keywordflow}{return} TD-\/>getTypedefNameForAnonDecl() == \textcolor{keyword}{nullptr} \&\&}
+\DoxyCodeLine{1264            TD-\/>getIdentifier() == \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{1265   \}}
+\DoxyCodeLine{1266 }
+\DoxyCodeLine{1267   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1268 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_ae3de9b7cbeb188589802559d7b286146}\label{_c_x_type_8cpp_ae3de9b7cbeb188589802559d7b286146}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Cursor\_isAnonymousRecordDecl@{clang\_Cursor\_isAnonymousRecordDecl}}
+\index{clang\_Cursor\_isAnonymousRecordDecl@{clang\_Cursor\_isAnonymousRecordDecl}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Cursor\_isAnonymousRecordDecl()}{clang\_Cursor\_isAnonymousRecordDecl()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Cursor\+\_\+is\+Anonymous\+Record\+Decl (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1270 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1270                                                        \{}
+\DoxyCodeLine{1271   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{1272     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1273   \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{1274   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} RecordDecl *FD = dyn\_cast\_or\_null<RecordDecl>(D))}
+\DoxyCodeLine{1275     \textcolor{keywordflow}{return} FD-\/>isAnonymousStructOrUnion();}
+\DoxyCodeLine{1276   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1277 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a326884cca3b3b7ce06519086cbac4f62}\label{_c_x_type_8cpp_a326884cca3b3b7ce06519086cbac4f62}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Cursor\_isBitField@{clang\_Cursor\_isBitField}}
+\index{clang\_Cursor\_isBitField@{clang\_Cursor\_isBitField}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Cursor\_isBitField()}{clang\_Cursor\_isBitField()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Cursor\+\_\+is\+Bit\+Field (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1091 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1091                                              \{}
+\DoxyCodeLine{1092   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{1093     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1094   \textcolor{keyword}{const} FieldDecl *FD = dyn\_cast\_or\_null<FieldDecl>(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C));}
+\DoxyCodeLine{1095   \textcolor{keywordflow}{if} (!FD)}
+\DoxyCodeLine{1096     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1097   \textcolor{keywordflow}{return} FD-\/>isBitField();}
+\DoxyCodeLine{1098 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a54bbdc8598317cca8992bb8eb7bf725c}\label{_c_x_type_8cpp_a54bbdc8598317cca8992bb8eb7bf725c}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Cursor\_isInlineNamespace@{clang\_Cursor\_isInlineNamespace}}
+\index{clang\_Cursor\_isInlineNamespace@{clang\_Cursor\_isInlineNamespace}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Cursor\_isInlineNamespace()}{clang\_Cursor\_isInlineNamespace()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Cursor\+\_\+is\+Inline\+Namespace (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1279 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1279                                                     \{}
+\DoxyCodeLine{1280   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{1281     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1282   \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{1283   \textcolor{keyword}{const} NamespaceDecl *ND = dyn\_cast\_or\_null<NamespaceDecl>(D);}
+\DoxyCodeLine{1284   \textcolor{keywordflow}{return} ND ? ND-\/>isInline() : 0;}
+\DoxyCodeLine{1285 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a7ceafcd317a03fdb13d31e708d683727}\label{_c_x_type_8cpp_a7ceafcd317a03fdb13d31e708d683727}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_equalTypes@{clang\_equalTypes}}
+\index{clang\_equalTypes@{clang\_equalTypes}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_equalTypes()}{clang\_equalTypes()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+equal\+Types (\begin{DoxyParamCaption}\item[{CXType}]{A,  }\item[{CXType}]{B }\end{DoxyParamCaption})}
+
+
+
+Definition at line 627 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{627                                               \{}
+\DoxyCodeLine{628   \textcolor{keywordflow}{return} A.data[0] == B.data[0] \&\& A.data[1] == B.data[1];}
+\DoxyCodeLine{629 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a65b502fe553dabb9582c5aa10da5a9fc}\label{_c_x_type_8cpp_a65b502fe553dabb9582c5aa10da5a9fc}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getAddressSpace@{clang\_getAddressSpace}}
+\index{clang\_getAddressSpace@{clang\_getAddressSpace}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getAddressSpace()}{clang\_getAddressSpace()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+get\+Address\+Space (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 419 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{419                                           \{}
+\DoxyCodeLine{420   QualType T = GetQualType(CT);}
+\DoxyCodeLine{421 }
+\DoxyCodeLine{422   \textcolor{comment}{// For non language-\/specific address space, use separate helper function.}}
+\DoxyCodeLine{423   \textcolor{keywordflow}{if} (T.getAddressSpace() >= LangAS::FirstTargetAddressSpace) \{}
+\DoxyCodeLine{424     \textcolor{keywordflow}{return} T.getQualifiers().getAddressSpaceAttributePrintValue();}
+\DoxyCodeLine{425   \}}
+\DoxyCodeLine{426   \textcolor{comment}{// FIXME: this function returns either a LangAS or a target AS}}
+\DoxyCodeLine{427   \textcolor{comment}{// Those values can overlap which makes this function rather unpredictable}}
+\DoxyCodeLine{428   \textcolor{comment}{// for any caller}}
+\DoxyCodeLine{429   \textcolor{keywordflow}{return} (\textcolor{keywordtype}{unsigned})T.getAddressSpace();}
+\DoxyCodeLine{430 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a54ccdb2063c903b11496879cd6f33d59}\label{_c_x_type_8cpp_a54ccdb2063c903b11496879cd6f33d59}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getArgType@{clang\_getArgType}}
+\index{clang\_getArgType@{clang\_getArgType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getArgType()}{clang\_getArgType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Arg\+Type (\begin{DoxyParamCaption}\item[{CXType}]{X,  }\item[{unsigned}]{i }\end{DoxyParamCaption})}
+
+
+
+Definition at line 695 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{695                                               \{}
+\DoxyCodeLine{696   QualType T = GetQualType(X);}
+\DoxyCodeLine{697   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{698     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(X));}
+\DoxyCodeLine{699 }
+\DoxyCodeLine{700   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionProtoType *FD = T-\/>getAs<FunctionProtoType>()) \{}
+\DoxyCodeLine{701     \textcolor{keywordtype}{unsigned} numParams = FD-\/>getNumParams();}
+\DoxyCodeLine{702     \textcolor{keywordflow}{if} (i >= numParams)}
+\DoxyCodeLine{703       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(X));}
+\DoxyCodeLine{704 }
+\DoxyCodeLine{705     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(FD-\/>getParamType(i), GetTU(X));}
+\DoxyCodeLine{706   \}}
+\DoxyCodeLine{707   }
+\DoxyCodeLine{708   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(X));}
+\DoxyCodeLine{709 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a88895017ed0b49f87cf51b7ddcb766d8}\label{_c_x_type_8cpp_a88895017ed0b49f87cf51b7ddcb766d8}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getArrayElementType@{clang\_getArrayElementType}}
+\index{clang\_getArrayElementType@{clang\_getArrayElementType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getArrayElementType()}{clang\_getArrayElementType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Array\+Element\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 850 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{850                                             \{}
+\DoxyCodeLine{851   QualType ET = QualType();}
+\DoxyCodeLine{852   QualType T = GetQualType(CT);}
+\DoxyCodeLine{853   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{854 }
+\DoxyCodeLine{855   \textcolor{keywordflow}{if} (TP) \{}
+\DoxyCodeLine{856     \textcolor{keywordflow}{switch} (TP-\/>getTypeClass()) \{}
+\DoxyCodeLine{857     \textcolor{keywordflow}{case} Type::ConstantArray:}
+\DoxyCodeLine{858       ET = cast<ConstantArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{859       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{860     \textcolor{keywordflow}{case} Type::IncompleteArray:}
+\DoxyCodeLine{861       ET = cast<IncompleteArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{862       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{863     \textcolor{keywordflow}{case} Type::VariableArray:}
+\DoxyCodeLine{864       ET = cast<VariableArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{865       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{866     \textcolor{keywordflow}{case} Type::DependentSizedArray:}
+\DoxyCodeLine{867       ET = cast<DependentSizedArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{868       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{869     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{870       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{871     \}}
+\DoxyCodeLine{872   \}}
+\DoxyCodeLine{873   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(ET, GetTU(CT));}
+\DoxyCodeLine{874 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_ab8acb48329181181fdc049eed1c36ac1}\label{_c_x_type_8cpp_ab8acb48329181181fdc049eed1c36ac1}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getArraySize@{clang\_getArraySize}}
+\index{clang\_getArraySize@{clang\_getArraySize}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getArraySize()}{clang\_getArraySize()}}
+{\footnotesize\ttfamily long long clang\+\_\+get\+Array\+Size (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 876 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{876                                         \{}
+\DoxyCodeLine{877   \textcolor{keywordtype}{long} \textcolor{keywordtype}{long} result = -\/1;}
+\DoxyCodeLine{878   QualType T = GetQualType(CT);}
+\DoxyCodeLine{879   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{880 }
+\DoxyCodeLine{881   \textcolor{keywordflow}{if} (TP) \{}
+\DoxyCodeLine{882     \textcolor{keywordflow}{switch} (TP-\/>getTypeClass()) \{}
+\DoxyCodeLine{883     \textcolor{keywordflow}{case} Type::ConstantArray:}
+\DoxyCodeLine{884       result = cast<ConstantArrayType> (TP)-\/>getSize().getSExtValue();}
+\DoxyCodeLine{885       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{886     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{887       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{888     \}}
+\DoxyCodeLine{889   \}}
+\DoxyCodeLine{890   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{891 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a3d8480e82fc0cdc770e5ecd3c88ffad7}\label{_c_x_type_8cpp_a3d8480e82fc0cdc770e5ecd3c88ffad7}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getCanonicalType@{clang\_getCanonicalType}}
+\index{clang\_getCanonicalType@{clang\_getCanonicalType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCanonicalType()}{clang\_getCanonicalType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Canonical\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 389 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{389                                          \{}
+\DoxyCodeLine{390   \textcolor{keywordflow}{if} (CT.kind == CXType\_Invalid)}
+\DoxyCodeLine{391     \textcolor{keywordflow}{return} CT;}
+\DoxyCodeLine{392 }
+\DoxyCodeLine{393   QualType T = GetQualType(CT);}
+\DoxyCodeLine{394   CXTranslationUnit TU = GetTU(CT);}
+\DoxyCodeLine{395 }
+\DoxyCodeLine{396   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{397     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{398 }
+\DoxyCodeLine{399   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(cxtu::getASTUnit(TU)-\/>getASTContext()}
+\DoxyCodeLine{400                         .getCanonicalType(T),}
+\DoxyCodeLine{401                     TU);}
+\DoxyCodeLine{402 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_aa7a61ee6661341b92168dbc5719e2e3f}\label{_c_x_type_8cpp_aa7a61ee6661341b92168dbc5719e2e3f}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getCursorExceptionSpecificationType@{clang\_getCursorExceptionSpecificationType}}
+\index{clang\_getCursorExceptionSpecificationType@{clang\_getCursorExceptionSpecificationType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCursorExceptionSpecificationType()}{clang\_getCursorExceptionSpecificationType()}}
+{\footnotesize\ttfamily int clang\+\_\+get\+Cursor\+Exception\+Specification\+Type (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 775 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{775                                                           \{}
+\DoxyCodeLine{776   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{777     \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_x_type_8cpp_a618f00fa0a0702acfaf14b26a34b7872}{clang\_getExceptionSpecificationType}}(\mbox{\hyperlink{_c_x_type_8cpp_a1d3670bea8f0f8660f74bc3e4dee10a0}{clang\_getCursorType}}(C));}
+\DoxyCodeLine{778 }
+\DoxyCodeLine{779   \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{780 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Cursor\+Type(), clang\+\_\+get\+Exception\+Specification\+Type(), and clang\+\_\+is\+Declaration().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a3e8642f2689daf6b729dac3ad81db410}\label{_c_x_type_8cpp_a3e8642f2689daf6b729dac3ad81db410}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getCursorResultType@{clang\_getCursorResultType}}
+\index{clang\_getCursorResultType@{clang\_getCursorResultType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCursorResultType()}{clang\_getCursorResultType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Cursor\+Result\+Type (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 722 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{722                                              \{}
+\DoxyCodeLine{723   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{724     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{725     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCMethodDecl *MD = dyn\_cast\_or\_null<ObjCMethodDecl>(D))}
+\DoxyCodeLine{726       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(MD-\/>getReturnType(), \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C));}
+\DoxyCodeLine{727 }
+\DoxyCodeLine{728     \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_x_type_8cpp_aeb3044184b6d432dc24b2888cb5a128d}{clang\_getResultType}}(\mbox{\hyperlink{_c_x_type_8cpp_a1d3670bea8f0f8660f74bc3e4dee10a0}{clang\_getCursorType}}(C));}
+\DoxyCodeLine{729   \}}
+\DoxyCodeLine{730 }
+\DoxyCodeLine{731   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C));}
+\DoxyCodeLine{732 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Cursor\+Type(), clang\+\_\+get\+Result\+Type(), clang\+\_\+is\+Declaration(), clang\+::cxcursor\+::get\+Cursor\+Decl(), clang\+::cxcursor\+::get\+Cursor\+TU(), and clang\+::cxtype\+::\+Make\+CXType().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a1d3670bea8f0f8660f74bc3e4dee10a0}\label{_c_x_type_8cpp_a1d3670bea8f0f8660f74bc3e4dee10a0}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getCursorType@{clang\_getCursorType}}
+\index{clang\_getCursorType@{clang\_getCursorType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCursorType()}{clang\_getCursorType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Cursor\+Type (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 216 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{216                                        \{}
+\DoxyCodeLine{217   \textcolor{keyword}{using namespace }cxcursor;}
+\DoxyCodeLine{218 }
+\DoxyCodeLine{219   CXTranslationUnit TU = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C);}
+\DoxyCodeLine{220   \textcolor{keywordflow}{if} (!TU)}
+\DoxyCodeLine{221     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{222 }
+\DoxyCodeLine{223   ASTContext \&Context = cxtu::getASTUnit(TU)-\/>getASTContext();}
+\DoxyCodeLine{224   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_ab958945dd59c351e1ae1a3f7f5668095}{clang\_isExpression}}(C.kind)) \{}
+\DoxyCodeLine{225     QualType T = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a80837a3710c6df0dfc24b5ee1d94ff9b}{cxcursor::getCursorExpr}}(C)-\/>getType();}
+\DoxyCodeLine{226     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, TU);}
+\DoxyCodeLine{227   \}}
+\DoxyCodeLine{228 }
+\DoxyCodeLine{229   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{230     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{231     \textcolor{keywordflow}{if} (!D)}
+\DoxyCodeLine{232       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{233 }
+\DoxyCodeLine{234     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} TypeDecl *TD = dyn\_cast<TypeDecl>(D))}
+\DoxyCodeLine{235       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(Context.getTypeDeclType(TD), TU);}
+\DoxyCodeLine{236     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCInterfaceDecl *ID = dyn\_cast<ObjCInterfaceDecl>(D))}
+\DoxyCodeLine{237       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(Context.getObjCInterfaceType(ID), TU);}
+\DoxyCodeLine{238     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} DeclaratorDecl *DD = dyn\_cast<DeclaratorDecl>(D))}
+\DoxyCodeLine{239       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(DD-\/>getType(), TU);}
+\DoxyCodeLine{240     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ValueDecl *VD = dyn\_cast<ValueDecl>(D))}
+\DoxyCodeLine{241       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(VD-\/>getType(), TU);}
+\DoxyCodeLine{242     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCPropertyDecl *PD = dyn\_cast<ObjCPropertyDecl>(D))}
+\DoxyCodeLine{243       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(PD-\/>getType(), TU);}
+\DoxyCodeLine{244     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionTemplateDecl *FTD = dyn\_cast<FunctionTemplateDecl>(D))}
+\DoxyCodeLine{245       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(FTD-\/>getTemplatedDecl()-\/>getType(), TU);}
+\DoxyCodeLine{246     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{247   \}}
+\DoxyCodeLine{248 }
+\DoxyCodeLine{249   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a8b03541653a9373d35919c45216bc70f}{clang\_isReference}}(C.kind)) \{}
+\DoxyCodeLine{250     \textcolor{keywordflow}{switch} (C.kind) \{}
+\DoxyCodeLine{251     \textcolor{keywordflow}{case} CXCursor\_ObjCSuperClassRef: \{}
+\DoxyCodeLine{252       QualType T}
+\DoxyCodeLine{253         = Context.getObjCInterfaceType(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a071683bc881399c3bcadba5a4da408b2}{getCursorObjCSuperClassRef}}(C).first);}
+\DoxyCodeLine{254       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, TU);}
+\DoxyCodeLine{255     \}}
+\DoxyCodeLine{256 }
+\DoxyCodeLine{257     \textcolor{keywordflow}{case} CXCursor\_ObjCClassRef: \{}
+\DoxyCodeLine{258       QualType T = Context.getObjCInterfaceType(\mbox{\hyperlink{namespaceclang_1_1cxcursor_ad21fba4a3d5f6bdc63a19303b1cb42a3}{getCursorObjCClassRef}}(C).first);}
+\DoxyCodeLine{259       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, TU);}
+\DoxyCodeLine{260     \}}
+\DoxyCodeLine{261 }
+\DoxyCodeLine{262     \textcolor{keywordflow}{case} CXCursor\_TypeRef: \{}
+\DoxyCodeLine{263       QualType T = Context.getTypeDeclType(\mbox{\hyperlink{namespaceclang_1_1cxcursor_ab0284c10c2cfeb2ffe43b99ec3e9dd9f}{getCursorTypeRef}}(C).first);}
+\DoxyCodeLine{264       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, TU);}
+\DoxyCodeLine{265 }
+\DoxyCodeLine{266     \}}
+\DoxyCodeLine{267 }
+\DoxyCodeLine{268     \textcolor{keywordflow}{case} CXCursor\_CXXBaseSpecifier:}
+\DoxyCodeLine{269       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{cxtype::MakeCXType}}(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a05b387c1d9aeb75b3de539f8622e0964}{getCursorCXXBaseSpecifier}}(C)-\/>getType(), TU);}
+\DoxyCodeLine{270 }
+\DoxyCodeLine{271     \textcolor{keywordflow}{case} CXCursor\_MemberRef:}
+\DoxyCodeLine{272       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{cxtype::MakeCXType}}(\mbox{\hyperlink{namespaceclang_1_1cxcursor_af3f3d2390bed39285f0b3313c1fab84b}{getCursorMemberRef}}(C).first-\/>getType(), TU);}
+\DoxyCodeLine{273 }
+\DoxyCodeLine{274     \textcolor{keywordflow}{case} CXCursor\_VariableRef:}
+\DoxyCodeLine{275       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{cxtype::MakeCXType}}(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a53fa4c4c92a2fbaded59ad51eeed6e47}{getCursorVariableRef}}(C).first-\/>getType(), TU);}
+\DoxyCodeLine{276 }
+\DoxyCodeLine{277     \textcolor{keywordflow}{case} CXCursor\_ObjCProtocolRef:}
+\DoxyCodeLine{278     \textcolor{keywordflow}{case} CXCursor\_TemplateRef:}
+\DoxyCodeLine{279     \textcolor{keywordflow}{case} CXCursor\_NamespaceRef:}
+\DoxyCodeLine{280     \textcolor{keywordflow}{case} CXCursor\_OverloadedDeclRef:}
+\DoxyCodeLine{281     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{282       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{283     \}}
+\DoxyCodeLine{284 }
+\DoxyCodeLine{285     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{286   \}}
+\DoxyCodeLine{287 }
+\DoxyCodeLine{288   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{289 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), clang\+\_\+is\+Expression(), clang\+\_\+is\+Reference(), clang\+::cxcursor\+::get\+Cursor\+CXXBase\+Specifier(), clang\+::cxcursor\+::get\+Cursor\+Decl(), clang\+::cxcursor\+::get\+Cursor\+Expr(), clang\+::cxcursor\+::get\+Cursor\+Member\+Ref(), clang\+::cxcursor\+::get\+Cursor\+Obj\+CClass\+Ref(), clang\+::cxcursor\+::get\+Cursor\+Obj\+CSuper\+Class\+Ref(), clang\+::cxcursor\+::get\+Cursor\+TU(), clang\+::cxcursor\+::get\+Cursor\+Type\+Ref(), clang\+::cxcursor\+::get\+Cursor\+Variable\+Ref(), and clang\+::cxtype\+::\+Make\+CXType().
+
+
+
+Referenced by clang\+\_\+\+Cursor\+\_\+get\+Offset\+Of\+Field(), clang\+\_\+get\+Cursor\+Exception\+Specification\+Type(), and clang\+\_\+get\+Cursor\+Result\+Type().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a10620b12f7206cd16be3d49b950871c8}\label{_c_x_type_8cpp_a10620b12f7206cd16be3d49b950871c8}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getDeclObjCTypeEncoding@{clang\_getDeclObjCTypeEncoding}}
+\index{clang\_getDeclObjCTypeEncoding@{clang\_getDeclObjCTypeEncoding}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getDeclObjCTypeEncoding()}{clang\_getDeclObjCTypeEncoding()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Decl\+Obj\+CType\+Encoding (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1100 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1100                                                    \{}
+\DoxyCodeLine{1101   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{1102     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{1103 }
+\DoxyCodeLine{1104   \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{1105   ASTContext \&Ctx = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a9f29c286f26b3cf616331c7e6554d373}{cxcursor::getCursorContext}}(C);}
+\DoxyCodeLine{1106   std::string encoding;}
+\DoxyCodeLine{1107 }
+\DoxyCodeLine{1108   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCMethodDecl *OMD = dyn\_cast<ObjCMethodDecl>(D))  \{}
+\DoxyCodeLine{1109     encoding = Ctx.getObjCEncodingForMethodDecl(OMD);}
+\DoxyCodeLine{1110   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ObjCPropertyDecl *OPD = dyn\_cast<ObjCPropertyDecl>(D))}
+\DoxyCodeLine{1111     encoding = Ctx.getObjCEncodingForPropertyDecl(OPD, \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{1112   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionDecl *FD = dyn\_cast<FunctionDecl>(D))}
+\DoxyCodeLine{1113     encoding = Ctx.getObjCEncodingForFunctionDecl(FD);}
+\DoxyCodeLine{1114   \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{1115     QualType Ty;}
+\DoxyCodeLine{1116     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} TypeDecl *TD = dyn\_cast<TypeDecl>(D))}
+\DoxyCodeLine{1117       Ty = Ctx.getTypeDeclType(TD);}
+\DoxyCodeLine{1118     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ValueDecl *VD = dyn\_cast<ValueDecl>(D))}
+\DoxyCodeLine{1119       Ty = VD-\/>getType();}
+\DoxyCodeLine{1120     \textcolor{keywordflow}{else} \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(\textcolor{stringliteral}{"{}?"{}});}
+\DoxyCodeLine{1121     Ctx.getObjCEncodingForType(Ty, encoding);}
+\DoxyCodeLine{1122   \}}
+\DoxyCodeLine{1123 }
+\DoxyCodeLine{1124   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(encoding);}
+\DoxyCodeLine{1125 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), clang\+::cxstring\+::create\+Dup(), clang\+::cxstring\+::create\+Empty(), clang\+::cxstring\+::create\+Ref(), clang\+::cxcursor\+::get\+Cursor\+Context(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_acb9c5b8e9a189fecd28edc44ae4a5af7}\label{_c_x_type_8cpp_acb9c5b8e9a189fecd28edc44ae4a5af7}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getElementType@{clang\_getElementType}}
+\index{clang\_getElementType@{clang\_getElementType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getElementType()}{clang\_getElementType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Element\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 792 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{792                                        \{}
+\DoxyCodeLine{793   QualType ET = QualType();}
+\DoxyCodeLine{794   QualType T = GetQualType(CT);}
+\DoxyCodeLine{795   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{796 }
+\DoxyCodeLine{797   \textcolor{keywordflow}{if} (TP) \{}
+\DoxyCodeLine{798     \textcolor{keywordflow}{switch} (TP-\/>getTypeClass()) \{}
+\DoxyCodeLine{799     \textcolor{keywordflow}{case} Type::ConstantArray:}
+\DoxyCodeLine{800       ET = cast<ConstantArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{801       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{802     \textcolor{keywordflow}{case} Type::IncompleteArray:}
+\DoxyCodeLine{803       ET = cast<IncompleteArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{804       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{805     \textcolor{keywordflow}{case} Type::VariableArray:}
+\DoxyCodeLine{806       ET = cast<VariableArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{807       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{808     \textcolor{keywordflow}{case} Type::DependentSizedArray:}
+\DoxyCodeLine{809       ET = cast<DependentSizedArrayType> (TP)-\/>getElementType();}
+\DoxyCodeLine{810       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{811     \textcolor{keywordflow}{case} Type::Vector:}
+\DoxyCodeLine{812       ET = cast<VectorType> (TP)-\/>getElementType();}
+\DoxyCodeLine{813       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{814     \textcolor{keywordflow}{case} Type::ExtVector:}
+\DoxyCodeLine{815       ET = cast<ExtVectorType>(TP)-\/>getElementType();}
+\DoxyCodeLine{816       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{817     \textcolor{keywordflow}{case} Type::Complex:}
+\DoxyCodeLine{818       ET = cast<ComplexType> (TP)-\/>getElementType();}
+\DoxyCodeLine{819       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{820     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{821       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{822     \}}
+\DoxyCodeLine{823   \}}
+\DoxyCodeLine{824   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(ET, GetTU(CT));}
+\DoxyCodeLine{825 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a97de04ea9715be200d226087b60a796a}\label{_c_x_type_8cpp_a97de04ea9715be200d226087b60a796a}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getEnumConstantDeclUnsignedValue@{clang\_getEnumConstantDeclUnsignedValue}}
+\index{clang\_getEnumConstantDeclUnsignedValue@{clang\_getEnumConstantDeclUnsignedValue}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getEnumConstantDeclUnsignedValue()}{clang\_getEnumConstantDeclUnsignedValue()}}
+{\footnotesize\ttfamily unsigned long long clang\+\_\+get\+Enum\+Constant\+Decl\+Unsigned\+Value (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 358 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{358                                                                       \{}
+\DoxyCodeLine{359   \textcolor{keyword}{using namespace }cxcursor;}
+\DoxyCodeLine{360 }
+\DoxyCodeLine{361   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{362     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{363 }
+\DoxyCodeLine{364     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} EnumConstantDecl *TD = dyn\_cast\_or\_null<EnumConstantDecl>(D)) \{}
+\DoxyCodeLine{365       \textcolor{keywordflow}{return} TD-\/>getInitVal().getZExtValue();}
+\DoxyCodeLine{366     \}}
+\DoxyCodeLine{367 }
+\DoxyCodeLine{368     \textcolor{keywordflow}{return} ULLONG\_MAX;}
+\DoxyCodeLine{369   \}}
+\DoxyCodeLine{370 }
+\DoxyCodeLine{371   \textcolor{keywordflow}{return} ULLONG\_MAX;}
+\DoxyCodeLine{372 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a1897c1f756e7ed639d7d1ffee5066c25}\label{_c_x_type_8cpp_a1897c1f756e7ed639d7d1ffee5066c25}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getEnumConstantDeclValue@{clang\_getEnumConstantDeclValue}}
+\index{clang\_getEnumConstantDeclValue@{clang\_getEnumConstantDeclValue}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getEnumConstantDeclValue()}{clang\_getEnumConstantDeclValue()}}
+{\footnotesize\ttfamily long long clang\+\_\+get\+Enum\+Constant\+Decl\+Value (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 342 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{342                                                      \{}
+\DoxyCodeLine{343   \textcolor{keyword}{using namespace }cxcursor;}
+\DoxyCodeLine{344 }
+\DoxyCodeLine{345   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{346     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{347 }
+\DoxyCodeLine{348     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} EnumConstantDecl *TD = dyn\_cast\_or\_null<EnumConstantDecl>(D)) \{}
+\DoxyCodeLine{349       \textcolor{keywordflow}{return} TD-\/>getInitVal().getSExtValue();}
+\DoxyCodeLine{350     \}}
+\DoxyCodeLine{351 }
+\DoxyCodeLine{352     \textcolor{keywordflow}{return} LLONG\_MIN;}
+\DoxyCodeLine{353   \}}
+\DoxyCodeLine{354 }
+\DoxyCodeLine{355   \textcolor{keywordflow}{return} LLONG\_MIN;}
+\DoxyCodeLine{356 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a0c10944f37aaec842a04659121da28b2}\label{_c_x_type_8cpp_a0c10944f37aaec842a04659121da28b2}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getEnumDeclIntegerType@{clang\_getEnumDeclIntegerType}}
+\index{clang\_getEnumDeclIntegerType@{clang\_getEnumDeclIntegerType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getEnumDeclIntegerType()}{clang\_getEnumDeclIntegerType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Enum\+Decl\+Integer\+Type (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 324 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{324                                                 \{}
+\DoxyCodeLine{325   \textcolor{keyword}{using namespace }cxcursor;}
+\DoxyCodeLine{326   CXTranslationUnit TU = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C);}
+\DoxyCodeLine{327 }
+\DoxyCodeLine{328   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{329     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{330 }
+\DoxyCodeLine{331     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} EnumDecl *TD = dyn\_cast\_or\_null<EnumDecl>(D)) \{}
+\DoxyCodeLine{332       QualType T = TD-\/>getIntegerType();}
+\DoxyCodeLine{333       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, TU);}
+\DoxyCodeLine{334     \}}
+\DoxyCodeLine{335 }
+\DoxyCodeLine{336     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{337   \}}
+\DoxyCodeLine{338 }
+\DoxyCodeLine{339   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{340 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), clang\+::cxcursor\+::get\+Cursor\+Decl(), clang\+::cxcursor\+::get\+Cursor\+TU(), and clang\+::cxtype\+::\+Make\+CXType().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a618f00fa0a0702acfaf14b26a34b7872}\label{_c_x_type_8cpp_a618f00fa0a0702acfaf14b26a34b7872}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getExceptionSpecificationType@{clang\_getExceptionSpecificationType}}
+\index{clang\_getExceptionSpecificationType@{clang\_getExceptionSpecificationType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getExceptionSpecificationType()}{clang\_getExceptionSpecificationType()}}
+{\footnotesize\ttfamily int clang\+\_\+get\+Exception\+Specification\+Type (\begin{DoxyParamCaption}\item[{CXType}]{X }\end{DoxyParamCaption})}
+
+
+
+Definition at line 764 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{764                                                   \{}
+\DoxyCodeLine{765   QualType T = GetQualType(X);}
+\DoxyCodeLine{766   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{767     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{768 }
+\DoxyCodeLine{769   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} \textcolor{keyword}{auto} *FD = T-\/>getAs<FunctionProtoType>())}
+\DoxyCodeLine{770     \textcolor{keywordflow}{return} getExternalExceptionSpecificationKind(FD-\/>getExceptionSpecType());}
+\DoxyCodeLine{771 }
+\DoxyCodeLine{772   \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{773 \}}
+
+\end{DoxyCode}
+
+
+Referenced by clang\+\_\+get\+Cursor\+Exception\+Specification\+Type().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a720ee0d2442993bd23d7ba1fa34ca374}\label{_c_x_type_8cpp_a720ee0d2442993bd23d7ba1fa34ca374}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getFieldDeclBitWidth@{clang\_getFieldDeclBitWidth}}
+\index{clang\_getFieldDeclBitWidth@{clang\_getFieldDeclBitWidth}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getFieldDeclBitWidth()}{clang\_getFieldDeclBitWidth()}}
+{\footnotesize\ttfamily int clang\+\_\+get\+Field\+Decl\+Bit\+Width (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 374 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{374                                            \{}
+\DoxyCodeLine{375   \textcolor{keyword}{using namespace }cxcursor;}
+\DoxyCodeLine{376 }
+\DoxyCodeLine{377   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{378     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{getCursorDecl}}(C);}
+\DoxyCodeLine{379 }
+\DoxyCodeLine{380     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FieldDecl *FD = dyn\_cast\_or\_null<FieldDecl>(D)) \{}
+\DoxyCodeLine{381       \textcolor{keywordflow}{if} (FD-\/>isBitField())}
+\DoxyCodeLine{382         \textcolor{keywordflow}{return} FD-\/>getBitWidthValue(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a9f29c286f26b3cf616331c7e6554d373}{getCursorContext}}(C));}
+\DoxyCodeLine{383     \}}
+\DoxyCodeLine{384   \}}
+\DoxyCodeLine{385 }
+\DoxyCodeLine{386   \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{387 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), clang\+::cxcursor\+::get\+Cursor\+Context(), and clang\+::cxcursor\+::get\+Cursor\+Decl().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_ab050b099d5a745525d55c742015e5654}\label{_c_x_type_8cpp_ab050b099d5a745525d55c742015e5654}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getFunctionTypeCallingConv@{clang\_getFunctionTypeCallingConv}}
+\index{clang\_getFunctionTypeCallingConv@{clang\_getFunctionTypeCallingConv}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getFunctionTypeCallingConv()}{clang\_getFunctionTypeCallingConv()}}
+{\footnotesize\ttfamily CXCalling\+Conv clang\+\_\+get\+Function\+Type\+Calling\+Conv (\begin{DoxyParamCaption}\item[{CXType}]{X }\end{DoxyParamCaption})}
+
+
+
+Definition at line 645 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{645                                                          \{}
+\DoxyCodeLine{646   QualType T = GetQualType(X);}
+\DoxyCodeLine{647   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{648     \textcolor{keywordflow}{return} CXCallingConv\_Invalid;}
+\DoxyCodeLine{649   }
+\DoxyCodeLine{650   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionType *FD = T-\/>getAs<FunctionType>()) \{}
+\DoxyCodeLine{651 \textcolor{preprocessor}{\#define TCALLINGCONV(X) case CC\_\#\#X: return CXCallingConv\_\#\#X}}
+\DoxyCodeLine{652     \textcolor{keywordflow}{switch} (FD-\/>getCallConv()) \{}
+\DoxyCodeLine{653       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(C);}
+\DoxyCodeLine{654       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86StdCall);}
+\DoxyCodeLine{655       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86FastCall);}
+\DoxyCodeLine{656       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86ThisCall);}
+\DoxyCodeLine{657       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86Pascal);}
+\DoxyCodeLine{658       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86RegCall);}
+\DoxyCodeLine{659       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86VectorCall);}
+\DoxyCodeLine{660       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(AArch64VectorCall);}
+\DoxyCodeLine{661       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(Win64);}
+\DoxyCodeLine{662       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(X86\_64SysV);}
+\DoxyCodeLine{663       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(AAPCS);}
+\DoxyCodeLine{664       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(AAPCS\_VFP);}
+\DoxyCodeLine{665       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(IntelOclBicc);}
+\DoxyCodeLine{666       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(Swift);}
+\DoxyCodeLine{667       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(PreserveMost);}
+\DoxyCodeLine{668       \mbox{\hyperlink{_c_x_type_8cpp_ac3b35bb8a896f2e91bd8786ec341a7c5}{TCALLINGCONV}}(PreserveAll);}
+\DoxyCodeLine{669     \textcolor{keywordflow}{case} CC\_SpirFunction: \textcolor{keywordflow}{return} CXCallingConv\_Unexposed;}
+\DoxyCodeLine{670     \textcolor{keywordflow}{case} CC\_OpenCLKernel: \textcolor{keywordflow}{return} CXCallingConv\_Unexposed;}
+\DoxyCodeLine{671       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{672     \}}
+\DoxyCodeLine{673 \textcolor{preprocessor}{\#undef TCALLINGCONV}}
+\DoxyCodeLine{674   \}}
+\DoxyCodeLine{675   }
+\DoxyCodeLine{676   \textcolor{keywordflow}{return} CXCallingConv\_Invalid;}
+\DoxyCodeLine{677 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_abff38235356b94f7499b8c0ca03a5038}\label{_c_x_type_8cpp_abff38235356b94f7499b8c0ca03a5038}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getNumArgTypes@{clang\_getNumArgTypes}}
+\index{clang\_getNumArgTypes@{clang\_getNumArgTypes}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getNumArgTypes()}{clang\_getNumArgTypes()}}
+{\footnotesize\ttfamily int clang\+\_\+get\+Num\+Arg\+Types (\begin{DoxyParamCaption}\item[{CXType}]{X }\end{DoxyParamCaption})}
+
+
+
+Definition at line 679 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{679                                    \{}
+\DoxyCodeLine{680   QualType T = GetQualType(X);}
+\DoxyCodeLine{681   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{682     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{683   }
+\DoxyCodeLine{684   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionProtoType *FD = T-\/>getAs<FunctionProtoType>()) \{}
+\DoxyCodeLine{685     \textcolor{keywordflow}{return} FD-\/>getNumParams();}
+\DoxyCodeLine{686   \}}
+\DoxyCodeLine{687   }
+\DoxyCodeLine{688   \textcolor{keywordflow}{if} (T-\/>getAs<FunctionNoProtoType>()) \{}
+\DoxyCodeLine{689     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{690   \}}
+\DoxyCodeLine{691   }
+\DoxyCodeLine{692   \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{693 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a629dce96297870b004f11f13cdf80587}\label{_c_x_type_8cpp_a629dce96297870b004f11f13cdf80587}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getNumElements@{clang\_getNumElements}}
+\index{clang\_getNumElements@{clang\_getNumElements}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getNumElements()}{clang\_getNumElements()}}
+{\footnotesize\ttfamily long long clang\+\_\+get\+Num\+Elements (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 827 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{827                                           \{}
+\DoxyCodeLine{828   \textcolor{keywordtype}{long} \textcolor{keywordtype}{long} result = -\/1;}
+\DoxyCodeLine{829   QualType T = GetQualType(CT);}
+\DoxyCodeLine{830   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{831 }
+\DoxyCodeLine{832   \textcolor{keywordflow}{if} (TP) \{}
+\DoxyCodeLine{833     \textcolor{keywordflow}{switch} (TP-\/>getTypeClass()) \{}
+\DoxyCodeLine{834     \textcolor{keywordflow}{case} Type::ConstantArray:}
+\DoxyCodeLine{835       result = cast<ConstantArrayType> (TP)-\/>getSize().getSExtValue();}
+\DoxyCodeLine{836       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{837     \textcolor{keywordflow}{case} Type::Vector:}
+\DoxyCodeLine{838       result = cast<VectorType> (TP)-\/>getNumElements();}
+\DoxyCodeLine{839       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{840     \textcolor{keywordflow}{case} Type::ExtVector:}
+\DoxyCodeLine{841       result = cast<ExtVectorType>(TP)-\/>getNumElements();}
+\DoxyCodeLine{842       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{843     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{844       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{845     \}}
+\DoxyCodeLine{846   \}}
+\DoxyCodeLine{847   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{848 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a5ad5de5325d0345ebe292115f8fdb9ff}\label{_c_x_type_8cpp_a5ad5de5325d0345ebe292115f8fdb9ff}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getPointeeType@{clang\_getPointeeType}}
+\index{clang\_getPointeeType@{clang\_getPointeeType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getPointeeType()}{clang\_getPointeeType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Pointee\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 443 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{443                                        \{}
+\DoxyCodeLine{444   QualType T = GetQualType(CT);}
+\DoxyCodeLine{445   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{446 }
+\DoxyCodeLine{447   \textcolor{keywordflow}{if} (!TP)}
+\DoxyCodeLine{448     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{449 }
+\DoxyCodeLine{450 try\_again:}
+\DoxyCodeLine{451   \textcolor{keywordflow}{switch} (TP-\/>getTypeClass()) \{}
+\DoxyCodeLine{452     \textcolor{keywordflow}{case} Type::Pointer:}
+\DoxyCodeLine{453       T = cast<PointerType>(TP)-\/>getPointeeType();}
+\DoxyCodeLine{454       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{455     \textcolor{keywordflow}{case} Type::BlockPointer:}
+\DoxyCodeLine{456       T = cast<BlockPointerType>(TP)-\/>getPointeeType();}
+\DoxyCodeLine{457       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{458     \textcolor{keywordflow}{case} Type::LValueReference:}
+\DoxyCodeLine{459     \textcolor{keywordflow}{case} Type::RValueReference:}
+\DoxyCodeLine{460       T = cast<ReferenceType>(TP)-\/>getPointeeType();}
+\DoxyCodeLine{461       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{462     \textcolor{keywordflow}{case} Type::ObjCObjectPointer:}
+\DoxyCodeLine{463       T = cast<ObjCObjectPointerType>(TP)-\/>getPointeeType();}
+\DoxyCodeLine{464       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{465     \textcolor{keywordflow}{case} Type::MemberPointer:}
+\DoxyCodeLine{466       T = cast<MemberPointerType>(TP)-\/>getPointeeType();}
+\DoxyCodeLine{467       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{468     \textcolor{keywordflow}{case} Type::Auto:}
+\DoxyCodeLine{469     \textcolor{keywordflow}{case} Type::DeducedTemplateSpecialization:}
+\DoxyCodeLine{470       TP = cast<DeducedType>(TP)-\/>getDeducedType().getTypePtrOrNull();}
+\DoxyCodeLine{471       \textcolor{keywordflow}{if} (TP)}
+\DoxyCodeLine{472         \textcolor{keywordflow}{goto} try\_again;}
+\DoxyCodeLine{473       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{474     \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{475       T = QualType();}
+\DoxyCodeLine{476       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{477   \}}
+\DoxyCodeLine{478   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, GetTU(CT));}
+\DoxyCodeLine{479 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_aeb3044184b6d432dc24b2888cb5a128d}\label{_c_x_type_8cpp_aeb3044184b6d432dc24b2888cb5a128d}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getResultType@{clang\_getResultType}}
+\index{clang\_getResultType@{clang\_getResultType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getResultType()}{clang\_getResultType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Result\+Type (\begin{DoxyParamCaption}\item[{CXType}]{X }\end{DoxyParamCaption})}
+
+
+
+Definition at line 711 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{711                                      \{}
+\DoxyCodeLine{712   QualType T = GetQualType(X);}
+\DoxyCodeLine{713   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{714     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(X));}
+\DoxyCodeLine{715   }
+\DoxyCodeLine{716   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionType *FD = T-\/>getAs<FunctionType>())}
+\DoxyCodeLine{717     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(FD-\/>getReturnType(), GetTU(X));}
+\DoxyCodeLine{718 }
+\DoxyCodeLine{719   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(X));}
+\DoxyCodeLine{720 \}}
+
+\end{DoxyCode}
+
+
+Referenced by clang\+\_\+get\+Cursor\+Result\+Type().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_af7b6b47bb98865b91a02e148f87062a2}\label{_c_x_type_8cpp_af7b6b47bb98865b91a02e148f87062a2}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getTypeDeclaration@{clang\_getTypeDeclaration}}
+\index{clang\_getTypeDeclaration@{clang\_getTypeDeclaration}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getTypeDeclaration()}{clang\_getTypeDeclaration()}}
+{\footnotesize\ttfamily CXCursor clang\+\_\+get\+Type\+Declaration (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 481 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{481                                              \{}
+\DoxyCodeLine{482   \textcolor{keywordflow}{if} (CT.kind == CXType\_Invalid)}
+\DoxyCodeLine{483     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa8325b990acde766ecd9276d7d9df53a}{cxcursor::MakeCXCursorInvalid}}(CXCursor\_NoDeclFound);}
+\DoxyCodeLine{484 }
+\DoxyCodeLine{485   QualType T = GetQualType(CT);}
+\DoxyCodeLine{486   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{487 }
+\DoxyCodeLine{488   \textcolor{keywordflow}{if} (!TP)}
+\DoxyCodeLine{489     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa8325b990acde766ecd9276d7d9df53a}{cxcursor::MakeCXCursorInvalid}}(CXCursor\_NoDeclFound);}
+\DoxyCodeLine{490 }
+\DoxyCodeLine{491   Decl *D = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{492 }
+\DoxyCodeLine{493 try\_again:}
+\DoxyCodeLine{494   \textcolor{keywordflow}{switch} (TP-\/>getTypeClass()) \{}
+\DoxyCodeLine{495   \textcolor{keywordflow}{case} Type::Typedef:}
+\DoxyCodeLine{496     D = cast<TypedefType>(TP)-\/>getDecl();}
+\DoxyCodeLine{497     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{498   \textcolor{keywordflow}{case} Type::ObjCObject:}
+\DoxyCodeLine{499     D = cast<ObjCObjectType>(TP)-\/>getInterface();}
+\DoxyCodeLine{500     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{501   \textcolor{keywordflow}{case} Type::ObjCInterface:}
+\DoxyCodeLine{502     D = cast<ObjCInterfaceType>(TP)-\/>getDecl();}
+\DoxyCodeLine{503     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{504   \textcolor{keywordflow}{case} Type::Record:}
+\DoxyCodeLine{505   \textcolor{keywordflow}{case} Type::Enum:}
+\DoxyCodeLine{506     D = cast<TagType>(TP)-\/>getDecl();}
+\DoxyCodeLine{507     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{508   \textcolor{keywordflow}{case} Type::TemplateSpecialization:}
+\DoxyCodeLine{509     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} RecordType *Record = TP-\/>getAs<RecordType>())}
+\DoxyCodeLine{510       D = Record-\/>getDecl();}
+\DoxyCodeLine{511     \textcolor{keywordflow}{else}}
+\DoxyCodeLine{512       D = cast<TemplateSpecializationType>(TP)-\/>getTemplateName()}
+\DoxyCodeLine{513                                                          .getAsTemplateDecl();}
+\DoxyCodeLine{514     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{515 }
+\DoxyCodeLine{516   \textcolor{keywordflow}{case} Type::Auto:}
+\DoxyCodeLine{517   \textcolor{keywordflow}{case} Type::DeducedTemplateSpecialization:}
+\DoxyCodeLine{518     TP = cast<DeducedType>(TP)-\/>getDeducedType().getTypePtrOrNull();}
+\DoxyCodeLine{519     \textcolor{keywordflow}{if} (TP)}
+\DoxyCodeLine{520       \textcolor{keywordflow}{goto} try\_again;}
+\DoxyCodeLine{521     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{522 }
+\DoxyCodeLine{523   \textcolor{keywordflow}{case} Type::InjectedClassName:}
+\DoxyCodeLine{524     D = cast<InjectedClassNameType>(TP)-\/>getDecl();}
+\DoxyCodeLine{525     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{526 }
+\DoxyCodeLine{527   \textcolor{comment}{// FIXME: Template type parameters!      }}
+\DoxyCodeLine{528 }
+\DoxyCodeLine{529   \textcolor{keywordflow}{case} Type::Elaborated:}
+\DoxyCodeLine{530     TP = cast<ElaboratedType>(TP)-\/>getNamedType().getTypePtrOrNull();}
+\DoxyCodeLine{531     \textcolor{keywordflow}{goto} try\_again;}
+\DoxyCodeLine{532 }
+\DoxyCodeLine{533   \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{534     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{535   \}}
+\DoxyCodeLine{536 }
+\DoxyCodeLine{537   \textcolor{keywordflow}{if} (!D)}
+\DoxyCodeLine{538     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa8325b990acde766ecd9276d7d9df53a}{cxcursor::MakeCXCursorInvalid}}(CXCursor\_NoDeclFound);}
+\DoxyCodeLine{539 }
+\DoxyCodeLine{540   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_ab61ec2059175833672e8e78a376bb218}{cxcursor::MakeCXCursor}}(D, GetTU(CT));}
+\DoxyCodeLine{541 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxcursor\+::\+Make\+CXCursor\+Invalid().
+
+
+
+Referenced by clang\+\_\+\+Type\+\_\+get\+Offset\+Of(), and clang\+\_\+\+Type\+\_\+visit\+Fields().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_af08ffb81b29dce8ca5ff8b99cb706deb}\label{_c_x_type_8cpp_af08ffb81b29dce8ca5ff8b99cb706deb}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getTypedefDeclUnderlyingType@{clang\_getTypedefDeclUnderlyingType}}
+\index{clang\_getTypedefDeclUnderlyingType@{clang\_getTypedefDeclUnderlyingType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getTypedefDeclUnderlyingType()}{clang\_getTypedefDeclUnderlyingType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+get\+Typedef\+Decl\+Underlying\+Type (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 306 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{306                                                       \{}
+\DoxyCodeLine{307   \textcolor{keyword}{using namespace }cxcursor;}
+\DoxyCodeLine{308   CXTranslationUnit TU = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{cxcursor::getCursorTU}}(C);}
+\DoxyCodeLine{309 }
+\DoxyCodeLine{310   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind)) \{}
+\DoxyCodeLine{311     \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(C);}
+\DoxyCodeLine{312 }
+\DoxyCodeLine{313     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} TypedefNameDecl *TD = dyn\_cast\_or\_null<TypedefNameDecl>(D)) \{}
+\DoxyCodeLine{314       QualType T = TD-\/>getUnderlyingType();}
+\DoxyCodeLine{315       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(T, TU);}
+\DoxyCodeLine{316     \}}
+\DoxyCodeLine{317 }
+\DoxyCodeLine{318     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{319   \}}
+\DoxyCodeLine{320 }
+\DoxyCodeLine{321   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), TU);}
+\DoxyCodeLine{322 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+is\+Declaration(), clang\+::cxcursor\+::get\+Cursor\+Decl(), clang\+::cxcursor\+::get\+Cursor\+TU(), and clang\+::cxtype\+::\+Make\+CXType().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_a4475ab93785a2d30a971699f155181de}\label{_c_x_type_8cpp_a4475ab93785a2d30a971699f155181de}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getTypedefName@{clang\_getTypedefName}}
+\index{clang\_getTypedefName@{clang\_getTypedefName}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getTypedefName()}{clang\_getTypedefName()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Typedef\+Name (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 432 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{432                                          \{}
+\DoxyCodeLine{433   QualType T = GetQualType(CT);}
+\DoxyCodeLine{434   \textcolor{keyword}{const} TypedefType *TT = T-\/>getAs<TypedefType>();}
+\DoxyCodeLine{435   \textcolor{keywordflow}{if} (TT) \{}
+\DoxyCodeLine{436     TypedefNameDecl *TD = TT-\/>getDecl();}
+\DoxyCodeLine{437     \textcolor{keywordflow}{if} (TD)}
+\DoxyCodeLine{438       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(TD-\/>getNameAsString().c\_str());}
+\DoxyCodeLine{439   \}}
+\DoxyCodeLine{440   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{441 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a7bb1a114f09f7b616a229a8bb874f2f1}\label{_c_x_type_8cpp_a7bb1a114f09f7b616a229a8bb874f2f1}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getTypeKindSpelling@{clang\_getTypeKindSpelling}}
+\index{clang\_getTypeKindSpelling@{clang\_getTypeKindSpelling}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getTypeKindSpelling()}{clang\_getTypeKindSpelling()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Type\+Kind\+Spelling (\begin{DoxyParamCaption}\item[{enum CXType\+Kind}]{K }\end{DoxyParamCaption})}
+
+
+
+Definition at line 543 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{543                                                       \{}
+\DoxyCodeLine{544   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *s = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{545 \textcolor{preprocessor}{\#define TKIND(X) case CXType\_\#\#X: s = "{}"{}}  \#X  "{}"{}; break}
+\DoxyCodeLine{546   \textcolor{keywordflow}{switch} (K) \{}
+\DoxyCodeLine{547     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Invalid);}
+\DoxyCodeLine{548     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Unexposed);}
+\DoxyCodeLine{549     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Void);}
+\DoxyCodeLine{550     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Bool);}
+\DoxyCodeLine{551     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Char\_U);}
+\DoxyCodeLine{552     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(UChar);}
+\DoxyCodeLine{553     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Char16);}
+\DoxyCodeLine{554     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Char32);}
+\DoxyCodeLine{555     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(UShort);}
+\DoxyCodeLine{556     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(UInt);}
+\DoxyCodeLine{557     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ULong);}
+\DoxyCodeLine{558     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ULongLong);}
+\DoxyCodeLine{559     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(UInt128);}
+\DoxyCodeLine{560     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Char\_S);}
+\DoxyCodeLine{561     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(SChar);}
+\DoxyCodeLine{562     \textcolor{keywordflow}{case} CXType\_WChar: s = \textcolor{stringliteral}{"{}WChar"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{563     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Short);}
+\DoxyCodeLine{564     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Int);}
+\DoxyCodeLine{565     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Long);}
+\DoxyCodeLine{566     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(LongLong);}
+\DoxyCodeLine{567     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Int128);}
+\DoxyCodeLine{568     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Half);}
+\DoxyCodeLine{569     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Float);}
+\DoxyCodeLine{570     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Double);}
+\DoxyCodeLine{571     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(LongDouble);}
+\DoxyCodeLine{572     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ShortAccum);}
+\DoxyCodeLine{573     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Accum);}
+\DoxyCodeLine{574     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(LongAccum);}
+\DoxyCodeLine{575     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(UShortAccum);}
+\DoxyCodeLine{576     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(UAccum);}
+\DoxyCodeLine{577     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ULongAccum);}
+\DoxyCodeLine{578     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Float16);}
+\DoxyCodeLine{579     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Float128);}
+\DoxyCodeLine{580     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(NullPtr);}
+\DoxyCodeLine{581     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Overload);}
+\DoxyCodeLine{582     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Dependent);}
+\DoxyCodeLine{583     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCId);}
+\DoxyCodeLine{584     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCClass);}
+\DoxyCodeLine{585     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCSel);}
+\DoxyCodeLine{586     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Complex);}
+\DoxyCodeLine{587     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Pointer);}
+\DoxyCodeLine{588     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(BlockPointer);}
+\DoxyCodeLine{589     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(LValueReference);}
+\DoxyCodeLine{590     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(RValueReference);}
+\DoxyCodeLine{591     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Record);}
+\DoxyCodeLine{592     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Enum);}
+\DoxyCodeLine{593     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Typedef);}
+\DoxyCodeLine{594     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCInterface);}
+\DoxyCodeLine{595     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCObject);}
+\DoxyCodeLine{596     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCObjectPointer);}
+\DoxyCodeLine{597     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ObjCTypeParam);}
+\DoxyCodeLine{598     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(FunctionNoProto);}
+\DoxyCodeLine{599     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(FunctionProto);}
+\DoxyCodeLine{600     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ConstantArray);}
+\DoxyCodeLine{601     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(IncompleteArray);}
+\DoxyCodeLine{602     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(VariableArray);}
+\DoxyCodeLine{603     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(DependentSizedArray);}
+\DoxyCodeLine{604     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Vector);}
+\DoxyCodeLine{605     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(ExtVector);}
+\DoxyCodeLine{606     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(MemberPointer);}
+\DoxyCodeLine{607     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Auto);}
+\DoxyCodeLine{608     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Elaborated);}
+\DoxyCodeLine{609     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Pipe);}
+\DoxyCodeLine{610     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Attributed);}
+\DoxyCodeLine{611     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(BFloat16);}
+\DoxyCodeLine{612 \textcolor{preprocessor}{\#define IMAGE\_TYPE(ImgType, Id, SingletonId, Access, Suffix) TKIND(Id);}}
+\DoxyCodeLine{613 \textcolor{preprocessor}{\#include "{}clang/Basic/OpenCLImageTypes.def"{}}}
+\DoxyCodeLine{614 \textcolor{preprocessor}{\#undef IMAGE\_TYPE}}
+\DoxyCodeLine{615 \textcolor{preprocessor}{\#define EXT\_OPAQUE\_TYPE(ExtTYpe, Id, Ext) TKIND(Id);}}
+\DoxyCodeLine{616 \textcolor{preprocessor}{\#include "{}clang/Basic/OpenCLExtensionTypes.def"{}}}
+\DoxyCodeLine{617     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(OCLSampler);}
+\DoxyCodeLine{618     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(OCLEvent);}
+\DoxyCodeLine{619     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(OCLQueue);}
+\DoxyCodeLine{620     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(OCLReserveID);}
+\DoxyCodeLine{621     \mbox{\hyperlink{_c_x_type_8cpp_aabbf9e179de956d6798c6a4c87d30f65}{TKIND}}(Atomic);}
+\DoxyCodeLine{622   \}}
+\DoxyCodeLine{623 \textcolor{preprocessor}{\#undef TKIND}}
+\DoxyCodeLine{624   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_abc91e0841937d19cfc9e1801ac00b3c4}{cxstring::createRef}}(s);}
+\DoxyCodeLine{625 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxstring\+::create\+Ref(), and TKIND.
+
+\mbox{\Hypertarget{_c_x_type_8cpp_ae144228507fed08fdf97002f5308071d}\label{_c_x_type_8cpp_ae144228507fed08fdf97002f5308071d}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_getTypeSpelling@{clang\_getTypeSpelling}}
+\index{clang\_getTypeSpelling@{clang\_getTypeSpelling}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getTypeSpelling()}{clang\_getTypeSpelling()}}
+{\footnotesize\ttfamily CXString clang\+\_\+get\+Type\+Spelling (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 291 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{291                                           \{}
+\DoxyCodeLine{292   QualType T = GetQualType(CT);}
+\DoxyCodeLine{293   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{294     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a8a49aa6ea196abdde85886689f2630f9}{cxstring::createEmpty}}();}
+\DoxyCodeLine{295 }
+\DoxyCodeLine{296   CXTranslationUnit TU = GetTU(CT);}
+\DoxyCodeLine{297   SmallString<64> Str;}
+\DoxyCodeLine{298   llvm::raw\_svector\_ostream OS(Str);}
+\DoxyCodeLine{299   PrintingPolicy PP(cxtu::getASTUnit(TU)-\/>getASTContext().getLangOpts());}
+\DoxyCodeLine{300 }
+\DoxyCodeLine{301   T.print(OS, PP);}
+\DoxyCodeLine{302 }
+\DoxyCodeLine{303   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxstring_a19a4962be87f75a8c1fa5a0b75f76298}{cxstring::createDup}}(OS.str());}
+\DoxyCodeLine{304 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a9f8de21d82490d6adfead30e8ab7ca57}\label{_c_x_type_8cpp_a9f8de21d82490d6adfead30e8ab7ca57}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_isConstQualifiedType@{clang\_isConstQualifiedType}}
+\index{clang\_isConstQualifiedType@{clang\_isConstQualifiedType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_isConstQualifiedType()}{clang\_isConstQualifiedType()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+is\+Const\+Qualified\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 404 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{404                                                \{}
+\DoxyCodeLine{405   QualType T = GetQualType(CT);}
+\DoxyCodeLine{406   \textcolor{keywordflow}{return} T.isLocalConstQualified();}
+\DoxyCodeLine{407 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a4ada1a674d06a4a97b62897346203630}\label{_c_x_type_8cpp_a4ada1a674d06a4a97b62897346203630}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_isFunctionTypeVariadic@{clang\_isFunctionTypeVariadic}}
+\index{clang\_isFunctionTypeVariadic@{clang\_isFunctionTypeVariadic}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_isFunctionTypeVariadic()}{clang\_isFunctionTypeVariadic()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+is\+Function\+Type\+Variadic (\begin{DoxyParamCaption}\item[{CXType}]{X }\end{DoxyParamCaption})}
+
+
+
+Definition at line 631 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{631                                                 \{}
+\DoxyCodeLine{632   QualType T = GetQualType(X);}
+\DoxyCodeLine{633   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{634     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{635 }
+\DoxyCodeLine{636   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionProtoType *FD = T-\/>getAs<FunctionProtoType>())}
+\DoxyCodeLine{637     \textcolor{keywordflow}{return} (\textcolor{keywordtype}{unsigned})FD-\/>isVariadic();}
+\DoxyCodeLine{638 }
+\DoxyCodeLine{639   \textcolor{keywordflow}{if} (T-\/>getAs<FunctionNoProtoType>())}
+\DoxyCodeLine{640     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{641   }
+\DoxyCodeLine{642   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{643 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a89492eaf65d3f961105efeaca6bb1472}\label{_c_x_type_8cpp_a89492eaf65d3f961105efeaca6bb1472}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_isPODType@{clang\_isPODType}}
+\index{clang\_isPODType@{clang\_isPODType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_isPODType()}{clang\_isPODType()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+is\+PODType (\begin{DoxyParamCaption}\item[{CXType}]{X }\end{DoxyParamCaption})}
+
+
+
+Definition at line 782 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{782                                    \{}
+\DoxyCodeLine{783   QualType T = GetQualType(X);}
+\DoxyCodeLine{784   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{785     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{786   }
+\DoxyCodeLine{787   CXTranslationUnit TU = GetTU(X);}
+\DoxyCodeLine{788 }
+\DoxyCodeLine{789   \textcolor{keywordflow}{return} T.isPODType(cxtu::getASTUnit(TU)-\/>getASTContext()) ? 1 : 0;}
+\DoxyCodeLine{790 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a0beb494915a15b4f221ae61e499e311e}\label{_c_x_type_8cpp_a0beb494915a15b4f221ae61e499e311e}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_isRestrictQualifiedType@{clang\_isRestrictQualifiedType}}
+\index{clang\_isRestrictQualifiedType@{clang\_isRestrictQualifiedType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_isRestrictQualifiedType()}{clang\_isRestrictQualifiedType()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+is\+Restrict\+Qualified\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 414 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{414                                                   \{}
+\DoxyCodeLine{415   QualType T = GetQualType(CT);}
+\DoxyCodeLine{416   \textcolor{keywordflow}{return} T.isLocalRestrictQualified();}
+\DoxyCodeLine{417 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a9edd8308096b8adf1a91d49468bf18f9}\label{_c_x_type_8cpp_a9edd8308096b8adf1a91d49468bf18f9}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_isVolatileQualifiedType@{clang\_isVolatileQualifiedType}}
+\index{clang\_isVolatileQualifiedType@{clang\_isVolatileQualifiedType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_isVolatileQualifiedType()}{clang\_isVolatileQualifiedType()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+is\+Volatile\+Qualified\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 409 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{409                                                   \{}
+\DoxyCodeLine{410   QualType T = GetQualType(CT);}
+\DoxyCodeLine{411   \textcolor{keywordflow}{return} T.isLocalVolatileQualified();}
+\DoxyCodeLine{412 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a1d48d1f5eb9425cbec89c0f7df0f9595}\label{_c_x_type_8cpp_a1d48d1f5eb9425cbec89c0f7df0f9595}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getAlignOf@{clang\_Type\_getAlignOf}}
+\index{clang\_Type\_getAlignOf@{clang\_Type\_getAlignOf}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getAlignOf()}{clang\_Type\_getAlignOf()}}
+{\footnotesize\ttfamily long long clang\+\_\+\+Type\+\_\+get\+Align\+Of (\begin{DoxyParamCaption}\item[{CXType}]{T }\end{DoxyParamCaption})}
+
+
+
+Definition at line 897 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{897                                           \{}
+\DoxyCodeLine{898   \textcolor{keywordflow}{if} (T.kind == CXType\_Invalid)}
+\DoxyCodeLine{899     \textcolor{keywordflow}{return} CXTypeLayoutError\_Invalid;}
+\DoxyCodeLine{900   ASTContext \&Ctx = cxtu::getASTUnit(GetTU(T))-\/>getASTContext();}
+\DoxyCodeLine{901   QualType QT = GetQualType(T);}
+\DoxyCodeLine{902   \textcolor{comment}{// [expr.alignof] p1: return size\_t value for complete object type, reference}}
+\DoxyCodeLine{903   \textcolor{comment}{//                    or array.}}
+\DoxyCodeLine{904   \textcolor{comment}{// [expr.alignof] p3: if reference type, return size of referenced type}}
+\DoxyCodeLine{905   \textcolor{keywordflow}{if} (QT-\/>isReferenceType())}
+\DoxyCodeLine{906     QT = QT.getNonReferenceType();}
+\DoxyCodeLine{907   \textcolor{keywordflow}{if} (!isIncompleteTypeWithAlignment(QT))}
+\DoxyCodeLine{908     \textcolor{keywordflow}{return} CXTypeLayoutError\_Incomplete;}
+\DoxyCodeLine{909   \textcolor{keywordflow}{if} (QT-\/>isDependentType())}
+\DoxyCodeLine{910     \textcolor{keywordflow}{return} CXTypeLayoutError\_Dependent;}
+\DoxyCodeLine{911   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} \textcolor{keyword}{auto} *Deduced = dyn\_cast<DeducedType>(QT))}
+\DoxyCodeLine{912     \textcolor{keywordflow}{if} (Deduced-\/>getDeducedType().isNull())}
+\DoxyCodeLine{913       \textcolor{keywordflow}{return} CXTypeLayoutError\_Undeduced;}
+\DoxyCodeLine{914   \textcolor{comment}{// Exceptions by GCC extension -\/ see ASTContext.cpp:1313 getTypeInfoImpl}}
+\DoxyCodeLine{915   \textcolor{comment}{// if (QT-\/>isFunctionType()) return 4; // Bug \#15511 -\/ should be 1}}
+\DoxyCodeLine{916   \textcolor{comment}{// if (QT-\/>isVoidType()) return 1;}}
+\DoxyCodeLine{917   \textcolor{keywordflow}{return} Ctx.getTypeAlignInChars(QT).getQuantity();}
+\DoxyCodeLine{918 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a3b837c0aca38e1bd67b7b5ca5d8fdc22}\label{_c_x_type_8cpp_a3b837c0aca38e1bd67b7b5ca5d8fdc22}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getClassType@{clang\_Type\_getClassType}}
+\index{clang\_Type\_getClassType@{clang\_Type\_getClassType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getClassType()}{clang\_Type\_getClassType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Class\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 920 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{920                                           \{}
+\DoxyCodeLine{921   QualType ET = QualType();}
+\DoxyCodeLine{922   QualType T = GetQualType(CT);}
+\DoxyCodeLine{923   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{924 }
+\DoxyCodeLine{925   \textcolor{keywordflow}{if} (TP \&\& TP-\/>getTypeClass() == Type::MemberPointer) \{}
+\DoxyCodeLine{926     ET = QualType(cast<MemberPointerType> (TP)-\/>getClass(), 0);}
+\DoxyCodeLine{927   \}}
+\DoxyCodeLine{928   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(ET, GetTU(CT));}
+\DoxyCodeLine{929 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a8641fd362da41b0b80ca4a77f1fb2f07}\label{_c_x_type_8cpp_a8641fd362da41b0b80ca4a77f1fb2f07}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getCXXRefQualifier@{clang\_Type\_getCXXRefQualifier}}
+\index{clang\_Type\_getCXXRefQualifier@{clang\_Type\_getCXXRefQualifier}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getCXXRefQualifier()}{clang\_Type\_getCXXRefQualifier()}}
+{\footnotesize\ttfamily enum CXRef\+Qualifier\+Kind clang\+\_\+\+Type\+\_\+get\+CXXRef\+Qualifier (\begin{DoxyParamCaption}\item[{CXType}]{T }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1054 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1073                                                                 \{}
+\DoxyCodeLine{1074   QualType QT = GetQualType(T);}
+\DoxyCodeLine{1075   \textcolor{keywordflow}{if} (QT.isNull())}
+\DoxyCodeLine{1076     \textcolor{keywordflow}{return} CXRefQualifier\_None;}
+\DoxyCodeLine{1077   \textcolor{keyword}{const} FunctionProtoType *FD = QT-\/>getAs<FunctionProtoType>();}
+\DoxyCodeLine{1078   \textcolor{keywordflow}{if} (!FD)}
+\DoxyCodeLine{1079     \textcolor{keywordflow}{return} CXRefQualifier\_None;}
+\DoxyCodeLine{1080   \textcolor{keywordflow}{switch} (FD-\/>getRefQualifier()) \{}
+\DoxyCodeLine{1081     \textcolor{keywordflow}{case} RQ\_None:}
+\DoxyCodeLine{1082       \textcolor{keywordflow}{return} CXRefQualifier\_None;}
+\DoxyCodeLine{1083     \textcolor{keywordflow}{case} RQ\_LValue:}
+\DoxyCodeLine{1084       \textcolor{keywordflow}{return} CXRefQualifier\_LValue;}
+\DoxyCodeLine{1085     \textcolor{keywordflow}{case} RQ\_RValue:}
+\DoxyCodeLine{1086       \textcolor{keywordflow}{return} CXRefQualifier\_RValue;}
+\DoxyCodeLine{1087   \}}
+\DoxyCodeLine{1088   \textcolor{keywordflow}{return} CXRefQualifier\_None;}
+\DoxyCodeLine{1089 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_afc3f56965d3cd31c19be04e7994935eb}\label{_c_x_type_8cpp_afc3f56965d3cd31c19be04e7994935eb}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getModifiedType@{clang\_Type\_getModifiedType}}
+\index{clang\_Type\_getModifiedType@{clang\_Type\_getModifiedType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getModifiedType()}{clang\_Type\_getModifiedType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Modified\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1043 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1043                                              \{}
+\DoxyCodeLine{1044   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1045   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1046     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1047 }
+\DoxyCodeLine{1048   \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} *ATT = T-\/>getAs<AttributedType>())}
+\DoxyCodeLine{1049     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(ATT-\/>getModifiedType(), GetTU(CT));}
+\DoxyCodeLine{1050 }
+\DoxyCodeLine{1051   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1052 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a9c60d244ec189fd2dc6077e74c5731c9}\label{_c_x_type_8cpp_a9c60d244ec189fd2dc6077e74c5731c9}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getNamedType@{clang\_Type\_getNamedType}}
+\index{clang\_Type\_getNamedType@{clang\_Type\_getNamedType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getNamedType()}{clang\_Type\_getNamedType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Named\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1287 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1287                                          \{}
+\DoxyCodeLine{1288   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1289   \textcolor{keyword}{const} Type *TP = T.getTypePtrOrNull();}
+\DoxyCodeLine{1290 }
+\DoxyCodeLine{1291   \textcolor{keywordflow}{if} (TP \&\& TP-\/>getTypeClass() == Type::Elaborated)}
+\DoxyCodeLine{1292     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(cast<ElaboratedType>(TP)-\/>getNamedType(), GetTU(CT));}
+\DoxyCodeLine{1293 }
+\DoxyCodeLine{1294   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1295 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_aa41af4571d69c09d88b3fde3886e1ed4}\label{_c_x_type_8cpp_aa41af4571d69c09d88b3fde3886e1ed4}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getNullability@{clang\_Type\_getNullability}}
+\index{clang\_Type\_getNullability@{clang\_Type\_getNullability}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getNullability()}{clang\_Type\_getNullability()}}
+{\footnotesize\ttfamily enum CXType\+Nullability\+Kind clang\+\_\+\+Type\+\_\+get\+Nullability (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1297 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1306                                                                 \{}
+\DoxyCodeLine{1307   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1308   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1309     \textcolor{keywordflow}{return} CXTypeNullability\_Invalid;}
+\DoxyCodeLine{1310 }
+\DoxyCodeLine{1311   ASTContext \&Ctx = cxtu::getASTUnit(GetTU(CT))-\/>getASTContext();}
+\DoxyCodeLine{1312   \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} nullability = T-\/>getNullability(Ctx)) \{}
+\DoxyCodeLine{1313     \textcolor{keywordflow}{switch} (*nullability) \{}
+\DoxyCodeLine{1314       \textcolor{keywordflow}{case} NullabilityKind::NonNull:}
+\DoxyCodeLine{1315         \textcolor{keywordflow}{return} CXTypeNullability\_NonNull;}
+\DoxyCodeLine{1316       \textcolor{keywordflow}{case} NullabilityKind::Nullable:}
+\DoxyCodeLine{1317         \textcolor{keywordflow}{return} CXTypeNullability\_Nullable;}
+\DoxyCodeLine{1318       \textcolor{keywordflow}{case} NullabilityKind::NullableResult:}
+\DoxyCodeLine{1319         \textcolor{keywordflow}{return} CXTypeNullability\_NullableResult;}
+\DoxyCodeLine{1320       \textcolor{keywordflow}{case} NullabilityKind::Unspecified:}
+\DoxyCodeLine{1321         \textcolor{keywordflow}{return} CXTypeNullability\_Unspecified;}
+\DoxyCodeLine{1322     \}}
+\DoxyCodeLine{1323   \}}
+\DoxyCodeLine{1324   \textcolor{keywordflow}{return} CXTypeNullability\_Invalid;}
+\DoxyCodeLine{1325 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_aecb9336722f2659b827e344c7ce05b45}\label{_c_x_type_8cpp_aecb9336722f2659b827e344c7ce05b45}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getNumObjCProtocolRefs@{clang\_Type\_getNumObjCProtocolRefs}}
+\index{clang\_Type\_getNumObjCProtocolRefs@{clang\_Type\_getNumObjCProtocolRefs}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getNumObjCProtocolRefs()}{clang\_Type\_getNumObjCProtocolRefs()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Type\+\_\+get\+Num\+Obj\+CProtocol\+Refs (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1172 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1172                                                       \{}
+\DoxyCodeLine{1173   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1174   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1175     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1176 }
+\DoxyCodeLine{1177   \textcolor{keyword}{const} ObjCObjectType *OT = dyn\_cast<ObjCObjectType>(T);}
+\DoxyCodeLine{1178   \textcolor{keywordflow}{if} (!OT)}
+\DoxyCodeLine{1179     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1180 }
+\DoxyCodeLine{1181   \textcolor{keywordflow}{return} OT-\/>getNumProtocols();}
+\DoxyCodeLine{1182 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a77806a063adec1d4727afff9af0db813}\label{_c_x_type_8cpp_a77806a063adec1d4727afff9af0db813}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getNumObjCTypeArgs@{clang\_Type\_getNumObjCTypeArgs}}
+\index{clang\_Type\_getNumObjCTypeArgs@{clang\_Type\_getNumObjCTypeArgs}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getNumObjCTypeArgs()}{clang\_Type\_getNumObjCTypeArgs()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Type\+\_\+get\+Num\+Obj\+CType\+Args (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1200 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1200                                                   \{}
+\DoxyCodeLine{1201   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1202   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1203     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1204 }
+\DoxyCodeLine{1205   \textcolor{keyword}{const} ObjCObjectType *OT = dyn\_cast<ObjCObjectType>(T);}
+\DoxyCodeLine{1206   \textcolor{keywordflow}{if} (!OT)}
+\DoxyCodeLine{1207     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1208 }
+\DoxyCodeLine{1209   \textcolor{keywordflow}{return} OT-\/>getTypeArgs().size();}
+\DoxyCodeLine{1210 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a90316726b7e7461002955339e55ca245}\label{_c_x_type_8cpp_a90316726b7e7461002955339e55ca245}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getNumTemplateArguments@{clang\_Type\_getNumTemplateArguments}}
+\index{clang\_Type\_getNumTemplateArguments@{clang\_Type\_getNumTemplateArguments}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getNumTemplateArguments()}{clang\_Type\_getNumTemplateArguments()}}
+{\footnotesize\ttfamily int clang\+\_\+\+Type\+\_\+get\+Num\+Template\+Arguments (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1135 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1135                                                   \{}
+\DoxyCodeLine{1136   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1137   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1138     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{1139 }
+\DoxyCodeLine{1140   \textcolor{keyword}{auto} TA = GetTemplateArguments(T);}
+\DoxyCodeLine{1141   \textcolor{keywordflow}{if} (!TA)}
+\DoxyCodeLine{1142     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{1143 }
+\DoxyCodeLine{1144   \textcolor{keywordflow}{return} GetTemplateArgumentArraySize(TA.getValue());}
+\DoxyCodeLine{1145 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a4c3cddecb5a3ffa2fd4cc6a286f9294a}\label{_c_x_type_8cpp_a4c3cddecb5a3ffa2fd4cc6a286f9294a}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getObjCObjectBaseType@{clang\_Type\_getObjCObjectBaseType}}
+\index{clang\_Type\_getObjCObjectBaseType@{clang\_Type\_getObjCObjectBaseType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getObjCObjectBaseType()}{clang\_Type\_getObjCObjectBaseType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Obj\+CObject\+Base\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1160 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1160                                                    \{}
+\DoxyCodeLine{1161   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1162   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1163     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1164 }
+\DoxyCodeLine{1165   \textcolor{keyword}{const} ObjCObjectType *OT = dyn\_cast<ObjCObjectType>(T);}
+\DoxyCodeLine{1166   \textcolor{keywordflow}{if} (!OT)}
+\DoxyCodeLine{1167     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1168 }
+\DoxyCodeLine{1169   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(OT-\/>getBaseType(), GetTU(CT));}
+\DoxyCodeLine{1170 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a4eb677cf3bfc7179baacc4ffa4790569}\label{_c_x_type_8cpp_a4eb677cf3bfc7179baacc4ffa4790569}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getObjCProtocolDecl@{clang\_Type\_getObjCProtocolDecl}}
+\index{clang\_Type\_getObjCProtocolDecl@{clang\_Type\_getObjCProtocolDecl}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getObjCProtocolDecl()}{clang\_Type\_getObjCProtocolDecl()}}
+{\footnotesize\ttfamily CXCursor clang\+\_\+\+Type\+\_\+get\+Obj\+CProtocol\+Decl (\begin{DoxyParamCaption}\item[{CXType}]{CT,  }\item[{unsigned}]{i }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1184 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1184                                                                \{}
+\DoxyCodeLine{1185   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1186   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1187     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa8325b990acde766ecd9276d7d9df53a}{cxcursor::MakeCXCursorInvalid}}(CXCursor\_NoDeclFound);}
+\DoxyCodeLine{1188 }
+\DoxyCodeLine{1189   \textcolor{keyword}{const} ObjCObjectType *OT = dyn\_cast<ObjCObjectType>(T);}
+\DoxyCodeLine{1190   \textcolor{keywordflow}{if} (!OT)}
+\DoxyCodeLine{1191     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa8325b990acde766ecd9276d7d9df53a}{cxcursor::MakeCXCursorInvalid}}(CXCursor\_NoDeclFound);}
+\DoxyCodeLine{1192 }
+\DoxyCodeLine{1193   \textcolor{keyword}{const} ObjCProtocolDecl *PD = OT-\/>getProtocol(i);}
+\DoxyCodeLine{1194   \textcolor{keywordflow}{if} (!PD)}
+\DoxyCodeLine{1195     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_aa8325b990acde766ecd9276d7d9df53a}{cxcursor::MakeCXCursorInvalid}}(CXCursor\_NoDeclFound);}
+\DoxyCodeLine{1196 }
+\DoxyCodeLine{1197   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_ab61ec2059175833672e8e78a376bb218}{cxcursor::MakeCXCursor}}(PD, GetTU(CT));}
+\DoxyCodeLine{1198 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_affbafbb6555c318338011747fc1f4831}\label{_c_x_type_8cpp_affbafbb6555c318338011747fc1f4831}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getObjCTypeArg@{clang\_Type\_getObjCTypeArg}}
+\index{clang\_Type\_getObjCTypeArg@{clang\_Type\_getObjCTypeArg}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getObjCTypeArg()}{clang\_Type\_getObjCTypeArg()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Obj\+CType\+Arg (\begin{DoxyParamCaption}\item[{CXType}]{CT,  }\item[{unsigned}]{i }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1212 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1212                                                         \{}
+\DoxyCodeLine{1213   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1214   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1215     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1216 }
+\DoxyCodeLine{1217   \textcolor{keyword}{const} ObjCObjectType *OT = dyn\_cast<ObjCObjectType>(T);}
+\DoxyCodeLine{1218   \textcolor{keywordflow}{if} (!OT)}
+\DoxyCodeLine{1219     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1220 }
+\DoxyCodeLine{1221   \textcolor{keyword}{const} ArrayRef<QualType> TA = OT-\/>getTypeArgs();}
+\DoxyCodeLine{1222   \textcolor{keywordflow}{if} ((\textcolor{keywordtype}{size\_t})i >= TA.size())}
+\DoxyCodeLine{1223     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1224 }
+\DoxyCodeLine{1225   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(TA[i], GetTU(CT));}
+\DoxyCodeLine{1226 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a16773a0dbf5bedf922396c5c518ae99a}\label{_c_x_type_8cpp_a16773a0dbf5bedf922396c5c518ae99a}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getOffsetOf@{clang\_Type\_getOffsetOf}}
+\index{clang\_Type\_getOffsetOf@{clang\_Type\_getOffsetOf}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getOffsetOf()}{clang\_Type\_getOffsetOf()}}
+{\footnotesize\ttfamily long long clang\+\_\+\+Type\+\_\+get\+Offset\+Of (\begin{DoxyParamCaption}\item[{CXType}]{PT,  }\item[{const char $\ast$}]{S }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1012 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1012                                                            \{}
+\DoxyCodeLine{1013   \textcolor{comment}{// check that PT is not incomplete/dependent}}
+\DoxyCodeLine{1014   CXCursor PC = \mbox{\hyperlink{_c_x_type_8cpp_af7b6b47bb98865b91a02e148f87062a2}{clang\_getTypeDeclaration}}(PT);}
+\DoxyCodeLine{1015   \textcolor{keywordtype}{long} \textcolor{keywordtype}{long} Error = validateFieldParentType(PC,PT);}
+\DoxyCodeLine{1016   \textcolor{keywordflow}{if} (Error < 0)}
+\DoxyCodeLine{1017     \textcolor{keywordflow}{return} Error;}
+\DoxyCodeLine{1018   \textcolor{keywordflow}{if} (!S)}
+\DoxyCodeLine{1019     \textcolor{keywordflow}{return} CXTypeLayoutError\_InvalidFieldName;}
+\DoxyCodeLine{1020   \textcolor{comment}{// lookup field}}
+\DoxyCodeLine{1021   ASTContext \&Ctx = cxtu::getASTUnit(GetTU(PT))-\/>getASTContext();}
+\DoxyCodeLine{1022   IdentifierInfo *II = \&Ctx.Idents.get(S);}
+\DoxyCodeLine{1023   DeclarationName FieldName(II);}
+\DoxyCodeLine{1024   \textcolor{keyword}{const} RecordDecl *RD =}
+\DoxyCodeLine{1025         dyn\_cast\_or\_null<RecordDecl>(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(PC));}
+\DoxyCodeLine{1026   \textcolor{comment}{// verified in validateFieldParentType}}
+\DoxyCodeLine{1027   RD = RD-\/>getDefinition();}
+\DoxyCodeLine{1028   RecordDecl::lookup\_result Res = RD-\/>lookup(FieldName);}
+\DoxyCodeLine{1029   \textcolor{comment}{// If a field of the parent record is incomplete, lookup will fail.}}
+\DoxyCodeLine{1030   \textcolor{comment}{// and we would return InvalidFieldName instead of Incomplete.}}
+\DoxyCodeLine{1031   \textcolor{comment}{// But this erroneous results does protects again a hidden assertion failure}}
+\DoxyCodeLine{1032   \textcolor{comment}{// in the RecordLayoutBuilder}}
+\DoxyCodeLine{1033   \textcolor{keywordflow}{if} (!Res.isSingleResult())}
+\DoxyCodeLine{1034     \textcolor{keywordflow}{return} CXTypeLayoutError\_InvalidFieldName;}
+\DoxyCodeLine{1035   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FieldDecl *FD = dyn\_cast<FieldDecl>(Res.front()))}
+\DoxyCodeLine{1036     \textcolor{keywordflow}{return} Ctx.getFieldOffset(FD);}
+\DoxyCodeLine{1037   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} IndirectFieldDecl *IFD = dyn\_cast<IndirectFieldDecl>(Res.front()))}
+\DoxyCodeLine{1038     \textcolor{keywordflow}{return} Ctx.getFieldOffset(IFD);}
+\DoxyCodeLine{1039   \textcolor{comment}{// we don't want any other Decl Type.}}
+\DoxyCodeLine{1040   \textcolor{keywordflow}{return} CXTypeLayoutError\_InvalidFieldName;}
+\DoxyCodeLine{1041 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Type\+Declaration().
+
+\mbox{\Hypertarget{_c_x_type_8cpp_ae439d580b183e40c09a0cc66f6fa36bf}\label{_c_x_type_8cpp_ae439d580b183e40c09a0cc66f6fa36bf}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getSizeOf@{clang\_Type\_getSizeOf}}
+\index{clang\_Type\_getSizeOf@{clang\_Type\_getSizeOf}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getSizeOf()}{clang\_Type\_getSizeOf()}}
+{\footnotesize\ttfamily long long clang\+\_\+\+Type\+\_\+get\+Size\+Of (\begin{DoxyParamCaption}\item[{CXType}]{T }\end{DoxyParamCaption})}
+
+
+
+Definition at line 931 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{931                                          \{}
+\DoxyCodeLine{932   \textcolor{keywordflow}{if} (T.kind == CXType\_Invalid)}
+\DoxyCodeLine{933     \textcolor{keywordflow}{return} CXTypeLayoutError\_Invalid;}
+\DoxyCodeLine{934   ASTContext \&Ctx = cxtu::getASTUnit(GetTU(T))-\/>getASTContext();}
+\DoxyCodeLine{935   QualType QT = GetQualType(T);}
+\DoxyCodeLine{936   \textcolor{comment}{// [expr.sizeof] p2: if reference type, return size of referenced type}}
+\DoxyCodeLine{937   \textcolor{keywordflow}{if} (QT-\/>isReferenceType())}
+\DoxyCodeLine{938     QT = QT.getNonReferenceType();}
+\DoxyCodeLine{939   \textcolor{comment}{// [expr.sizeof] p1: return -\/1 on: func, incomplete, bitfield, incomplete}}
+\DoxyCodeLine{940   \textcolor{comment}{//                   enumeration}}
+\DoxyCodeLine{941   \textcolor{comment}{// Note: We get the cxtype, not the cxcursor, so we can't call}}
+\DoxyCodeLine{942   \textcolor{comment}{//       FieldDecl-\/>isBitField()}}
+\DoxyCodeLine{943   \textcolor{comment}{// [expr.sizeof] p3: pointer ok, function not ok.}}
+\DoxyCodeLine{944   \textcolor{comment}{// [gcc extension] lib/AST/ExprConstant.cpp:1372 HandleSizeof : vla == error}}
+\DoxyCodeLine{945   \textcolor{keywordflow}{if} (QT-\/>isIncompleteType())}
+\DoxyCodeLine{946     \textcolor{keywordflow}{return} CXTypeLayoutError\_Incomplete;}
+\DoxyCodeLine{947   \textcolor{keywordflow}{if} (QT-\/>isDependentType())}
+\DoxyCodeLine{948     \textcolor{keywordflow}{return} CXTypeLayoutError\_Dependent;}
+\DoxyCodeLine{949   \textcolor{keywordflow}{if} (!QT-\/>isConstantSizeType())}
+\DoxyCodeLine{950     \textcolor{keywordflow}{return} CXTypeLayoutError\_NotConstantSize;}
+\DoxyCodeLine{951   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} \textcolor{keyword}{auto} *Deduced = dyn\_cast<DeducedType>(QT))}
+\DoxyCodeLine{952     \textcolor{keywordflow}{if} (Deduced-\/>getDeducedType().isNull())}
+\DoxyCodeLine{953       \textcolor{keywordflow}{return} CXTypeLayoutError\_Undeduced;}
+\DoxyCodeLine{954   \textcolor{comment}{// [gcc extension] lib/AST/ExprConstant.cpp:1372}}
+\DoxyCodeLine{955   \textcolor{comment}{//                 HandleSizeof : \{voidtype,functype\} == 1}}
+\DoxyCodeLine{956   \textcolor{comment}{// not handled by ASTContext.cpp:1313 getTypeInfoImpl}}
+\DoxyCodeLine{957   \textcolor{keywordflow}{if} (QT-\/>isVoidType() || QT-\/>isFunctionType())}
+\DoxyCodeLine{958     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{959   \textcolor{keywordflow}{return} Ctx.getTypeSizeInChars(QT).getQuantity();}
+\DoxyCodeLine{960 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a7efab9a1ff4b7be8e852a53c5f4d73e6}\label{_c_x_type_8cpp_a7efab9a1ff4b7be8e852a53c5f4d73e6}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getTemplateArgumentAsType@{clang\_Type\_getTemplateArgumentAsType}}
+\index{clang\_Type\_getTemplateArgumentAsType@{clang\_Type\_getTemplateArgumentAsType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getTemplateArgumentAsType()}{clang\_Type\_getTemplateArgumentAsType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Template\+Argument\+As\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT,  }\item[{unsigned}]{index }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1147 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1147                                                                        \{}
+\DoxyCodeLine{1148   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1149   \textcolor{keywordflow}{if} (T.isNull())}
+\DoxyCodeLine{1150     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1151 }
+\DoxyCodeLine{1152   \textcolor{keyword}{auto} TA = GetTemplateArguments(T);}
+\DoxyCodeLine{1153   \textcolor{keywordflow}{if} (!TA)}
+\DoxyCodeLine{1154     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1155 }
+\DoxyCodeLine{1156   Optional<QualType> QT = FindTemplateArgumentTypeAt(TA.getValue(), index);}
+\DoxyCodeLine{1157   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QT.getValueOr(QualType()), GetTU(CT));}
+\DoxyCodeLine{1158 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_a897416ad1979f589bb01359b3a31e354}\label{_c_x_type_8cpp_a897416ad1979f589bb01359b3a31e354}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_getValueType@{clang\_Type\_getValueType}}
+\index{clang\_Type\_getValueType@{clang\_Type\_getValueType}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_getValueType()}{clang\_Type\_getValueType()}}
+{\footnotesize\ttfamily CXType clang\+\_\+\+Type\+\_\+get\+Value\+Type (\begin{DoxyParamCaption}\item[{CXType}]{CT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1327 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1327                                           \{}
+\DoxyCodeLine{1328   QualType T = GetQualType(CT);}
+\DoxyCodeLine{1329 }
+\DoxyCodeLine{1330   \textcolor{keywordflow}{if} (T.isNull() || !T-\/>isAtomicType())}
+\DoxyCodeLine{1331       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(QualType(), GetTU(CT));}
+\DoxyCodeLine{1332 }
+\DoxyCodeLine{1333   \textcolor{keyword}{const} \textcolor{keyword}{auto} *AT = T-\/>castAs<AtomicType>();}
+\DoxyCodeLine{1334   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxtype_afab44f51bd657249b6dcf6476c6b6b98}{MakeCXType}}(AT-\/>getValueType(), GetTU(CT));}
+\DoxyCodeLine{1335 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_ad08f909487f3043b05527b86dc79c56b}\label{_c_x_type_8cpp_ad08f909487f3043b05527b86dc79c56b}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_isTransparentTagTypedef@{clang\_Type\_isTransparentTagTypedef}}
+\index{clang\_Type\_isTransparentTagTypedef@{clang\_Type\_isTransparentTagTypedef}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_isTransparentTagTypedef()}{clang\_Type\_isTransparentTagTypedef()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Type\+\_\+is\+Transparent\+Tag\+Typedef (\begin{DoxyParamCaption}\item[{CXType}]{TT }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1297 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1297                                                       \{}
+\DoxyCodeLine{1298   QualType T = GetQualType(TT);}
+\DoxyCodeLine{1299   \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} *TT = dyn\_cast\_or\_null<TypedefType>(T.getTypePtrOrNull())) \{}
+\DoxyCodeLine{1300     \textcolor{keywordflow}{if} (\textcolor{keyword}{auto} *D = TT-\/>getDecl())}
+\DoxyCodeLine{1301       \textcolor{keywordflow}{return} D-\/>isTransparentTag();}
+\DoxyCodeLine{1302   \}}
+\DoxyCodeLine{1303   \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{1304 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_x_type_8cpp_abe81959d9ff1a1cfb80c2688bac4e861}\label{_c_x_type_8cpp_abe81959d9ff1a1cfb80c2688bac4e861}} 
+\index{CXType.cpp@{CXType.cpp}!clang\_Type\_visitFields@{clang\_Type\_visitFields}}
+\index{clang\_Type\_visitFields@{clang\_Type\_visitFields}!CXType.cpp@{CXType.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_Type\_visitFields()}{clang\_Type\_visitFields()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+\+Type\+\_\+visit\+Fields (\begin{DoxyParamCaption}\item[{CXType}]{PT,  }\item[{CXField\+Visitor}]{visitor,  }\item[{CXClient\+Data}]{client\+\_\+data }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1228 of file CXType.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1230                                                          \{}
+\DoxyCodeLine{1231   CXCursor PC = \mbox{\hyperlink{_c_x_type_8cpp_af7b6b47bb98865b91a02e148f87062a2}{clang\_getTypeDeclaration}}(PT);}
+\DoxyCodeLine{1232   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a0c5b391d8bca745084fb8906cce6f66c}{clang\_isInvalid}}(PC.kind))}
+\DoxyCodeLine{1233     \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{1234   \textcolor{keyword}{const} RecordDecl *RD =}
+\DoxyCodeLine{1235         dyn\_cast\_or\_null<RecordDecl>(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{cxcursor::getCursorDecl}}(PC));}
+\DoxyCodeLine{1236   \textcolor{keywordflow}{if} (!RD || RD-\/>isInvalidDecl())}
+\DoxyCodeLine{1237     \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{1238   RD = RD-\/>getDefinition();}
+\DoxyCodeLine{1239   \textcolor{keywordflow}{if} (!RD || RD-\/>isInvalidDecl())}
+\DoxyCodeLine{1240     \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{1241 }
+\DoxyCodeLine{1242   \textcolor{keywordflow}{for} (RecordDecl::field\_iterator I = RD-\/>field\_begin(), E = RD-\/>field\_end();}
+\DoxyCodeLine{1243        I != E; ++I)\{}
+\DoxyCodeLine{1244     \textcolor{keyword}{const} FieldDecl *FD = dyn\_cast\_or\_null<FieldDecl>((*I));}
+\DoxyCodeLine{1245     \textcolor{comment}{// Callback to the client.}}
+\DoxyCodeLine{1246     \textcolor{keywordflow}{switch} (visitor(\mbox{\hyperlink{namespaceclang_1_1cxcursor_ab61ec2059175833672e8e78a376bb218}{cxcursor::MakeCXCursor}}(FD, GetTU(PT)), client\_data))\{}
+\DoxyCodeLine{1247     \textcolor{keywordflow}{case} CXVisit\_Break:}
+\DoxyCodeLine{1248       \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{1249     \textcolor{keywordflow}{case} CXVisit\_Continue:}
+\DoxyCodeLine{1250       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{1251     \}}
+\DoxyCodeLine{1252   \}}
+\DoxyCodeLine{1253   \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{1254 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Type\+Declaration(), clang\+\_\+is\+Invalid(), clang\+::cxcursor\+::get\+Cursor\+Decl(), and clang\+::cxcursor\+::\+Make\+CXCursor().
+

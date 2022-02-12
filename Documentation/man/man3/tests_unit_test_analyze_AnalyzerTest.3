@@ -1,0 +1,178 @@
+.TH "tests.unit.test_analyze.AnalyzerTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_analyze.AnalyzerTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_nodebug_macros_appended\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_set_language_fall_through\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_set_language_stops_on_not_supported\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_set_language_sets_flags\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_set_language_from_filename\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_arch_loop_sets_flags\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_arch_loop_stops_on_not_supported\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 235 of file test_analyze\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_arch_loop_sets_flags ( self)"
+
+.PP
+Definition at line 295 of file test_analyze\&.py\&.
+.PP
+.nf
+295     def test_arch_loop_sets_flags(self):
+296         def flags(archs):
+297             spy = Spy()
+298             input = {'flags': [], 'arch_list': archs}
+299             sut\&.arch_check(input, spy\&.call)
+300             return spy\&.arg['flags']
+301 
+302         self\&.assertEqual([], flags([]))
+303         self\&.assertEqual(['-arch', 'i386'], flags(['i386']))
+304         self\&.assertEqual(['-arch', 'i386'], flags(['i386', 'ppc']))
+305         self\&.assertEqual(['-arch', 'sparc'], flags(['i386', 'sparc']))
+306 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_arch_loop_stops_on_not_supported ( self)"
+
+.PP
+Definition at line 307 of file test_analyze\&.py\&.
+.PP
+.nf
+307     def test_arch_loop_stops_on_not_supported(self):
+308         def stop(archs):
+309             spy = Spy()
+310             input = {'flags': [], 'arch_list': archs}
+311             self\&.assertIsNone(sut\&.arch_check(input, spy\&.call))
+312             self\&.assertIsNone(spy\&.arg)
+313 
+314         stop(['ppc'])
+315         stop(['ppc64'])
+316 
+317 
+318 @sut\&.require([])
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_nodebug_macros_appended ( self)"
+
+.PP
+Definition at line 237 of file test_analyze\&.py\&.
+.PP
+.nf
+237     def test_nodebug_macros_appended(self):
+238         def test(flags):
+239             spy = Spy()
+240             opts = {'flags': flags, 'force_debug': True}
+241             self\&.assertEqual(spy\&.success,
+242                              sut\&.filter_debug_flags(opts, spy\&.call))
+243             return spy\&.arg['flags']
+244 
+245         self\&.assertEqual(['-UNDEBUG'], test([]))
+246         self\&.assertEqual(['-DNDEBUG', '-UNDEBUG'], test(['-DNDEBUG']))
+247         self\&.assertEqual(['-DSomething', '-UNDEBUG'], test(['-DSomething']))
+248 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_set_language_fall_through ( self)"
+
+.PP
+Definition at line 249 of file test_analyze\&.py\&.
+.PP
+.nf
+249     def test_set_language_fall_through(self):
+250         def language(expected, input):
+251             spy = Spy()
+252             input\&.update({'compiler': 'c', 'file': 'test\&.c'})
+253             self\&.assertEqual(spy\&.success, sut\&.language_check(input, spy\&.call))
+254             self\&.assertEqual(expected, spy\&.arg['language'])
+255 
+256         language('c',   {'language': 'c', 'flags': []})
+257         language('c++', {'language': 'c++', 'flags': []})
+258 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_set_language_from_filename ( self)"
+
+.PP
+Definition at line 280 of file test_analyze\&.py\&.
+.PP
+.nf
+280     def test_set_language_from_filename(self):
+281         def language(expected, input):
+282             spy = Spy()
+283             input\&.update({'language': None, 'flags': []})
+284             self\&.assertEqual(spy\&.success, sut\&.language_check(input, spy\&.call))
+285             self\&.assertEqual(expected, spy\&.arg['language'])
+286 
+287         language('c',   {'file': 'file\&.c',   'compiler': 'c'})
+288         language('c++', {'file': 'file\&.c',   'compiler': 'c++'})
+289         language('c++', {'file': 'file\&.cxx', 'compiler': 'c'})
+290         language('c++', {'file': 'file\&.cxx', 'compiler': 'c++'})
+291         language('c++', {'file': 'file\&.cpp', 'compiler': 'c++'})
+292         language('c-cpp-output',   {'file': 'file\&.i', 'compiler': 'c'})
+293         language('c++-cpp-output', {'file': 'file\&.i', 'compiler': 'c++'})
+294 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_set_language_sets_flags ( self)"
+
+.PP
+Definition at line 270 of file test_analyze\&.py\&.
+.PP
+.nf
+270     def test_set_language_sets_flags(self):
+271         def flags(expected, input):
+272             spy = Spy()
+273             input\&.update({'compiler': 'c', 'file': 'test\&.c'})
+274             self\&.assertEqual(spy\&.success, sut\&.language_check(input, spy\&.call))
+275             self\&.assertEqual(expected, spy\&.arg['flags'])
+276 
+277         flags(['-x', 'c'],   {'language': 'c', 'flags': []})
+278         flags(['-x', 'c++'], {'language': 'c++', 'flags': []})
+279 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.AnalyzerTest\&.test_set_language_stops_on_not_supported ( self)"
+
+.PP
+Definition at line 259 of file test_analyze\&.py\&.
+.PP
+.nf
+259     def test_set_language_stops_on_not_supported(self):
+260         spy = Spy()
+261         input = {
+262             'compiler': 'c',
+263             'flags': [],
+264             'file': 'test\&.java',
+265             'language': 'java'
+266         }
+267         self\&.assertIsNone(sut\&.language_check(input, spy\&.call))
+268         self\&.assertIsNone(spy\&.arg)
+269 
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

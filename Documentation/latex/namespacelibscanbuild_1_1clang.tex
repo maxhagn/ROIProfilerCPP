@@ -1,0 +1,420 @@
+\hypertarget{namespacelibscanbuild_1_1clang}{}\doxysection{libscanbuild.\+clang Namespace Reference}
+\label{namespacelibscanbuild_1_1clang}\index{libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classlibscanbuild_1_1clang_1_1_clang_error_exception}{Clang\+Error\+Exception}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_ac38809d624aaefe00fff85b0bfa1005f}{get\+\_\+version}} (clang)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_aceaa1fcd710247641672c50964398c2a}{get\+\_\+arguments}} (command, cwd)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_a22384ca519d665152d7131a80ea349bb}{get\+\_\+active\+\_\+checkers}} (clang, plugins)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_a34893da383d84e138695f07a596d1b2b}{is\+\_\+active}} (checkers)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_af887fda2dc553cce619a1a5dc9a39267}{parse\+\_\+checkers}} (stream)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_a70514d7e50269346912151e9c2b0e0d7}{get\+\_\+checkers}} (clang, plugins)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_aea5b01c822382e97fd622bbfadd82c62}{is\+\_\+ctu\+\_\+capable}} (extdef\+\_\+map\+\_\+cmd)
+\item 
+def \mbox{\hyperlink{namespacelibscanbuild_1_1clang_af91327b127fdb63a9c81a3d8d03d5149}{get\+\_\+triple\+\_\+arch}} (command, cwd)
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{namespacelibscanbuild_1_1clang_a432255a4149d3c1c5deb929fdad2b46e}{ACTIVE\+\_\+\+CHECKER\+\_\+\+PATTERN}} = re.\+compile(r\textquotesingle{}$^\wedge$-\/analyzer-\/checker=(.$\ast$)\$\textquotesingle{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_a22384ca519d665152d7131a80ea349bb}\label{namespacelibscanbuild_1_1clang_a22384ca519d665152d7131a80ea349bb}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!get\_active\_checkers@{get\_active\_checkers}}
+\index{get\_active\_checkers@{get\_active\_checkers}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{get\_active\_checkers()}{get\_active\_checkers()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+get\+\_\+active\+\_\+checkers (\begin{DoxyParamCaption}\item[{}]{clang,  }\item[{}]{plugins }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Get the active checker list.
+
+:param clang:   the compiler we are using
+:param plugins: list of plugins which was requested by the user
+:return:        list of checker names which are active
+
+To get the default checkers we execute Clang to print how this
+compilation would be called. And take out the enabled checker from the
+arguments. For input file we specify stdin and pass only language
+information. \end{DoxyVerb}
+ 
+
+Definition at line 58 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{58 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_a22384ca519d665152d7131a80ea349bb}{get\_active\_checkers}}(clang, plugins):}
+\DoxyCodeLine{59     \textcolor{stringliteral}{"{}"{}"{} Get the active checker list.}}
+\DoxyCodeLine{60 \textcolor{stringliteral}{}}
+\DoxyCodeLine{61 \textcolor{stringliteral}{    :param clang:   the compiler we are using}}
+\DoxyCodeLine{62 \textcolor{stringliteral}{    :param plugins: list of plugins which was requested by the user}}
+\DoxyCodeLine{63 \textcolor{stringliteral}{    :return:        list of checker names which are active}}
+\DoxyCodeLine{64 \textcolor{stringliteral}{}}
+\DoxyCodeLine{65 \textcolor{stringliteral}{    To get the default checkers we execute Clang to print how this}}
+\DoxyCodeLine{66 \textcolor{stringliteral}{    compilation would be called. And take out the enabled checker from the}}
+\DoxyCodeLine{67 \textcolor{stringliteral}{    arguments. For input file we specify stdin and pass only language}}
+\DoxyCodeLine{68 \textcolor{stringliteral}{    information. "{}"{}"{}}}
+\DoxyCodeLine{69 }
+\DoxyCodeLine{70     \textcolor{keyword}{def }get\_active\_checkers\_for(language):}
+\DoxyCodeLine{71         \textcolor{stringliteral}{"{}"{}"{} Returns a list of active checkers for the given language. "{}"{}"{}}}
+\DoxyCodeLine{72 }
+\DoxyCodeLine{73         load\_args = [arg}
+\DoxyCodeLine{74                      \textcolor{keywordflow}{for} plugin \textcolor{keywordflow}{in} plugins}
+\DoxyCodeLine{75                      \textcolor{keywordflow}{for} arg \textcolor{keywordflow}{in} [\textcolor{stringliteral}{'-\/Xclang'}, \textcolor{stringliteral}{'-\/load'}, \textcolor{stringliteral}{'-\/Xclang'}, plugin]]}
+\DoxyCodeLine{76         cmd = [clang, \textcolor{stringliteral}{'-\/-\/analyze'}] + load\_args + [\textcolor{stringliteral}{'-\/x'}, language, \textcolor{stringliteral}{'-\/'}]}
+\DoxyCodeLine{77         \textcolor{keywordflow}{return} [ACTIVE\_CHECKER\_PATTERN.match(arg).group(1)}
+\DoxyCodeLine{78                 \textcolor{keywordflow}{for} arg \textcolor{keywordflow}{in} \mbox{\hyperlink{namespacelibscanbuild_1_1clang_aceaa1fcd710247641672c50964398c2a}{get\_arguments}}(cmd, \textcolor{stringliteral}{'.'})}
+\DoxyCodeLine{79                 \textcolor{keywordflow}{if} ACTIVE\_CHECKER\_PATTERN.match(arg)]}
+\DoxyCodeLine{80 }
+\DoxyCodeLine{81     result = set()}
+\DoxyCodeLine{82     \textcolor{keywordflow}{for} language \textcolor{keywordflow}{in} [\textcolor{stringliteral}{'c'}, \textcolor{stringliteral}{'c++'}, \textcolor{stringliteral}{'objective-\/c'}, \textcolor{stringliteral}{'objective-\/c++'}]:}
+\DoxyCodeLine{83         result.update(get\_active\_checkers\_for(language))}
+\DoxyCodeLine{84     \textcolor{keywordflow}{return} frozenset(result)}
+\DoxyCodeLine{85 }
+\DoxyCodeLine{86 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+clang.\+get\+\_\+arguments().
+
+
+
+Referenced by libscanbuild.\+clang.\+get\+\_\+checkers().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_aceaa1fcd710247641672c50964398c2a}\label{namespacelibscanbuild_1_1clang_aceaa1fcd710247641672c50964398c2a}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!get\_arguments@{get\_arguments}}
+\index{get\_arguments@{get\_arguments}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{get\_arguments()}{get\_arguments()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+get\+\_\+arguments (\begin{DoxyParamCaption}\item[{}]{command,  }\item[{}]{cwd }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Capture Clang invocation.
+
+:param command: the compilation command
+:param cwd:     the current working directory
+:return:        the detailed front-end invocation command \end{DoxyVerb}
+ 
+
+Definition at line 38 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{38 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_aceaa1fcd710247641672c50964398c2a}{get\_arguments}}(command, cwd):}
+\DoxyCodeLine{39     \textcolor{stringliteral}{"{}"{}"{} Capture Clang invocation.}}
+\DoxyCodeLine{40 \textcolor{stringliteral}{}}
+\DoxyCodeLine{41 \textcolor{stringliteral}{    :param command: the compilation command}}
+\DoxyCodeLine{42 \textcolor{stringliteral}{    :param cwd:     the current working directory}}
+\DoxyCodeLine{43 \textcolor{stringliteral}{    :return:        the detailed front-\/end invocation command "{}"{}"{}}}
+\DoxyCodeLine{44 }
+\DoxyCodeLine{45     cmd = command[:]}
+\DoxyCodeLine{46     cmd.insert(1, \textcolor{stringliteral}{'-\/\#\#\#'})}
+\DoxyCodeLine{47     cmd.append(\textcolor{stringliteral}{'-\/fno-\/color-\/diagnostics'})}
+\DoxyCodeLine{48 }
+\DoxyCodeLine{49     output = \mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\_command}}(cmd, cwd=cwd)}
+\DoxyCodeLine{50     \textcolor{comment}{\# The relevant information is in the last line of the output.}}
+\DoxyCodeLine{51     \textcolor{comment}{\# Don't check if finding last line fails, would throw exception anyway.}}
+\DoxyCodeLine{52     last\_line = output[-\/1]}
+\DoxyCodeLine{53     \textcolor{keywordflow}{if} re.search(\textcolor{stringliteral}{r'clang(.*): error:'}, last\_line):}
+\DoxyCodeLine{54         \textcolor{keywordflow}{raise} ClangErrorException(last\_line)}
+\DoxyCodeLine{55     \textcolor{keywordflow}{return} \mbox{\hyperlink{namespacelibscanbuild_1_1shell_ae2a3d56a48c3f8031021d617491be88c}{decode}}(last\_line)}
+\DoxyCodeLine{56 }
+\DoxyCodeLine{57 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+shell.\+decode(), and libscanbuild.\+run\+\_\+command().
+
+
+
+Referenced by libscanbuild.\+clang.\+get\+\_\+active\+\_\+checkers(), libscanbuild.\+clang.\+get\+\_\+triple\+\_\+arch(), libscanbuild.\+analyze.\+report\+\_\+failure(), and libscanbuild.\+analyze.\+run\+\_\+analyzer().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_a70514d7e50269346912151e9c2b0e0d7}\label{namespacelibscanbuild_1_1clang_a70514d7e50269346912151e9c2b0e0d7}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!get\_checkers@{get\_checkers}}
+\index{get\_checkers@{get\_checkers}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{get\_checkers()}{get\_checkers()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+get\+\_\+checkers (\begin{DoxyParamCaption}\item[{}]{clang,  }\item[{}]{plugins }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Get all the available checkers from default and from the plugins.
+
+:param clang:   the compiler we are using
+:param plugins: list of plugins which was requested by the user
+:return:        a dictionary of all available checkers and its status
+
+{<checker name>: (<checker description>, <is active by default>)} \end{DoxyVerb}
+ 
+
+Definition at line 138 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{138 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_a70514d7e50269346912151e9c2b0e0d7}{get\_checkers}}(clang, plugins):}
+\DoxyCodeLine{139     \textcolor{stringliteral}{"{}"{}"{} Get all the available checkers from default and from the plugins.}}
+\DoxyCodeLine{140 \textcolor{stringliteral}{}}
+\DoxyCodeLine{141 \textcolor{stringliteral}{    :param clang:   the compiler we are using}}
+\DoxyCodeLine{142 \textcolor{stringliteral}{    :param plugins: list of plugins which was requested by the user}}
+\DoxyCodeLine{143 \textcolor{stringliteral}{    :return:        a dictionary of all available checkers and its status}}
+\DoxyCodeLine{144 \textcolor{stringliteral}{}}
+\DoxyCodeLine{145 \textcolor{stringliteral}{    \{<checker name>: (<checker description>, <is active by default>)\} "{}"{}"{}}}
+\DoxyCodeLine{146 }
+\DoxyCodeLine{147     load = [elem \textcolor{keywordflow}{for} plugin \textcolor{keywordflow}{in} plugins \textcolor{keywordflow}{for} elem \textcolor{keywordflow}{in} [\textcolor{stringliteral}{'-\/load'}, plugin]]}
+\DoxyCodeLine{148     cmd = [clang, \textcolor{stringliteral}{'-\/cc1'}] + load + [\textcolor{stringliteral}{'-\/analyzer-\/checker-\/help'}]}
+\DoxyCodeLine{149 }
+\DoxyCodeLine{150     lines = \mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\_command}}(cmd)}
+\DoxyCodeLine{151 }
+\DoxyCodeLine{152     is\_active\_checker = \mbox{\hyperlink{namespacelibscanbuild_1_1clang_a34893da383d84e138695f07a596d1b2b}{is\_active}}(\mbox{\hyperlink{namespacelibscanbuild_1_1clang_a22384ca519d665152d7131a80ea349bb}{get\_active\_checkers}}(clang, plugins))}
+\DoxyCodeLine{153 }
+\DoxyCodeLine{154     checkers = \{}
+\DoxyCodeLine{155         name: (description, is\_active\_checker(name))}
+\DoxyCodeLine{156         \textcolor{keywordflow}{for} name, description \textcolor{keywordflow}{in} \mbox{\hyperlink{namespacelibscanbuild_1_1clang_af887fda2dc553cce619a1a5dc9a39267}{parse\_checkers}}(lines)}
+\DoxyCodeLine{157     \}}
+\DoxyCodeLine{158     \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} checkers:}
+\DoxyCodeLine{159         \textcolor{keywordflow}{raise} Exception(\textcolor{stringliteral}{'Could not query Clang for available checkers.'})}
+\DoxyCodeLine{160 }
+\DoxyCodeLine{161     \textcolor{keywordflow}{return} checkers}
+\DoxyCodeLine{162 }
+\DoxyCodeLine{163 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+clang.\+get\+\_\+active\+\_\+checkers(), libscanbuild.\+clang.\+is\+\_\+active(), libscanbuild.\+clang.\+parse\+\_\+checkers(), and libscanbuild.\+run\+\_\+command().
+
+
+
+Referenced by libscanbuild.\+arguments.\+validate\+\_\+args\+\_\+for\+\_\+analyze().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_af91327b127fdb63a9c81a3d8d03d5149}\label{namespacelibscanbuild_1_1clang_af91327b127fdb63a9c81a3d8d03d5149}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!get\_triple\_arch@{get\_triple\_arch}}
+\index{get\_triple\_arch@{get\_triple\_arch}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{get\_triple\_arch()}{get\_triple\_arch()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+get\+\_\+triple\+\_\+arch (\begin{DoxyParamCaption}\item[{}]{command,  }\item[{}]{cwd }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Returns the architecture part of the target triple for the given
+compilation command. \end{DoxyVerb}
+ 
+
+Definition at line 175 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{175 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_af91327b127fdb63a9c81a3d8d03d5149}{get\_triple\_arch}}(command, cwd):}
+\DoxyCodeLine{176     \textcolor{stringliteral}{"{}"{}"{}Returns the architecture part of the target triple for the given}}
+\DoxyCodeLine{177 \textcolor{stringliteral}{    compilation command. "{}"{}"{}}}
+\DoxyCodeLine{178 }
+\DoxyCodeLine{179     cmd = \mbox{\hyperlink{namespacelibscanbuild_1_1clang_aceaa1fcd710247641672c50964398c2a}{get\_arguments}}(command, cwd)}
+\DoxyCodeLine{180     \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{181         separator = cmd.index(\textcolor{stringliteral}{"{}-\/triple"{}})}
+\DoxyCodeLine{182         \textcolor{keywordflow}{return} cmd[separator + 1]}
+\DoxyCodeLine{183     \textcolor{keywordflow}{except} (IndexError, ValueError):}
+\DoxyCodeLine{184         \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}"{}}}
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+clang.\+get\+\_\+arguments().
+
+
+
+Referenced by libscanbuild.\+analyze.\+ctu\+\_\+collect\+\_\+phase(), and libscanbuild.\+analyze.\+dispatch\+\_\+ctu().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_ac38809d624aaefe00fff85b0bfa1005f}\label{namespacelibscanbuild_1_1clang_ac38809d624aaefe00fff85b0bfa1005f}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!get\_version@{get\_version}}
+\index{get\_version@{get\_version}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{get\_version()}{get\_version()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+get\+\_\+version (\begin{DoxyParamCaption}\item[{}]{clang }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Returns the compiler version as string.
+
+:param clang:   the compiler we are using
+:return:        the version string printed to stderr \end{DoxyVerb}
+ 
+
+Definition at line 27 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{27 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_ac38809d624aaefe00fff85b0bfa1005f}{get\_version}}(clang):}
+\DoxyCodeLine{28     \textcolor{stringliteral}{"{}"{}"{} Returns the compiler version as string.}}
+\DoxyCodeLine{29 \textcolor{stringliteral}{}}
+\DoxyCodeLine{30 \textcolor{stringliteral}{    :param clang:   the compiler we are using}}
+\DoxyCodeLine{31 \textcolor{stringliteral}{    :return:        the version string printed to stderr "{}"{}"{}}}
+\DoxyCodeLine{32 }
+\DoxyCodeLine{33     output = \mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\_command}}([clang, \textcolor{stringliteral}{'-\/v'}])}
+\DoxyCodeLine{34     \textcolor{comment}{\# the relevant version info is in the first line}}
+\DoxyCodeLine{35     \textcolor{keywordflow}{return} output[0]}
+\DoxyCodeLine{36 }
+\DoxyCodeLine{37 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+run\+\_\+command().
+
+
+
+Referenced by libscanbuild.\+report.\+assemble\+\_\+cover(), and libscanbuild.\+analyze.\+report\+\_\+failure().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_a34893da383d84e138695f07a596d1b2b}\label{namespacelibscanbuild_1_1clang_a34893da383d84e138695f07a596d1b2b}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!is\_active@{is\_active}}
+\index{is\_active@{is\_active}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{is\_active()}{is\_active()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+is\+\_\+active (\begin{DoxyParamCaption}\item[{}]{checkers }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Returns a method, which classifies the checker active or not,
+based on the received checker name list. \end{DoxyVerb}
+ 
+
+Definition at line 87 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{87 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_a34893da383d84e138695f07a596d1b2b}{is\_active}}(checkers):}
+\DoxyCodeLine{88     \textcolor{stringliteral}{"{}"{}"{} Returns a method, which classifies the checker active or not,}}
+\DoxyCodeLine{89 \textcolor{stringliteral}{    based on the received checker name list. "{}"{}"{}}}
+\DoxyCodeLine{90 }
+\DoxyCodeLine{91     \textcolor{keyword}{def }predicate(checker):}
+\DoxyCodeLine{92         \textcolor{stringliteral}{"{}"{}"{} Returns True if the given checker is active. "{}"{}"{}}}
+\DoxyCodeLine{93 }
+\DoxyCodeLine{94         \textcolor{keywordflow}{return} any(pattern.match(checker) \textcolor{keywordflow}{for} pattern \textcolor{keywordflow}{in} predicate.patterns)}
+\DoxyCodeLine{95 }
+\DoxyCodeLine{96     predicate.patterns = [re.compile(\textcolor{stringliteral}{r'\string^'} + a + \textcolor{stringliteral}{r'(\(\backslash\).|\$)'}) \textcolor{keywordflow}{for} a \textcolor{keywordflow}{in} checkers]}
+\DoxyCodeLine{97     \textcolor{keywordflow}{return} predicate}
+\DoxyCodeLine{98 }
+\DoxyCodeLine{99 }
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+clang.\+get\+\_\+checkers().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_aea5b01c822382e97fd622bbfadd82c62}\label{namespacelibscanbuild_1_1clang_aea5b01c822382e97fd622bbfadd82c62}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!is\_ctu\_capable@{is\_ctu\_capable}}
+\index{is\_ctu\_capable@{is\_ctu\_capable}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{is\_ctu\_capable()}{is\_ctu\_capable()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+is\+\_\+ctu\+\_\+capable (\begin{DoxyParamCaption}\item[{}]{extdef\+\_\+map\+\_\+cmd }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Detects if the current (or given) clang and external definition mapping
+executables are CTU compatible. \end{DoxyVerb}
+ 
+
+Definition at line 164 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{164 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_aea5b01c822382e97fd622bbfadd82c62}{is\_ctu\_capable}}(extdef\_map\_cmd):}
+\DoxyCodeLine{165     \textcolor{stringliteral}{"{}"{}"{} Detects if the current (or given) clang and external definition mapping}}
+\DoxyCodeLine{166 \textcolor{stringliteral}{    executables are CTU compatible. "{}"{}"{}}}
+\DoxyCodeLine{167 }
+\DoxyCodeLine{168     \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{169         \mbox{\hyperlink{namespacelibscanbuild_a243b8757d8cfbc0be023301a8b951d6c}{run\_command}}([extdef\_map\_cmd, \textcolor{stringliteral}{'-\/version'}])}
+\DoxyCodeLine{170     \textcolor{keywordflow}{except} (OSError, subprocess.CalledProcessError):}
+\DoxyCodeLine{171         \textcolor{keywordflow}{return} \textcolor{keyword}{False}}
+\DoxyCodeLine{172     \textcolor{keywordflow}{return} \textcolor{keyword}{True}}
+\DoxyCodeLine{173 }
+\DoxyCodeLine{174 }
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+run\+\_\+command().
+
+
+
+Referenced by libscanbuild.\+arguments.\+validate\+\_\+args\+\_\+for\+\_\+analyze().
+
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_af887fda2dc553cce619a1a5dc9a39267}\label{namespacelibscanbuild_1_1clang_af887fda2dc553cce619a1a5dc9a39267}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!parse\_checkers@{parse\_checkers}}
+\index{parse\_checkers@{parse\_checkers}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{parse\_checkers()}{parse\_checkers()}}
+{\footnotesize\ttfamily def libscanbuild.\+clang.\+parse\+\_\+checkers (\begin{DoxyParamCaption}\item[{}]{stream }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb} Parse clang -analyzer-checker-help output.
+
+Below the line 'CHECKERS:' are there the name description pairs.
+Many of them are in one line, but some long named checker has the
+name and the description in separate lines.
+
+The checker name is always prefixed with two space character. The
+name contains no whitespaces. Then followed by newline (if it's
+too long) or other space characters comes the description of the
+checker. The description ends with a newline character.
+
+:param stream:  list of lines to parse
+:return:        generator of tuples
+
+(<checker name>, <checker description>) \end{DoxyVerb}
+ 
+
+Definition at line 100 of file clang.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{100 \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1clang_af887fda2dc553cce619a1a5dc9a39267}{parse\_checkers}}(stream):}
+\DoxyCodeLine{101     \textcolor{stringliteral}{"{}"{}"{} Parse clang -\/analyzer-\/checker-\/help output.}}
+\DoxyCodeLine{102 \textcolor{stringliteral}{}}
+\DoxyCodeLine{103 \textcolor{stringliteral}{    Below the line 'CHECKERS:' are there the name description pairs.}}
+\DoxyCodeLine{104 \textcolor{stringliteral}{    Many of them are in one line, but some long named checker has the}}
+\DoxyCodeLine{105 \textcolor{stringliteral}{    name and the description in separate lines.}}
+\DoxyCodeLine{106 \textcolor{stringliteral}{}}
+\DoxyCodeLine{107 \textcolor{stringliteral}{    The checker name is always prefixed with two space character. The}}
+\DoxyCodeLine{108 \textcolor{stringliteral}{    name contains no whitespaces. Then followed by newline (if it's}}
+\DoxyCodeLine{109 \textcolor{stringliteral}{    too long) or other space characters comes the description of the}}
+\DoxyCodeLine{110 \textcolor{stringliteral}{    checker. The description ends with a newline character.}}
+\DoxyCodeLine{111 \textcolor{stringliteral}{}}
+\DoxyCodeLine{112 \textcolor{stringliteral}{    :param stream:  list of lines to parse}}
+\DoxyCodeLine{113 \textcolor{stringliteral}{    :return:        generator of tuples}}
+\DoxyCodeLine{114 \textcolor{stringliteral}{}}
+\DoxyCodeLine{115 \textcolor{stringliteral}{    (<checker name>, <checker description>) "{}"{}"{}}}
+\DoxyCodeLine{116 }
+\DoxyCodeLine{117     lines = iter(stream)}
+\DoxyCodeLine{118     \textcolor{comment}{\# find checkers header}}
+\DoxyCodeLine{119     \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} lines:}
+\DoxyCodeLine{120         \textcolor{keywordflow}{if} re.match(\textcolor{stringliteral}{r'\string^CHECKERS:'}, line):}
+\DoxyCodeLine{121             \textcolor{keywordflow}{break}}
+\DoxyCodeLine{122     \textcolor{comment}{\# find entries}}
+\DoxyCodeLine{123     state = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{124     \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} lines:}
+\DoxyCodeLine{125         \textcolor{keywordflow}{if} state \textcolor{keywordflow}{and} \textcolor{keywordflow}{not} re.match(\textcolor{stringliteral}{r'\string^\(\backslash\)s\(\backslash\)s\(\backslash\)S'}, line):}
+\DoxyCodeLine{126             \textcolor{keywordflow}{yield} (state, line.strip())}
+\DoxyCodeLine{127             state = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{128         \textcolor{keywordflow}{elif} re.match(\textcolor{stringliteral}{r'\string^\(\backslash\)s\(\backslash\)s\(\backslash\)S+\$'}, line.rstrip()):}
+\DoxyCodeLine{129             state = line.strip()}
+\DoxyCodeLine{130         \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{131             pattern = re.compile(\textcolor{stringliteral}{r'\string^\(\backslash\)s\(\backslash\)s(?P<key>\(\backslash\)S*)\(\backslash\)s*(?P<value>.*)'})}
+\DoxyCodeLine{132             match = pattern.match(line.rstrip())}
+\DoxyCodeLine{133             \textcolor{keywordflow}{if} match:}
+\DoxyCodeLine{134                 current = match.groupdict()}
+\DoxyCodeLine{135                 \textcolor{keywordflow}{yield} (current[\textcolor{stringliteral}{'key'}], current[\textcolor{stringliteral}{'value'}])}
+\DoxyCodeLine{136 }
+\DoxyCodeLine{137 }
+
+\end{DoxyCode}
+
+
+Referenced by libscanbuild.\+clang.\+get\+\_\+checkers().
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{namespacelibscanbuild_1_1clang_a432255a4149d3c1c5deb929fdad2b46e}\label{namespacelibscanbuild_1_1clang_a432255a4149d3c1c5deb929fdad2b46e}} 
+\index{libscanbuild.clang@{libscanbuild.clang}!ACTIVE\_CHECKER\_PATTERN@{ACTIVE\_CHECKER\_PATTERN}}
+\index{ACTIVE\_CHECKER\_PATTERN@{ACTIVE\_CHECKER\_PATTERN}!libscanbuild.clang@{libscanbuild.clang}}
+\doxysubsubsection{\texorpdfstring{ACTIVE\_CHECKER\_PATTERN}{ACTIVE\_CHECKER\_PATTERN}}
+{\footnotesize\ttfamily libscanbuild.\+clang.\+ACTIVE\+\_\+\+CHECKER\+\_\+\+PATTERN = re.\+compile(r\textquotesingle{}$^\wedge$-\/analyzer-\/checker=(.$\ast$)\$\textquotesingle{})}
+
+
+
+Definition at line 19 of file clang.\+py.
+

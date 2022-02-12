@@ -1,0 +1,541 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_diff_8cpp_source" xml:lang="en-US">
+<title>ClangDiff.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-diff/ClangDiff.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;ClangDiff.cpp&#32;-&#32;compare&#32;source&#32;files&#32;by&#32;AST&#32;nodes&#32;------*-&#32;C++&#32;-*-&#32;-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;a&#32;tool&#32;for&#32;syntax&#32;tree&#32;based&#32;comparison&#32;using</emphasis>
+00010 <emphasis role="comment">//&#32;Tooling/ASTDiff.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/ASTDiff/ASTDiff.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/CommonOptionsParser.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Tooling.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00018 
+00019 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00020 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00021 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::tooling;
+00022 
+00023 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;ClangDiffCategory(<emphasis role="stringliteral">&quot;clang-diff&#32;options&quot;</emphasis>);
+00024 
+00025 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00026 &#32;&#32;&#32;&#32;ASTDump(<emphasis role="stringliteral">&quot;ast-dump&quot;</emphasis>,
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;the&#32;internal&#32;representation&#32;of&#32;the&#32;AST.&quot;</emphasis>),
+00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangDiffCategory));
+00029 
+00030 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;ASTDumpJson(
+00031 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;ast-dump-json&quot;</emphasis>,
+00032 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;the&#32;internal&#32;representation&#32;of&#32;the&#32;AST&#32;as&#32;JSON.&quot;</emphasis>),
+00033 &#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangDiffCategory));
+00034 
+00035 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;PrintMatches(<emphasis role="stringliteral">&quot;dump-matches&quot;</emphasis>,
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;the&#32;matched&#32;nodes.&quot;</emphasis>),
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangDiffCategory));
+00038 
+00039 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;HtmlDiff(<emphasis role="stringliteral">&quot;html&quot;</emphasis>,
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Output&#32;a&#32;side-by-side&#32;diff&#32;in&#32;HTML.&quot;</emphasis>),
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangDiffCategory));
+00042 
+00043 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;SourcePath(cl::Positional,&#32;cl::desc(<emphasis role="stringliteral">&quot;&lt;source&gt;&quot;</emphasis>),
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::Required,
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangDiffCategory));
+00046 
+00047 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;DestinationPath(cl::Positional,
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;&lt;destination&gt;&quot;</emphasis>),
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::Optional,
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangDiffCategory));
+00051 
+00052 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;StopAfter(<emphasis role="stringliteral">&quot;stop-diff-after&quot;</emphasis>,
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;&lt;topdown|bottomup&gt;&quot;</emphasis>),
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::Optional,&#32;cl::init(<emphasis role="stringliteral">&quot;&quot;</emphasis>),
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangDiffCategory));
+00056 
+00057 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;int&gt;&#32;MaxSize(<emphasis role="stringliteral">&quot;s&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;&lt;maxsize&gt;&quot;</emphasis>),&#32;cl::Optional,
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(-1),&#32;cl::cat(ClangDiffCategory));
+00059 
+00060 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;BuildPath(<emphasis role="stringliteral">&quot;p&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Build&#32;path&quot;</emphasis>),&#32;cl::init(<emphasis role="stringliteral">&quot;&quot;</emphasis>),
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::Optional,&#32;cl::cat(ClangDiffCategory));
+00062 
+00063 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;&#32;ArgsAfter(
+00064 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;extra-arg&quot;</emphasis>,
+00065 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Additional&#32;argument&#32;to&#32;append&#32;to&#32;the&#32;compiler&#32;command&#32;line&quot;</emphasis>),
+00066 &#32;&#32;&#32;&#32;cl::cat(ClangDiffCategory));
+00067 
+00068 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;&#32;ArgsBefore(
+00069 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;extra-arg-before&quot;</emphasis>,
+00070 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Additional&#32;argument&#32;to&#32;prepend&#32;to&#32;the&#32;compiler&#32;command&#32;line&quot;</emphasis>),
+00071 &#32;&#32;&#32;&#32;cl::cat(ClangDiffCategory));
+00072 
+00073 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;addExtraArgs(std::unique_ptr&lt;CompilationDatabase&gt;&#32;&amp;Compilations)&#32;{
+00074 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Compilations)
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00076 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;AdjustingCompilations&#32;=
+00077 &#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;ArgumentsAdjustingCompilations&gt;(
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::move(Compilations));
+00079 &#32;&#32;AdjustingCompilations-&gt;appendArgumentsAdjuster(
+00080 &#32;&#32;&#32;&#32;&#32;&#32;getInsertArgumentAdjuster(ArgsBefore,&#32;ArgumentInsertPosition::BEGIN));
+00081 &#32;&#32;AdjustingCompilations-&gt;appendArgumentsAdjuster(
+00082 &#32;&#32;&#32;&#32;&#32;&#32;getInsertArgumentAdjuster(ArgsAfter,&#32;ArgumentInsertPosition::END));
+00083 &#32;&#32;Compilations&#32;=&#32;std::move(AdjustingCompilations);
+00084 }
+00085 
+00086 <emphasis role="keyword">static</emphasis>&#32;std::unique_ptr&lt;ASTUnit&gt;
+00087 getAST(<emphasis role="keyword">const</emphasis>&#32;std::unique_ptr&lt;CompilationDatabase&gt;&#32;&amp;CommonCompilations,
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;StringRef&#32;Filename)&#32;{
+00089 &#32;&#32;std::string&#32;ErrorMessage;
+00090 &#32;&#32;std::unique_ptr&lt;CompilationDatabase&gt;&#32;Compilations;
+00091 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CommonCompilations)&#32;{
+00092 &#32;&#32;&#32;&#32;Compilations&#32;=&#32;CompilationDatabase::autoDetectFromSource(
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;BuildPath.empty()&#32;?&#32;Filename&#32;:&#32;BuildPath,&#32;ErrorMessage);
+00094 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Compilations)&#32;{
+00095 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error&#32;while&#32;trying&#32;to&#32;load&#32;a&#32;compilation&#32;database,&#32;running&#32;&quot;</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;without&#32;flags.\n&quot;</emphasis>
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;ErrorMessage;
+00099 &#32;&#32;&#32;&#32;&#32;&#32;Compilations&#32;=
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::make_unique&lt;clang::tooling::FixedCompilationDatabase&gt;(
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;.&quot;</emphasis>,&#32;std::vector&lt;std::string&gt;());
+00102 &#32;&#32;&#32;&#32;}
+00103 &#32;&#32;}
+00104 &#32;&#32;addExtraArgs(Compilations);
+00105 &#32;&#32;std::array&lt;std::string,&#32;1&gt;&#32;Files&#32;=&#32;{{std::string(Filename)}};
+00106 &#32;&#32;ClangTool&#32;Tool(Compilations&#32;?&#32;*Compilations&#32;:&#32;*CommonCompilations,&#32;Files);
+00107 &#32;&#32;std::vector&lt;std::unique_ptr&lt;ASTUnit&gt;&gt;&#32;ASTs;
+00108 &#32;&#32;Tool.buildASTs(ASTs);
+00109 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTs.size()&#32;!=&#32;Files.size())
+00110 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00111 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::move(ASTs[0]);
+00112 }
+00113 
+00114 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;hexdigit(<emphasis role="keywordtype">int</emphasis>&#32;N)&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;N&#32;&amp;=&#32;0xf,&#32;N&#32;+&#32;(N&#32;&lt;&#32;10&#32;?&#32;<emphasis role="charliteral">&apos;0&apos;</emphasis>&#32;:&#32;<emphasis role="charliteral">&apos;a&apos;</emphasis>&#32;-&#32;10);&#32;}
+00115 
+00116 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;HtmlDiffHeader[]&#32;=&#32;R<emphasis role="stringliteral">&quot;(</emphasis>
+00117 <emphasis role="stringliteral">&lt;html&gt;</emphasis>
+00118 <emphasis role="stringliteral">&lt;head&gt;</emphasis>
+00119 <emphasis role="stringliteral">&lt;meta&#32;charset=&apos;utf-8&apos;/&gt;</emphasis>
+00120 <emphasis role="stringliteral">&lt;style&gt;</emphasis>
+00121 <emphasis role="stringliteral">span.d&#32;{&#32;color:&#32;red;&#32;}</emphasis>
+00122 <emphasis role="stringliteral">span.u&#32;{&#32;color:&#32;#cc00cc;&#32;}</emphasis>
+00123 <emphasis role="stringliteral">span.i&#32;{&#32;color:&#32;green;&#32;}</emphasis>
+00124 <emphasis role="stringliteral">span.m&#32;{&#32;font-weight:&#32;bold;&#32;}</emphasis>
+00125 <emphasis role="stringliteral">span&#32;&#32;&#32;{&#32;font-weight:&#32;normal;&#32;color:&#32;black;&#32;}</emphasis>
+00126 <emphasis role="stringliteral">div.code&#32;{</emphasis>
+00127 <emphasis role="stringliteral">&#32;&#32;width:&#32;48%;</emphasis>
+00128 <emphasis role="stringliteral">&#32;&#32;height:&#32;98%;</emphasis>
+00129 <emphasis role="stringliteral">&#32;&#32;overflow:&#32;scroll;</emphasis>
+00130 <emphasis role="stringliteral">&#32;&#32;float:&#32;left;</emphasis>
+00131 <emphasis role="stringliteral">&#32;&#32;padding:&#32;0&#32;0&#32;0.5%&#32;0.5%;</emphasis>
+00132 <emphasis role="stringliteral">&#32;&#32;border:&#32;solid&#32;2px&#32;LightGrey;</emphasis>
+00133 <emphasis role="stringliteral">&#32;&#32;border-radius:&#32;5px;</emphasis>
+00134 <emphasis role="stringliteral">}</emphasis>
+00135 <emphasis role="stringliteral">&lt;/style&gt;</emphasis>
+00136 <emphasis role="stringliteral">&lt;/head&gt;</emphasis>
+00137 <emphasis role="stringliteral">&lt;script&#32;type=&apos;text/javascript&apos;&gt;</emphasis>
+00138 <emphasis role="stringliteral">highlightStack&#32;=&#32;[]</emphasis>
+00139 <emphasis role="stringliteral">function&#32;clearHighlight()&#32;{</emphasis>
+00140 <emphasis role="stringliteral">&#32;&#32;while&#32;(highlightStack.length)&#32;{</emphasis>
+00141 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;var&#32;[l,&#32;r]&#32;=&#32;highlightStack.pop()</emphasis>
+00142 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;document.getElementById(l).style.backgroundColor&#32;=&#32;&apos;inherit&apos;</emphasis>
+00143 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;if&#32;(r[1]&#32;!=&#32;&apos;-&apos;)</emphasis>
+00144 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;document.getElementById(r).style.backgroundColor&#32;=&#32;&apos;inherit&apos;</emphasis>
+00145 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00146 <emphasis role="stringliteral">}</emphasis>
+00147 <emphasis role="stringliteral">function&#32;highlight(event)&#32;{</emphasis>
+00148 <emphasis role="stringliteral">&#32;&#32;var&#32;id&#32;=&#32;event.target[&apos;id&apos;]</emphasis>
+00149 <emphasis role="stringliteral">&#32;&#32;doHighlight(id)</emphasis>
+00150 <emphasis role="stringliteral">}</emphasis>
+00151 <emphasis role="stringliteral">function&#32;doHighlight(id)&#32;{</emphasis>
+00152 <emphasis role="stringliteral">&#32;&#32;clearHighlight()</emphasis>
+00153 <emphasis role="stringliteral">&#32;&#32;source&#32;=&#32;document.getElementById(id)</emphasis>
+00154 <emphasis role="stringliteral">&#32;&#32;if&#32;(!source.attributes[&apos;tid&apos;])</emphasis>
+00155 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;return</emphasis>
+00156 <emphasis role="stringliteral">&#32;&#32;var&#32;mapped&#32;=&#32;source</emphasis>
+00157 <emphasis role="stringliteral">&#32;&#32;while&#32;(mapped&#32;&amp;&amp;&#32;mapped.parentElement&#32;&amp;&amp;&#32;mapped.attributes[&apos;tid&apos;].value.substr(1)&#32;===&#32;&apos;-1&apos;)</emphasis>
+00158 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;mapped&#32;=&#32;mapped.parentElement</emphasis>
+00159 <emphasis role="stringliteral">&#32;&#32;var&#32;tid&#32;=&#32;null,&#32;target&#32;=&#32;null</emphasis>
+00160 <emphasis role="stringliteral">&#32;&#32;if&#32;(mapped)&#32;{</emphasis>
+00161 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;tid&#32;=&#32;mapped.attributes[&apos;tid&apos;].value</emphasis>
+00162 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;target&#32;=&#32;document.getElementById(tid)</emphasis>
+00163 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00164 <emphasis role="stringliteral">&#32;&#32;if&#32;(source.parentElement&#32;&amp;&amp;&#32;source.parentElement.classList.contains(&apos;code&apos;))</emphasis>
+00165 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;return</emphasis>
+00166 <emphasis role="stringliteral">&#32;&#32;source.style.backgroundColor&#32;=&#32;&apos;lightgrey&apos;</emphasis>
+00167 <emphasis role="stringliteral">&#32;&#32;source.scrollIntoView()</emphasis>
+00168 <emphasis role="stringliteral">&#32;&#32;if&#32;(target)&#32;{</emphasis>
+00169 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;if&#32;(mapped&#32;===&#32;source)</emphasis>
+00170 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;target.style.backgroundColor&#32;=&#32;&apos;lightgrey&apos;</emphasis>
+00171 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;target.scrollIntoView()</emphasis>
+00172 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00173 <emphasis role="stringliteral">&#32;&#32;highlightStack.push([id,&#32;tid])</emphasis>
+00174 <emphasis role="stringliteral">&#32;&#32;location.hash&#32;=&#32;&apos;#&apos;&#32;+&#32;id</emphasis>
+00175 <emphasis role="stringliteral">}</emphasis>
+00176 <emphasis role="stringliteral">function&#32;scrollToBoth()&#32;{</emphasis>
+00177 <emphasis role="stringliteral">&#32;&#32;doHighlight(location.hash.substr(1))</emphasis>
+00178 <emphasis role="stringliteral">}</emphasis>
+00179 <emphasis role="stringliteral">function&#32;changed(elem)&#32;{</emphasis>
+00180 <emphasis role="stringliteral">&#32;&#32;return&#32;elem.classList.length&#32;==&#32;0</emphasis>
+00181 <emphasis role="stringliteral">}</emphasis>
+00182 <emphasis role="stringliteral">function&#32;nextChangedNode(prefix,&#32;increment,&#32;number)&#32;{</emphasis>
+00183 <emphasis role="stringliteral">&#32;&#32;do&#32;{</emphasis>
+00184 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;number&#32;+=&#32;increment</emphasis>
+00185 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;var&#32;elem&#32;=&#32;document.getElementById(prefix&#32;+&#32;number)</emphasis>
+00186 <emphasis role="stringliteral">&#32;&#32;}&#32;while(elem&#32;&amp;&amp;&#32;!changed(elem))</emphasis>
+00187 <emphasis role="stringliteral">&#32;&#32;return&#32;elem&#32;?&#32;number&#32;:&#32;null</emphasis>
+00188 <emphasis role="stringliteral">}</emphasis>
+00189 <emphasis role="stringliteral">function&#32;handleKey(e)&#32;{</emphasis>
+00190 <emphasis role="stringliteral">&#32;&#32;var&#32;down&#32;=&#32;e.code&#32;===&#32;&quot;KeyJ&quot;</emphasis>
+00191 <emphasis role="stringliteral">&#32;&#32;var&#32;up&#32;=&#32;e.code&#32;===&#32;&quot;KeyK&quot;</emphasis>
+00192 <emphasis role="stringliteral">&#32;&#32;if&#32;(!down&#32;&amp;&amp;&#32;!up)</emphasis>
+00193 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;return</emphasis>
+00194 <emphasis role="stringliteral">&#32;&#32;var&#32;id&#32;=&#32;highlightStack[0]&#32;?&#32;highlightStack[0][0]&#32;:&#32;&apos;R0&apos;</emphasis>
+00195 <emphasis role="stringliteral">&#32;&#32;var&#32;oldelem&#32;=&#32;document.getElementById(id)</emphasis>
+00196 <emphasis role="stringliteral">&#32;&#32;var&#32;number&#32;=&#32;parseInt(id.substr(1))</emphasis>
+00197 <emphasis role="stringliteral">&#32;&#32;var&#32;increment&#32;=&#32;down&#32;?&#32;1&#32;:&#32;-1</emphasis>
+00198 <emphasis role="stringliteral">&#32;&#32;var&#32;lastnumber&#32;=&#32;number</emphasis>
+00199 <emphasis role="stringliteral">&#32;&#32;var&#32;prefix&#32;=&#32;id[0]</emphasis>
+00200 <emphasis role="stringliteral">&#32;&#32;do&#32;{</emphasis>
+00201 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;number&#32;=&#32;nextChangedNode(prefix,&#32;increment,&#32;number)</emphasis>
+00202 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;var&#32;elem&#32;=&#32;document.getElementById(prefix&#32;+&#32;number)</emphasis>
+00203 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;if&#32;(up&#32;&amp;&amp;&#32;elem)&#32;{</emphasis>
+00204 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;while&#32;(elem.parentElement&#32;&amp;&amp;&#32;changed(elem.parentElement))</emphasis>
+00205 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;elem&#32;=&#32;elem.parentElement</emphasis>
+00206 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;number&#32;=&#32;elem.id.substr(1)</emphasis>
+00207 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;}</emphasis>
+00208 <emphasis role="stringliteral">&#32;&#32;}&#32;while&#32;((down&#32;&amp;&amp;&#32;id&#32;!==&#32;&apos;R0&apos;&#32;&amp;&amp;&#32;oldelem.contains(elem)))</emphasis>
+00209 <emphasis role="stringliteral">&#32;&#32;if&#32;(!number)</emphasis>
+00210 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;number&#32;=&#32;lastnumber</emphasis>
+00211 <emphasis role="stringliteral">&#32;&#32;elem&#32;=&#32;document.getElementById(prefix&#32;+&#32;number)</emphasis>
+00212 <emphasis role="stringliteral">&#32;&#32;doHighlight(prefix&#32;+&#32;number)</emphasis>
+00213 <emphasis role="stringliteral">}</emphasis>
+00214 <emphasis role="stringliteral">window.onload&#32;=&#32;scrollToBoth</emphasis>
+00215 <emphasis role="stringliteral">window.onkeydown&#32;=&#32;handleKey</emphasis>
+00216 <emphasis role="stringliteral">&lt;/script&gt;</emphasis>
+00217 <emphasis role="stringliteral">&lt;body&gt;</emphasis>
+00218 <emphasis role="stringliteral">&lt;div&#32;onclick=&apos;highlight(event)&apos;&gt;</emphasis>
+00219 <emphasis role="stringliteral">)&quot;;</emphasis>
+00220 <emphasis role="stringliteral"></emphasis>
+00221 <emphasis role="stringliteral"></emphasis><emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printHtml(raw_ostream&#32;&amp;OS,&#32;<emphasis role="keywordtype">char</emphasis>&#32;C)&#32;{
+00222 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C)&#32;{
+00223 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&amp;&apos;</emphasis>:
+00224 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;amp;&quot;</emphasis>;
+00225 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00226 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&lt;&apos;</emphasis>:
+00227 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;lt;&quot;</emphasis>;
+00228 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00229 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&gt;&apos;</emphasis>:
+00230 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;gt;&quot;</emphasis>;
+00231 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00232 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;\&apos;&apos;</emphasis>:
+00233 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;#x27;&quot;</emphasis>;
+00234 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00235 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>:
+00236 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;quot;&quot;</emphasis>;
+00237 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00238 &#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00239 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;C;
+00240 &#32;&#32;}
+00241 }
+00242 
+00243 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printHtml(raw_ostream&#32;&amp;OS,&#32;<emphasis role="keyword">const</emphasis>&#32;StringRef&#32;Str)&#32;{
+00244 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">char</emphasis>&#32;C&#32;:&#32;Str)
+00245 &#32;&#32;&#32;&#32;printHtml(OS,&#32;C);
+00246 }
+00247 
+00248 <emphasis role="keyword">static</emphasis>&#32;std::string&#32;getChangeKindAbbr(diff::ChangeKind&#32;Kind)&#32;{
+00249 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(Kind)&#32;{
+00250 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::None:
+00251 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00252 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Delete:
+00253 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;d&quot;</emphasis>;
+00254 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Update:
+00255 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;u&quot;</emphasis>;
+00256 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Insert:
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;i&quot;</emphasis>;
+00258 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Move:
+00259 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;m&quot;</emphasis>;
+00260 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::UpdateMove:
+00261 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;u&#32;m&quot;</emphasis>;
+00262 &#32;&#32;}
+00263 &#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Invalid&#32;enumeration&#32;value.&quot;</emphasis>);
+00264 }
+00265 
+00266 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;printHtmlForNode(raw_ostream&#32;&amp;OS,&#32;<emphasis role="keyword">const</emphasis>&#32;diff::ASTDiff&#32;&amp;Diff,
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::SyntaxTree&#32;&amp;Tree,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IsLeft,
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::NodeId&#32;Id,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Offset)&#32;{
+00269 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;diff::Node&#32;&amp;Node&#32;=&#32;Tree.getNode(Id);
+00270 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;MyTag,&#32;OtherTag;
+00271 &#32;&#32;diff::NodeId&#32;LeftId,&#32;RightId;
+00272 &#32;&#32;diff::NodeId&#32;TargetId&#32;=&#32;Diff.getMapped(Tree,&#32;Id);
+00273 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(IsLeft)&#32;{
+00274 &#32;&#32;&#32;&#32;MyTag&#32;=&#32;<emphasis role="charliteral">&apos;L&apos;</emphasis>;
+00275 &#32;&#32;&#32;&#32;OtherTag&#32;=&#32;<emphasis role="charliteral">&apos;R&apos;</emphasis>;
+00276 &#32;&#32;&#32;&#32;LeftId&#32;=&#32;Id;
+00277 &#32;&#32;&#32;&#32;RightId&#32;=&#32;TargetId;
+00278 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00279 &#32;&#32;&#32;&#32;MyTag&#32;=&#32;<emphasis role="charliteral">&apos;R&apos;</emphasis>;
+00280 &#32;&#32;&#32;&#32;OtherTag&#32;=&#32;<emphasis role="charliteral">&apos;L&apos;</emphasis>;
+00281 &#32;&#32;&#32;&#32;LeftId&#32;=&#32;TargetId;
+00282 &#32;&#32;&#32;&#32;RightId&#32;=&#32;Id;
+00283 &#32;&#32;}
+00284 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Begin,&#32;End;
+00285 &#32;&#32;std::tie(Begin,&#32;End)&#32;=&#32;Tree.getSourceRangeOffsets(Node);
+00286 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SrcMgr&#32;=&#32;Tree.getASTContext().getSourceManager();
+00287 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Code&#32;=&#32;SrcMgr.getBufferOrFake(SrcMgr.getMainFileID()).getBuffer();
+00288 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;Offset&#32;&lt;&#32;Begin;&#32;++Offset)
+00289 &#32;&#32;&#32;&#32;printHtml(OS,&#32;Code[Offset]);
+00290 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;span&#32;id=&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;MyTag&#32;&lt;&lt;&#32;Id&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;&quot;</emphasis>
+00291 &#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;tid=&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;OtherTag&#32;&lt;&lt;&#32;TargetId&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;&quot;</emphasis>;
+00292 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;title=&apos;&quot;</emphasis>;
+00293 &#32;&#32;printHtml(OS,&#32;Node.getTypeLabel());
+00294 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;&lt;&lt;&#32;LeftId&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;-&gt;&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;RightId;
+00295 &#32;&#32;std::string&#32;Value&#32;=&#32;Tree.getNodeValue(Node);
+00296 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Value.empty())&#32;{
+00297 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00298 &#32;&#32;&#32;&#32;printHtml(OS,&#32;Value);
+00299 &#32;&#32;}
+00300 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+00301 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Node.Change&#32;!=&#32;diff::None)
+00302 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;class=&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;getChangeKindAbbr(Node.Change)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+00303 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&gt;&quot;</emphasis>;
+00304 
+00305 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(diff::NodeId&#32;Child&#32;:&#32;Node.Children)
+00306 &#32;&#32;&#32;&#32;Offset&#32;=&#32;printHtmlForNode(OS,&#32;Diff,&#32;Tree,&#32;IsLeft,&#32;Child,&#32;Offset);
+00307 
+00308 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;Offset&#32;&lt;&#32;End;&#32;++Offset)
+00309 &#32;&#32;&#32;&#32;printHtml(OS,&#32;Code[Offset]);
+00310 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Id&#32;==&#32;Tree.getRootId())&#32;{
+00311 &#32;&#32;&#32;&#32;End&#32;=&#32;Code.size();
+00312 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(;&#32;Offset&#32;&lt;&#32;End;&#32;++Offset)
+00313 &#32;&#32;&#32;&#32;&#32;&#32;printHtml(OS,&#32;Code[Offset]);
+00314 &#32;&#32;}
+00315 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/span&gt;&quot;</emphasis>;
+00316 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Offset;
+00317 }
+00318 
+00319 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printJsonString(raw_ostream&#32;&amp;OS,&#32;<emphasis role="keyword">const</emphasis>&#32;StringRef&#32;Str)&#32;{
+00320 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">signed</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;C&#32;:&#32;Str)&#32;{
+00321 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C)&#32;{
+00322 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>:
+00323 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(\&quot;)&quot;;</emphasis>
+00324 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">break</emphasis>;
+00325 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;\\&apos;</emphasis>:
+00326 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(\\)&quot;;</emphasis>
+00327 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">break</emphasis>;
+00328 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>:
+00329 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(\n)&quot;;</emphasis>
+00330 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">break</emphasis>;
+00331 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;<emphasis role="charliteral">&apos;\t&apos;</emphasis>:
+00332 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(\t)&quot;;</emphasis>
+00333 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">break</emphasis>;
+00334 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00335 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="stringliteral">&apos;\x00&apos;</emphasis>&#32;&lt;=&#32;C&#32;&amp;&amp;&#32;C&#32;&lt;=&#32;<emphasis role="stringliteral">&apos;\x1f&apos;</emphasis>)&#32;{
+00336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(\u00)&quot;&#32;&lt;&lt;&#32;hexdigit(C&#32;&gt;&gt;&#32;4)&#32;&lt;&lt;&#32;hexdigit(C);</emphasis>
+00337 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;}&#32;</emphasis><emphasis role="keywordflow">else</emphasis>&#32;{
+00338 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;C;
+00339 &#32;&#32;&#32;&#32;&#32;&#32;}
+00340 &#32;&#32;&#32;&#32;}
+00341 &#32;&#32;}
+00342 }
+00343 
+00344 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printNodeAttributes(raw_ostream&#32;&amp;OS,&#32;diff::SyntaxTree&#32;&amp;Tree,
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::NodeId&#32;Id)&#32;{
+00346 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;diff::Node&#32;&amp;N&#32;=&#32;Tree.getNode(Id);
+00347 &#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(&quot;id&quot;:)&quot;&#32;&lt;&lt;&#32;int(Id);</emphasis>
+00348 <emphasis role="stringliteral">&#32;&#32;OS&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(,&quot;type&quot;:&quot;)&quot;&#32;&lt;&lt;&#32;N.getTypeLabel()&#32;&lt;&lt;&#32;</emphasis><emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00349 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Offsets&#32;=&#32;Tree.getSourceRangeOffsets(N);
+00350 &#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(,&quot;begin&quot;:)&quot;&#32;&lt;&lt;&#32;Offsets.first;</emphasis>
+00351 <emphasis role="stringliteral">&#32;&#32;OS&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(,&quot;end&quot;:)&quot;&#32;&lt;&lt;&#32;Offsets.second;</emphasis>
+00352 <emphasis role="stringliteral">&#32;&#32;std::string&#32;Value&#32;=&#32;Tree.getNodeValue(N);</emphasis>
+00353 <emphasis role="stringliteral">&#32;&#32;</emphasis><emphasis role="keywordflow">if</emphasis>&#32;(!Value.empty())&#32;{
+00354 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(,&quot;value&quot;:&quot;)&quot;;</emphasis>
+00355 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;printJsonString(OS,&#32;Value);</emphasis>
+00356 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;</emphasis><emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00357 &#32;&#32;}
+00358 }
+00359 
+00360 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printNodeAsJson(raw_ostream&#32;&amp;OS,&#32;diff::SyntaxTree&#32;&amp;Tree,
+00361 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::NodeId&#32;Id)&#32;{
+00362 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;diff::Node&#32;&amp;N&#32;=&#32;Tree.getNode(Id);
+00363 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;{&quot;</emphasis>;
+00364 &#32;&#32;printNodeAttributes(OS,&#32;Tree,&#32;Id);
+00365 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Identifier&#32;=&#32;N.getIdentifier();
+00366 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;QualifiedIdentifier&#32;=&#32;N.getQualifiedIdentifier();
+00367 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Identifier)&#32;{
+00368 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(,&quot;identifier&quot;:&quot;)&quot;;</emphasis>
+00369 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;printJsonString(OS,&#32;*Identifier);</emphasis>
+00370 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(&quot;)&quot;;</emphasis>
+00371 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">if</emphasis>&#32;(QualifiedIdentifier&#32;&amp;&amp;&#32;*Identifier&#32;!=&#32;*QualifiedIdentifier)&#32;{
+00372 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(,&quot;qualified_identifier&quot;:&quot;)&quot;;</emphasis>
+00373 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;printJsonString(OS,&#32;*QualifiedIdentifier);</emphasis>
+00374 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(&quot;)&quot;;</emphasis>
+00375 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;}</emphasis>
+00376 <emphasis role="stringliteral">&#32;&#32;}</emphasis>
+00377 <emphasis role="stringliteral">&#32;&#32;OS&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(,&quot;children&quot;:[)&quot;;</emphasis>
+00378 <emphasis role="stringliteral">&#32;&#32;</emphasis><emphasis role="keywordflow">if</emphasis>&#32;(N.Children.size()&#32;&gt;&#32;0)&#32;{
+00379 &#32;&#32;&#32;&#32;printNodeAsJson(OS,&#32;Tree,&#32;N.Children[0]);
+00380 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">size_t</emphasis>&#32;I&#32;=&#32;1,&#32;E&#32;=&#32;N.Children.size();&#32;I&#32;&lt;&#32;E;&#32;++I)&#32;{
+00381 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&quot;</emphasis>;
+00382 &#32;&#32;&#32;&#32;&#32;&#32;printNodeAsJson(OS,&#32;Tree,&#32;N.Children[I]);
+00383 &#32;&#32;&#32;&#32;}
+00384 &#32;&#32;}
+00385 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]}&quot;</emphasis>;
+00386 }
+00387 
+00388 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printNode(raw_ostream&#32;&amp;OS,&#32;diff::SyntaxTree&#32;&amp;Tree,
+00389 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::NodeId&#32;Id)&#32;{
+00390 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Id.isInvalid())&#32;{
+00391 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;None&quot;</emphasis>;
+00392 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00393 &#32;&#32;}
+00394 &#32;&#32;OS&#32;&lt;&lt;&#32;Tree.getNode(Id).getTypeLabel();
+00395 &#32;&#32;std::string&#32;Value&#32;=&#32;Tree.getNodeValue(Id);
+00396 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Value.empty())
+00397 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Value;
+00398 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;(&quot;</emphasis>&#32;&lt;&lt;&#32;Id&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;)&quot;</emphasis>;
+00399 }
+00400 
+00401 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printTree(raw_ostream&#32;&amp;OS,&#32;diff::SyntaxTree&#32;&amp;Tree)&#32;{
+00402 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(diff::NodeId&#32;Id&#32;:&#32;Tree)&#32;{
+00403 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;&lt;&#32;Tree.getNode(Id).Depth;&#32;++I)
+00404 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>;
+00405 &#32;&#32;&#32;&#32;printNode(OS,&#32;Tree,&#32;Id);
+00406 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00407 &#32;&#32;}
+00408 }
+00409 
+00410 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printDstChange(raw_ostream&#32;&amp;OS,&#32;diff::ASTDiff&#32;&amp;Diff,
+00411 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::SyntaxTree&#32;&amp;SrcTree,&#32;diff::SyntaxTree&#32;&amp;DstTree,
+00412 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diff::NodeId&#32;Dst)&#32;{
+00413 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;diff::Node&#32;&amp;DstNode&#32;=&#32;DstTree.getNode(Dst);
+00414 &#32;&#32;diff::NodeId&#32;Src&#32;=&#32;Diff.getMapped(DstTree,&#32;Dst);
+00415 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(DstNode.Change)&#32;{
+00416 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::None:
+00417 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00418 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Delete:
+00419 &#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;The&#32;destination&#32;tree&#32;can&apos;t&#32;have&#32;deletions.&quot;</emphasis>);
+00420 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Update:
+00421 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Update&#32;&quot;</emphasis>;
+00422 &#32;&#32;&#32;&#32;printNode(OS,&#32;SrcTree,&#32;Src);
+00423 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;to&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;DstTree.getNodeValue(Dst)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00424 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00425 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Insert:
+00426 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::Move:
+00427 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;diff::UpdateMove:
+00428 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DstNode.Change&#32;==&#32;diff::Insert)
+00429 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Insert&quot;</emphasis>;
+00430 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DstNode.Change&#32;==&#32;diff::Move)
+00431 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Move&quot;</emphasis>;
+00432 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DstNode.Change&#32;==&#32;diff::UpdateMove)
+00433 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Update&#32;and&#32;Move&quot;</emphasis>;
+00434 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>;
+00435 &#32;&#32;&#32;&#32;printNode(OS,&#32;DstTree,&#32;Dst);
+00436 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;into&#32;&quot;</emphasis>;
+00437 &#32;&#32;&#32;&#32;printNode(OS,&#32;DstTree,&#32;DstNode.Parent);
+00438 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;at&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;DstTree.findPositionInParent(Dst)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00439 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00440 &#32;&#32;}
+00441 }
+00442 
+<anchor xml:id="__clang_diff_8cpp_source_1l00443"/><link linkend="__clang_diff_8cpp_1a217dbf8b442f20279ea00b898af96f52">00443</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_diff_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00444 &#32;&#32;std::string&#32;ErrorMessage;
+00445 &#32;&#32;std::unique_ptr&lt;CompilationDatabase&gt;&#32;CommonCompilations&#32;=
+00446 &#32;&#32;&#32;&#32;&#32;&#32;FixedCompilationDatabase::loadFromCommandLine(argc,&#32;argv,&#32;ErrorMessage);
+00447 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CommonCompilations&#32;&amp;&amp;&#32;!ErrorMessage.empty())
+00448 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ErrorMessage;
+00449 &#32;&#32;cl::HideUnrelatedOptions(ClangDiffCategory);
+00450 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!cl::ParseCommandLineOptions(argc,&#32;argv))&#32;{
+00451 &#32;&#32;&#32;&#32;cl::PrintOptionValues();
+00452 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00453 &#32;&#32;}
+00454 
+00455 &#32;&#32;addExtraArgs(CommonCompilations);
+00456 
+00457 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTDump&#32;||&#32;ASTDumpJson)&#32;{
+00458 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DestinationPath.empty())&#32;{
+00459 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error:&#32;Please&#32;specify&#32;exactly&#32;one&#32;filename.\n&quot;</emphasis>;
+00460 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00461 &#32;&#32;&#32;&#32;}
+00462 &#32;&#32;&#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;AST&#32;=&#32;getAST(CommonCompilations,&#32;SourcePath);
+00463 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AST)
+00464 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00465 &#32;&#32;&#32;&#32;diff::SyntaxTree&#32;Tree(AST-&gt;getASTContext());
+00466 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTDump)&#32;{
+00467 &#32;&#32;&#32;&#32;&#32;&#32;printTree(llvm::outs(),&#32;Tree);
+00468 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00469 &#32;&#32;&#32;&#32;}
+00470 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;({&quot;filename&quot;:&quot;)&quot;;</emphasis>
+00471 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;printJsonString(llvm::outs(),&#32;SourcePath);</emphasis>
+00472 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(&quot;,&quot;root&quot;:)&quot;;</emphasis>
+00473 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;printNodeAsJson(llvm::outs(),&#32;Tree,&#32;Tree.getRootId());</emphasis>
+00474 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;</emphasis><emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00475 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00476 &#32;&#32;}
+00477 
+00478 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DestinationPath.empty())&#32;{
+00479 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error:&#32;Exactly&#32;two&#32;paths&#32;are&#32;required.\n&quot;</emphasis>;
+00480 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00481 &#32;&#32;}
+00482 
+00483 &#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;Src&#32;=&#32;getAST(CommonCompilations,&#32;SourcePath);
+00484 &#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;Dst&#32;=&#32;getAST(CommonCompilations,&#32;DestinationPath);
+00485 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Src&#32;||&#32;!Dst)
+00486 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00487 
+00488 &#32;&#32;diff::ComparisonOptions&#32;Options;
+00489 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MaxSize&#32;!=&#32;-1)
+00490 &#32;&#32;&#32;&#32;Options.MaxSize&#32;=&#32;MaxSize;
+00491 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!StopAfter.empty())&#32;{
+00492 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StopAfter&#32;==&#32;<emphasis role="stringliteral">&quot;topdown&quot;</emphasis>)
+00493 &#32;&#32;&#32;&#32;&#32;&#32;Options.StopAfterTopDown&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00494 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StopAfter&#32;!=&#32;<emphasis role="stringliteral">&quot;bottomup&quot;</emphasis>)&#32;{
+00495 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error:&#32;Invalid&#32;argument&#32;for&#32;-stop-after\n&quot;</emphasis>;
+00496 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00497 &#32;&#32;&#32;&#32;}
+00498 &#32;&#32;}
+00499 &#32;&#32;diff::SyntaxTree&#32;SrcTree(Src-&gt;getASTContext());
+00500 &#32;&#32;diff::SyntaxTree&#32;DstTree(Dst-&gt;getASTContext());
+00501 &#32;&#32;diff::ASTDiff&#32;Diff(SrcTree,&#32;DstTree,&#32;Options);
+00502 
+00503 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HtmlDiff)&#32;{
+00504 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;HtmlDiffHeader&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;pre&gt;&quot;</emphasis>;
+00505 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;div&#32;id=&apos;L&apos;&#32;class=&apos;code&apos;&gt;&quot;</emphasis>;
+00506 &#32;&#32;&#32;&#32;printHtmlForNode(llvm::outs(),&#32;Diff,&#32;SrcTree,&#32;<emphasis role="keyword">true</emphasis>,&#32;SrcTree.getRootId(),&#32;0);
+00507 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/div&gt;&quot;</emphasis>;
+00508 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;div&#32;id=&apos;R&apos;&#32;class=&apos;code&apos;&gt;&quot;</emphasis>;
+00509 &#32;&#32;&#32;&#32;printHtmlForNode(llvm::outs(),&#32;Diff,&#32;DstTree,&#32;<emphasis role="keyword">false</emphasis>,&#32;DstTree.getRootId(),
+00510 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0);
+00511 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/div&gt;&quot;</emphasis>;
+00512 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/pre&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;\n&quot;</emphasis>;
+00513 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00514 &#32;&#32;}
+00515 
+00516 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(diff::NodeId&#32;Dst&#32;:&#32;DstTree)&#32;{
+00517 &#32;&#32;&#32;&#32;diff::NodeId&#32;Src&#32;=&#32;Diff.getMapped(DstTree,&#32;Dst);
+00518 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(PrintMatches&#32;&amp;&amp;&#32;Src.isValid())&#32;{
+00519 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Match&#32;&quot;</emphasis>;
+00520 &#32;&#32;&#32;&#32;&#32;&#32;printNode(llvm::outs(),&#32;SrcTree,&#32;Src);
+00521 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;to&#32;&quot;</emphasis>;
+00522 &#32;&#32;&#32;&#32;&#32;&#32;printNode(llvm::outs(),&#32;DstTree,&#32;Dst);
+00523 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00524 &#32;&#32;&#32;&#32;}
+00525 &#32;&#32;&#32;&#32;printDstChange(llvm::outs(),&#32;Diff,&#32;SrcTree,&#32;DstTree,&#32;Dst);
+00526 &#32;&#32;}
+00527 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(diff::NodeId&#32;Src&#32;:&#32;SrcTree)&#32;{
+00528 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Diff.getMapped(SrcTree,&#32;Src).isInvalid())&#32;{
+00529 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Delete&#32;&quot;</emphasis>;
+00530 &#32;&#32;&#32;&#32;&#32;&#32;printNode(llvm::outs(),&#32;SrcTree,&#32;Src);
+00531 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00532 &#32;&#32;&#32;&#32;}
+00533 &#32;&#32;}
+00534 
+00535 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00536 }
+</programlisting></section>

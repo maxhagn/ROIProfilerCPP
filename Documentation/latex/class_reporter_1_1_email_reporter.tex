@@ -1,0 +1,172 @@
+\hypertarget{class_reporter_1_1_email_reporter}{}\doxysection{Reporter.\+Email\+Reporter Class Reference}
+\label{class_reporter_1_1_email_reporter}\index{Reporter.EmailReporter@{Reporter.EmailReporter}}
+Inheritance diagram for Reporter.\+Email\+Reporter\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_reporter_1_1_email_reporter}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{class_reporter_1_1_email_reporter_ab1313296199a21db32716abd36f74345}{get\+Name}} (self)
+\item 
+def \mbox{\hyperlink{class_reporter_1_1_email_reporter_a1f9cdf4c54b4308a553628033912cf56}{get\+Parameters}} (self)
+\item 
+def \mbox{\hyperlink{class_reporter_1_1_email_reporter_a9193d5c1612d210ee42b4db2787b68aa}{attach\+File}} (self, outer, path)
+\item 
+def \mbox{\hyperlink{class_reporter_1_1_email_reporter_a22246ff1d9cc2d82ecd63b453392de76}{file\+Report}} (self, report, parameters)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 78 of file Reporter.\+py.
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_reporter_1_1_email_reporter_a9193d5c1612d210ee42b4db2787b68aa}\label{class_reporter_1_1_email_reporter_a9193d5c1612d210ee42b4db2787b68aa}} 
+\index{Reporter.EmailReporter@{Reporter.EmailReporter}!attachFile@{attachFile}}
+\index{attachFile@{attachFile}!Reporter.EmailReporter@{Reporter.EmailReporter}}
+\doxysubsubsection{\texorpdfstring{attachFile()}{attachFile()}}
+{\footnotesize\ttfamily def Reporter.\+Email\+Reporter.\+attach\+File (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{outer,  }\item[{}]{path }\end{DoxyParamCaption})}
+
+
+
+Definition at line 86 of file Reporter.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{86     \textcolor{keyword}{def }attachFile(self, outer, path):}
+\DoxyCodeLine{87         \textcolor{comment}{\# Guess the content type based on the file's extension.  Encoding}}
+\DoxyCodeLine{88         \textcolor{comment}{\# will be ignored, although we should check for simple things like}}
+\DoxyCodeLine{89         \textcolor{comment}{\# gzip'd or compressed files.}}
+\DoxyCodeLine{90         ctype, encoding = mimetypes.guess\_type(path)}
+\DoxyCodeLine{91         \textcolor{keywordflow}{if} ctype \textcolor{keywordflow}{is} \textcolor{keywordtype}{None} \textcolor{keywordflow}{or} encoding \textcolor{keywordflow}{is} \textcolor{keywordflow}{not} \textcolor{keywordtype}{None}:}
+\DoxyCodeLine{92             \textcolor{comment}{\# No guess could be made, or the file is encoded (compressed), so}}
+\DoxyCodeLine{93             \textcolor{comment}{\# use a generic bag-\/of-\/bits type.}}
+\DoxyCodeLine{94             ctype = \textcolor{stringliteral}{'application/octet-\/stream'}}
+\DoxyCodeLine{95         maintype, subtype = ctype.split(\textcolor{stringliteral}{'/'}, 1)}
+\DoxyCodeLine{96         \textcolor{keywordflow}{if} maintype == \textcolor{stringliteral}{'text'}:}
+\DoxyCodeLine{97             fp = \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(path)}
+\DoxyCodeLine{98             \textcolor{comment}{\# Note: we should handle calculating the charset}}
+\DoxyCodeLine{99             msg = MIMEText(fp.read(), \_subtype=subtype)}
+\DoxyCodeLine{100             fp.close()}
+\DoxyCodeLine{101         \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{102             fp = \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(path, \textcolor{stringliteral}{'rb'})}
+\DoxyCodeLine{103             msg = MIMEBase(maintype, subtype)}
+\DoxyCodeLine{104             msg.set\_payload(fp.read())}
+\DoxyCodeLine{105             fp.close()}
+\DoxyCodeLine{106             \textcolor{comment}{\# Encode the payload using Base64}}
+\DoxyCodeLine{107             encoders.encode\_base64(msg)}
+\DoxyCodeLine{108         \textcolor{comment}{\# Set the filename parameter}}
+\DoxyCodeLine{109         msg.add\_header(\textcolor{stringliteral}{'Content-\/Disposition'}, \textcolor{stringliteral}{'attachment'}, filename=os.path.basename(path))}
+\DoxyCodeLine{110         outer.attach(msg)}
+\DoxyCodeLine{111 }
+
+\end{DoxyCode}
+
+
+References startfile.\+open().
+
+
+
+Referenced by Reporter.\+Email\+Reporter.\+file\+Report().
+
+\mbox{\Hypertarget{class_reporter_1_1_email_reporter_a22246ff1d9cc2d82ecd63b453392de76}\label{class_reporter_1_1_email_reporter_a22246ff1d9cc2d82ecd63b453392de76}} 
+\index{Reporter.EmailReporter@{Reporter.EmailReporter}!fileReport@{fileReport}}
+\index{fileReport@{fileReport}!Reporter.EmailReporter@{Reporter.EmailReporter}}
+\doxysubsubsection{\texorpdfstring{fileReport()}{fileReport()}}
+{\footnotesize\ttfamily def Reporter.\+Email\+Reporter.\+file\+Report (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{report,  }\item[{}]{parameters }\end{DoxyParamCaption})}
+
+
+
+Definition at line 112 of file Reporter.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{112     \textcolor{keyword}{def }fileReport(self, report, parameters):}
+\DoxyCodeLine{113         mainMsg = \textcolor{stringliteral}{"{}"{}"{}\(\backslash\)}}
+\DoxyCodeLine{114 \textcolor{stringliteral}{BUG REPORT}}
+\DoxyCodeLine{115 \textcolor{stringliteral}{-\/-\/-\/}}
+\DoxyCodeLine{116 \textcolor{stringliteral}{Title: \%s}}
+\DoxyCodeLine{117 \textcolor{stringliteral}{Description: \%s}}
+\DoxyCodeLine{118 \textcolor{stringliteral}{"{}"{}"{}}\%(report.title, report.description)}
+\DoxyCodeLine{119 }
+\DoxyCodeLine{120         \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} parameters.get(\textcolor{stringliteral}{'To'}):}
+\DoxyCodeLine{121             \textcolor{keywordflow}{raise} ReportFailure(\textcolor{stringliteral}{'No "{}To"{} address specified.'})}
+\DoxyCodeLine{122         \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} parameters.get(\textcolor{stringliteral}{'From'}):}
+\DoxyCodeLine{123             \textcolor{keywordflow}{raise} ReportFailure(\textcolor{stringliteral}{'No "{}From"{} address specified.'})}
+\DoxyCodeLine{124 }
+\DoxyCodeLine{125         msg = MIMEMultipart()}
+\DoxyCodeLine{126         msg[\textcolor{stringliteral}{'Subject'}] = \textcolor{stringliteral}{'BUG REPORT: \%s'}\%(report.title)}
+\DoxyCodeLine{127         \textcolor{comment}{\# FIXME: Get config parameters}}
+\DoxyCodeLine{128         msg[\textcolor{stringliteral}{'To'}] = parameters.get(\textcolor{stringliteral}{'To'})}
+\DoxyCodeLine{129         msg[\textcolor{stringliteral}{'From'}] = parameters.get(\textcolor{stringliteral}{'From'})}
+\DoxyCodeLine{130         msg.preamble = mainMsg}
+\DoxyCodeLine{131 }
+\DoxyCodeLine{132         msg.attach(MIMEText(mainMsg, \_subtype=\textcolor{stringliteral}{'text/plain'}))}
+\DoxyCodeLine{133         \textcolor{keywordflow}{for} file \textcolor{keywordflow}{in} report.files:}
+\DoxyCodeLine{134             self.attachFile(msg, file)}
+\DoxyCodeLine{135 }
+\DoxyCodeLine{136         \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{137             s = smtplib.SMTP(host=parameters.get(\textcolor{stringliteral}{'SMTP Server'}),}
+\DoxyCodeLine{138                              port=parameters.get(\textcolor{stringliteral}{'SMTP Port'}))}
+\DoxyCodeLine{139             s.sendmail(msg[\textcolor{stringliteral}{'From'}], msg[\textcolor{stringliteral}{'To'}], msg.as\_string())}
+\DoxyCodeLine{140             s.close()}
+\DoxyCodeLine{141         \textcolor{keywordflow}{except}:}
+\DoxyCodeLine{142             \textcolor{keywordflow}{raise} ReportFailure(\textcolor{stringliteral}{'Unable to send message via SMTP.'})}
+\DoxyCodeLine{143 }
+\DoxyCodeLine{144         \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Message sent!"{}}}
+\DoxyCodeLine{145 }
+
+\end{DoxyCode}
+
+
+References Reporter.\+Email\+Reporter.\+attach\+File().
+
+\mbox{\Hypertarget{class_reporter_1_1_email_reporter_ab1313296199a21db32716abd36f74345}\label{class_reporter_1_1_email_reporter_ab1313296199a21db32716abd36f74345}} 
+\index{Reporter.EmailReporter@{Reporter.EmailReporter}!getName@{getName}}
+\index{getName@{getName}!Reporter.EmailReporter@{Reporter.EmailReporter}}
+\doxysubsubsection{\texorpdfstring{getName()}{getName()}}
+{\footnotesize\ttfamily def Reporter.\+Email\+Reporter.\+get\+Name (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 79 of file Reporter.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{79     \textcolor{keyword}{def }getName(self):}
+\DoxyCodeLine{80         \textcolor{keywordflow}{return} \textcolor{stringliteral}{'Email'}}
+\DoxyCodeLine{81 }
+
+\end{DoxyCode}
+
+
+Referenced by Reporter.\+Text\+Parameter.\+get\+HTML(), Reporter.\+Selection\+Parameter.\+get\+HTML(), and Reporter.\+Reporter\+Parameter.\+get\+Value().
+
+\mbox{\Hypertarget{class_reporter_1_1_email_reporter_a1f9cdf4c54b4308a553628033912cf56}\label{class_reporter_1_1_email_reporter_a1f9cdf4c54b4308a553628033912cf56}} 
+\index{Reporter.EmailReporter@{Reporter.EmailReporter}!getParameters@{getParameters}}
+\index{getParameters@{getParameters}!Reporter.EmailReporter@{Reporter.EmailReporter}}
+\doxysubsubsection{\texorpdfstring{getParameters()}{getParameters()}}
+{\footnotesize\ttfamily def Reporter.\+Email\+Reporter.\+get\+Parameters (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 82 of file Reporter.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{82     \textcolor{keyword}{def }getParameters(self):}
+\DoxyCodeLine{83         \textcolor{keywordflow}{return} [TextParameter(x) \textcolor{keywordflow}{for} x \textcolor{keywordflow}{in} [\textcolor{stringliteral}{'To'}, \textcolor{stringliteral}{'From'}, \textcolor{stringliteral}{'SMTP Server'}, \textcolor{stringliteral}{'SMTP Port'}]]}
+\DoxyCodeLine{84 }
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/scan-\/view/share/\mbox{\hyperlink{_reporter_8py}{Reporter.\+py}}\end{DoxyCompactItemize}

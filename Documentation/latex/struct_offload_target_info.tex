@@ -1,0 +1,206 @@
+\hypertarget{struct_offload_target_info}{}\doxysection{Offload\+Target\+Info Struct Reference}
+\label{struct_offload_target_info}\index{OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{struct_offload_target_info_a201b4e994213afcdd776867b7b6d1eae}{Offload\+Target\+Info}} (const String\+Ref Target)
+\item 
+bool \mbox{\hyperlink{struct_offload_target_info_a2eb3794ca870118bef52b97bd65a6ad0}{has\+Host\+Kind}} () const
+\item 
+bool \mbox{\hyperlink{struct_offload_target_info_ab482a9cf689cd876afbe7c5bc1befca3}{is\+Offload\+Kind\+Valid}} () const
+\item 
+bool \mbox{\hyperlink{struct_offload_target_info_a659a3f9dcf7c8df811d60209d4387a23}{is\+Triple\+Valid}} () const
+\item 
+bool \mbox{\hyperlink{struct_offload_target_info_a55d64188846e6f5cf8d94ddc7a086177}{operator==}} (const \mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}} \&Target) const
+\item 
+std\+::string \mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+String\+Ref \mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{Offload\+Kind}}
+\item 
+llvm\+::\+Triple \mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}
+\item 
+String\+Ref \mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Obtain the offload kind, real machine triple, and an optional GPUArch out of the target information specified by the user. Bundle Entry ID (or, Offload Target String) has following components\+:
+\begin{DoxyItemize}
+\item Offload Kind -\/ Host, Open\+MP, or HIP
+\item Triple -\/ Standard \mbox{\hyperlink{namespace_l_l_v_m}{LLVM}} Triple
+\item GPUArch (Optional) -\/ Processor name, like gfx906 or sm\+\_\+30 In presence of Proc, the Triple should contain separator \char`\"{}-\/\char`\"{} for all standard four components, even if they are empty. 
+\end{DoxyItemize}
+
+Definition at line 139 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{struct_offload_target_info_a201b4e994213afcdd776867b7b6d1eae}\label{struct_offload_target_info_a201b4e994213afcdd776867b7b6d1eae}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!OffloadTargetInfo@{OffloadTargetInfo}}
+\index{OffloadTargetInfo@{OffloadTargetInfo}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{OffloadTargetInfo()}{OffloadTargetInfo()}}
+{\footnotesize\ttfamily Offload\+Target\+Info\+::\+Offload\+Target\+Info (\begin{DoxyParamCaption}\item[{const String\+Ref}]{Target }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 144 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{144                                             \{}
+\DoxyCodeLine{145     SmallVector<StringRef, 6> Components;}
+\DoxyCodeLine{146     Target.split(Components, \textcolor{charliteral}{'-\/'}, 5);}
+\DoxyCodeLine{147     Components.resize(6);}
+\DoxyCodeLine{148     this-\/>\mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} = Components[0];}
+\DoxyCodeLine{149     this-\/>\mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}} = llvm::Triple(Components[1], Components[2], Components[3],}
+\DoxyCodeLine{150                                 Components[4]);}
+\DoxyCodeLine{151     this-\/>\mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}} = Components[5];}
+\DoxyCodeLine{152   \}}
+
+\end{DoxyCode}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{struct_offload_target_info_a2eb3794ca870118bef52b97bd65a6ad0}\label{struct_offload_target_info_a2eb3794ca870118bef52b97bd65a6ad0}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!hasHostKind@{hasHostKind}}
+\index{hasHostKind@{hasHostKind}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{hasHostKind()}{hasHostKind()}}
+{\footnotesize\ttfamily bool Offload\+Target\+Info\+::has\+Host\+Kind (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 154 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{154 \{ \textcolor{keywordflow}{return} this-\/>\mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} == \textcolor{stringliteral}{"{}host"{}}; \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{struct_offload_target_info_ab482a9cf689cd876afbe7c5bc1befca3}\label{struct_offload_target_info_ab482a9cf689cd876afbe7c5bc1befca3}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!isOffloadKindValid@{isOffloadKindValid}}
+\index{isOffloadKindValid@{isOffloadKindValid}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{isOffloadKindValid()}{isOffloadKindValid()}}
+{\footnotesize\ttfamily bool Offload\+Target\+Info\+::is\+Offload\+Kind\+Valid (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 156 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{156                                   \{}
+\DoxyCodeLine{157     \textcolor{keywordflow}{return} \mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} == \textcolor{stringliteral}{"{}host"{}} || \mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} == \textcolor{stringliteral}{"{}openmp"{}} ||}
+\DoxyCodeLine{158            \mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} == \textcolor{stringliteral}{"{}hip"{}} || \mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} == \textcolor{stringliteral}{"{}hipv4"{}};}
+\DoxyCodeLine{159   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{struct_offload_target_info_a659a3f9dcf7c8df811d60209d4387a23}\label{struct_offload_target_info_a659a3f9dcf7c8df811d60209d4387a23}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!isTripleValid@{isTripleValid}}
+\index{isTripleValid@{isTripleValid}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{isTripleValid()}{isTripleValid()}}
+{\footnotesize\ttfamily bool Offload\+Target\+Info\+::is\+Triple\+Valid (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 161 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{161                              \{}
+\DoxyCodeLine{162     \textcolor{keywordflow}{return} !\mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}.str().empty() \&\& \mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}.getArch() != Triple::UnknownArch;}
+\DoxyCodeLine{163   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{struct_offload_target_info_a55d64188846e6f5cf8d94ddc7a086177}\label{struct_offload_target_info_a55d64188846e6f5cf8d94ddc7a086177}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!operator==@{operator==}}
+\index{operator==@{operator==}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}}
+{\footnotesize\ttfamily bool Offload\+Target\+Info\+::operator== (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}} \&}]{Target }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 165 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{165                                                          \{}
+\DoxyCodeLine{166     \textcolor{keywordflow}{return} \mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} == Target.\mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} \&\&}
+\DoxyCodeLine{167            \mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}.isCompatibleWith(Target.\mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}) \&\& \mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}} == Target.\mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}};}
+\DoxyCodeLine{168   \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}\label{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!str@{str}}
+\index{str@{str}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{str()}{str()}}
+{\footnotesize\ttfamily std\+::string Offload\+Target\+Info\+::str (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 170 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{170                   \{}
+\DoxyCodeLine{171     \textcolor{keywordflow}{return} Twine(\mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} + \textcolor{stringliteral}{"{}-\/"{}} + \mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}.str() + \textcolor{stringliteral}{"{}-\/"{}} + \mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}}).str();}
+\DoxyCodeLine{172   \}}
+
+\end{DoxyCode}
+
+
+Referenced by is\+Code\+Object\+Compatible().
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}\label{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!GPUArch@{GPUArch}}
+\index{GPUArch@{GPUArch}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{GPUArch}{GPUArch}}
+{\footnotesize\ttfamily String\+Ref Offload\+Target\+Info\+::\+GPUArch}
+
+
+
+Definition at line 142 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+
+Referenced by is\+Code\+Object\+Compatible().
+
+\mbox{\Hypertarget{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}\label{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!OffloadKind@{OffloadKind}}
+\index{OffloadKind@{OffloadKind}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{OffloadKind}{OffloadKind}}
+{\footnotesize\ttfamily String\+Ref Offload\+Target\+Info\+::\+Offload\+Kind}
+
+
+
+Definition at line 140 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+
+Referenced by is\+Code\+Object\+Compatible().
+
+\mbox{\Hypertarget{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}\label{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}} 
+\index{OffloadTargetInfo@{OffloadTargetInfo}!Triple@{Triple}}
+\index{Triple@{Triple}!OffloadTargetInfo@{OffloadTargetInfo}}
+\doxysubsubsection{\texorpdfstring{Triple}{Triple}}
+{\footnotesize\ttfamily llvm\+::\+Triple Offload\+Target\+Info\+::\+Triple}
+
+
+
+Definition at line 141 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+
+Referenced by is\+Code\+Object\+Compatible().
+
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/bundler/\mbox{\hyperlink{_clang_offload_bundler_8cpp}{Clang\+Offload\+Bundler.\+cpp}}\end{DoxyCompactItemize}

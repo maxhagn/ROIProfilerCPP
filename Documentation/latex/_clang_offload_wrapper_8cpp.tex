@@ -1,0 +1,116 @@
+\hypertarget{_clang_offload_wrapper_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/wrapper/\+Clang\+Offload\+Wrapper.cpp File Reference}
+\label{_clang_offload_wrapper_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/wrapper/ClangOffloadWrapper.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/wrapper/ClangOffloadWrapper.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Version.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Array\+Ref.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Triple.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Bitcode/\+Bitcode\+Writer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+IR/\+Constants.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+IR/\+Global\+Variable.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+IR/\+IRBuilder.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+IR/\+LLVMContext.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+IR/\+Module.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Errc.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Error.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Error\+Or.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Memory\+Buffer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Tool\+Output\+File.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+With\+Color.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Transforms/\+Utils/\+Module\+Utils.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$cassert$>$}\newline
+{\ttfamily \#include $<$cstdint$>$}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_offload_wrapper_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Implementation of the offload wrapper tool. It takes offload target binaries as input and creates wrapper bitcode file containing target binaries packaged as data. Wrapper bitcode also includes initialization code which registers target binaries in offloading runtime at program startup. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_offload_wrapper_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_offload_wrapper_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangOffloadWrapper.cpp@{ClangOffloadWrapper.cpp}!main@{main}}
+\index{main@{main}!ClangOffloadWrapper.cpp@{ClangOffloadWrapper.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 312 of file Clang\+Offload\+Wrapper.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{312                                       \{}
+\DoxyCodeLine{313   sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{314 }
+\DoxyCodeLine{315   cl::HideUnrelatedOptions(ClangOffloadWrapperCategory);}
+\DoxyCodeLine{316   cl::SetVersionPrinter([](raw\_ostream \&OS) \{}
+\DoxyCodeLine{317     OS << clang::getClangToolFullVersion(\textcolor{stringliteral}{"{}clang-\/offload-\/wrapper"{}}) << \textcolor{charliteral}{'\(\backslash\)n'};}
+\DoxyCodeLine{318   \});}
+\DoxyCodeLine{319   cl::ParseCommandLineOptions(}
+\DoxyCodeLine{320       argc, argv,}
+\DoxyCodeLine{321       \textcolor{stringliteral}{"{}A tool to create a wrapper bitcode for offload target binaries. Takes "{}}}
+\DoxyCodeLine{322       \textcolor{stringliteral}{"{}offload\(\backslash\)ntarget binaries as input and produces bitcode file containing "{}}}
+\DoxyCodeLine{323       \textcolor{stringliteral}{"{}target binaries packaged\(\backslash\)nas data and initialization code which "{}}}
+\DoxyCodeLine{324       \textcolor{stringliteral}{"{}registers target binaries in offload runtime.\(\backslash\)n"{}});}
+\DoxyCodeLine{325 }
+\DoxyCodeLine{326   \textcolor{keywordflow}{if} (Help) \{}
+\DoxyCodeLine{327     cl::PrintHelpMessage();}
+\DoxyCodeLine{328     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{329   \}}
+\DoxyCodeLine{330 }
+\DoxyCodeLine{331   \textcolor{keyword}{auto} reportError = [argv](Error E) \{}
+\DoxyCodeLine{332     logAllUnhandledErrors(std::move(E), WithColor::error(errs(), argv[0]));}
+\DoxyCodeLine{333   \};}
+\DoxyCodeLine{334 }
+\DoxyCodeLine{335   \textcolor{keywordflow}{if} (Triple(Target).getArch() == Triple::UnknownArch) \{}
+\DoxyCodeLine{336     reportError(createStringError(}
+\DoxyCodeLine{337         errc::invalid\_argument, \textcolor{stringliteral}{"{}'"{}} + Target + \textcolor{stringliteral}{"{}': unsupported target triple"{}}));}
+\DoxyCodeLine{338     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{339   \}}
+\DoxyCodeLine{340 }
+\DoxyCodeLine{341   \textcolor{comment}{// Read device binaries.}}
+\DoxyCodeLine{342   SmallVector<std::unique\_ptr<MemoryBuffer>, 4u> Buffers;}
+\DoxyCodeLine{343   SmallVector<ArrayRef<char>, 4u> Images;}
+\DoxyCodeLine{344   Buffers.reserve(Inputs.size());}
+\DoxyCodeLine{345   Images.reserve(Inputs.size());}
+\DoxyCodeLine{346   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} std::string \&File : Inputs) \{}
+\DoxyCodeLine{347     ErrorOr<std::unique\_ptr<MemoryBuffer>> BufOrErr =}
+\DoxyCodeLine{348         MemoryBuffer::getFileOrSTDIN(File);}
+\DoxyCodeLine{349     \textcolor{keywordflow}{if} (!BufOrErr) \{}
+\DoxyCodeLine{350       reportError(createFileError(File, BufOrErr.getError()));}
+\DoxyCodeLine{351       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{352     \}}
+\DoxyCodeLine{353     \textcolor{keyword}{const} std::unique\_ptr<MemoryBuffer> \&Buf =}
+\DoxyCodeLine{354         Buffers.emplace\_back(std::move(*BufOrErr));}
+\DoxyCodeLine{355     Images.emplace\_back(Buf-\/>getBufferStart(), Buf-\/>getBufferSize());}
+\DoxyCodeLine{356   \}}
+\DoxyCodeLine{357 }
+\DoxyCodeLine{358   \textcolor{comment}{// Create the output file to write the resulting bitcode to.}}
+\DoxyCodeLine{359   std::error\_code EC;}
+\DoxyCodeLine{360   ToolOutputFile Out(Output, EC, sys::fs::OF\_None);}
+\DoxyCodeLine{361   \textcolor{keywordflow}{if} (EC) \{}
+\DoxyCodeLine{362     reportError(createFileError(Output, EC));}
+\DoxyCodeLine{363     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{364   \}}
+\DoxyCodeLine{365 }
+\DoxyCodeLine{366   \textcolor{comment}{// Create a wrapper for device binaries and write its bitcode to the file.}}
+\DoxyCodeLine{367   WriteBitcodeToFile(BinaryWrapper(Target).wrapBinaries(}
+\DoxyCodeLine{368                          makeArrayRef(Images.data(), Images.size())),}
+\DoxyCodeLine{369                      Out.os());}
+\DoxyCodeLine{370   \textcolor{keywordflow}{if} (Out.os().has\_error()) \{}
+\DoxyCodeLine{371     reportError(createFileError(Output, Out.os().error()));}
+\DoxyCodeLine{372     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{373   \}}
+\DoxyCodeLine{374 }
+\DoxyCodeLine{375   \textcolor{comment}{// Success.}}
+\DoxyCodeLine{376   Out.keep();}
+\DoxyCodeLine{377   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{378 \}}
+
+\end{DoxyCode}

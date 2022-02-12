@@ -1,0 +1,138 @@
+.TH "Reporter.EmailReporter" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Reporter.EmailReporter
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits object\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBgetName\fP (self)"
+.br
+.ti -1c
+.RI "def \fBgetParameters\fP (self)"
+.br
+.ti -1c
+.RI "def \fBattachFile\fP (self, outer, path)"
+.br
+.ti -1c
+.RI "def \fBfileReport\fP (self, report, parameters)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 78 of file Reporter\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def Reporter\&.EmailReporter\&.attachFile ( self,  outer,  path)"
+
+.PP
+Definition at line 86 of file Reporter\&.py\&.
+.PP
+.nf
+86     def attachFile(self, outer, path):
+87         # Guess the content type based on the file's extension\&.  Encoding
+88         # will be ignored, although we should check for simple things like
+89         # gzip'd or compressed files\&.
+90         ctype, encoding = mimetypes\&.guess_type(path)
+91         if ctype is None or encoding is not None:
+92             # No guess could be made, or the file is encoded (compressed), so
+93             # use a generic bag-of-bits type\&.
+94             ctype = 'application/octet-stream'
+95         maintype, subtype = ctype\&.split('/', 1)
+96         if maintype == 'text':
+97             fp = open(path)
+98             # Note: we should handle calculating the charset
+99             msg = MIMEText(fp\&.read(), _subtype=subtype)
+100             fp\&.close()
+101         else:
+102             fp = open(path, 'rb')
+103             msg = MIMEBase(maintype, subtype)
+104             msg\&.set_payload(fp\&.read())
+105             fp\&.close()
+106             # Encode the payload using Base64
+107             encoders\&.encode_base64(msg)
+108         # Set the filename parameter
+109         msg\&.add_header('Content-Disposition', 'attachment', filename=os\&.path\&.basename(path))
+110         outer\&.attach(msg)
+111 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by Reporter\&.EmailReporter\&.fileReport()\&.
+.SS "def Reporter\&.EmailReporter\&.fileReport ( self,  report,  parameters)"
+
+.PP
+Definition at line 112 of file Reporter\&.py\&.
+.PP
+.nf
+112     def fileReport(self, report, parameters):
+113         mainMsg = """\
+114 BUG REPORT
+115 ---
+116 Title: %s
+117 Description: %s
+118 """%(report\&.title, report\&.description)
+119 
+120         if not parameters\&.get('To'):
+121             raise ReportFailure('No "To" address specified\&.')
+122         if not parameters\&.get('From'):
+123             raise ReportFailure('No "From" address specified\&.')
+124 
+125         msg = MIMEMultipart()
+126         msg['Subject'] = 'BUG REPORT: %s'%(report\&.title)
+127         # FIXME: Get config parameters
+128         msg['To'] = parameters\&.get('To')
+129         msg['From'] = parameters\&.get('From')
+130         msg\&.preamble = mainMsg
+131 
+132         msg\&.attach(MIMEText(mainMsg, _subtype='text/plain'))
+133         for file in report\&.files:
+134             self\&.attachFile(msg, file)
+135 
+136         try:
+137             s = smtplib\&.SMTP(host=parameters\&.get('SMTP Server'),
+138                              port=parameters\&.get('SMTP Port'))
+139             s\&.sendmail(msg['From'], msg['To'], msg\&.as_string())
+140             s\&.close()
+141         except:
+142             raise ReportFailure('Unable to send message via SMTP\&.')
+143 
+144         return "Message sent!"
+145 
+.fi
+.PP
+References Reporter\&.EmailReporter\&.attachFile()\&.
+.SS "def Reporter\&.EmailReporter\&.getName ( self)"
+
+.PP
+Definition at line 79 of file Reporter\&.py\&.
+.PP
+.nf
+79     def getName(self):
+80         return 'Email'
+81 
+.fi
+.PP
+Referenced by Reporter\&.TextParameter\&.getHTML(), Reporter\&.SelectionParameter\&.getHTML(), and Reporter\&.ReporterParameter\&.getValue()\&.
+.SS "def Reporter\&.EmailReporter\&.getParameters ( self)"
+
+.PP
+Definition at line 82 of file Reporter\&.py\&.
+.PP
+.nf
+82     def getParameters(self):
+83         return [TextParameter(x) for x in ['To', 'From', 'SMTP Server', 'SMTP Port']]
+84 
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

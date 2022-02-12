@@ -1,0 +1,85 @@
+.TH "tests.functional.cases.test_from_cdb" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_from_cdb
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBOutputDirectoryTest\fP"
+.br
+.ti -1c
+.RI "class \fBExitCodeTest\fP"
+.br
+.ti -1c
+.RI "class \fBOutputFormatTest\fP"
+.br
+.ti -1c
+.RI "class \fBFailureReportTest\fP"
+.br
+.ti -1c
+.RI "class \fBTitleTest\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBprepare_cdb\fP (name, target_dir)"
+.br
+.ti -1c
+.RI "def \fBrun_analyzer\fP (directory, cdb, args)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_from_cdb\&.prepare_cdb ( name,  target_dir)"
+
+.PP
+Definition at line 15 of file test_from_cdb\&.py\&.
+.PP
+.nf
+15 def prepare_cdb(name, target_dir):
+16     target_file = 'build_{0}\&.json'\&.format(name)
+17     this_dir, _ = os\&.path\&.split(__file__)
+18     path = os\&.path\&.abspath(os\&.path\&.join(this_dir, '\&.\&.', 'src'))
+19     source_dir = os\&.path\&.join(path, 'compilation_database')
+20     source_file = os\&.path\&.join(source_dir, target_file + '\&.in')
+21     target_file = os\&.path\&.join(target_dir, 'compile_commands\&.json')
+22     with open(source_file, 'r') as in_handle:
+23         with open(target_file, 'w') as out_handle:
+24             for line in in_handle:
+25                 temp = string\&.Template(line)
+26                 out_handle\&.write(temp\&.substitute(path=path))
+27     return target_file
+28 
+29 
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cdb\&.FailureReportTest\&.test_broken_creates_failure_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.FailureReportTest\&.test_broken_does_not_creates_failure_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code_if_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code_if_asked_from_plist(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_default_only_creates_html_report(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_default_title_in_report(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_given_title_in_report(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_and_html_creates_html_and_plist_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_only_creates_plist_report(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_does_not_set_exit_code(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_regular_keeps_report_dir(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_sets_exit_code_if_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_sets_exit_code_if_asked_from_plist(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_and_html_creates_sarif_and_html_reports(), and tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_only_creates_sarif_result()\&.
+.SS "def tests\&.functional\&.cases\&.test_from_cdb\&.run_analyzer ( directory,  cdb,  args)"
+
+.PP
+Definition at line 30 of file test_from_cdb\&.py\&.
+.PP
+.nf
+30 def run_analyzer(directory, cdb, args):
+31     cmd = ['analyze-build', '--cdb', cdb, '--output', directory] \
+32         + args
+33     return call_and_report(cmd, [])
+34 
+35 
+.fi
+.PP
+References tests\&.functional\&.cases\&.call_and_report()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cdb\&.FailureReportTest\&.test_broken_creates_failure_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.FailureReportTest\&.test_broken_does_not_creates_failure_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code_if_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_clear_does_not_set_exit_code_if_asked_from_plist(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_default_only_creates_html_report(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_default_title_in_report(), tests\&.functional\&.cases\&.test_from_cdb\&.TitleTest\&.test_given_title_in_report(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_and_html_creates_html_and_plist_reports(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_plist_only_creates_plist_report(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_does_not_set_exit_code(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputDirectoryTest\&.test_regular_keeps_report_dir(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_sets_exit_code_if_asked(), tests\&.functional\&.cases\&.test_from_cdb\&.ExitCodeTest\&.test_regular_sets_exit_code_if_asked_from_plist(), tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_and_html_creates_sarif_and_html_reports(), and tests\&.functional\&.cases\&.test_from_cdb\&.OutputFormatTest\&.test_sarif_only_creates_sarif_result()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

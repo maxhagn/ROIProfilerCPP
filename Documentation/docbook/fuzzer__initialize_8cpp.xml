@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_fuzzer__initialize_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/fuzzer-initialize/fuzzer_initialize.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/fuzzer-initialize/fuzzer_initialize.cpp</primary></indexterm>
+<programlisting>#include &quot;fuzzer_initialize.h&quot;
+#include &quot;llvm/InitializePasses.h&quot;
+#include &quot;llvm/PassRegistry.h&quot;
+#include &quot;llvm/Support/TargetSelect.h&quot;
+#include &lt;cstring&gt;
+</programlisting><simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespaceclang__fuzzer">clang_fuzzer</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>const std::vector&lt; const char * &gt; &amp; <link linkend="_namespaceclang__fuzzer_1a7204f11d358bc8d6b48eb043fdba0ce4">clang_fuzzer::GetCLArgs</link> ()</para>
+</listitem>
+            <listitem><para>int <link linkend="_fuzzer__initialize_8cpp_1aa30889313cc057073351a87b2590b886">LLVMFuzzerInitialize</link> (int *argc, char ***argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+
+<para>This file implements two functions: one that returns the command line arguments for a given call to the fuzz target and one that initializes the fuzzer with the correct command line arguments. </para>
+<para>
+Definition in file <link linkend="_fuzzer__initialize_8cpp_source">fuzzer_initialize.cpp</link>.</para>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_fuzzer__initialize_8cpp_1aa30889313cc057073351a87b2590b886"/>    <section>
+    <title>LLVMFuzzerInitialize()</title>
+<indexterm><primary>LLVMFuzzerInitialize</primary><secondary>fuzzer_initialize.cpp</secondary></indexterm>
+<indexterm><primary>fuzzer_initialize.cpp</primary><secondary>LLVMFuzzerInitialize</secondary></indexterm>
+<para><computeroutput>int LLVMFuzzerInitialize (int * argc, char *** argv)</computeroutput></para><para>
+Definition at line <link linkend="_fuzzer__initialize_8cpp_source_1l00037">37</link> of file <link linkend="_fuzzer__initialize_8cpp_source">fuzzer_initialize.cpp</link>.</para>
+<programlisting>00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00038 &#32;&#32;InitializeAllTargets();
+00039 &#32;&#32;InitializeAllTargetMCs();
+00040 &#32;&#32;InitializeAllAsmPrinters();
+00041 &#32;&#32;InitializeAllAsmParsers();
+00042 &#32;&#32;
+00043 &#32;&#32;PassRegistry&#32;&amp;Registry&#32;=&#32;*PassRegistry::getPassRegistry();
+00044 &#32;&#32;initializeCore(Registry);
+00045 &#32;&#32;initializeScalarOpts(Registry);
+00046 &#32;&#32;initializeVectorization(Registry);
+00047 &#32;&#32;initializeIPO(Registry);
+00048 &#32;&#32;initializeAnalysis(Registry);
+00049 &#32;&#32;initializeTransformUtils(Registry);
+00050 &#32;&#32;initializeInstCombine(Registry);
+00051 &#32;&#32;initializeAggressiveInstCombine(Registry);
+00052 &#32;&#32;initializeInstrumentation(Registry);
+00053 &#32;&#32;initializeTarget(Registry);
+00054 
+00055 &#32;&#32;CLArgs.push_back(<emphasis role="stringliteral">&quot;-O2&quot;</emphasis>);
+00056 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;I&#32;=&#32;1;&#32;I&#32;&lt;&#32;*argc;&#32;I++)&#32;{
+00057 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp((*argv)[I],&#32;<emphasis role="stringliteral">&quot;-ignore_remaining_args=1&quot;</emphasis>)&#32;==&#32;0)&#32;{
+00058 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(I++;&#32;I&#32;&lt;&#32;*argc;&#32;I++)
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CLArgs.push_back((*argv)[I]);
+00060 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00061 &#32;&#32;&#32;&#32;}
+00062 &#32;&#32;}
+00063 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00064 }
+</programlisting><para>
+Referenced by <link linkend="__dummy_clang_fuzzer_8cpp_source_1l00017">main()</link>.</para>
+</section>
+</section>
+</section>

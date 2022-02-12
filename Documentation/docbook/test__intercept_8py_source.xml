@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_test__intercept_8py_source" xml:lang="en-US">
+<title>test_intercept.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/tests/unit/test_intercept.py</primary></indexterm>
+<programlisting><anchor xml:id="_test__intercept_8py_source_1l00001"/><link linkend="_namespacetests_1_1unit_1_1test__intercept">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 
+00006 <emphasis role="keyword">import</emphasis>&#32;libear
+00007 <emphasis role="keyword">import</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1intercept">libscanbuild.intercept</link>&#32;<emphasis role="keyword">as</emphasis>&#32;sut
+00008 <emphasis role="keyword">import</emphasis>&#32;unittest
+00009 <emphasis role="keyword">import</emphasis>&#32;os.path
+00010 
+00011 
+<anchor xml:id="_test__intercept_8py_source_1l00012"/><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test">00012</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test">InterceptUtilTest</link>(unittest.TestCase):
+00013 
+<anchor xml:id="_test__intercept_8py_source_1l00014"/><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test_1ae0444baedc05bd8ac5529f00b12cf1ba">00014</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test_1ae0444baedc05bd8ac5529f00b12cf1ba">test_format_entry_filters_action</link>(self):
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(command):
+00016 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;trace&#32;=&#32;{<emphasis role="stringliteral">&apos;command&apos;</emphasis>:&#32;command,&#32;<emphasis role="stringliteral">&apos;directory&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;/opt/src/project&apos;</emphasis>}
+00017 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;list(sut.format_entry(trace))
+00018 
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;cc&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-o&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;file.o&apos;</emphasis>]))
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;cc&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-E&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>]))
+00021 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;cc&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-MM&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>]))
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>([<emphasis role="stringliteral">&apos;cc&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;this.o&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;that.o&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-o&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;a.out&apos;</emphasis>]))
+00023 
+<anchor xml:id="_test__intercept_8py_source_1l00024"/><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test_1ac891386c151937f1da86ed0c306758a7">00024</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test_1ac891386c151937f1da86ed0c306758a7">test_format_entry_normalize_filename</link>(self):
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;parent&#32;=&#32;os.path.join(os.sep,&#32;<emphasis role="stringliteral">&apos;home&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;me&apos;</emphasis>)
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;current&#32;=&#32;os.path.join(parent,&#32;<emphasis role="stringliteral">&apos;project&apos;</emphasis>)
+00027 
+00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(filename):
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;trace&#32;=&#32;{<emphasis role="stringliteral">&apos;directory&apos;</emphasis>:&#32;current,&#32;<emphasis role="stringliteral">&apos;command&apos;</emphasis>:&#32;[<emphasis role="stringliteral">&apos;cc&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;filename]}
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;list(sut.format_entry(trace))[0][<emphasis role="stringliteral">&apos;file&apos;</emphasis>]
+00031 
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(os.path.join(current,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>),&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>))
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(os.path.join(current,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>),&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;./file.c&apos;</emphasis>))
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(os.path.join(parent,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>),&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(<emphasis role="stringliteral">&apos;../file.c&apos;</emphasis>))
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertEqual(os.path.join(current,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>),
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decls_8cpp_1ae1a3968e7947464bee7714f6d43b7002">test</link>(os.path.join(current,&#32;<emphasis role="stringliteral">&apos;file.c&apos;</emphasis>)))
+00037 
+<anchor xml:id="_test__intercept_8py_source_1l00038"/><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test_1a2af331eda994194c3d48967629b2e9db">00038</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classtests_1_1unit_1_1test__intercept_1_1_intercept_util_test_1a2af331eda994194c3d48967629b2e9db">test_sip</link>(self):
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>create_status_report(filename,&#32;message):
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;content&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;#!/usr/bin/env&#32;sh</emphasis>
+00041 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;echo&#32;&apos;sa-la-la-la&apos;</emphasis>
+00042 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;echo&#32;&apos;la-la-la&apos;</emphasis>
+00043 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;echo&#32;&apos;{0}&apos;</emphasis>
+00044 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;echo&#32;&apos;sa-la-la-la&apos;</emphasis>
+00045 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;echo&#32;&apos;la-la-la&apos;</emphasis>
+00046 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&quot;&quot;&quot;</emphasis>.format(message)
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;lines&#32;=&#32;[line.strip()&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;content.split(<emphasis role="stringliteral">&apos;\n&apos;</emphasis>)]
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(<emphasis role="stringliteral">&apos;\n&apos;</emphasis>.join(lines))
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.close()
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.chmod(filename,&#32;0x1ff)
+00052 
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>create_csrutil(dest_dir,&#32;status):
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename&#32;=&#32;os.path.join(dest_dir,&#32;<emphasis role="stringliteral">&apos;csrutil&apos;</emphasis>)
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;message&#32;=&#32;<emphasis role="stringliteral">&apos;System&#32;Integrity&#32;Protection&#32;status:&#32;{0}&apos;</emphasis>.format(status)
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;create_status_report(filename,&#32;message)
+00057 
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>create_sestatus(dest_dir,&#32;status):
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename&#32;=&#32;os.path.join(dest_dir,&#32;<emphasis role="stringliteral">&apos;sestatus&apos;</emphasis>)
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;message&#32;=&#32;<emphasis role="stringliteral">&apos;SELinux&#32;status:\t{0}&apos;</emphasis>.format(status)
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;create_status_report(filename,&#32;message)
+00062 
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ENABLED&#32;=&#32;<emphasis role="stringliteral">&apos;enabled&apos;</emphasis>
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DISABLED&#32;=&#32;<emphasis role="stringliteral">&apos;disabled&apos;</emphasis>
+00065 
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OSX&#32;=&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>
+00067 
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">libear.TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;tmpdir:
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;saved&#32;=&#32;os.environ[<emphasis role="stringliteral">&apos;PATH&apos;</emphasis>]
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.environ[<emphasis role="stringliteral">&apos;PATH&apos;</emphasis>]&#32;=&#32;tmpdir&#32;+&#32;<emphasis role="stringliteral">&apos;:&apos;</emphasis>&#32;+&#32;saved
+00072 
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;create_csrutil(tmpdir,&#32;ENABLED)
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertTrue(sut.is_preload_disabled(OSX))
+00075 
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;create_csrutil(tmpdir,&#32;DISABLED)
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(sut.is_preload_disabled(OSX))
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">finally</emphasis>:
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.environ[<emphasis role="stringliteral">&apos;PATH&apos;</emphasis>]&#32;=&#32;saved
+00080 
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;saved&#32;=&#32;os.environ[<emphasis role="stringliteral">&apos;PATH&apos;</emphasis>]
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.environ[<emphasis role="stringliteral">&apos;PATH&apos;</emphasis>]&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;shall&#32;be&#32;false&#32;when&#32;it&apos;s&#32;not&#32;in&#32;the&#32;path</emphasis>
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(sut.is_preload_disabled(OSX))
+00086 
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.assertFalse(sut.is_preload_disabled(<emphasis role="stringliteral">&apos;unix&apos;</emphasis>))
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">finally</emphasis>:
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.environ[<emphasis role="stringliteral">&apos;PATH&apos;</emphasis>]&#32;=&#32;saved
+</programlisting></section>

@@ -1,0 +1,227 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_indexer_8cpp_source" xml:lang="en-US">
+<title>CIndexer.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexer.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CIndexer.cpp&#32;-&#32;Clang-C&#32;Source&#32;Indexing&#32;Library&#32;---------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;the&#32;Clang-C&#32;Source&#32;Indexing&#32;library.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_indexer_8h">CIndexer.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LLVM.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Version.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Driver.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/STLExtras.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MD5.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Path.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Program.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/YAMLParser.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&lt;cstdio&gt;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&lt;mutex&gt;</emphasis>
+00027 
+00028 <emphasis role="preprocessor">#ifdef&#32;__CYGWIN__</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&lt;cygwin/version.h&gt;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&lt;sys/cygwin.h&gt;</emphasis>
+00031 <emphasis role="preprocessor">#define&#32;_WIN32&#32;1</emphasis>
+00032 <emphasis role="preprocessor">#endif</emphasis>
+00033 
+00034 <emphasis role="preprocessor">#ifdef&#32;_WIN32</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&lt;windows.h&gt;</emphasis>
+00036 <emphasis role="preprocessor">#elif&#32;defined(_AIX)</emphasis>
+00037 <emphasis role="preprocessor">#include&#32;&lt;errno.h&gt;</emphasis>
+00038 <emphasis role="preprocessor">#include&#32;&lt;sys/ldr.h&gt;</emphasis>
+00039 <emphasis role="preprocessor">#else</emphasis>
+00040 <emphasis role="preprocessor">#include&#32;&lt;dlfcn.h&gt;</emphasis>
+00041 <emphasis role="preprocessor">#endif</emphasis>
+00042 
+00043 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00044 
+00045 <emphasis role="preprocessor">#ifdef&#32;_AIX</emphasis>
+00046 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00047 <emphasis role="keyword">namespace&#32;</emphasis>{
+00048 
+00049 <emphasis role="keyword">template</emphasis>&#32;&lt;<emphasis role="keyword">typename</emphasis>&#32;LibClangPathType&gt;
+00050 <emphasis role="keywordtype">void</emphasis>&#32;getClangResourcesPathImplAIX(LibClangPathType&#32;&amp;LibClangPath)&#32;{
+00051 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;PrevErrno&#32;=&#32;errno;
+00052 
+00053 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;BufSize&#32;=&#32;2048u;
+00054 &#32;&#32;std::unique_ptr&lt;char[]&gt;&#32;Buf;
+00055 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">true</emphasis>)&#32;{
+00056 &#32;&#32;&#32;&#32;Buf&#32;=&#32;std::make_unique&lt;char&#32;[]&gt;(BufSize);
+00057 &#32;&#32;&#32;&#32;errno&#32;=&#32;0;
+00058 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;Ret&#32;=&#32;loadquery(L_GETXINFO,&#32;Buf.get(),&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>)BufSize);
+00059 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Ret&#32;!=&#32;-1)
+00060 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;&#32;<emphasis role="comment">//&#32;loadquery()&#32;was&#32;successful.</emphasis>
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(errno&#32;!=&#32;ENOMEM)
+00062 &#32;&#32;&#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Encountered&#32;an&#32;unexpected&#32;loadquery()&#32;failure&quot;</emphasis>);
+00063 
+00064 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;errno&#32;==&#32;ENOMEM;&#32;try&#32;to&#32;allocate&#32;more&#32;memory.</emphasis>
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((BufSize&#32;&amp;&#32;~((-1u)&#32;&gt;&gt;&#32;1u))&#32;!=&#32;0u)
+00066 &#32;&#32;&#32;&#32;&#32;&#32;llvm::report_fatal_error(<emphasis role="stringliteral">&quot;BufSize&#32;needed&#32;for&#32;loadquery()&#32;too&#32;large&quot;</emphasis>);
+00067 
+00068 &#32;&#32;&#32;&#32;Buf.release();
+00069 &#32;&#32;&#32;&#32;BufSize&#32;&lt;&lt;=&#32;1u;
+00070 &#32;&#32;}
+00071 
+00072 &#32;&#32;<emphasis role="comment">//&#32;Extract&#32;the&#32;function&#32;entry&#32;point&#32;from&#32;the&#32;function&#32;descriptor.</emphasis>
+00073 &#32;&#32;uint64_t&#32;EntryAddr&#32;=
+00074 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">reinterpret_cast&lt;</emphasis>uintptr_t&#32;&amp;<emphasis role="keyword">&gt;</emphasis>(<link linkend="__c_index_8cpp_1a42e314c492d0d545b1e0e3278894b75d">clang_createTranslationUnit</link>);
+00075 
+00076 &#32;&#32;<emphasis role="comment">//&#32;Loop&#32;to&#32;locate&#32;the&#32;function&#32;entry&#32;point&#32;in&#32;the&#32;loadquery()&#32;results.</emphasis>
+00077 &#32;&#32;ld_xinfo&#32;*CurInfo&#32;=&#32;<emphasis role="keyword">reinterpret_cast&lt;</emphasis>ld_xinfo&#32;*<emphasis role="keyword">&gt;</emphasis>(Buf.get());
+00078 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">true</emphasis>)&#32;{
+00079 &#32;&#32;&#32;&#32;uint64_t&#32;CurTextStart&#32;=&#32;(uint64_t)CurInfo-&gt;ldinfo_textorg;
+00080 &#32;&#32;&#32;&#32;uint64_t&#32;CurTextEnd&#32;=&#32;CurTextStart&#32;+&#32;CurInfo-&gt;ldinfo_textsize;
+00081 &#32;&#32;&#32;&#32;if&#32;(CurTextStart&#32;&lt;=&#32;EntryAddr&#32;&amp;&amp;&#32;EntryAddr&#32;&lt;&#32;CurTextEnd)
+00082 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;&#32;<emphasis role="comment">//&#32;Successfully&#32;located.</emphasis>
+00083 
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CurInfo-&gt;ldinfo_next&#32;==&#32;0u)
+00085 &#32;&#32;&#32;&#32;&#32;&#32;llvm::report_fatal_error(<emphasis role="stringliteral">&quot;Cannot&#32;locate&#32;entry&#32;point&#32;in&#32;&quot;</emphasis>
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;the&#32;loadquery()&#32;results&quot;</emphasis>);
+00087 &#32;&#32;&#32;&#32;CurInfo&#32;=&#32;<emphasis role="keyword">reinterpret_cast&lt;</emphasis>ld_xinfo&#32;*<emphasis role="keyword">&gt;</emphasis>(<emphasis role="keyword">reinterpret_cast&lt;</emphasis><emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(CurInfo)&#32;+
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CurInfo-&gt;ldinfo_next);
+00089 &#32;&#32;}
+00090 
+00091 &#32;&#32;LibClangPath&#32;+=&#32;<emphasis role="keyword">reinterpret_cast&lt;</emphasis><emphasis role="keywordtype">char</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(CurInfo)&#32;+&#32;CurInfo-&gt;ldinfo_filename;
+00092 &#32;&#32;errno&#32;=&#32;PrevErrno;
+00093 }
+00094 
+00095 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00096 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;clang</emphasis>
+00097 <emphasis role="preprocessor">#endif</emphasis>
+00098 
+<anchor xml:id="__c_indexer_8cpp_source_1l00099"/><link linkend="_classclang_1_1_c_indexer_1a4b292906114303ecabb75bec7ff17a92">00099</link> <emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;<link linkend="_classclang_1_1_c_indexer_1a4b292906114303ecabb75bec7ff17a92">CIndexer::getClangResourcesPath</link>()&#32;{
+00100 &#32;&#32;<emphasis role="comment">//&#32;Did&#32;we&#32;already&#32;compute&#32;the&#32;path?</emphasis>
+00101 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ResourcesPath.empty())
+00102 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ResourcesPath;
+00103 
+00104 &#32;&#32;SmallString&lt;128&gt;&#32;LibClangPath;
+00105 
+00106 &#32;&#32;<emphasis role="comment">//&#32;Find&#32;the&#32;location&#32;where&#32;this&#32;library&#32;lives&#32;(libclang.dylib).</emphasis>
+00107 <emphasis role="preprocessor">#ifdef&#32;_WIN32</emphasis>
+00108 &#32;&#32;MEMORY_BASIC_INFORMATION&#32;mbi;
+00109 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;path[MAX_PATH];
+00110 &#32;&#32;VirtualQuery((<emphasis role="keywordtype">void</emphasis>&#32;*)(uintptr_t)<link linkend="__c_index_8cpp_1a42e314c492d0d545b1e0e3278894b75d">clang_createTranslationUnit</link>,&#32;&amp;mbi,
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">sizeof</emphasis>(mbi));
+00112 &#32;&#32;GetModuleFileNameA((HINSTANCE)mbi.AllocationBase,&#32;path,&#32;MAX_PATH);
+00113 
+00114 <emphasis role="preprocessor">#ifdef&#32;__CYGWIN__</emphasis>
+00115 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;w32path[MAX_PATH];
+00116 &#32;&#32;strcpy(w32path,&#32;path);
+00117 <emphasis role="preprocessor">#if&#32;CYGWIN_VERSION_API_MAJOR&#32;&gt;&#32;0&#32;||&#32;CYGWIN_VERSION_API_MINOR&#32;&gt;=&#32;181</emphasis>
+00118 &#32;&#32;cygwin_conv_path(CCP_WIN_A_TO_POSIX,&#32;w32path,&#32;path,&#32;MAX_PATH);
+00119 <emphasis role="preprocessor">#else</emphasis>
+00120 &#32;&#32;cygwin_conv_to_full_posix_path(w32path,&#32;path);
+00121 <emphasis role="preprocessor">#endif</emphasis>
+00122 <emphasis role="preprocessor">#endif</emphasis>
+00123 
+00124 &#32;&#32;LibClangPath&#32;+=&#32;path;
+00125 <emphasis role="preprocessor">#elif&#32;defined(_AIX)</emphasis>
+00126 &#32;&#32;getClangResourcesPathImplAIX(LibClangPath);
+00127 <emphasis role="preprocessor">#else</emphasis>
+00128 &#32;&#32;<emphasis role="comment">//&#32;This&#32;silly&#32;cast&#32;below&#32;avoids&#32;a&#32;C++&#32;warning.</emphasis>
+00129 &#32;&#32;Dl_info&#32;info;
+00130 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(dladdr((<emphasis role="keywordtype">void</emphasis>&#32;*)(uintptr_t)<link linkend="__c_index_8cpp_1a42e314c492d0d545b1e0e3278894b75d">clang_createTranslationUnit</link>,&#32;&amp;info)&#32;==&#32;0)
+00131 &#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;Call&#32;to&#32;dladdr()&#32;failed&quot;</emphasis>);
+00132 
+00133 &#32;&#32;<emphasis role="comment">//&#32;We&#32;now&#32;have&#32;the&#32;CIndex&#32;directory,&#32;locate&#32;clang&#32;relative&#32;to&#32;it.</emphasis>
+00134 &#32;&#32;LibClangPath&#32;+=&#32;info.dli_fname;
+00135 <emphasis role="preprocessor">#endif</emphasis>
+00136 
+00137 &#32;&#32;<emphasis role="comment">//&#32;Cache&#32;our&#32;result.</emphasis>
+00138 &#32;&#32;ResourcesPath&#32;=&#32;driver::Driver::GetResourcesPath(LibClangPath);
+00139 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ResourcesPath;
+00140 }
+00141 
+<anchor xml:id="__c_indexer_8cpp_source_1l00142"/><link linkend="_classclang_1_1_c_indexer_1a542a2e3cb09f282f8d456b32770fd4b2">00142</link> StringRef&#32;<link linkend="_classclang_1_1_c_indexer_1a542a2e3cb09f282f8d456b32770fd4b2">CIndexer::getClangToolchainPath</link>()&#32;{
+00143 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ToolchainPath.empty())
+00144 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ToolchainPath;
+00145 &#32;&#32;StringRef&#32;ResourcePath&#32;=&#32;<link linkend="_classclang_1_1_c_indexer_1a4b292906114303ecabb75bec7ff17a92">getClangResourcesPath</link>();
+00146 &#32;&#32;ToolchainPath&#32;=
+00147 &#32;&#32;&#32;&#32;&#32;&#32;std::string(llvm::sys::path::parent_path(llvm::sys::path::parent_path(
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::path::parent_path(ResourcePath))));
+00149 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ToolchainPath;
+00150 }
+00151 
+<anchor xml:id="__c_indexer_8cpp_source_1l00152"/><link linkend="_classclang_1_1_libclang_invocation_reporter_1a2cdb530eb76516c96b5923dad2e243af">00152</link> <link linkend="_classclang_1_1_libclang_invocation_reporter_1a2cdb530eb76516c96b5923dad2e243af">LibclangInvocationReporter::LibclangInvocationReporter</link>(
+00153 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1_c_indexer">CIndexer</link>&#32;&amp;Idx,&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53">OperationKind</link>&#32;Op,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;ParseOptions,
+00154 &#32;&#32;&#32;&#32;llvm::ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Args,
+00155 &#32;&#32;&#32;&#32;llvm::ArrayRef&lt;std::string&gt;&#32;InvocationArgs,
+00156 &#32;&#32;&#32;&#32;llvm::ArrayRef&lt;CXUnsavedFile&gt;&#32;UnsavedFiles)&#32;{
+00157 &#32;&#32;StringRef&#32;Path&#32;=&#32;Idx.<link linkend="_classclang_1_1_c_indexer_1a4d18c0143db01294d2152486ba7ca3c4">getInvocationEmissionPath</link>();
+00158 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Path.empty())
+00159 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00160 
+00161 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;a&#32;temporary&#32;file&#32;for&#32;the&#32;invocation&#32;log.</emphasis>
+00162 &#32;&#32;SmallString&lt;256&gt;&#32;TempPath;
+00163 &#32;&#32;TempPath&#32;=&#32;Path;
+00164 &#32;&#32;llvm::sys::path::append(TempPath,&#32;<emphasis role="stringliteral">&quot;libclang-%%%%%%%%%%%%&quot;</emphasis>);
+00165 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;FD;
+00166 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::sys::fs::createUniqueFile(TempPath,&#32;FD,&#32;TempPath,
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::fs::OF_Text))
+00168 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00169 &#32;&#32;File&#32;=&#32;std::string(TempPath.begin(),&#32;TempPath.end());
+00170 &#32;&#32;llvm::raw_fd_ostream&#32;OS(FD,&#32;<emphasis role="comment">/*ShouldClose=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00171 
+00172 &#32;&#32;<emphasis role="comment">//&#32;Write&#32;out&#32;the&#32;information&#32;about&#32;the&#32;invocation&#32;to&#32;it.</emphasis>
+00173 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;WriteStringKey&#32;=&#32;[&amp;OS](StringRef&#32;Key,&#32;StringRef&#32;Value)&#32;{
+00174 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(&quot;)&quot;&#32;&lt;&lt;&#32;Key&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(&quot;:&quot;)&quot;;</emphasis>
+00175 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">llvm::yaml::escape</link>(Value)&#32;&lt;&lt;&#32;</emphasis><emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00176 &#32;&#32;};
+00177 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;{&apos;</emphasis>;
+00178 &#32;&#32;WriteStringKey(<emphasis role="stringliteral">&quot;toolchain&quot;</emphasis>,&#32;Idx.<link linkend="_classclang_1_1_c_indexer_1a542a2e3cb09f282f8d456b32770fd4b2">getClangToolchainPath</link>());
+00179 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00180 &#32;&#32;WriteStringKey(<emphasis role="stringliteral">&quot;libclang.operation&quot;</emphasis>,
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Op&#32;==&#32;<link linkend="_classclang_1_1_libclang_invocation_reporter_1accdb53ba461fb345cd984aa037eecf53ae6f6b50529513b200513042d023bebd9">OperationKind::ParseOperation</link>&#32;?&#32;<emphasis role="stringliteral">&quot;parse&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;complete&quot;</emphasis>);
+00182 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00183 &#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(&quot;libclang.opts&quot;:)&quot;&#32;&lt;&lt;&#32;ParseOptions;</emphasis>
+00184 <emphasis role="stringliteral">&#32;&#32;OS&#32;&lt;&lt;&#32;</emphasis><emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00185 &#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(&quot;args&quot;:[)&quot;;</emphasis>
+00186 <emphasis role="stringliteral">&#32;&#32;</emphasis><emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;I&#32;:&#32;llvm::enumerate(Args))&#32;{
+00187 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I.index())
+00188 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00189 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>&#32;&lt;&lt;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">llvm::yaml::escape</link>(I.value())&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00190 &#32;&#32;}
+00191 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!InvocationArgs.empty())&#32;{
+00192 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(],&quot;invocation-args&quot;:[)&quot;;</emphasis>
+00193 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;I&#32;:&#32;llvm::enumerate(InvocationArgs))&#32;{
+00194 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I.index())
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00196 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>&#32;&lt;&lt;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">llvm::yaml::escape</link>(I.value())&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;&quot;&apos;</emphasis>;
+00197 &#32;&#32;&#32;&#32;}
+00198 &#32;&#32;}
+00199 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!UnsavedFiles.empty())&#32;{
+00200 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;(],&quot;unsaved_file_hashes&quot;:[)&quot;;</emphasis>
+00201 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;</emphasis><emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;UF&#32;:&#32;llvm::enumerate(UnsavedFiles))&#32;{
+00202 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(UF.index())
+00203 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00204 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;{&apos;</emphasis>;
+00205 &#32;&#32;&#32;&#32;&#32;&#32;WriteStringKey(<emphasis role="stringliteral">&quot;name&quot;</emphasis>,&#32;UF.value().Filename);
+00206 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;,&apos;</emphasis>;
+00207 &#32;&#32;&#32;&#32;&#32;&#32;llvm::MD5&#32;Hash;
+00208 &#32;&#32;&#32;&#32;&#32;&#32;Hash.update(getContents(UF.value()));
+00209 &#32;&#32;&#32;&#32;&#32;&#32;llvm::MD5::MD5Result&#32;Result;
+00210 &#32;&#32;&#32;&#32;&#32;&#32;Hash.final(Result);
+00211 &#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;32&gt;&#32;Digest&#32;=&#32;Result.digest();
+00212 &#32;&#32;&#32;&#32;&#32;&#32;WriteStringKey(<emphasis role="stringliteral">&quot;md5&quot;</emphasis>,&#32;Digest);
+00213 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;}&apos;</emphasis>;
+00214 &#32;&#32;&#32;&#32;}
+00215 &#32;&#32;}
+00216 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]}&quot;</emphasis>;
+00217 }
+00218 
+<anchor xml:id="__c_indexer_8cpp_source_1l00219"/><link linkend="_classclang_1_1_libclang_invocation_reporter_1a3fafbe06dce2b7afdfbc83303b5723f2">00219</link> <link linkend="_classclang_1_1_libclang_invocation_reporter_1a3fafbe06dce2b7afdfbc83303b5723f2">LibclangInvocationReporter::~LibclangInvocationReporter</link>()&#32;{
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!File.empty())
+00221 &#32;&#32;&#32;&#32;llvm::sys::fs::remove(File);
+00222 }
+</programlisting></section>

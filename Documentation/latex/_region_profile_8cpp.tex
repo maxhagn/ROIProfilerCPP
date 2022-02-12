@@ -1,0 +1,407 @@
+\hypertarget{_region_profile_8cpp}{}\doxysection{Region\+Profile.\+cpp File Reference}
+\label{_region_profile_8cpp}\index{RegionProfile.cpp@{RegionProfile.cpp}}
+{\ttfamily \#include \char`\"{}Region\+Profile.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$iomanip$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{class_my_visitor}{My\+Visitor}}
+\item 
+class \mbox{\hyperlink{class_consumer}{Consumer}}
+\begin{DoxyCompactList}\small\item\em Customizes a Instance of ASTConsumer. The \mbox{\hyperlink{class_consumer}{Consumer}} is used by the Frontend Action to traverse the AST Tree. \end{DoxyCompactList}\item 
+class \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}}
+\begin{DoxyCompactList}\small\item\em Creates ASTConsumer and returns ASTContext. A new \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}} is created in the main, where the Compiler\+Instance and the Source\+Files are used to generate a new AST Tree \mbox{\hyperlink{class_consumer}{Consumer}}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+Source\+Location \mbox{\hyperlink{_region_profile_8cpp_adfd72dc10aea9a01b5e9c1785033949d}{get\+Location\+After\+Token}} (Source\+Location source\+Location, ASTContext $\ast$local\+Context)
+\begin{DoxyCompactList}\small\item\em Returns Location after Token. The end location of a function oder stmt returns the location before a brace or a semicolon. The events have to be called after the end token. This location is returned by this function. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverse\+Children}} (Stmt $\ast$func\+Body, ASTContext $\ast$local\+Context)
+\begin{DoxyCompactList}\small\item\em Traverses recursively through the body of the specified function body. Function Body is a set of statements. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{_region_profile_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\begin{DoxyCompactList}\small\item\em The entry point of the tool. The main functions deals with the input files and options. Furthermore the \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}} will be created and is used to transform the code. After transformation the rewritten code will be printed to the specified output file. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_region_profile_8cpp_adfd72dc10aea9a01b5e9c1785033949d}\label{_region_profile_8cpp_adfd72dc10aea9a01b5e9c1785033949d}} 
+\index{RegionProfile.cpp@{RegionProfile.cpp}!getLocationAfterToken@{getLocationAfterToken}}
+\index{getLocationAfterToken@{getLocationAfterToken}!RegionProfile.cpp@{RegionProfile.cpp}}
+\doxysubsubsection{\texorpdfstring{getLocationAfterToken()}{getLocationAfterToken()}}
+{\footnotesize\ttfamily Source\+Location get\+Location\+After\+Token (\begin{DoxyParamCaption}\item[{Source\+Location}]{source\+Location,  }\item[{ASTContext $\ast$}]{local\+Context }\end{DoxyParamCaption})}
+
+
+
+Returns Location after Token. The end location of a function oder stmt returns the location before a brace or a semicolon. The events have to be called after the end token. This location is returned by this function. 
+
+! 
+
+Definition at line 10 of file Region\+Profile.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{10                                                                                                 \{}
+\DoxyCodeLine{11     \textcolor{comment}{// get the current token at the specified location}}
+\DoxyCodeLine{12     Optional <Token> currentToken( clang::Lexer::findNextToken(}
+\DoxyCodeLine{13             sourceLocation, localContext-\/>getSourceManager( ),}
+\DoxyCodeLine{14             localContext-\/>getLangOpts( )));}
+\DoxyCodeLine{15 }
+\DoxyCodeLine{16     \textcolor{comment}{// if token is raw identifier return last token}}
+\DoxyCodeLine{17     \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) == clang::tok::raw\_identifier ) \{}
+\DoxyCodeLine{18         sourceLocation = sourceLocation.getLocWithOffset( -\/1 );}
+\DoxyCodeLine{19     \}}
+\DoxyCodeLine{20         \textcolor{comment}{// if token is semi return this token}}
+\DoxyCodeLine{21     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) == clang::tok::semi ) \{}
+\DoxyCodeLine{22         sourceLocation = sourceLocation.getLocWithOffset( 0 );}
+\DoxyCodeLine{23     \}}
+\DoxyCodeLine{24         \textcolor{comment}{// if token is brace return next token}}
+\DoxyCodeLine{25     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) == clang::tok::r\_brace ) \{}
+\DoxyCodeLine{26         sourceLocation = sourceLocation.getLocWithOffset( 1 );}
+\DoxyCodeLine{27     \}}
+\DoxyCodeLine{28 }
+\DoxyCodeLine{29     \textcolor{comment}{// find location after semicolon}}
+\DoxyCodeLine{30     SourceLocation locAfterSemi( clang::Lexer::findLocationAfterToken(}
+\DoxyCodeLine{31             sourceLocation, clang::tok::semi,}
+\DoxyCodeLine{32             localContext-\/>getSourceManager( ),}
+\DoxyCodeLine{33             localContext-\/>getLangOpts( ), \textcolor{keyword}{true} ));}
+\DoxyCodeLine{34 }
+\DoxyCodeLine{35     \textcolor{comment}{// find location after brace}}
+\DoxyCodeLine{36     SourceLocation locAfterBrace( clang::Lexer::findLocationAfterToken(}
+\DoxyCodeLine{37             sourceLocation, clang::tok::r\_brace,}
+\DoxyCodeLine{38             localContext-\/>getSourceManager( ),}
+\DoxyCodeLine{39             localContext-\/>getLangOpts( ), \textcolor{keyword}{true} ));}
+\DoxyCodeLine{40 }
+\DoxyCodeLine{41     \textcolor{comment}{// if loc after semi is valid return locAfterSemi}}
+\DoxyCodeLine{42     \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) != clang::tok::r\_brace \&\& locAfterSemi.isValid( )) \{}
+\DoxyCodeLine{43         sourceLocation = locAfterSemi;}
+\DoxyCodeLine{44     \}}
+\DoxyCodeLine{45         \textcolor{comment}{// if loc after brace is valid return locAfterBrace}}
+\DoxyCodeLine{46     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ( currentToken-\/>getKind( ) != clang::tok::r\_brace \&\& locAfterBrace.isValid( )) \{}
+\DoxyCodeLine{47         sourceLocation = locAfterBrace;}
+\DoxyCodeLine{48     \}}
+\DoxyCodeLine{49 }
+\DoxyCodeLine{50     \textcolor{comment}{// if token is brace return current location}}
+\DoxyCodeLine{51 }
+\DoxyCodeLine{52     \textcolor{keywordflow}{return} sourceLocation;}
+\DoxyCodeLine{53 \}}
+
+\end{DoxyCode}
+
+
+Referenced by traverse\+Children(), and My\+Visitor\+::\+Visit\+Stmt().
+
+\mbox{\Hypertarget{_region_profile_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_region_profile_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{RegionProfile.cpp@{RegionProfile.cpp}!main@{main}}
+\index{main@{main}!RegionProfile.cpp@{RegionProfile.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+The entry point of the tool. The main functions deals with the input files and options. Furthermore the \mbox{\hyperlink{class_clang_frontend_action}{Clang\+Frontend\+Action}} will be created and is used to transform the code. After transformation the rewritten code will be printed to the specified output file. 
+
+! 
+
+Definition at line 400 of file Region\+Profile.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{400                                         \{}
+\DoxyCodeLine{401 }
+\DoxyCodeLine{402     \textcolor{comment}{// runtime start}}
+\DoxyCodeLine{403     std::chrono::system\_clock::time\_point startTime = std::chrono::system\_clock::now( );}
+\DoxyCodeLine{404 }
+\DoxyCodeLine{405     \textcolor{comment}{// create Common Option Parser}}
+\DoxyCodeLine{406     \textcolor{keyword}{auto} ExpectedParser = CommonOptionsParser::create( argc, argv, MyToolCategory, llvm::cl::Required );}
+\DoxyCodeLine{407 }
+\DoxyCodeLine{408     \textcolor{comment}{// terminate if specified options are not expected}}
+\DoxyCodeLine{409     \textcolor{keywordflow}{if} ( !ExpectedParser ) \{}
+\DoxyCodeLine{410         llvm::errs( ) << ExpectedParser.takeError( );}
+\DoxyCodeLine{411         \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{412     \}}
+\DoxyCodeLine{413 }
+\DoxyCodeLine{414     \textcolor{comment}{// create local parameter variables}}
+\DoxyCodeLine{415     std::string outputFilename = \textcolor{stringliteral}{"{}output.cpp"{}};}
+\DoxyCodeLine{416     std::string stmtId = \textcolor{stringliteral}{"{}start"{}};}
+\DoxyCodeLine{417 }
+\DoxyCodeLine{418     \textcolor{comment}{// create the stream for output file}}
+\DoxyCodeLine{419     std::error\_code err\_code;}
+\DoxyCodeLine{420 }
+\DoxyCodeLine{421     \textcolor{comment}{// parse arguments}}
+\DoxyCodeLine{422     \textcolor{keywordflow}{for} ( \textcolor{keywordtype}{int} i = 0; i < argc; ++i ) \{}
+\DoxyCodeLine{423 }
+\DoxyCodeLine{424         \textcolor{comment}{// if output file is specified}}
+\DoxyCodeLine{425         \textcolor{keywordflow}{if} ( std::string( argv[ i ] ) == \textcolor{stringliteral}{"{}-\/o"{}} ) \{}
+\DoxyCodeLine{426             outputFilename = std::string( argv[ i + 1 ] );}
+\DoxyCodeLine{427         \}}
+\DoxyCodeLine{428 }
+\DoxyCodeLine{429         \textcolor{comment}{// if statement id is specified}}
+\DoxyCodeLine{430         \textcolor{keywordflow}{if} ( std::string( argv[ i ] ) == \textcolor{stringliteral}{"{}-\/-\/stmt"{}} ) \{}
+\DoxyCodeLine{431             stmtId = std::string( argv[ i + 1 ] );}
+\DoxyCodeLine{432         \}}
+\DoxyCodeLine{433     \}}
+\DoxyCodeLine{434 }
+\DoxyCodeLine{435     \textcolor{comment}{// Print Hagn Tool Information}}
+\DoxyCodeLine{436     cout << setw( 82 ) << setfill( \textcolor{charliteral}{'='} ) << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{437     cout << setw( 45 ) << setfill( \textcolor{charliteral}{' '} ) << \textcolor{stringliteral}{"{}Hagn Tool"{}} << setw( 25 ) << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{438     cout << setw( 83 ) << setfill( \textcolor{charliteral}{'='} ) << \textcolor{stringliteral}{"{}\(\backslash\)n\(\backslash\)n"{}};}
+\DoxyCodeLine{439     cout << \textcolor{stringliteral}{"{}Input File: "{}} << argv[ 1 ] << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{440     cout << \textcolor{stringliteral}{"{}Output File: "{}} << outputFilename << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{441     \textcolor{comment}{// print no statement id notification}}
+\DoxyCodeLine{442     \textcolor{keywordflow}{if} ( stmtId == \textcolor{stringliteral}{"{}start"{}} ) \{}
+\DoxyCodeLine{443         cout << \textcolor{stringliteral}{"{}Mode: Annotating Main Function\(\backslash\)n"{}};}
+\DoxyCodeLine{444     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{445         cout << \textcolor{stringliteral}{"{}Mode: Annotate specified Statement\(\backslash\)n"{}};}
+\DoxyCodeLine{446         cout << \textcolor{stringliteral}{"{}Statement ID: "{}} << stmtId << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{447     \}}
+\DoxyCodeLine{448 }
+\DoxyCodeLine{449     \textcolor{comment}{// add statement id to global scope}}
+\DoxyCodeLine{450     \mbox{\hyperlink{_region_profile_8h_a29f40cbf56ba1c9a5d4750faccff56c6}{statementOption}} = stmtId;}
+\DoxyCodeLine{451 }
+\DoxyCodeLine{452     \textcolor{comment}{// set destination of output file to the specified file}}
+\DoxyCodeLine{453     llvm::raw\_fd\_ostream dest( outputFilename, err\_code );}
+\DoxyCodeLine{454 }
+\DoxyCodeLine{455     \textcolor{comment}{// Parse the options and create new ClangTool}}
+\DoxyCodeLine{456     CommonOptionsParser \&OptionsParser = ExpectedParser.get( );}
+\DoxyCodeLine{457     ClangTool Tool( OptionsParser.getCompilations( ),}
+\DoxyCodeLine{458                     OptionsParser.getSourcePathList( ));}
+\DoxyCodeLine{459 }
+\DoxyCodeLine{460     \textcolor{comment}{// run the Clang Tool, creating a new FrontendAction}}
+\DoxyCodeLine{461     \textcolor{keywordtype}{int} result = Tool.run( newFrontendActionFactory<ClangFrontendAction>( ).\mbox{\hyperlink{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}{get}}( ));}
+\DoxyCodeLine{462 }
+\DoxyCodeLine{463     \textcolor{comment}{// add initialization and summary if transformation was successful}}
+\DoxyCodeLine{464     \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_region_profile_8h_a15ae25a94346899ec5715517ec03bd4f}{transformationSuccess}} ) \{}
+\DoxyCodeLine{465 }
+\DoxyCodeLine{466         \textcolor{comment}{// if initialization Location is valid insert includes and create DataStorage Object}}
+\DoxyCodeLine{467         \mbox{\hyperlink{_region_profile_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}}.pop\_back( );}
+\DoxyCodeLine{468         \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_region_profile_8h_a824216c5325518b8eec871b8174fec3f}{initializationLocation}}.isValid( )) \{}
+\DoxyCodeLine{469             \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( \mbox{\hyperlink{_region_profile_8h_a824216c5325518b8eec871b8174fec3f}{initializationLocation}},}
+\DoxyCodeLine{470                                  \textcolor{stringliteral}{"{}\#include \(\backslash\)"{}../lib/DataStorage.cpp\(\backslash\)"{}\(\backslash\)n"{}}\textcolor{stringliteral}{"{}DataStorage dataStorage(\(\backslash\)"{}"{}} +}
+\DoxyCodeLine{471                                  \mbox{\hyperlink{_region_profile_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} + \textcolor{stringliteral}{"{}\(\backslash\)"{});"{}} );}
+\DoxyCodeLine{472         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{473             cerr << \textcolor{stringliteral}{"{}Invalid initializationLocation, Line 356"{}};}
+\DoxyCodeLine{474             exit( EXIT\_FAILURE );}
+\DoxyCodeLine{475         \}}
+\DoxyCodeLine{476 }
+\DoxyCodeLine{477         \textcolor{comment}{// start an event at the beginning of the main function}}
+\DoxyCodeLine{478         \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_region_profile_8h_a6a7a6f87a39ed5405e4f4df9e1205530}{runtimeStartLocation}}.isValid( )) \{}
+\DoxyCodeLine{479             \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( \mbox{\hyperlink{_region_profile_8h_a6a7a6f87a39ed5405e4f4df9e1205530}{runtimeStartLocation}}, \textcolor{stringliteral}{"{}dataStorage.startEvent(0);\(\backslash\)n"{}} );}
+\DoxyCodeLine{480         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{481             cerr << \textcolor{stringliteral}{"{}Invalid runtimeStartLocation, Line 364"{}};}
+\DoxyCodeLine{482             exit( EXIT\_FAILURE );}
+\DoxyCodeLine{483         \}}
+\DoxyCodeLine{484 }
+\DoxyCodeLine{485         \textcolor{comment}{// start event and insert time summery as last step in the main function}}
+\DoxyCodeLine{486         \textcolor{keywordflow}{if} ( \mbox{\hyperlink{_region_profile_8h_a4d00baee5074510abc5b5853de403290}{summaryLocation}}.isValid( )) \{}
+\DoxyCodeLine{487             \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( \mbox{\hyperlink{_region_profile_8h_a4d00baee5074510abc5b5853de403290}{summaryLocation}}, \textcolor{stringliteral}{"{}dataStorage.endEvent(0);\(\backslash\)ndataStorage.print();"{}} );}
+\DoxyCodeLine{488         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{489             cerr << \textcolor{stringliteral}{"{}Invalid summaryLocation, Line 372"{}};}
+\DoxyCodeLine{490             exit( EXIT\_FAILURE );}
+\DoxyCodeLine{491         \}}
+\DoxyCodeLine{492 }
+\DoxyCodeLine{493         \textcolor{comment}{// runtime end}}
+\DoxyCodeLine{494         std::chrono::system\_clock::time\_point endTime = std::chrono::system\_clock::now( );}
+\DoxyCodeLine{495         std::chrono::duration<double, std::milli> ms\_double = endTime -\/ startTime;}
+\DoxyCodeLine{496 }
+\DoxyCodeLine{497         \textcolor{comment}{// print hagn tool runtime}}
+\DoxyCodeLine{498         cout << \textcolor{stringliteral}{"{}Runtime: "{}} << ms\_double.count( ) << \textcolor{stringliteral}{"{}ms\(\backslash\)n"{}};}
+\DoxyCodeLine{499 }
+\DoxyCodeLine{500         \textcolor{comment}{// print program finished notification}}
+\DoxyCodeLine{501         cout << \textcolor{stringliteral}{"{}Success: Yes\(\backslash\)n\(\backslash\)n"{}};}
+\DoxyCodeLine{502 }
+\DoxyCodeLine{503         \textcolor{comment}{// add transformed code to output file}}
+\DoxyCodeLine{504         \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.getEditBuffer( \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.getSourceMgr( ).getMainFileID( )).write( dest );}
+\DoxyCodeLine{505 }
+\DoxyCodeLine{506 }
+\DoxyCodeLine{507     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{508         cout << \textcolor{stringliteral}{"{}Success: No\(\backslash\)n\(\backslash\)n"{}};}
+\DoxyCodeLine{509         exit( EXIT\_FAILURE );}
+\DoxyCodeLine{510     \}}
+\DoxyCodeLine{511 }
+\DoxyCodeLine{512     \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{513 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}\label{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}} 
+\index{RegionProfile.cpp@{RegionProfile.cpp}!traverseChildren@{traverseChildren}}
+\index{traverseChildren@{traverseChildren}!RegionProfile.cpp@{RegionProfile.cpp}}
+\doxysubsubsection{\texorpdfstring{traverseChildren()}{traverseChildren()}}
+{\footnotesize\ttfamily void traverse\+Children (\begin{DoxyParamCaption}\item[{Stmt $\ast$}]{func\+Body,  }\item[{ASTContext $\ast$}]{local\+Context }\end{DoxyParamCaption})}
+
+
+
+Traverses recursively through the body of the specified function body. Function Body is a set of statements. 
+
+! 
+
+Definition at line 60 of file Region\+Profile.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{60                                                                   \{}
+\DoxyCodeLine{61 }
+\DoxyCodeLine{62     \textcolor{comment}{// count statements in body and search for parent statements}}
+\DoxyCodeLine{63     \textcolor{keywordtype}{int} childrenSize = 0;}
+\DoxyCodeLine{64     Stmt *parentStmt = NULL;}
+\DoxyCodeLine{65     \textcolor{keywordflow}{for} ( Stmt::child\_iterator i = funcBody-\/>child\_begin( ), e = funcBody-\/>child\_end( ); i != e; ++i ) \{}
+\DoxyCodeLine{66         Stmt *currStmt = *i;}
+\DoxyCodeLine{67         \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) != Stmt::ReturnStmtClass ) \{}
+\DoxyCodeLine{68             childrenSize++;}
+\DoxyCodeLine{69             \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) == Stmt::CallExprClass}
+\DoxyCodeLine{70                  || currStmt-\/>getStmtClass( ) == Stmt::ForStmtClass}
+\DoxyCodeLine{71                  || currStmt-\/>getStmtClass( ) == Stmt::WhileStmtClass}
+\DoxyCodeLine{72                  || currStmt-\/>getStmtClass( ) == Stmt::IfStmtClass}
+\DoxyCodeLine{73                  || currStmt-\/>getStmtClass( ) == Stmt::CXXMemberCallExprClass}
+\DoxyCodeLine{74                     ) \{}
+\DoxyCodeLine{75                 parentStmt = currStmt;}
+\DoxyCodeLine{76             \}}
+\DoxyCodeLine{77         \}}
+\DoxyCodeLine{78     \}}
+\DoxyCodeLine{79 }
+\DoxyCodeLine{80     \textcolor{comment}{// if body has multiple children, annotate all statements with performance counter}}
+\DoxyCodeLine{81     \textcolor{keywordflow}{if} ( childrenSize > 1 ) \{}
+\DoxyCodeLine{82         \textcolor{keywordtype}{bool} isCompoundedStatement = \textcolor{keyword}{false};}
+\DoxyCodeLine{83         SourceLocation lastEventEndLocation;}
+\DoxyCodeLine{84 }
+\DoxyCodeLine{85         \textcolor{keywordflow}{for} ( Stmt::child\_iterator i = funcBody-\/>child\_begin( ), e = funcBody-\/>child\_end( );}
+\DoxyCodeLine{86               i != e; ++i ) \{}
+\DoxyCodeLine{87             Stmt *currStmt = *i;}
+\DoxyCodeLine{88             currStmt-\/>getStmtClassName( );}
+\DoxyCodeLine{89 }
+\DoxyCodeLine{90             \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) != Stmt::ReturnStmtClass ) \{}
+\DoxyCodeLine{91 }
+\DoxyCodeLine{92                 SourceLocation beginLoc = currStmt-\/>getBeginLoc( );}
+\DoxyCodeLine{93                 SourceLocation endLoc = \mbox{\hyperlink{_region_profile_8cpp_adfd72dc10aea9a01b5e9c1785033949d}{getLocationAfterToken}}( currStmt-\/>getEndLoc( ), localContext );}
+\DoxyCodeLine{94 }
+\DoxyCodeLine{95                 \textcolor{comment}{// if statement runtime is not merged}}
+\DoxyCodeLine{96                 \textcolor{keywordflow}{if} ( !isCompoundedStatement ) \{}
+\DoxyCodeLine{97 }
+\DoxyCodeLine{98                     \textcolor{comment}{// set start time always}}
+\DoxyCodeLine{99                     \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( beginLoc,}
+\DoxyCodeLine{100                                          \textcolor{stringliteral}{"{}dataStorage.startEvent("{}} + std::to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) + \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{101 }
+\DoxyCodeLine{102                     \textcolor{comment}{// if statement is not parent, wait for next statement}}
+\DoxyCodeLine{103                     \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) != Stmt::CallExprClass \&\&}
+\DoxyCodeLine{104                          currStmt-\/>getStmtClass( ) != Stmt::ForStmtClass \&\&}
+\DoxyCodeLine{105                          currStmt-\/>getStmtClass( ) != Stmt::WhileStmtClass \&\&}
+\DoxyCodeLine{106                          currStmt-\/>getStmtClass( ) != Stmt::IfStmtClass \&\&}
+\DoxyCodeLine{107                          currStmt-\/>getStmtClass( ) != Stmt::CXXMemberCallExprClass}
+\DoxyCodeLine{108                             ) \{}
+\DoxyCodeLine{109 }
+\DoxyCodeLine{110                         lastEventEndLocation = endLoc;}
+\DoxyCodeLine{111                         isCompoundedStatement = \textcolor{keyword}{true};}
+\DoxyCodeLine{112 }
+\DoxyCodeLine{113                         \textcolor{comment}{// statement is parent, do not merge runtime}}
+\DoxyCodeLine{114                     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{115                         \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( endLoc,}
+\DoxyCodeLine{116                                              \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) + \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{117                         \textcolor{comment}{// concat stmtclass and stmtid and add to identifierString}}
+\DoxyCodeLine{118                         int64\_t \textcolor{keywordtype}{id} = currStmt-\/>getID( *localContext );}
+\DoxyCodeLine{119                         std::string idString =}
+\DoxyCodeLine{120                                 currStmt-\/>getStmtClassName( ) + std::string( \textcolor{stringliteral}{"{} "{}} ) + std::to\_string( \textcolor{keywordtype}{id} );}
+\DoxyCodeLine{121                         \mbox{\hyperlink{_region_profile_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += idString + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{122 }
+\DoxyCodeLine{123                         isCompoundedStatement = \textcolor{keyword}{false};}
+\DoxyCodeLine{124                         \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++;}
+\DoxyCodeLine{125                     \}}
+\DoxyCodeLine{126 }
+\DoxyCodeLine{127                     \textcolor{comment}{// if waiting for next statement}}
+\DoxyCodeLine{128                 \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{129 }
+\DoxyCodeLine{130                     \textcolor{comment}{// if statement is parent, stop last merge and annotate this statement}}
+\DoxyCodeLine{131                     \textcolor{keywordflow}{if} ( currStmt-\/>getStmtClass( ) == Stmt::CallExprClass ||}
+\DoxyCodeLine{132                          currStmt-\/>getStmtClass( ) == Stmt::ForStmtClass ||}
+\DoxyCodeLine{133                          currStmt-\/>getStmtClass( ) == Stmt::WhileStmtClass ||}
+\DoxyCodeLine{134                          currStmt-\/>getStmtClass( ) == Stmt::IfStmtClass ||}
+\DoxyCodeLine{135                          currStmt-\/>getStmtClass( ) == Stmt::CXXMemberCallExprClass}
+\DoxyCodeLine{136                             ) \{}
+\DoxyCodeLine{137 }
+\DoxyCodeLine{138                         \textcolor{comment}{// end old event}}
+\DoxyCodeLine{139                         \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( beginLoc,}
+\DoxyCodeLine{140                                              \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) +}
+\DoxyCodeLine{141                                              \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{142 }
+\DoxyCodeLine{143                         \textcolor{comment}{// add compound description to identifier string}}
+\DoxyCodeLine{144                         \mbox{\hyperlink{_region_profile_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += \textcolor{stringliteral}{"{}CustomCompoundStmt i00000"{}} + to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++ ) + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{145 }
+\DoxyCodeLine{146                         \textcolor{comment}{// start and end new event around parent function}}
+\DoxyCodeLine{147                         \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( beginLoc,}
+\DoxyCodeLine{148                                              \textcolor{stringliteral}{"{}dataStorage.startEvent("{}} + std::to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) +}
+\DoxyCodeLine{149                                              \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{150                         \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( endLoc,}
+\DoxyCodeLine{151                                              \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++ ) +}
+\DoxyCodeLine{152                                              \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{153 }
+\DoxyCodeLine{154                         \textcolor{comment}{// concat stmtclass and stmtid and add to identifierString}}
+\DoxyCodeLine{155                         int64\_t \textcolor{keywordtype}{id} = currStmt-\/>getID( *localContext );}
+\DoxyCodeLine{156                         std::string idString =}
+\DoxyCodeLine{157                                 currStmt-\/>getStmtClassName( ) + std::string( \textcolor{stringliteral}{"{} "{}} ) + std::to\_string( \textcolor{keywordtype}{id} );}
+\DoxyCodeLine{158                         \mbox{\hyperlink{_region_profile_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += idString + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{159 }
+\DoxyCodeLine{160                         isCompoundedStatement = \textcolor{keyword}{false};}
+\DoxyCodeLine{161 }
+\DoxyCodeLine{162                         \textcolor{comment}{// wait for next statement again}}
+\DoxyCodeLine{163                     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{164                         lastEventEndLocation = endLoc;}
+\DoxyCodeLine{165                         isCompoundedStatement = \textcolor{keyword}{true};}
+\DoxyCodeLine{166                     \}}
+\DoxyCodeLine{167                 \}}
+\DoxyCodeLine{168             \}}
+\DoxyCodeLine{169         \}}
+\DoxyCodeLine{170 }
+\DoxyCodeLine{171         \textcolor{comment}{// end last event}}
+\DoxyCodeLine{172         \textcolor{keywordflow}{if} ( isCompoundedStatement \&\& lastEventEndLocation.isValid( )) \{}
+\DoxyCodeLine{173             \mbox{\hyperlink{_region_profile_8h_a284f3685f06f0e161d79ef2f7513460b}{rewriter}}.InsertText( lastEventEndLocation,}
+\DoxyCodeLine{174                                  \textcolor{stringliteral}{"{}dataStorage.endEvent("{}} + std::to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}}++ ) + \textcolor{stringliteral}{"{});\(\backslash\)n"{}} );}
+\DoxyCodeLine{175             \mbox{\hyperlink{_region_profile_8h_ae32c9fb32bce38a59a96888d88486084}{identifierString}} += \textcolor{stringliteral}{"{}CustomCompoundStmt i00000"{}} + to\_string( \mbox{\hyperlink{_region_profile_8h_a192cb4171d7738dc4bcd720dd2d3509f}{internalIdentifier}} ) + \textcolor{stringliteral}{"{},"{}};}
+\DoxyCodeLine{176         \}}
+\DoxyCodeLine{177 }
+\DoxyCodeLine{178         \textcolor{comment}{// set transformation successful}}
+\DoxyCodeLine{179         \mbox{\hyperlink{_region_profile_8h_a15ae25a94346899ec5715517ec03bd4f}{transformationSuccess}} = \textcolor{keyword}{true};}
+\DoxyCodeLine{180 }
+\DoxyCodeLine{181     \}}
+\DoxyCodeLine{182         \textcolor{comment}{// if body has zero or one statements}}
+\DoxyCodeLine{183     \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{184         \textcolor{comment}{// if one child is parent of another set of statements}}
+\DoxyCodeLine{185         \textcolor{comment}{// call traverseChildren recursively}}
+\DoxyCodeLine{186         \textcolor{keywordflow}{if} ( parentStmt != NULL ) \{}
+\DoxyCodeLine{187             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::CallExprClass ) \{}
+\DoxyCodeLine{188                 CallExpr *expr = cast<CallExpr>( parentStmt );}
+\DoxyCodeLine{189                 Stmt *nextBody = expr-\/>getDirectCallee( )-\/>getBody( );}
+\DoxyCodeLine{190                 \mbox{\hyperlink{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{191             \}}
+\DoxyCodeLine{192             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::ForStmtClass ) \{}
+\DoxyCodeLine{193                 ForStmt *forStmt = cast<ForStmt>( parentStmt );}
+\DoxyCodeLine{194                 Stmt *nextBody = forStmt-\/>getBody( );}
+\DoxyCodeLine{195                 \mbox{\hyperlink{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{196             \}}
+\DoxyCodeLine{197             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::WhileStmtClass ) \{}
+\DoxyCodeLine{198                 WhileStmt *whileStmt = cast<WhileStmt>( parentStmt );}
+\DoxyCodeLine{199                 Stmt *nextBody = whileStmt-\/>getBody( );}
+\DoxyCodeLine{200                 \mbox{\hyperlink{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{201             \}}
+\DoxyCodeLine{202             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::IfStmtClass ) \{}
+\DoxyCodeLine{203                 IfStmt *ifStmt = cast<IfStmt>( parentStmt );}
+\DoxyCodeLine{204                 Stmt *nextBody = ifStmt-\/>getThen( );}
+\DoxyCodeLine{205                 \mbox{\hyperlink{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{206             \}}
+\DoxyCodeLine{207             \textcolor{keywordflow}{if} ( parentStmt-\/>getStmtClass( ) == Stmt::CXXMemberCallExprClass ) \{}
+\DoxyCodeLine{208                 CXXMemberCallExpr *cxxMemberCallExpr = cast<CXXMemberCallExpr>( parentStmt );}
+\DoxyCodeLine{209                 Stmt *nextBody = cxxMemberCallExpr-\/>getDirectCallee( )-\/>getBody();}
+\DoxyCodeLine{210                 \mbox{\hyperlink{_region_profile_8cpp_a19133d8d4f04cd2fa902dd1f8bc7426f}{traverseChildren}}( nextBody, localContext );}
+\DoxyCodeLine{211             \}}
+\DoxyCodeLine{212             \textcolor{comment}{// if return is the only statement annotate nothing}}
+\DoxyCodeLine{213         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{214             \textcolor{comment}{// cout << "{}hagn-\/tool hasn't found any statements!\(\backslash\)n"{};}}
+\DoxyCodeLine{215         \}}
+\DoxyCodeLine{216     \}}
+\DoxyCodeLine{217 \}}
+
+\end{DoxyCode}
+
+
+References get\+Location\+After\+Token(), identifier\+String, internal\+Identifier, rewriter, and transformation\+Success.
+
+
+
+Referenced by My\+Visitor\+::\+Visit\+Function\+Decl(), and My\+Visitor\+::\+Visit\+Stmt().
+

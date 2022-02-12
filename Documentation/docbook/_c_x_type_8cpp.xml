@@ -1,0 +1,1534 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_type_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/CXType.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXType.cpp</primary></indexterm>
+<programlisting>#include &quot;CIndexer.h&quot;
+#include &quot;CXCursor.h&quot;
+#include &quot;CXString.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;CXType.h&quot;
+#include &quot;clang/AST/Decl.h&quot;
+#include &quot;clang/AST/DeclObjC.h&quot;
+#include &quot;clang/AST/DeclTemplate.h&quot;
+#include &quot;clang/AST/Expr.h&quot;
+#include &quot;clang/AST/Type.h&quot;
+#include &quot;clang/Basic/AddressSpaces.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Basic/OpenCLImageTypes.def&quot;
+#include &quot;clang/Basic/OpenCLExtensionTypes.def&quot;
+</programlisting><simplesect>
+    <title>Macros    </title>
+        <itemizedlist>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1a8368b1f249bfe69199e6afd6ea97fd05">BTCASE</link>(K)   case BuiltinType::K: return CXType_##K</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1a115028e350b8253973a4fedd9d0f309a">IMAGE_TYPE</link>(ImgType,  Id,  SingletonId,  Access,  Suffix)   <link linkend="__c_x_type_8cpp_1a8368b1f249bfe69199e6afd6ea97fd05">BTCASE</link>(Id);</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1a2b91f4921f0c62fb259ff5fb8b6418db">EXT_OPAQUE_TYPE</link>(ExtType,  Id,  Ext)   <link linkend="__c_x_type_8cpp_1a8368b1f249bfe69199e6afd6ea97fd05">BTCASE</link>(Id);</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1a038c9d59247f2bb96487d2cb9e76d194">TKCASE</link>(K)   case Type::K: return CXType_##K</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(X)   case CXType_##X: s = &quot;&quot;  #X  &quot;&quot;; break</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1a115028e350b8253973a4fedd9d0f309a">IMAGE_TYPE</link>(ImgType,  Id,  SingletonId,  Access,  Suffix)   <link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Id);</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1a5b3b75a224d735f0a0e119919afc304e">EXT_OPAQUE_TYPE</link>(ExtTYpe,  Id,  Ext)   <link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Id);</para>
+</listitem>
+            <listitem><para>#define <link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X)   case CC_##X: return CXCallingConv_##X</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a1d3670bea8f0f8660f74bc3e4dee10a0">clang_getCursorType</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_x_type_8cpp_1ae144228507fed08fdf97002f5308071d">clang_getTypeSpelling</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1af08ffb81b29dce8ca5ff8b99cb706deb">clang_getTypedefDeclUnderlyingType</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a0c10944f37aaec842a04659121da28b2">clang_getEnumDeclIntegerType</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1a1897c1f756e7ed639d7d1ffee5066c25">clang_getEnumConstantDeclValue</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>unsigned long long <link linkend="__c_x_type_8cpp_1a97de04ea9715be200d226087b60a796a">clang_getEnumConstantDeclUnsignedValue</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_type_8cpp_1a720ee0d2442993bd23d7ba1fa34ca374">clang_getFieldDeclBitWidth</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a3d8480e82fc0cdc770e5ecd3c88ffad7">clang_getCanonicalType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a9f8de21d82490d6adfead30e8ab7ca57">clang_isConstQualifiedType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a9edd8308096b8adf1a91d49468bf18f9">clang_isVolatileQualifiedType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a0beb494915a15b4f221ae61e499e311e">clang_isRestrictQualifiedType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a65b502fe553dabb9582c5aa10da5a9fc">clang_getAddressSpace</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_x_type_8cpp_1a4475ab93785a2d30a971699f155181de">clang_getTypedefName</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a5ad5de5325d0345ebe292115f8fdb9ff">clang_getPointeeType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXCursor <link linkend="__c_x_type_8cpp_1af7b6b47bb98865b91a02e148f87062a2">clang_getTypeDeclaration</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_x_type_8cpp_1a7bb1a114f09f7b616a229a8bb874f2f1">clang_getTypeKindSpelling</link> (enum CXTypeKind K)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a7ceafcd317a03fdb13d31e708d683727">clang_equalTypes</link> (CXType A, CXType B)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a4ada1a674d06a4a97b62897346203630">clang_isFunctionTypeVariadic</link> (CXType X)</para>
+</listitem>
+            <listitem><para>CXCallingConv <link linkend="__c_x_type_8cpp_1ab050b099d5a745525d55c742015e5654">clang_getFunctionTypeCallingConv</link> (CXType X)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_type_8cpp_1abff38235356b94f7499b8c0ca03a5038">clang_getNumArgTypes</link> (CXType X)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a54ccdb2063c903b11496879cd6f33d59">clang_getArgType</link> (CXType X, unsigned i)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1aeb3044184b6d432dc24b2888cb5a128d">clang_getResultType</link> (CXType X)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a3e8642f2689daf6b729dac3ad81db410">clang_getCursorResultType</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_type_8cpp_1a618f00fa0a0702acfaf14b26a34b7872">clang_getExceptionSpecificationType</link> (CXType X)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_type_8cpp_1aa7a61ee6661341b92168dbc5719e2e3f">clang_getCursorExceptionSpecificationType</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a89492eaf65d3f961105efeaca6bb1472">clang_isPODType</link> (CXType X)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1acb9c5b8e9a189fecd28edc44ae4a5af7">clang_getElementType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1a629dce96297870b004f11f13cdf80587">clang_getNumElements</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a88895017ed0b49f87cf51b7ddcb766d8">clang_getArrayElementType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1ab8acb48329181181fdc049eed1c36ac1">clang_getArraySize</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1a1d48d1f5eb9425cbec89c0f7df0f9595">clang_Type_getAlignOf</link> (CXType T)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a3b837c0aca38e1bd67b7b5ca5d8fdc22">clang_Type_getClassType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1ae439d580b183e40c09a0cc66f6fa36bf">clang_Type_getSizeOf</link> (CXType T)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1a16773a0dbf5bedf922396c5c518ae99a">clang_Type_getOffsetOf</link> (CXType PT, const char *S)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1afc3f56965d3cd31c19be04e7994935eb">clang_Type_getModifiedType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_type_8cpp_1adb233758f93452b97bdb65ff556f1d9f">clang_Cursor_getOffsetOfField</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>enum CXRefQualifierKind <link linkend="__c_x_type_8cpp_1a8641fd362da41b0b80ca4a77f1fb2f07">clang_Type_getCXXRefQualifier</link> (CXType T)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a326884cca3b3b7ce06519086cbac4f62">clang_Cursor_isBitField</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXString <link linkend="__c_x_type_8cpp_1a10620b12f7206cd16be3d49b950871c8">clang_getDeclObjCTypeEncoding</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_type_8cpp_1a90316726b7e7461002955339e55ca245">clang_Type_getNumTemplateArguments</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a7efab9a1ff4b7be8e852a53c5f4d73e6">clang_Type_getTemplateArgumentAsType</link> (CXType CT, unsigned index)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a4c3cddecb5a3ffa2fd4cc6a286f9294a">clang_Type_getObjCObjectBaseType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1aecb9336722f2659b827e344c7ce05b45">clang_Type_getNumObjCProtocolRefs</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXCursor <link linkend="__c_x_type_8cpp_1a4eb677cf3bfc7179baacc4ffa4790569">clang_Type_getObjCProtocolDecl</link> (CXType CT, unsigned i)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a77806a063adec1d4727afff9af0db813">clang_Type_getNumObjCTypeArgs</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1affbafbb6555c318338011747fc1f4831">clang_Type_getObjCTypeArg</link> (CXType CT, unsigned i)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1abe81959d9ff1a1cfb80c2688bac4e861">clang_Type_visitFields</link> (CXType PT, CXFieldVisitor visitor, CXClientData client_data)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a2790eda169a41be2e5f48dc18fd2c3a2">clang_Cursor_isAnonymous</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1ae3de9b7cbeb188589802559d7b286146">clang_Cursor_isAnonymousRecordDecl</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1a54bbdc8598317cca8992bb8eb7bf725c">clang_Cursor_isInlineNamespace</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a9c60d244ec189fd2dc6077e74c5731c9">clang_Type_getNamedType</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_type_8cpp_1ad08f909487f3043b05527b86dc79c56b">clang_Type_isTransparentTagTypedef</link> (CXType TT)</para>
+</listitem>
+            <listitem><para>enum CXTypeNullabilityKind <link linkend="__c_x_type_8cpp_1aa41af4571d69c09d88b3fde3886e1ed4">clang_Type_getNullability</link> (CXType CT)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_type_8cpp_1a897416ad1979f589bb01359b3a31e354">clang_Type_getValueType</link> (CXType CT)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Macro Definition Documentation</title>
+<anchor xml:id="__c_x_type_8cpp_1a8368b1f249bfe69199e6afd6ea97fd05"/>    <section>
+    <title>BTCASE</title>
+<indexterm><primary>BTCASE</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>BTCASE</secondary></indexterm>
+<para><computeroutput>#define BTCASE( K)   case BuiltinType::K: return CXType_##K</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1a2b91f4921f0c62fb259ff5fb8b6418db"/>    <section>
+    <title>EXT_OPAQUE_TYPE<computeroutput>[1/2]</computeroutput></title>
+<indexterm><primary>EXT_OPAQUE_TYPE</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>EXT_OPAQUE_TYPE</secondary></indexterm>
+<para><computeroutput>#define EXT_OPAQUE_TYPE( ExtType,  Id,  Ext)   <link linkend="__c_x_type_8cpp_1a8368b1f249bfe69199e6afd6ea97fd05">BTCASE</link>(Id);</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1a5b3b75a224d735f0a0e119919afc304e"/>    <section>
+    <title>EXT_OPAQUE_TYPE<computeroutput>[2/2]</computeroutput></title>
+<indexterm><primary>EXT_OPAQUE_TYPE</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>EXT_OPAQUE_TYPE</secondary></indexterm>
+<para><computeroutput>#define EXT_OPAQUE_TYPE( ExtTYpe,  Id,  Ext)   <link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Id);</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1a115028e350b8253973a4fedd9d0f309a"/>    <section>
+    <title>IMAGE_TYPE<computeroutput>[1/2]</computeroutput></title>
+<indexterm><primary>IMAGE_TYPE</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>IMAGE_TYPE</secondary></indexterm>
+<para><computeroutput>#define IMAGE_TYPE( ImgType,  Id,  SingletonId,  Access,  Suffix)   <link linkend="__c_x_type_8cpp_1a8368b1f249bfe69199e6afd6ea97fd05">BTCASE</link>(Id);</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1a115028e350b8253973a4fedd9d0f309a"/>    <section>
+    <title>IMAGE_TYPE<computeroutput>[2/2]</computeroutput></title>
+<indexterm><primary>IMAGE_TYPE</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>IMAGE_TYPE</secondary></indexterm>
+<para><computeroutput>#define IMAGE_TYPE( ImgType,  Id,  SingletonId,  Access,  Suffix)   <link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Id);</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5"/>    <section>
+    <title>TCALLINGCONV</title>
+<indexterm><primary>TCALLINGCONV</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>TCALLINGCONV</secondary></indexterm>
+<para><computeroutput>#define TCALLINGCONV( X)   case CC_##X: return CXCallingConv_##X</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1a038c9d59247f2bb96487d2cb9e76d194"/>    <section>
+    <title>TKCASE</title>
+<indexterm><primary>TKCASE</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>TKCASE</secondary></indexterm>
+<para><computeroutput>#define TKCASE( K)   case Type::K: return CXType_##K</computeroutput></para>    </section><anchor xml:id="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65"/>    <section>
+    <title>TKIND</title>
+<indexterm><primary>TKIND</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>TKIND</secondary></indexterm>
+<para><computeroutput>#define TKIND( X)   case CXType_##X: s = &quot;&quot;  #X  &quot;&quot;; break</computeroutput></para></section>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__c_x_type_8cpp_1adb233758f93452b97bdb65ff556f1d9f"/>    <section>
+    <title>clang_Cursor_getOffsetOfField()</title>
+<indexterm><primary>clang_Cursor_getOffsetOfField</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Cursor_getOffsetOfField</secondary></indexterm>
+<para><computeroutput>long long clang_Cursor_getOffsetOfField (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01054">1054</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01055 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+01056 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;we&#32;need&#32;to&#32;validate&#32;the&#32;parent&#32;type</emphasis>
+01057 &#32;&#32;&#32;&#32;CXCursor&#32;PC&#32;=&#32;<link linkend="__c_index_8cpp_1a114663793af87aa65d983a8514db6b43">clang_getCursorSemanticParent</link>(C);
+01058 &#32;&#32;&#32;&#32;CXType&#32;PT&#32;=&#32;<link linkend="__c_x_type_8cpp_1a1d3670bea8f0f8660f74bc3e4dee10a0">clang_getCursorType</link>(PC);
+01059 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;Error&#32;=&#32;validateFieldParentType(PC,PT);
+01060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;&lt;&#32;0)
+01061 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error;
+01062 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;proceed&#32;with&#32;the&#32;offset&#32;calculation</emphasis>
+01063 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01064 &#32;&#32;&#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(C);
+01065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FieldDecl&gt;(D))
+01066 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ctx.getFieldOffset(FD);
+01067 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;IndirectFieldDecl&#32;*IFD&#32;=&#32;dyn_cast_or_null&lt;IndirectFieldDecl&gt;(D))
+01068 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ctx.getFieldOffset(IFD);
+01069 &#32;&#32;}
+01070 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01071 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l08219">clang_getCursorSemanticParent()</link>, <link linkend="__c_x_type_8cpp_source_1l00216">clang_getCursorType()</link>, and <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a2790eda169a41be2e5f48dc18fd2c3a2"/>    <section>
+    <title>clang_Cursor_isAnonymous()</title>
+<indexterm><primary>clang_Cursor_isAnonymous</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Cursor_isAnonymous</secondary></indexterm>
+<para><computeroutput>unsigned clang_Cursor_isAnonymous (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01256">1256</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01257 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+01258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01259 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01260 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;NamespaceDecl&#32;*ND&#32;=&#32;dyn_cast_or_null&lt;NamespaceDecl&gt;(D))&#32;{
+01261 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ND-&gt;isAnonymousNamespace();
+01262 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TagDecl&#32;*TD&#32;=&#32;dyn_cast_or_null&lt;TagDecl&gt;(D))&#32;{
+01263 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TD-&gt;getTypedefNameForAnonDecl()&#32;==&#32;<emphasis role="keyword">nullptr</emphasis>&#32;&amp;&amp;
+01264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TD-&gt;getIdentifier()&#32;==&#32;<emphasis role="keyword">nullptr</emphasis>;
+01265 &#32;&#32;}
+01266 
+01267 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01268 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1ae3de9b7cbeb188589802559d7b286146"/>    <section>
+    <title>clang_Cursor_isAnonymousRecordDecl()</title>
+<indexterm><primary>clang_Cursor_isAnonymousRecordDecl</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Cursor_isAnonymousRecordDecl</secondary></indexterm>
+<para><computeroutput>unsigned clang_Cursor_isAnonymousRecordDecl (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01270">1270</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01271 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+01272 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01273 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01274 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;RecordDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;RecordDecl&gt;(D))
+01275 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;isAnonymousStructOrUnion();
+01276 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01277 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a326884cca3b3b7ce06519086cbac4f62"/>    <section>
+    <title>clang_Cursor_isBitField()</title>
+<indexterm><primary>clang_Cursor_isBitField</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Cursor_isBitField</secondary></indexterm>
+<para><computeroutput>unsigned clang_Cursor_isBitField (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01091">1091</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01092 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+01093 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01094 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FieldDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C));
+01095 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FD)
+01096 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01097 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;isBitField();
+01098 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a54bbdc8598317cca8992bb8eb7bf725c"/>    <section>
+    <title>clang_Cursor_isInlineNamespace()</title>
+<indexterm><primary>clang_Cursor_isInlineNamespace</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Cursor_isInlineNamespace</secondary></indexterm>
+<para><computeroutput>unsigned clang_Cursor_isInlineNamespace (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01279">1279</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01279 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01280 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+01281 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01282 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01283 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;NamespaceDecl&#32;*ND&#32;=&#32;dyn_cast_or_null&lt;NamespaceDecl&gt;(D);
+01284 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ND&#32;?&#32;ND-&gt;isInline()&#32;:&#32;0;
+01285 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a7ceafcd317a03fdb13d31e708d683727"/>    <section>
+    <title>clang_equalTypes()</title>
+<indexterm><primary>clang_equalTypes</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_equalTypes</secondary></indexterm>
+<para><computeroutput>unsigned clang_equalTypes (CXType A, CXType B)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00627">627</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00627 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00628 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;A.data[0]&#32;==&#32;B.data[0]&#32;&amp;&amp;&#32;A.data[1]&#32;==&#32;B.data[1];
+00629 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a65b502fe553dabb9582c5aa10da5a9fc"/>    <section>
+    <title>clang_getAddressSpace()</title>
+<indexterm><primary>clang_getAddressSpace</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getAddressSpace</secondary></indexterm>
+<para><computeroutput>unsigned clang_getAddressSpace (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00419">419</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00420 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00421 
+00422 &#32;&#32;<emphasis role="comment">//&#32;For&#32;non&#32;language-specific&#32;address&#32;space,&#32;use&#32;separate&#32;helper&#32;function.</emphasis>
+00423 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.getAddressSpace()&#32;&gt;=&#32;LangAS::FirstTargetAddressSpace)&#32;{
+00424 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;T.getQualifiers().getAddressSpaceAttributePrintValue();
+00425 &#32;&#32;}
+00426 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;this&#32;function&#32;returns&#32;either&#32;a&#32;LangAS&#32;or&#32;a&#32;target&#32;AS</emphasis>
+00427 &#32;&#32;<emphasis role="comment">//&#32;Those&#32;values&#32;can&#32;overlap&#32;which&#32;makes&#32;this&#32;function&#32;rather&#32;unpredictable</emphasis>
+00428 &#32;&#32;<emphasis role="comment">//&#32;for&#32;any&#32;caller</emphasis>
+00429 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>)T.getAddressSpace();
+00430 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a54ccdb2063c903b11496879cd6f33d59"/>    <section>
+    <title>clang_getArgType()</title>
+<indexterm><primary>clang_getArgType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getArgType</secondary></indexterm>
+<para><computeroutput>CXType clang_getArgType (CXType X, unsigned i)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00695">695</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00695 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00696 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00697 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00698 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(X));
+00699 
+00700 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionProtoType&#32;*FD&#32;=&#32;T-&gt;getAs&lt;FunctionProtoType&gt;())&#32;{
+00701 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;numParams&#32;=&#32;FD-&gt;getNumParams();
+00702 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&gt;=&#32;numParams)
+00703 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(X));
+00704 
+00705 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(FD-&gt;getParamType(i),&#32;GetTU(X));
+00706 &#32;&#32;}
+00707 &#32;&#32;
+00708 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(X));
+00709 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a88895017ed0b49f87cf51b7ddcb766d8"/>    <section>
+    <title>clang_getArrayElementType()</title>
+<indexterm><primary>clang_getArrayElementType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getArrayElementType</secondary></indexterm>
+<para><computeroutput>CXType clang_getArrayElementType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00850">850</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00850 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00851 &#32;&#32;QualType&#32;ET&#32;=&#32;QualType();
+00852 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00853 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00854 
+00855 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP)&#32;{
+00856 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TP-&gt;getTypeClass())&#32;{
+00857 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ConstantArray:
+00858 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;ConstantArrayType&gt;&#32;(TP)-&gt;getElementType();
+00859 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00860 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::IncompleteArray:
+00861 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;IncompleteArrayType&gt;&#32;(TP)-&gt;getElementType();
+00862 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00863 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::VariableArray:
+00864 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;VariableArrayType&gt;&#32;(TP)-&gt;getElementType();
+00865 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00866 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::DependentSizedArray:
+00867 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;DependentSizedArrayType&gt;&#32;(TP)-&gt;getElementType();
+00868 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00869 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00870 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00871 &#32;&#32;&#32;&#32;}
+00872 &#32;&#32;}
+00873 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(ET,&#32;GetTU(CT));
+00874 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1ab8acb48329181181fdc049eed1c36ac1"/>    <section>
+    <title>clang_getArraySize()</title>
+<indexterm><primary>clang_getArraySize</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getArraySize</secondary></indexterm>
+<para><computeroutput>long long clang_getArraySize (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00876">876</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00876 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00877 &#32;&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;result&#32;=&#32;-1;
+00878 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00879 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00880 
+00881 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP)&#32;{
+00882 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TP-&gt;getTypeClass())&#32;{
+00883 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ConstantArray:
+00884 &#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;cast&lt;ConstantArrayType&gt;&#32;(TP)-&gt;getSize().getSExtValue();
+00885 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00886 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00887 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00888 &#32;&#32;&#32;&#32;}
+00889 &#32;&#32;}
+00890 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00891 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a3d8480e82fc0cdc770e5ecd3c88ffad7"/>    <section>
+    <title>clang_getCanonicalType()</title>
+<indexterm><primary>clang_getCanonicalType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getCanonicalType</secondary></indexterm>
+<para><computeroutput>CXType clang_getCanonicalType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00389">389</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00389 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00390 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CT.kind&#32;==&#32;CXType_Invalid)
+00391 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CT;
+00392 
+00393 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00394 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;GetTU(CT);
+00395 
+00396 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00397 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+00398 
+00399 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(cxtu::getASTUnit(TU)-&gt;getASTContext()
+00400 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.getCanonicalType(T),
+00401 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU);
+00402 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1aa7a61ee6661341b92168dbc5719e2e3f"/>    <section>
+    <title>clang_getCursorExceptionSpecificationType()</title>
+<indexterm><primary>clang_getCursorExceptionSpecificationType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getCursorExceptionSpecificationType</secondary></indexterm>
+<para><computeroutput>int clang_getCursorExceptionSpecificationType (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00775">775</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00775 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00776 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+00777 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_type_8cpp_1a618f00fa0a0702acfaf14b26a34b7872">clang_getExceptionSpecificationType</link>(<link linkend="__c_x_type_8cpp_1a1d3670bea8f0f8660f74bc3e4dee10a0">clang_getCursorType</link>(C));
+00778 
+00779 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+00780 }
+</programlisting><para>
+References <link linkend="__c_x_type_8cpp_source_1l00216">clang_getCursorType()</link>, <link linkend="__c_x_type_8cpp_source_1l00764">clang_getExceptionSpecificationType()</link>, and <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a3e8642f2689daf6b729dac3ad81db410"/>    <section>
+    <title>clang_getCursorResultType()</title>
+<indexterm><primary>clang_getCursorResultType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getCursorResultType</secondary></indexterm>
+<para><computeroutput>CXType clang_getCursorResultType (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00722">722</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00722 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00723 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00724 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00725 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*MD&#32;=&#32;dyn_cast_or_null&lt;ObjCMethodDecl&gt;(D))
+00726 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(MD-&gt;getReturnType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+00727 
+00728 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_type_8cpp_1aeb3044184b6d432dc24b2888cb5a128d">clang_getResultType</link>(<link linkend="__c_x_type_8cpp_1a1d3670bea8f0f8660f74bc3e4dee10a0">clang_getCursorType</link>(C));
+00729 &#32;&#32;}
+00730 
+00731 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+00732 }
+</programlisting><para>
+References <link linkend="__c_x_type_8cpp_source_1l00216">clang_getCursorType()</link>, <link linkend="__c_x_type_8cpp_source_1l00711">clang_getResultType()</link>, <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, and <link linkend="__c_x_type_8cpp_source_1l00126">clang::cxtype::MakeCXType()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a1d3670bea8f0f8660f74bc3e4dee10a0"/>    <section>
+    <title>clang_getCursorType()</title>
+<indexterm><primary>clang_getCursorType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getCursorType</secondary></indexterm>
+<para><computeroutput>CXType clang_getCursorType (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00216">216</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00217 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00218 
+00219 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TU)
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00222 
+00223 &#32;&#32;ASTContext&#32;&amp;Context&#32;=&#32;cxtu::getASTUnit(TU)-&gt;getASTContext();
+00224 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))&#32;{
+00225 &#32;&#32;&#32;&#32;QualType&#32;T&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">cxcursor::getCursorExpr</link>(C)-&gt;getType();
+00226 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;TU);
+00227 &#32;&#32;}
+00228 
+00229 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00230 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00231 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00232 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00233 
+00234 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TypeDecl&#32;*TD&#32;=&#32;dyn_cast&lt;TypeDecl&gt;(D))
+00235 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(Context.getTypeDeclType(TD),&#32;TU);
+00236 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*ID&#32;=&#32;dyn_cast&lt;ObjCInterfaceDecl&gt;(D))
+00237 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(Context.getObjCInterfaceType(ID),&#32;TU);
+00238 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;DeclaratorDecl&#32;*DD&#32;=&#32;dyn_cast&lt;DeclaratorDecl&gt;(D))
+00239 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(DD-&gt;getType(),&#32;TU);
+00240 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ValueDecl&#32;*VD&#32;=&#32;dyn_cast&lt;ValueDecl&gt;(D))
+00241 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(VD-&gt;getType(),&#32;TU);
+00242 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyDecl&#32;*PD&#32;=&#32;dyn_cast&lt;ObjCPropertyDecl&gt;(D))
+00243 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(PD-&gt;getType(),&#32;TU);
+00244 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateDecl&#32;*FTD&#32;=&#32;dyn_cast&lt;FunctionTemplateDecl&gt;(D))
+00245 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(FTD-&gt;getTemplatedDecl()-&gt;getType(),&#32;TU);
+00246 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00247 &#32;&#32;}
+00248 
+00249 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a8b03541653a9373d35919c45216bc70f">clang_isReference</link>(C.kind))&#32;{
+00250 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(C.kind)&#32;{
+00251 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_ObjCSuperClassRef:&#32;{
+00252 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;T
+00253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;=&#32;Context.getObjCInterfaceType(<link linkend="_namespaceclang_1_1cxcursor_1a071683bc881399c3bcadba5a4da408b2">getCursorObjCSuperClassRef</link>(C).first);
+00254 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;TU);
+00255 &#32;&#32;&#32;&#32;}
+00256 
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_ObjCClassRef:&#32;{
+00258 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;T&#32;=&#32;Context.getObjCInterfaceType(<link linkend="_namespaceclang_1_1cxcursor_1ad21fba4a3d5f6bdc63a19303b1cb42a3">getCursorObjCClassRef</link>(C).first);
+00259 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;TU);
+00260 &#32;&#32;&#32;&#32;}
+00261 
+00262 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_TypeRef:&#32;{
+00263 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;T&#32;=&#32;Context.getTypeDeclType(<link linkend="_namespaceclang_1_1cxcursor_1ab0284c10c2cfeb2ffe43b99ec3e9dd9f">getCursorTypeRef</link>(C).first);
+00264 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;TU);
+00265 
+00266 &#32;&#32;&#32;&#32;}
+00267 
+00268 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_CXXBaseSpecifier:
+00269 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(<link linkend="_namespaceclang_1_1cxcursor_1a05b387c1d9aeb75b3de539f8622e0964">getCursorCXXBaseSpecifier</link>(C)-&gt;getType(),&#32;TU);
+00270 
+00271 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_MemberRef:
+00272 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(<link linkend="_namespaceclang_1_1cxcursor_1af3f3d2390bed39285f0b3313c1fab84b">getCursorMemberRef</link>(C).first-&gt;getType(),&#32;TU);
+00273 
+00274 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_VariableRef:
+00275 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(<link linkend="_namespaceclang_1_1cxcursor_1a53fa4c4c92a2fbaded59ad51eeed6e47">getCursorVariableRef</link>(C).first-&gt;getType(),&#32;TU);
+00276 
+00277 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_ObjCProtocolRef:
+00278 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_TemplateRef:
+00279 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_NamespaceRef:
+00280 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCursor_OverloadedDeclRef:
+00281 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00282 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00283 &#32;&#32;&#32;&#32;}
+00284 
+00285 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00286 &#32;&#32;}
+00287 
+00288 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00289 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_index_8cpp_source_1l05952">clang_isExpression()</link>, <link linkend="__c_index_8cpp_source_1l05948">clang_isReference()</link>, <link linkend="__c_x_cursor_8cpp_source_1l00970">clang::cxcursor::getCursorCXXBaseSpecifier()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01105">clang::cxcursor::getCursorExpr()</link>, <link linkend="__c_x_cursor_8cpp_source_1l00958">clang::cxcursor::getCursorMemberRef()</link>, <link linkend="__c_x_cursor_8cpp_source_1l00876">clang::cxcursor::getCursorObjCClassRef()</link>, <link linkend="__c_x_cursor_8cpp_source_1l00841">clang::cxcursor::getCursorObjCSuperClassRef()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, <link linkend="__c_x_cursor_8cpp_source_1l00891">clang::cxcursor::getCursorTypeRef()</link>, <link linkend="__c_x_cursor_8cpp_source_1l00941">clang::cxcursor::getCursorVariableRef()</link>, and <link linkend="__c_x_type_8cpp_source_1l00126">clang::cxtype::MakeCXType()</link>.</para>
+<para>
+Referenced by <link linkend="__c_x_type_8cpp_source_1l01054">clang_Cursor_getOffsetOfField()</link>, <link linkend="__c_x_type_8cpp_source_1l00775">clang_getCursorExceptionSpecificationType()</link>, and <link linkend="__c_x_type_8cpp_source_1l00722">clang_getCursorResultType()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a10620b12f7206cd16be3d49b950871c8"/>    <section>
+    <title>clang_getDeclObjCTypeEncoding()</title>
+<indexterm><primary>clang_getDeclObjCTypeEncoding</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getDeclObjCTypeEncoding</secondary></indexterm>
+<para><computeroutput>CXString clang_getDeclObjCTypeEncoding (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01100">1100</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01101 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))
+01102 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+01103 
+01104 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01105 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(C);
+01106 &#32;&#32;std::string&#32;encoding;
+01107 
+01108 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*OMD&#32;=&#32;dyn_cast&lt;ObjCMethodDecl&gt;(D))&#32;&#32;{
+01109 &#32;&#32;&#32;&#32;encoding&#32;=&#32;Ctx.getObjCEncodingForMethodDecl(OMD);
+01110 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCPropertyDecl&#32;*OPD&#32;=&#32;dyn_cast&lt;ObjCPropertyDecl&gt;(D))
+01111 &#32;&#32;&#32;&#32;encoding&#32;=&#32;Ctx.getObjCEncodingForPropertyDecl(OPD,&#32;<emphasis role="keyword">nullptr</emphasis>);
+01112 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast&lt;FunctionDecl&gt;(D))
+01113 &#32;&#32;&#32;&#32;encoding&#32;=&#32;Ctx.getObjCEncodingForFunctionDecl(FD);
+01114 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01115 &#32;&#32;&#32;&#32;QualType&#32;Ty;
+01116 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TypeDecl&#32;*TD&#32;=&#32;dyn_cast&lt;TypeDecl&gt;(D))
+01117 &#32;&#32;&#32;&#32;&#32;&#32;Ty&#32;=&#32;Ctx.getTypeDeclType(TD);
+01118 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ValueDecl&#32;*VD&#32;=&#32;dyn_cast&lt;ValueDecl&gt;(D))
+01119 &#32;&#32;&#32;&#32;&#32;&#32;Ty&#32;=&#32;VD-&gt;getType();
+01120 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(<emphasis role="stringliteral">&quot;?&quot;</emphasis>);
+01121 &#32;&#32;&#32;&#32;Ctx.getObjCEncodingForType(Ty,&#32;encoding);
+01122 &#32;&#32;}
+01123 
+01124 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(encoding);
+01125 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_string_8cpp_source_1l00067">clang::cxstring::createDup()</link>, <link linkend="__c_x_string_8cpp_source_1l00043">clang::cxstring::createEmpty()</link>, <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01122">clang::cxcursor::getCursorContext()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1acb9c5b8e9a189fecd28edc44ae4a5af7"/>    <section>
+    <title>clang_getElementType()</title>
+<indexterm><primary>clang_getElementType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getElementType</secondary></indexterm>
+<para><computeroutput>CXType clang_getElementType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00792">792</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00792 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00793 &#32;&#32;QualType&#32;ET&#32;=&#32;QualType();
+00794 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00795 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00796 
+00797 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP)&#32;{
+00798 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TP-&gt;getTypeClass())&#32;{
+00799 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ConstantArray:
+00800 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;ConstantArrayType&gt;&#32;(TP)-&gt;getElementType();
+00801 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00802 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::IncompleteArray:
+00803 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;IncompleteArrayType&gt;&#32;(TP)-&gt;getElementType();
+00804 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00805 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::VariableArray:
+00806 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;VariableArrayType&gt;&#32;(TP)-&gt;getElementType();
+00807 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00808 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::DependentSizedArray:
+00809 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;DependentSizedArrayType&gt;&#32;(TP)-&gt;getElementType();
+00810 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00811 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Vector:
+00812 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;VectorType&gt;&#32;(TP)-&gt;getElementType();
+00813 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00814 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ExtVector:
+00815 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;ExtVectorType&gt;(TP)-&gt;getElementType();
+00816 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00817 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Complex:
+00818 &#32;&#32;&#32;&#32;&#32;&#32;ET&#32;=&#32;cast&lt;ComplexType&gt;&#32;(TP)-&gt;getElementType();
+00819 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00820 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00821 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00822 &#32;&#32;&#32;&#32;}
+00823 &#32;&#32;}
+00824 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(ET,&#32;GetTU(CT));
+00825 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a97de04ea9715be200d226087b60a796a"/>    <section>
+    <title>clang_getEnumConstantDeclUnsignedValue()</title>
+<indexterm><primary>clang_getEnumConstantDeclUnsignedValue</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getEnumConstantDeclUnsignedValue</secondary></indexterm>
+<para><computeroutput>unsigned long long clang_getEnumConstantDeclUnsignedValue (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00358">358</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00359 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00360 
+00361 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00362 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00363 
+00364 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;EnumConstantDecl&#32;*TD&#32;=&#32;dyn_cast_or_null&lt;EnumConstantDecl&gt;(D))&#32;{
+00365 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TD-&gt;getInitVal().getZExtValue();
+00366 &#32;&#32;&#32;&#32;}
+00367 
+00368 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ULLONG_MAX;
+00369 &#32;&#32;}
+00370 
+00371 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ULLONG_MAX;
+00372 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a1897c1f756e7ed639d7d1ffee5066c25"/>    <section>
+    <title>clang_getEnumConstantDeclValue()</title>
+<indexterm><primary>clang_getEnumConstantDeclValue</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getEnumConstantDeclValue</secondary></indexterm>
+<para><computeroutput>long long clang_getEnumConstantDeclValue (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00342">342</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00342 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00343 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00344 
+00345 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00346 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00347 
+00348 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;EnumConstantDecl&#32;*TD&#32;=&#32;dyn_cast_or_null&lt;EnumConstantDecl&gt;(D))&#32;{
+00349 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TD-&gt;getInitVal().getSExtValue();
+00350 &#32;&#32;&#32;&#32;}
+00351 
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LLONG_MIN;
+00353 &#32;&#32;}
+00354 
+00355 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LLONG_MIN;
+00356 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a0c10944f37aaec842a04659121da28b2"/>    <section>
+    <title>clang_getEnumDeclIntegerType()</title>
+<indexterm><primary>clang_getEnumDeclIntegerType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getEnumDeclIntegerType</secondary></indexterm>
+<para><computeroutput>CXType clang_getEnumDeclIntegerType (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00324">324</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00325 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00326 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+00327 
+00328 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00329 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00330 
+00331 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;EnumDecl&#32;*TD&#32;=&#32;dyn_cast_or_null&lt;EnumDecl&gt;(D))&#32;{
+00332 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;T&#32;=&#32;TD-&gt;getIntegerType();
+00333 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;TU);
+00334 &#32;&#32;&#32;&#32;}
+00335 
+00336 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00337 &#32;&#32;}
+00338 
+00339 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00340 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, and <link linkend="__c_x_type_8cpp_source_1l00126">clang::cxtype::MakeCXType()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a618f00fa0a0702acfaf14b26a34b7872"/>    <section>
+    <title>clang_getExceptionSpecificationType()</title>
+<indexterm><primary>clang_getExceptionSpecificationType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getExceptionSpecificationType</secondary></indexterm>
+<para><computeroutput>int clang_getExceptionSpecificationType (CXType X)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00764">764</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00764 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00765 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00766 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00767 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+00768 
+00769 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*FD&#32;=&#32;T-&gt;getAs&lt;FunctionProtoType&gt;())
+00770 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getExternalExceptionSpecificationKind(FD-&gt;getExceptionSpecType());
+00771 
+00772 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+00773 }
+</programlisting><para>
+Referenced by <link linkend="__c_x_type_8cpp_source_1l00775">clang_getCursorExceptionSpecificationType()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a720ee0d2442993bd23d7ba1fa34ca374"/>    <section>
+    <title>clang_getFieldDeclBitWidth()</title>
+<indexterm><primary>clang_getFieldDeclBitWidth</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getFieldDeclBitWidth</secondary></indexterm>
+<para><computeroutput>int clang_getFieldDeclBitWidth (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00374">374</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00375 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00376 
+00377 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00378 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C);
+00379 
+00380 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FieldDecl&gt;(D))&#32;{
+00381 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FD-&gt;isBitField())
+00382 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;getBitWidthValue(<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">getCursorContext</link>(C));
+00383 &#32;&#32;&#32;&#32;}
+00384 &#32;&#32;}
+00385 
+00386 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+00387 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01122">clang::cxcursor::getCursorContext()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1ab050b099d5a745525d55c742015e5654"/>    <section>
+    <title>clang_getFunctionTypeCallingConv()</title>
+<indexterm><primary>clang_getFunctionTypeCallingConv</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getFunctionTypeCallingConv</secondary></indexterm>
+<para><computeroutput>CXCallingConv clang_getFunctionTypeCallingConv (CXType X)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00645">645</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00645 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00646 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00647 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00648 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCallingConv_Invalid;
+00649 &#32;&#32;
+00650 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionType&#32;*FD&#32;=&#32;T-&gt;getAs&lt;FunctionType&gt;())&#32;{
+00651 <emphasis role="preprocessor">#define&#32;TCALLINGCONV(X)&#32;case&#32;CC_##X:&#32;return&#32;CXCallingConv_##X</emphasis>
+00652 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(FD-&gt;getCallConv())&#32;{
+00653 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(C);
+00654 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86StdCall);
+00655 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86FastCall);
+00656 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86ThisCall);
+00657 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86Pascal);
+00658 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86RegCall);
+00659 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86VectorCall);
+00660 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(AArch64VectorCall);
+00661 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(Win64);
+00662 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(X86_64SysV);
+00663 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(AAPCS);
+00664 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(AAPCS_VFP);
+00665 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(IntelOclBicc);
+00666 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(Swift);
+00667 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(PreserveMost);
+00668 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1ac3b35bb8a896f2e91bd8786ec341a7c5">TCALLINGCONV</link>(PreserveAll);
+00669 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CC_SpirFunction:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCallingConv_Unexposed;
+00670 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CC_OpenCLKernel:&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCallingConv_Unexposed;
+00671 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00672 &#32;&#32;&#32;&#32;}
+00673 <emphasis role="preprocessor">#undef&#32;TCALLINGCONV</emphasis>
+00674 &#32;&#32;}
+00675 &#32;&#32;
+00676 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXCallingConv_Invalid;
+00677 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1abff38235356b94f7499b8c0ca03a5038"/>    <section>
+    <title>clang_getNumArgTypes()</title>
+<indexterm><primary>clang_getNumArgTypes</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getNumArgTypes</secondary></indexterm>
+<para><computeroutput>int clang_getNumArgTypes (CXType X)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00679">679</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00679 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00680 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00681 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00682 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+00683 &#32;&#32;
+00684 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionProtoType&#32;*FD&#32;=&#32;T-&gt;getAs&lt;FunctionProtoType&gt;())&#32;{
+00685 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;getNumParams();
+00686 &#32;&#32;}
+00687 &#32;&#32;
+00688 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T-&gt;getAs&lt;FunctionNoProtoType&gt;())&#32;{
+00689 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00690 &#32;&#32;}
+00691 &#32;&#32;
+00692 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+00693 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a629dce96297870b004f11f13cdf80587"/>    <section>
+    <title>clang_getNumElements()</title>
+<indexterm><primary>clang_getNumElements</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getNumElements</secondary></indexterm>
+<para><computeroutput>long long clang_getNumElements (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00827">827</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00827 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00828 &#32;&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;result&#32;=&#32;-1;
+00829 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00830 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00831 
+00832 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP)&#32;{
+00833 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TP-&gt;getTypeClass())&#32;{
+00834 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ConstantArray:
+00835 &#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;cast&lt;ConstantArrayType&gt;&#32;(TP)-&gt;getSize().getSExtValue();
+00836 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00837 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Vector:
+00838 &#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;cast&lt;VectorType&gt;&#32;(TP)-&gt;getNumElements();
+00839 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00840 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ExtVector:
+00841 &#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;cast&lt;ExtVectorType&gt;(TP)-&gt;getNumElements();
+00842 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00843 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00844 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00845 &#32;&#32;&#32;&#32;}
+00846 &#32;&#32;}
+00847 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00848 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a5ad5de5325d0345ebe292115f8fdb9ff"/>    <section>
+    <title>clang_getPointeeType()</title>
+<indexterm><primary>clang_getPointeeType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getPointeeType</secondary></indexterm>
+<para><computeroutput>CXType clang_getPointeeType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00443">443</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00443 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00444 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00445 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00446 
+00447 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TP)
+00448 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+00449 
+00450 try_again:
+00451 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TP-&gt;getTypeClass())&#32;{
+00452 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Pointer:
+00453 &#32;&#32;&#32;&#32;&#32;&#32;T&#32;=&#32;cast&lt;PointerType&gt;(TP)-&gt;getPointeeType();
+00454 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00455 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::BlockPointer:
+00456 &#32;&#32;&#32;&#32;&#32;&#32;T&#32;=&#32;cast&lt;BlockPointerType&gt;(TP)-&gt;getPointeeType();
+00457 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00458 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::LValueReference:
+00459 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::RValueReference:
+00460 &#32;&#32;&#32;&#32;&#32;&#32;T&#32;=&#32;cast&lt;ReferenceType&gt;(TP)-&gt;getPointeeType();
+00461 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00462 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ObjCObjectPointer:
+00463 &#32;&#32;&#32;&#32;&#32;&#32;T&#32;=&#32;cast&lt;ObjCObjectPointerType&gt;(TP)-&gt;getPointeeType();
+00464 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00465 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::MemberPointer:
+00466 &#32;&#32;&#32;&#32;&#32;&#32;T&#32;=&#32;cast&lt;MemberPointerType&gt;(TP)-&gt;getPointeeType();
+00467 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00468 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Auto:
+00469 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::DeducedTemplateSpecialization:
+00470 &#32;&#32;&#32;&#32;&#32;&#32;TP&#32;=&#32;cast&lt;DeducedType&gt;(TP)-&gt;getDeducedType().getTypePtrOrNull();
+00471 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP)
+00472 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;try_again;
+00473 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00474 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00475 &#32;&#32;&#32;&#32;&#32;&#32;T&#32;=&#32;QualType();
+00476 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00477 &#32;&#32;}
+00478 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;GetTU(CT));
+00479 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1aeb3044184b6d432dc24b2888cb5a128d"/>    <section>
+    <title>clang_getResultType()</title>
+<indexterm><primary>clang_getResultType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getResultType</secondary></indexterm>
+<para><computeroutput>CXType clang_getResultType (CXType X)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00711">711</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00711 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00712 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00713 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00714 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(X));
+00715 &#32;&#32;
+00716 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionType&#32;*FD&#32;=&#32;T-&gt;getAs&lt;FunctionType&gt;())
+00717 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(FD-&gt;getReturnType(),&#32;GetTU(X));
+00718 
+00719 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(X));
+00720 }
+</programlisting><para>
+Referenced by <link linkend="__c_x_type_8cpp_source_1l00722">clang_getCursorResultType()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1af7b6b47bb98865b91a02e148f87062a2"/>    <section>
+    <title>clang_getTypeDeclaration()</title>
+<indexterm><primary>clang_getTypeDeclaration</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getTypeDeclaration</secondary></indexterm>
+<para><computeroutput>CXCursor clang_getTypeDeclaration (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00481">481</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00481 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00482 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CT.kind&#32;==&#32;CXType_Invalid)
+00483 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+00484 
+00485 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00486 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00487 
+00488 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TP)
+00489 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+00490 
+00491 &#32;&#32;Decl&#32;*D&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00492 
+00493 try_again:
+00494 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TP-&gt;getTypeClass())&#32;{
+00495 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Typedef:
+00496 &#32;&#32;&#32;&#32;D&#32;=&#32;cast&lt;TypedefType&gt;(TP)-&gt;getDecl();
+00497 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00498 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ObjCObject:
+00499 &#32;&#32;&#32;&#32;D&#32;=&#32;cast&lt;ObjCObjectType&gt;(TP)-&gt;getInterface();
+00500 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00501 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::ObjCInterface:
+00502 &#32;&#32;&#32;&#32;D&#32;=&#32;cast&lt;ObjCInterfaceType&gt;(TP)-&gt;getDecl();
+00503 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00504 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Record:
+00505 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Enum:
+00506 &#32;&#32;&#32;&#32;D&#32;=&#32;cast&lt;TagType&gt;(TP)-&gt;getDecl();
+00507 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00508 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::TemplateSpecialization:
+00509 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;RecordType&#32;*Record&#32;=&#32;TP-&gt;getAs&lt;RecordType&gt;())
+00510 &#32;&#32;&#32;&#32;&#32;&#32;D&#32;=&#32;Record-&gt;getDecl();
+00511 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00512 &#32;&#32;&#32;&#32;&#32;&#32;D&#32;=&#32;cast&lt;TemplateSpecializationType&gt;(TP)-&gt;getTemplateName()
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.getAsTemplateDecl();
+00514 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00515 
+00516 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Auto:
+00517 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::DeducedTemplateSpecialization:
+00518 &#32;&#32;&#32;&#32;TP&#32;=&#32;cast&lt;DeducedType&gt;(TP)-&gt;getDeducedType().getTypePtrOrNull();
+00519 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP)
+00520 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;try_again;
+00521 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00522 
+00523 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::InjectedClassName:
+00524 &#32;&#32;&#32;&#32;D&#32;=&#32;cast&lt;InjectedClassNameType&gt;(TP)-&gt;getDecl();
+00525 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00526 
+00527 &#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Template&#32;type&#32;parameters!&#32;&#32;&#32;&#32;&#32;&#32;</emphasis>
+00528 
+00529 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;Type::Elaborated:
+00530 &#32;&#32;&#32;&#32;TP&#32;=&#32;cast&lt;ElaboratedType&gt;(TP)-&gt;getNamedType().getTypePtrOrNull();
+00531 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;try_again;
+00532 
+00533 &#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+00534 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00535 &#32;&#32;}
+00536 
+00537 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00538 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+00539 
+00540 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(D,&#32;GetTU(CT));
+00541 }
+</programlisting><para>
+References <link linkend="__c_x_cursor_8cpp_source_1l00034">clang::cxcursor::MakeCXCursorInvalid()</link>.</para>
+<para>
+Referenced by <link linkend="__c_x_type_8cpp_source_1l01012">clang_Type_getOffsetOf()</link>, and <link linkend="__c_x_type_8cpp_source_1l01228">clang_Type_visitFields()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1af08ffb81b29dce8ca5ff8b99cb706deb"/>    <section>
+    <title>clang_getTypedefDeclUnderlyingType()</title>
+<indexterm><primary>clang_getTypedefDeclUnderlyingType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getTypedefDeclUnderlyingType</secondary></indexterm>
+<para><computeroutput>CXType clang_getTypedefDeclUnderlyingType (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00306">306</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00306 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00307 &#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00308 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+00309 
+00310 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+00311 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+00312 
+00313 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;TypedefNameDecl&#32;*TD&#32;=&#32;dyn_cast_or_null&lt;TypedefNameDecl&gt;(D))&#32;{
+00314 &#32;&#32;&#32;&#32;&#32;&#32;QualType&#32;T&#32;=&#32;TD-&gt;getUnderlyingType();
+00315 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(T,&#32;TU);
+00316 &#32;&#32;&#32;&#32;}
+00317 
+00318 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00319 &#32;&#32;}
+00320 
+00321 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;TU);
+00322 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, and <link linkend="__c_x_type_8cpp_source_1l00126">clang::cxtype::MakeCXType()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1a4475ab93785a2d30a971699f155181de"/>    <section>
+    <title>clang_getTypedefName()</title>
+<indexterm><primary>clang_getTypedefName</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getTypedefName</secondary></indexterm>
+<para><computeroutput>CXString clang_getTypedefName (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00432">432</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00432 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00433 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00434 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;TypedefType&#32;*TT&#32;=&#32;T-&gt;getAs&lt;TypedefType&gt;();
+00435 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TT)&#32;{
+00436 &#32;&#32;&#32;&#32;TypedefNameDecl&#32;*TD&#32;=&#32;TT-&gt;getDecl();
+00437 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TD)
+00438 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(TD-&gt;getNameAsString().c_str());
+00439 &#32;&#32;}
+00440 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00441 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a7bb1a114f09f7b616a229a8bb874f2f1"/>    <section>
+    <title>clang_getTypeKindSpelling()</title>
+<indexterm><primary>clang_getTypeKindSpelling</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getTypeKindSpelling</secondary></indexterm>
+<para><computeroutput>CXString clang_getTypeKindSpelling (enum CXTypeKind K)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00543">543</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00543 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00544 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*s&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00545 <emphasis role="preprocessor">#define&#32;TKIND(X)&#32;case&#32;CXType_##X:&#32;s&#32;=&#32;&quot;&quot;</emphasis>&#32;&#32;#X&#32;&#32;&quot;&quot;;&#32;break
+00546 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(K)&#32;{
+00547 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Invalid);
+00548 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Unexposed);
+00549 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Void);
+00550 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Bool);
+00551 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Char_U);
+00552 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(UChar);
+00553 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Char16);
+00554 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Char32);
+00555 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(UShort);
+00556 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(UInt);
+00557 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ULong);
+00558 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ULongLong);
+00559 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(UInt128);
+00560 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Char_S);
+00561 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(SChar);
+00562 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXType_WChar:&#32;s&#32;=&#32;<emphasis role="stringliteral">&quot;WChar&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00563 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Short);
+00564 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Int);
+00565 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Long);
+00566 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(LongLong);
+00567 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Int128);
+00568 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Half);
+00569 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Float);
+00570 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Double);
+00571 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(LongDouble);
+00572 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ShortAccum);
+00573 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Accum);
+00574 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(LongAccum);
+00575 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(UShortAccum);
+00576 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(UAccum);
+00577 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ULongAccum);
+00578 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Float16);
+00579 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Float128);
+00580 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(NullPtr);
+00581 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Overload);
+00582 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Dependent);
+00583 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCId);
+00584 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCClass);
+00585 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCSel);
+00586 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Complex);
+00587 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Pointer);
+00588 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(BlockPointer);
+00589 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(LValueReference);
+00590 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(RValueReference);
+00591 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Record);
+00592 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Enum);
+00593 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Typedef);
+00594 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCInterface);
+00595 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCObject);
+00596 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCObjectPointer);
+00597 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ObjCTypeParam);
+00598 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(FunctionNoProto);
+00599 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(FunctionProto);
+00600 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ConstantArray);
+00601 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(IncompleteArray);
+00602 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(VariableArray);
+00603 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(DependentSizedArray);
+00604 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Vector);
+00605 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(ExtVector);
+00606 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(MemberPointer);
+00607 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Auto);
+00608 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Elaborated);
+00609 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Pipe);
+00610 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Attributed);
+00611 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(BFloat16);
+00612 <emphasis role="preprocessor">#define&#32;IMAGE_TYPE(ImgType,&#32;Id,&#32;SingletonId,&#32;Access,&#32;Suffix)&#32;TKIND(Id);</emphasis>
+00613 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/OpenCLImageTypes.def&quot;</emphasis>
+00614 <emphasis role="preprocessor">#undef&#32;IMAGE_TYPE</emphasis>
+00615 <emphasis role="preprocessor">#define&#32;EXT_OPAQUE_TYPE(ExtTYpe,&#32;Id,&#32;Ext)&#32;TKIND(Id);</emphasis>
+00616 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/OpenCLExtensionTypes.def&quot;</emphasis>
+00617 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(OCLSampler);
+00618 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(OCLEvent);
+00619 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(OCLQueue);
+00620 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(OCLReserveID);
+00621 &#32;&#32;&#32;&#32;<link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>(Atomic);
+00622 &#32;&#32;}
+00623 <emphasis role="preprocessor">#undef&#32;TKIND</emphasis>
+00624 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(s);
+00625 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00057">clang::cxstring::createRef()</link>, and <link linkend="__c_x_type_8cpp_1aabbf9e179de956d6798c6a4c87d30f65">TKIND</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1ae144228507fed08fdf97002f5308071d"/>    <section>
+    <title>clang_getTypeSpelling()</title>
+<indexterm><primary>clang_getTypeSpelling</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_getTypeSpelling</secondary></indexterm>
+<para><computeroutput>CXString clang_getTypeSpelling (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00291">291</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00291 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00292 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00293 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00294 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8a49aa6ea196abdde85886689f2630f9">cxstring::createEmpty</link>();
+00295 
+00296 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;GetTU(CT);
+00297 &#32;&#32;SmallString&lt;64&gt;&#32;Str;
+00298 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Str);
+00299 &#32;&#32;PrintingPolicy&#32;PP(cxtu::getASTUnit(TU)-&gt;getASTContext().getLangOpts());
+00300 
+00301 &#32;&#32;T.print(OS,&#32;PP);
+00302 
+00303 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a19a4962be87f75a8c1fa5a0b75f76298">cxstring::createDup</link>(OS.str());
+00304 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a9f8de21d82490d6adfead30e8ab7ca57"/>    <section>
+    <title>clang_isConstQualifiedType()</title>
+<indexterm><primary>clang_isConstQualifiedType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_isConstQualifiedType</secondary></indexterm>
+<para><computeroutput>unsigned clang_isConstQualifiedType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00404">404</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00404 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00405 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00406 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;T.isLocalConstQualified();
+00407 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a4ada1a674d06a4a97b62897346203630"/>    <section>
+    <title>clang_isFunctionTypeVariadic()</title>
+<indexterm><primary>clang_isFunctionTypeVariadic</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_isFunctionTypeVariadic</secondary></indexterm>
+<para><computeroutput>unsigned clang_isFunctionTypeVariadic (CXType X)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00631">631</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00631 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00632 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00633 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00634 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00635 
+00636 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionProtoType&#32;*FD&#32;=&#32;T-&gt;getAs&lt;FunctionProtoType&gt;())
+00637 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>)FD-&gt;isVariadic();
+00638 
+00639 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T-&gt;getAs&lt;FunctionNoProtoType&gt;())
+00640 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00641 &#32;&#32;
+00642 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00643 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a89492eaf65d3f961105efeaca6bb1472"/>    <section>
+    <title>clang_isPODType()</title>
+<indexterm><primary>clang_isPODType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_isPODType</secondary></indexterm>
+<para><computeroutput>unsigned clang_isPODType (CXType X)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00782">782</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00782 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00783 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(X);
+00784 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+00785 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00786 &#32;&#32;
+00787 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;GetTU(X);
+00788 
+00789 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;T.isPODType(cxtu::getASTUnit(TU)-&gt;getASTContext())&#32;?&#32;1&#32;:&#32;0;
+00790 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a0beb494915a15b4f221ae61e499e311e"/>    <section>
+    <title>clang_isRestrictQualifiedType()</title>
+<indexterm><primary>clang_isRestrictQualifiedType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_isRestrictQualifiedType</secondary></indexterm>
+<para><computeroutput>unsigned clang_isRestrictQualifiedType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00414">414</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00414 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00415 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00416 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;T.isLocalRestrictQualified();
+00417 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a9edd8308096b8adf1a91d49468bf18f9"/>    <section>
+    <title>clang_isVolatileQualifiedType()</title>
+<indexterm><primary>clang_isVolatileQualifiedType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_isVolatileQualifiedType</secondary></indexterm>
+<para><computeroutput>unsigned clang_isVolatileQualifiedType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00409">409</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00409 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00410 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00411 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;T.isLocalVolatileQualified();
+00412 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a1d48d1f5eb9425cbec89c0f7df0f9595"/>    <section>
+    <title>clang_Type_getAlignOf()</title>
+<indexterm><primary>clang_Type_getAlignOf</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getAlignOf</secondary></indexterm>
+<para><computeroutput>long long clang_Type_getAlignOf (CXType T)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00897">897</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00897 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00898 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.kind&#32;==&#32;CXType_Invalid)
+00899 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Invalid;
+00900 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;cxtu::getASTUnit(GetTU(T))-&gt;getASTContext();
+00901 &#32;&#32;QualType&#32;QT&#32;=&#32;GetQualType(T);
+00902 &#32;&#32;<emphasis role="comment">//&#32;[expr.alignof]&#32;p1:&#32;return&#32;size_t&#32;value&#32;for&#32;complete&#32;object&#32;type,&#32;reference</emphasis>
+00903 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;or&#32;array.</emphasis>
+00904 &#32;&#32;<emphasis role="comment">//&#32;[expr.alignof]&#32;p3:&#32;if&#32;reference&#32;type,&#32;return&#32;size&#32;of&#32;referenced&#32;type</emphasis>
+00905 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT-&gt;isReferenceType())
+00906 &#32;&#32;&#32;&#32;QT&#32;=&#32;QT.getNonReferenceType();
+00907 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!isIncompleteTypeWithAlignment(QT))
+00908 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Incomplete;
+00909 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT-&gt;isDependentType())
+00910 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Dependent;
+00911 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*Deduced&#32;=&#32;dyn_cast&lt;DeducedType&gt;(QT))
+00912 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Deduced-&gt;getDeducedType().isNull())
+00913 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Undeduced;
+00914 &#32;&#32;<emphasis role="comment">//&#32;Exceptions&#32;by&#32;GCC&#32;extension&#32;-&#32;see&#32;ASTContext.cpp:1313&#32;getTypeInfoImpl</emphasis>
+00915 &#32;&#32;<emphasis role="comment">//&#32;if&#32;(QT-&gt;isFunctionType())&#32;return&#32;4;&#32;//&#32;Bug&#32;#15511&#32;-&#32;should&#32;be&#32;1</emphasis>
+00916 &#32;&#32;<emphasis role="comment">//&#32;if&#32;(QT-&gt;isVoidType())&#32;return&#32;1;</emphasis>
+00917 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ctx.getTypeAlignInChars(QT).getQuantity();
+00918 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a3b837c0aca38e1bd67b7b5ca5d8fdc22"/>    <section>
+    <title>clang_Type_getClassType()</title>
+<indexterm><primary>clang_Type_getClassType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getClassType</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getClassType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00920">920</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00920 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00921 &#32;&#32;QualType&#32;ET&#32;=&#32;QualType();
+00922 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+00923 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+00924 
+00925 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP&#32;&amp;&amp;&#32;TP-&gt;getTypeClass()&#32;==&#32;Type::MemberPointer)&#32;{
+00926 &#32;&#32;&#32;&#32;ET&#32;=&#32;QualType(cast&lt;MemberPointerType&gt;&#32;(TP)-&gt;getClass(),&#32;0);
+00927 &#32;&#32;}
+00928 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(ET,&#32;GetTU(CT));
+00929 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a8641fd362da41b0b80ca4a77f1fb2f07"/>    <section>
+    <title>clang_Type_getCXXRefQualifier()</title>
+<indexterm><primary>clang_Type_getCXXRefQualifier</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getCXXRefQualifier</secondary></indexterm>
+<para><computeroutput>enum CXRefQualifierKind clang_Type_getCXXRefQualifier (CXType T)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01054">1054</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01074 &#32;&#32;QualType&#32;QT&#32;=&#32;GetQualType(T);
+01075 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT.isNull())
+01076 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXRefQualifier_None;
+01077 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionProtoType&#32;*FD&#32;=&#32;QT-&gt;getAs&lt;FunctionProtoType&gt;();
+01078 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FD)
+01079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXRefQualifier_None;
+01080 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(FD-&gt;getRefQualifier())&#32;{
+01081 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;RQ_None:
+01082 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXRefQualifier_None;
+01083 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;RQ_LValue:
+01084 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXRefQualifier_LValue;
+01085 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;RQ_RValue:
+01086 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXRefQualifier_RValue;
+01087 &#32;&#32;}
+01088 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXRefQualifier_None;
+01089 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1afc3f56965d3cd31c19be04e7994935eb"/>    <section>
+    <title>clang_Type_getModifiedType()</title>
+<indexterm><primary>clang_Type_getModifiedType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getModifiedType</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getModifiedType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01043">1043</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01044 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01045 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01047 
+01048 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*ATT&#32;=&#32;T-&gt;getAs&lt;AttributedType&gt;())
+01049 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(ATT-&gt;getModifiedType(),&#32;GetTU(CT));
+01050 
+01051 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01052 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a9c60d244ec189fd2dc6077e74c5731c9"/>    <section>
+    <title>clang_Type_getNamedType()</title>
+<indexterm><primary>clang_Type_getNamedType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getNamedType</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getNamedType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01287">1287</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01287 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01288 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01289 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Type&#32;*TP&#32;=&#32;T.getTypePtrOrNull();
+01290 
+01291 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TP&#32;&amp;&amp;&#32;TP-&gt;getTypeClass()&#32;==&#32;Type::Elaborated)
+01292 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(cast&lt;ElaboratedType&gt;(TP)-&gt;getNamedType(),&#32;GetTU(CT));
+01293 
+01294 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01295 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1aa41af4571d69c09d88b3fde3886e1ed4"/>    <section>
+    <title>clang_Type_getNullability()</title>
+<indexterm><primary>clang_Type_getNullability</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getNullability</secondary></indexterm>
+<para><computeroutput>enum CXTypeNullabilityKind clang_Type_getNullability (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01297">1297</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01306 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01307 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01308 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01309 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeNullability_Invalid;
+01310 
+01311 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;cxtu::getASTUnit(GetTU(CT))-&gt;getASTContext();
+01312 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;nullability&#32;=&#32;T-&gt;getNullability(Ctx))&#32;{
+01313 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(*nullability)&#32;{
+01314 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;NullabilityKind::NonNull:
+01315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeNullability_NonNull;
+01316 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;NullabilityKind::Nullable:
+01317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeNullability_Nullable;
+01318 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;NullabilityKind::NullableResult:
+01319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeNullability_NullableResult;
+01320 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;NullabilityKind::Unspecified:
+01321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeNullability_Unspecified;
+01322 &#32;&#32;&#32;&#32;}
+01323 &#32;&#32;}
+01324 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeNullability_Invalid;
+01325 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1aecb9336722f2659b827e344c7ce05b45"/>    <section>
+    <title>clang_Type_getNumObjCProtocolRefs()</title>
+<indexterm><primary>clang_Type_getNumObjCProtocolRefs</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getNumObjCProtocolRefs</secondary></indexterm>
+<para><computeroutput>unsigned clang_Type_getNumObjCProtocolRefs (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01172">1172</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01172 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01173 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01174 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01175 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01176 
+01177 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*OT&#32;=&#32;dyn_cast&lt;ObjCObjectType&gt;(T);
+01178 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OT)
+01179 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01180 
+01181 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;OT-&gt;getNumProtocols();
+01182 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a77806a063adec1d4727afff9af0db813"/>    <section>
+    <title>clang_Type_getNumObjCTypeArgs()</title>
+<indexterm><primary>clang_Type_getNumObjCTypeArgs</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getNumObjCTypeArgs</secondary></indexterm>
+<para><computeroutput>unsigned clang_Type_getNumObjCTypeArgs (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01200">1200</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01201 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01202 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01203 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01204 
+01205 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*OT&#32;=&#32;dyn_cast&lt;ObjCObjectType&gt;(T);
+01206 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OT)
+01207 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01208 
+01209 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;OT-&gt;getTypeArgs().size();
+01210 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a90316726b7e7461002955339e55ca245"/>    <section>
+    <title>clang_Type_getNumTemplateArguments()</title>
+<indexterm><primary>clang_Type_getNumTemplateArguments</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getNumTemplateArguments</secondary></indexterm>
+<para><computeroutput>int clang_Type_getNumTemplateArguments (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01135">1135</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01136 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01137 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01139 
+01140 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;TA&#32;=&#32;GetTemplateArguments(T);
+01141 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TA)
+01142 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01143 
+01144 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;GetTemplateArgumentArraySize(TA.getValue());
+01145 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a4c3cddecb5a3ffa2fd4cc6a286f9294a"/>    <section>
+    <title>clang_Type_getObjCObjectBaseType()</title>
+<indexterm><primary>clang_Type_getObjCObjectBaseType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getObjCObjectBaseType</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getObjCObjectBaseType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01160">1160</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01160 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01161 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01162 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01163 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01164 
+01165 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*OT&#32;=&#32;dyn_cast&lt;ObjCObjectType&gt;(T);
+01166 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OT)
+01167 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01168 
+01169 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(OT-&gt;getBaseType(),&#32;GetTU(CT));
+01170 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a4eb677cf3bfc7179baacc4ffa4790569"/>    <section>
+    <title>clang_Type_getObjCProtocolDecl()</title>
+<indexterm><primary>clang_Type_getObjCProtocolDecl</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getObjCProtocolDecl</secondary></indexterm>
+<para><computeroutput>CXCursor clang_Type_getObjCProtocolDecl (CXType CT, unsigned i)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01184">1184</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01185 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01186 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01187 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+01188 
+01189 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*OT&#32;=&#32;dyn_cast&lt;ObjCObjectType&gt;(T);
+01190 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OT)
+01191 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+01192 
+01193 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*PD&#32;=&#32;OT-&gt;getProtocol(i);
+01194 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!PD)
+01195 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">cxcursor::MakeCXCursorInvalid</link>(CXCursor_NoDeclFound);
+01196 
+01197 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(PD,&#32;GetTU(CT));
+01198 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1affbafbb6555c318338011747fc1f4831"/>    <section>
+    <title>clang_Type_getObjCTypeArg()</title>
+<indexterm><primary>clang_Type_getObjCTypeArg</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getObjCTypeArg</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getObjCTypeArg (CXType CT, unsigned i)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01212">1212</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01213 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01214 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01215 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01216 
+01217 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ObjCObjectType&#32;*OT&#32;=&#32;dyn_cast&lt;ObjCObjectType&gt;(T);
+01218 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OT)
+01219 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01220 
+01221 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;ArrayRef&lt;QualType&gt;&#32;TA&#32;=&#32;OT-&gt;getTypeArgs();
+01222 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((<emphasis role="keywordtype">size_t</emphasis>)i&#32;&gt;=&#32;TA.size())
+01223 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01224 
+01225 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(TA[i],&#32;GetTU(CT));
+01226 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a16773a0dbf5bedf922396c5c518ae99a"/>    <section>
+    <title>clang_Type_getOffsetOf()</title>
+<indexterm><primary>clang_Type_getOffsetOf</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getOffsetOf</secondary></indexterm>
+<para><computeroutput>long long clang_Type_getOffsetOf (CXType PT, const char * S)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01012">1012</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01012 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01013 &#32;&#32;<emphasis role="comment">//&#32;check&#32;that&#32;PT&#32;is&#32;not&#32;incomplete/dependent</emphasis>
+01014 &#32;&#32;CXCursor&#32;PC&#32;=&#32;<link linkend="__c_x_type_8cpp_1af7b6b47bb98865b91a02e148f87062a2">clang_getTypeDeclaration</link>(PT);
+01015 &#32;&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;Error&#32;=&#32;validateFieldParentType(PC,PT);
+01016 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;&lt;&#32;0)
+01017 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error;
+01018 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!S)
+01019 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_InvalidFieldName;
+01020 &#32;&#32;<emphasis role="comment">//&#32;lookup&#32;field</emphasis>
+01021 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;cxtu::getASTUnit(GetTU(PT))-&gt;getASTContext();
+01022 &#32;&#32;IdentifierInfo&#32;*II&#32;=&#32;&amp;Ctx.Idents.get(S);
+01023 &#32;&#32;DeclarationName&#32;FieldName(II);
+01024 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RecordDecl&#32;*RD&#32;=
+01025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast_or_null&lt;RecordDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(PC));
+01026 &#32;&#32;<emphasis role="comment">//&#32;verified&#32;in&#32;validateFieldParentType</emphasis>
+01027 &#32;&#32;RD&#32;=&#32;RD-&gt;getDefinition();
+01028 &#32;&#32;RecordDecl::lookup_result&#32;Res&#32;=&#32;RD-&gt;lookup(FieldName);
+01029 &#32;&#32;<emphasis role="comment">//&#32;If&#32;a&#32;field&#32;of&#32;the&#32;parent&#32;record&#32;is&#32;incomplete,&#32;lookup&#32;will&#32;fail.</emphasis>
+01030 &#32;&#32;<emphasis role="comment">//&#32;and&#32;we&#32;would&#32;return&#32;InvalidFieldName&#32;instead&#32;of&#32;Incomplete.</emphasis>
+01031 &#32;&#32;<emphasis role="comment">//&#32;But&#32;this&#32;erroneous&#32;results&#32;does&#32;protects&#32;again&#32;a&#32;hidden&#32;assertion&#32;failure</emphasis>
+01032 &#32;&#32;<emphasis role="comment">//&#32;in&#32;the&#32;RecordLayoutBuilder</emphasis>
+01033 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Res.isSingleResult())
+01034 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_InvalidFieldName;
+01035 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*FD&#32;=&#32;dyn_cast&lt;FieldDecl&gt;(Res.front()))
+01036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ctx.getFieldOffset(FD);
+01037 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;IndirectFieldDecl&#32;*IFD&#32;=&#32;dyn_cast&lt;IndirectFieldDecl&gt;(Res.front()))
+01038 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ctx.getFieldOffset(IFD);
+01039 &#32;&#32;<emphasis role="comment">//&#32;we&#32;don&apos;t&#32;want&#32;any&#32;other&#32;Decl&#32;Type.</emphasis>
+01040 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_InvalidFieldName;
+01041 }
+</programlisting><para>
+References <link linkend="__c_x_type_8cpp_source_1l00481">clang_getTypeDeclaration()</link>.</para>
+    </section><anchor xml:id="__c_x_type_8cpp_1ae439d580b183e40c09a0cc66f6fa36bf"/>    <section>
+    <title>clang_Type_getSizeOf()</title>
+<indexterm><primary>clang_Type_getSizeOf</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getSizeOf</secondary></indexterm>
+<para><computeroutput>long long clang_Type_getSizeOf (CXType T)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l00931">931</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>00931 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00932 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.kind&#32;==&#32;CXType_Invalid)
+00933 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Invalid;
+00934 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;cxtu::getASTUnit(GetTU(T))-&gt;getASTContext();
+00935 &#32;&#32;QualType&#32;QT&#32;=&#32;GetQualType(T);
+00936 &#32;&#32;<emphasis role="comment">//&#32;[expr.sizeof]&#32;p2:&#32;if&#32;reference&#32;type,&#32;return&#32;size&#32;of&#32;referenced&#32;type</emphasis>
+00937 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT-&gt;isReferenceType())
+00938 &#32;&#32;&#32;&#32;QT&#32;=&#32;QT.getNonReferenceType();
+00939 &#32;&#32;<emphasis role="comment">//&#32;[expr.sizeof]&#32;p1:&#32;return&#32;-1&#32;on:&#32;func,&#32;incomplete,&#32;bitfield,&#32;incomplete</emphasis>
+00940 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;enumeration</emphasis>
+00941 &#32;&#32;<emphasis role="comment">//&#32;Note:&#32;We&#32;get&#32;the&#32;cxtype,&#32;not&#32;the&#32;cxcursor,&#32;so&#32;we&#32;can&apos;t&#32;call</emphasis>
+00942 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;&#32;&#32;FieldDecl-&gt;isBitField()</emphasis>
+00943 &#32;&#32;<emphasis role="comment">//&#32;[expr.sizeof]&#32;p3:&#32;pointer&#32;ok,&#32;function&#32;not&#32;ok.</emphasis>
+00944 &#32;&#32;<emphasis role="comment">//&#32;[gcc&#32;extension]&#32;lib/AST/ExprConstant.cpp:1372&#32;HandleSizeof&#32;:&#32;vla&#32;==&#32;error</emphasis>
+00945 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT-&gt;isIncompleteType())
+00946 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Incomplete;
+00947 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT-&gt;isDependentType())
+00948 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Dependent;
+00949 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!QT-&gt;isConstantSizeType())
+00950 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_NotConstantSize;
+00951 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*Deduced&#32;=&#32;dyn_cast&lt;DeducedType&gt;(QT))
+00952 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Deduced-&gt;getDeducedType().isNull())
+00953 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTypeLayoutError_Undeduced;
+00954 &#32;&#32;<emphasis role="comment">//&#32;[gcc&#32;extension]&#32;lib/AST/ExprConstant.cpp:1372</emphasis>
+00955 &#32;&#32;<emphasis role="comment">//&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HandleSizeof&#32;:&#32;{voidtype,functype}&#32;==&#32;1</emphasis>
+00956 &#32;&#32;<emphasis role="comment">//&#32;not&#32;handled&#32;by&#32;ASTContext.cpp:1313&#32;getTypeInfoImpl</emphasis>
+00957 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(QT-&gt;isVoidType()&#32;||&#32;QT-&gt;isFunctionType())
+00958 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00959 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Ctx.getTypeSizeInChars(QT).getQuantity();
+00960 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a7efab9a1ff4b7be8e852a53c5f4d73e6"/>    <section>
+    <title>clang_Type_getTemplateArgumentAsType()</title>
+<indexterm><primary>clang_Type_getTemplateArgumentAsType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getTemplateArgumentAsType</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getTemplateArgumentAsType (CXType CT, unsigned index)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01147">1147</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01148 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01149 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull())
+01150 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01151 
+01152 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;TA&#32;=&#32;GetTemplateArguments(T);
+01153 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TA)
+01154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01155 
+01156 &#32;&#32;Optional&lt;QualType&gt;&#32;QT&#32;=&#32;FindTemplateArgumentTypeAt(TA.getValue(),&#32;index);
+01157 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QT.getValueOr(QualType()),&#32;GetTU(CT));
+01158 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1a897416ad1979f589bb01359b3a31e354"/>    <section>
+    <title>clang_Type_getValueType()</title>
+<indexterm><primary>clang_Type_getValueType</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_getValueType</secondary></indexterm>
+<para><computeroutput>CXType clang_Type_getValueType (CXType CT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01327">1327</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01328 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(CT);
+01329 
+01330 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(T.isNull()&#32;||&#32;!T-&gt;isAtomicType())
+01331 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(QualType(),&#32;GetTU(CT));
+01332 
+01333 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;*AT&#32;=&#32;T-&gt;castAs&lt;AtomicType&gt;();
+01334 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">MakeCXType</link>(AT-&gt;getValueType(),&#32;GetTU(CT));
+01335 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1ad08f909487f3043b05527b86dc79c56b"/>    <section>
+    <title>clang_Type_isTransparentTagTypedef()</title>
+<indexterm><primary>clang_Type_isTransparentTagTypedef</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_isTransparentTagTypedef</secondary></indexterm>
+<para><computeroutput>unsigned clang_Type_isTransparentTagTypedef (CXType TT)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01297">1297</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01297 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01298 &#32;&#32;QualType&#32;T&#32;=&#32;GetQualType(TT);
+01299 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*TT&#32;=&#32;dyn_cast_or_null&lt;TypedefType&gt;(T.getTypePtrOrNull()))&#32;{
+01300 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*D&#32;=&#32;TT-&gt;getDecl())
+01301 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D-&gt;isTransparentTag();
+01302 &#32;&#32;}
+01303 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01304 }
+</programlisting>    </section><anchor xml:id="__c_x_type_8cpp_1abe81959d9ff1a1cfb80c2688bac4e861"/>    <section>
+    <title>clang_Type_visitFields()</title>
+<indexterm><primary>clang_Type_visitFields</primary><secondary>CXType.cpp</secondary></indexterm>
+<indexterm><primary>CXType.cpp</primary><secondary>clang_Type_visitFields</secondary></indexterm>
+<para><computeroutput>unsigned clang_Type_visitFields (CXType PT, CXFieldVisitor visitor, CXClientData client_data)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_type_8cpp_source_1l01228">1228</link> of file <link linkend="__c_x_type_8cpp_source">CXType.cpp</link>.</para>
+<programlisting>01230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01231 &#32;&#32;CXCursor&#32;PC&#32;=&#32;<link linkend="__c_x_type_8cpp_1af7b6b47bb98865b91a02e148f87062a2">clang_getTypeDeclaration</link>(PT);
+01232 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a0c5b391d8bca745084fb8906cce6f66c">clang_isInvalid</link>(PC.kind))
+01233 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01234 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RecordDecl&#32;*RD&#32;=
+01235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast_or_null&lt;RecordDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(PC));
+01236 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!RD&#32;||&#32;RD-&gt;isInvalidDecl())
+01237 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01238 &#32;&#32;RD&#32;=&#32;RD-&gt;getDefinition();
+01239 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!RD&#32;||&#32;RD-&gt;isInvalidDecl())
+01240 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01241 
+01242 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(RecordDecl::field_iterator&#32;I&#32;=&#32;RD-&gt;field_begin(),&#32;E&#32;=&#32;RD-&gt;field_end();
+01243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;!=&#32;E;&#32;++I){
+01244 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FieldDecl&gt;((*I));
+01245 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Callback&#32;to&#32;the&#32;client.</emphasis>
+01246 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(visitor(<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(FD,&#32;GetTU(PT)),&#32;client_data)){
+01247 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXVisit_Break:
+01248 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01249 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXVisit_Continue:
+01250 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+01251 &#32;&#32;&#32;&#32;}
+01252 &#32;&#32;}
+01253 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01254 }
+</programlisting><para>
+References <link linkend="__c_x_type_8cpp_source_1l00481">clang_getTypeDeclaration()</link>, <link linkend="__c_index_8cpp_source_1l05930">clang_isInvalid()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, and <link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">clang::cxcursor::MakeCXCursor()</link>.</para>
+</section>
+</section>
+</section>

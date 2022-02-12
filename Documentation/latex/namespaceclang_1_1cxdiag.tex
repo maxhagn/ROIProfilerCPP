@@ -1,0 +1,77 @@
+\hypertarget{namespaceclang_1_1cxdiag}{}\doxysection{clang\+::cxdiag Namespace Reference}
+\label{namespaceclang_1_1cxdiag}\index{clang::cxdiag@{clang::cxdiag}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnostic\+Set\+Impl}} $\ast$ \mbox{\hyperlink{namespaceclang_1_1cxdiag_a02bce7e16b9a44d64657a2b5f1419351}{lazy\+Create\+Diags}} (CXTranslation\+Unit TU, bool check\+If\+Changed=false)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang_1_1cxdiag_a02bce7e16b9a44d64657a2b5f1419351}\label{namespaceclang_1_1cxdiag_a02bce7e16b9a44d64657a2b5f1419351}} 
+\index{clang::cxdiag@{clang::cxdiag}!lazyCreateDiags@{lazyCreateDiags}}
+\index{lazyCreateDiags@{lazyCreateDiags}!clang::cxdiag@{clang::cxdiag}}
+\doxysubsubsection{\texorpdfstring{lazyCreateDiags()}{lazyCreateDiags()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnostic\+Set\+Impl}} $\ast$ clang\+::cxdiag\+::lazy\+Create\+Diags (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU,  }\item[{bool}]{check\+If\+Changed = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 149 of file CIndex\+Diagnostic.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{150                                                                   \{}
+\DoxyCodeLine{151   ASTUnit *AU = cxtu::getASTUnit(TU);}
+\DoxyCodeLine{152 }
+\DoxyCodeLine{153   \textcolor{keywordflow}{if} (TU-\/>Diagnostics \&\& checkIfChanged) \{}
+\DoxyCodeLine{154     \textcolor{comment}{// In normal use, ASTUnit's diagnostics should not change unless we reparse.}}
+\DoxyCodeLine{155     \textcolor{comment}{// Currently they can only change by using the internal testing flag}}
+\DoxyCodeLine{156     \textcolor{comment}{// '-\/error-\/on-\/deserialized-\/decl' which will error during deserialization of}}
+\DoxyCodeLine{157     \textcolor{comment}{// a declaration. What will happen is:}}
+\DoxyCodeLine{158     \textcolor{comment}{//}}
+\DoxyCodeLine{159     \textcolor{comment}{//  -\/c-\/index-\/test gets a CXTranslationUnit}}
+\DoxyCodeLine{160     \textcolor{comment}{//  -\/checks the diagnostics, the diagnostics set is lazily created,}}
+\DoxyCodeLine{161     \textcolor{comment}{//     no errors are reported}}
+\DoxyCodeLine{162     \textcolor{comment}{//  -\/later does an operation, like annotation of tokens, that triggers}}
+\DoxyCodeLine{163     \textcolor{comment}{//     -\/error-\/on-\/deserialized-\/decl, that will emit a diagnostic error,}}
+\DoxyCodeLine{164     \textcolor{comment}{//     that ASTUnit will catch and add to its stored diagnostics vector.}}
+\DoxyCodeLine{165     \textcolor{comment}{//  -\/c-\/index-\/test wants to check whether an error occurred after performing}}
+\DoxyCodeLine{166     \textcolor{comment}{//     the operation but can only query the lazily created set.}}
+\DoxyCodeLine{167     \textcolor{comment}{//}}
+\DoxyCodeLine{168     \textcolor{comment}{// We check here if a new diagnostic was appended since the last time the}}
+\DoxyCodeLine{169     \textcolor{comment}{// diagnostic set was created, in which case we reset it.}}
+\DoxyCodeLine{170 }
+\DoxyCodeLine{171     \mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnosticSetImpl}} *}
+\DoxyCodeLine{172       Set = \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnosticSetImpl}}*\textcolor{keyword}{>}(TU-\/>Diagnostics);}
+\DoxyCodeLine{173     \textcolor{keywordflow}{if} (AU-\/>stored\_diag\_size() != Set-\/>\mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl_a4f8dbf6c6514ec1fdf340268f50409cb}{getNumDiagnostics}}()) \{}
+\DoxyCodeLine{174       \textcolor{comment}{// Diagnostics in the ASTUnit were updated, reset the associated}}
+\DoxyCodeLine{175       \textcolor{comment}{// diagnostics.}}
+\DoxyCodeLine{176       \textcolor{keyword}{delete} Set;}
+\DoxyCodeLine{177       TU-\/>Diagnostics = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{178     \}}
+\DoxyCodeLine{179   \}}
+\DoxyCodeLine{180 }
+\DoxyCodeLine{181   \textcolor{keywordflow}{if} (!TU-\/>Diagnostics) \{}
+\DoxyCodeLine{182     \mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnosticSetImpl}} *Set = \textcolor{keyword}{new} \mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnosticSetImpl}}();}
+\DoxyCodeLine{183     TU-\/>Diagnostics = Set;}
+\DoxyCodeLine{184     IntrusiveRefCntPtr<DiagnosticOptions> DOpts = \textcolor{keyword}{new} DiagnosticOptions;}
+\DoxyCodeLine{185     CXDiagnosticRenderer Renderer(AU-\/>getASTContext().getLangOpts(),}
+\DoxyCodeLine{186                                   \&*DOpts, Set);}
+\DoxyCodeLine{187     }
+\DoxyCodeLine{188     \textcolor{keywordflow}{for} (ASTUnit::stored\_diag\_iterator it = AU-\/>stored\_diag\_begin(),}
+\DoxyCodeLine{189          ei = AU-\/>stored\_diag\_end(); it != ei; ++it) \{}
+\DoxyCodeLine{190       Renderer.emitStoredDiagnostic(*it);}
+\DoxyCodeLine{191     \}}
+\DoxyCodeLine{192   \}}
+\DoxyCodeLine{193   \textcolor{keywordflow}{return} \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classclang_1_1_c_x_diagnostic_set_impl}{CXDiagnosticSetImpl}}*\textcolor{keyword}{>}(TU-\/>Diagnostics);}
+\DoxyCodeLine{194 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::\+CXDiagnostic\+Set\+Impl\+::get\+Num\+Diagnostics().
+
+
+
+Referenced by clang\+\_\+get\+Diagnostic\+Set\+From\+TU(), clang\+\_\+get\+Num\+Diagnostics(), and clang\+::cxindex\+::\+CXIndex\+Data\+Consumer\+::index\+Diagnostics().
+

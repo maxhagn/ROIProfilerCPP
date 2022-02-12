@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_source_location_8h_source" xml:lang="en-US">
+<title>CXSourceLocation.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXSourceLocation.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXSourceLocation.h&#32;-&#32;CXSourceLocations&#32;Utilities&#32;---------*-&#32;C++&#32;-*-===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXSourceLocations.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXSOURCELOCATION_H</emphasis>
+00014 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXSOURCELOCATION_H</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTContext.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LangOptions.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceLocation.h&quot;</emphasis>
+00020 
+00021 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00022 
+00023 <emphasis role="keyword">class&#32;</emphasis>SourceManager;
+00024 
+<anchor xml:id="__c_x_source_location_8h_source_1l00025"/><link linkend="_namespaceclang_1_1cxloc">00025</link> <emphasis role="keyword">namespace&#32;</emphasis>cxloc&#32;{
+00026 
+00028 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXSourceLocation&#32;
+00029 translateSourceLocation(<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,&#32;<emphasis role="keyword">const</emphasis>&#32;LangOptions&#32;&amp;LangOpts,
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)&#32;{
+00031 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isInvalid())
+00032 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_source_location_8cpp_1a20bb1e9a72e2c16fbcb21958f0648947">clang_getNullLocation</link>();
+00033 
+00034 &#32;&#32;CXSourceLocation&#32;Result&#32;=&#32;{&#32;{&#32;&amp;SM,&#32;&amp;LangOpts,&#32;},
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Loc.getRawEncoding()&#32;};
+00036 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Result;
+00037 }
+00038 &#32;&#32;
+00040 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXSourceLocation&#32;translateSourceLocation(ASTContext&#32;&amp;Context,
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)&#32;{
+00042 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;translateSourceLocation(Context.getSourceManager(),
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Context.getLangOpts(),
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Loc);
+00045 }
+00046 
+00053 CXSourceRange&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">translateSourceRange</link>(<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,&#32;
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;LangOptions&#32;&amp;LangOpts,
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;CharSourceRange&#32;&amp;R);
+00056 &#32;&#32;
+00058 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXSourceRange&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">translateSourceRange</link>(ASTContext&#32;&amp;Context,
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;R)&#32;{
+00060 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">translateSourceRange</link>(Context.getSourceManager(),
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Context.getLangOpts(),
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CharSourceRange::getTokenRange(R));
+00063 }
+00064 
+00065 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;SourceLocation&#32;translateSourceLocation(CXSourceLocation&#32;L)&#32;{
+00066 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SourceLocation::getFromRawEncoding(L.int_data);
+00067 }
+00068 
+00069 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;SourceRange&#32;translateCXSourceRange(CXSourceRange&#32;R)&#32;{
+00070 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SourceRange(SourceLocation::getFromRawEncoding(R.begin_int_data),
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation::getFromRawEncoding(R.end_int_data));
+00072 }
+00073 
+00078 CharSourceRange&#32;<link linkend="_namespaceclang_1_1cxloc_1aa8c3cee435c88a9e8a61f79cc8a0c0da">translateCXRangeToCharRange</link>(CXSourceRange&#32;R);
+00079 }}&#32;<emphasis role="comment">//&#32;end&#32;namespace:&#32;clang::cxloc</emphasis>
+00080 
+00081 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

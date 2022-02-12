@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__build_system_8cpp_source" xml:lang="en-US">
+<title>BuildSystem.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/BuildSystem.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;BuildSystem.cpp&#32;-&#32;Utilities&#32;for&#32;use&#32;by&#32;build&#32;systems&#32;---------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;various&#32;utilities&#32;for&#32;use&#32;by&#32;build&#32;systems.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang-c/BuildSystem.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CBindingWrapping.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Chrono.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorHandling.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Path.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/VirtualFileSystem.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00022 
+00023 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00024 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>llvm::sys;
+00025 
+<anchor xml:id="__build_system_8cpp_source_1l00026"/><link linkend="__build_system_8cpp_1a07391c5aa13ea56a8de2076ce2e292ff">00026</link> <emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<link linkend="__build_system_8cpp_1a07391c5aa13ea56a8de2076ce2e292ff">clang_getBuildSessionTimestamp</link>(<emphasis role="keywordtype">void</emphasis>)&#32;{
+00027 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::toTimeT(std::chrono::system_clock::now());
+00028 }
+00029 
+<anchor xml:id="__build_system_8cpp_source_1l00030"/><link linkend="__build_system_8cpp_1a49a0ea9492dfadb2118b6da00fa4a912">00030</link> <link linkend="__build_system_8cpp_1ae7cbdcc1b3ff11a85f2ec97abda4094b">DEFINE_SIMPLE_CONVERSION_FUNCTIONS</link>(llvm::vfs::YAMLVFSWriter,
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXVirtualFileOverlay)
+00032 
+00033 CXVirtualFileOverlay&#32;clang_VirtualFileOverlay_create(<emphasis role="keywordtype">unsigned</emphasis>)&#32;{
+00034 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;wrap(<emphasis role="keyword">new</emphasis>&#32;llvm::vfs::YAMLVFSWriter());
+00035 }
+00036 
+00037 <emphasis role="keyword">enum</emphasis>&#32;CXErrorCode
+00038 <link linkend="__build_system_8cpp_1a49a0ea9492dfadb2118b6da00fa4a912">clang_VirtualFileOverlay_addFileMapping</link>(CXVirtualFileOverlay&#32;VFO,
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*virtualPath,
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*realPath)&#32;{
+00041 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!VFO&#32;||&#32;!virtualPath&#32;||&#32;!realPath)
+00042 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00043 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!path::is_absolute(virtualPath))
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00045 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!path::is_absolute(realPath))
+00046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00047 
+00048 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(path::const_iterator
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PI&#32;=&#32;path::begin(virtualPath),
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PE&#32;=&#32;path::end(virtualPath);&#32;PI&#32;!=&#32;PE;&#32;++PI)&#32;{
+00051 &#32;&#32;&#32;&#32;StringRef&#32;Comp&#32;=&#32;*PI;
+00052 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Comp&#32;==&#32;<emphasis role="stringliteral">&quot;.&quot;</emphasis>&#32;||&#32;Comp&#32;==&#32;<emphasis role="stringliteral">&quot;..&quot;</emphasis>)
+00053 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00054 &#32;&#32;}
+00055 
+00056 &#32;&#32;unwrap(VFO)-&gt;addFileMapping(virtualPath,&#32;realPath);
+00057 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00058 }
+00059 
+00060 <emphasis role="keyword">enum</emphasis>&#32;CXErrorCode
+00061 <link linkend="__build_system_8cpp_1a4b36561bb4de24a902dd5c3d517320eb">clang_VirtualFileOverlay_setCaseSensitivity</link>(CXVirtualFileOverlay&#32;VFO,
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;caseSensitive)&#32;{
+00063 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!VFO)
+00064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00065 &#32;&#32;unwrap(VFO)-&gt;setCaseSensitivity(caseSensitive);
+00066 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00067 }
+00068 
+00069 <emphasis role="keyword">enum</emphasis>&#32;CXErrorCode
+00070 <link linkend="__build_system_8cpp_1abbd01fb19d8a0374311f509af25da230">clang_VirtualFileOverlay_writeToBuffer</link>(CXVirtualFileOverlay&#32;VFO,&#32;<emphasis role="keywordtype">unsigned</emphasis>,
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;**out_buffer_ptr,
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*out_buffer_size)&#32;{
+00073 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!VFO&#32;||&#32;!out_buffer_ptr&#32;||&#32;!out_buffer_size)
+00074 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00075 
+00076 &#32;&#32;llvm::SmallString&lt;256&gt;&#32;Buf;
+00077 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00078 &#32;&#32;unwrap(VFO)-&gt;write(OS);
+00079 
+00080 &#32;&#32;StringRef&#32;Data&#32;=&#32;OS.str();
+00081 &#32;&#32;*out_buffer_ptr&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">char</emphasis>*<emphasis role="keyword">&gt;</emphasis>(llvm::safe_malloc(Data.size()));
+00082 &#32;&#32;*out_buffer_size&#32;=&#32;Data.size();
+00083 &#32;&#32;memcpy(*out_buffer_ptr,&#32;Data.data(),&#32;Data.size());
+00084 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00085 }
+00086 
+<anchor xml:id="__build_system_8cpp_source_1l00087"/><link linkend="__build_system_8cpp_1aea57a4ed4b533460979c5bfc091d4fa5">00087</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__build_system_8cpp_1aea57a4ed4b533460979c5bfc091d4fa5">clang_free</link>(<emphasis role="keywordtype">void</emphasis>&#32;*buffer)&#32;{
+00088 &#32;&#32;free(buffer);
+00089 }
+00090 
+<anchor xml:id="__build_system_8cpp_source_1l00091"/><link linkend="__build_system_8cpp_1af48a174ecb047f9efaad91f67436bff3">00091</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__build_system_8cpp_1af48a174ecb047f9efaad91f67436bff3">clang_VirtualFileOverlay_dispose</link>(CXVirtualFileOverlay&#32;VFO)&#32;{
+00092 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;unwrap(VFO);
+00093 }
+00094 
+00095 
+<anchor xml:id="__build_system_8cpp_source_1l00096"/><link linkend="_struct_c_x_module_map_descriptor_impl">00096</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_struct_c_x_module_map_descriptor_impl">CXModuleMapDescriptorImpl</link>&#32;{
+<anchor xml:id="__build_system_8cpp_source_1l00097"/><link linkend="_struct_c_x_module_map_descriptor_impl_1a2d060308cf5d8c5ae20b6b475d044387">00097</link> &#32;&#32;std::string&#32;<link linkend="_struct_c_x_module_map_descriptor_impl_1a2d060308cf5d8c5ae20b6b475d044387">ModuleName</link>;
+<anchor xml:id="__build_system_8cpp_source_1l00098"/><link linkend="_struct_c_x_module_map_descriptor_impl_1a0b36323733c42fccc94096016c43a494">00098</link> &#32;&#32;std::string&#32;<link linkend="_struct_c_x_module_map_descriptor_impl_1a0b36323733c42fccc94096016c43a494">UmbrellaHeader</link>;
+00099 };
+00100 
+<anchor xml:id="__build_system_8cpp_source_1l00101"/><link linkend="__build_system_8cpp_1a3e1d0c1ce02a30c3cef11e2163c7ce3e">00101</link> CXModuleMapDescriptor&#32;<link linkend="__build_system_8cpp_1a3e1d0c1ce02a30c3cef11e2163c7ce3e">clang_ModuleMapDescriptor_create</link>(<emphasis role="keywordtype">unsigned</emphasis>)&#32;{
+00102 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_struct_c_x_module_map_descriptor_impl">CXModuleMapDescriptorImpl</link>();
+00103 }
+00104 
+00105 <emphasis role="keyword">enum</emphasis>&#32;CXErrorCode
+00106 <link linkend="__build_system_8cpp_1adb3cd0e1310d5eefc030adc3cd9ef120">clang_ModuleMapDescriptor_setFrameworkModuleName</link>(CXModuleMapDescriptor&#32;MMD,
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*name)&#32;{
+00108 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!MMD&#32;||&#32;!name)
+00109 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00110 
+00111 &#32;&#32;MMD-&gt;ModuleName&#32;=&#32;name;
+00112 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00113 }
+00114 
+00115 <emphasis role="keyword">enum</emphasis>&#32;CXErrorCode
+00116 <link linkend="__build_system_8cpp_1a945a4e4089d21e7a73444a1159fdfdfe">clang_ModuleMapDescriptor_setUmbrellaHeader</link>(CXModuleMapDescriptor&#32;MMD,
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*name)&#32;{
+00118 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!MMD&#32;||&#32;!name)
+00119 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00120 
+00121 &#32;&#32;MMD-&gt;UmbrellaHeader&#32;=&#32;name;
+00122 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00123 }
+00124 
+00125 <emphasis role="keyword">enum</emphasis>&#32;CXErrorCode
+00126 <link linkend="__build_system_8cpp_1a395f0b51baf7f991e799bcafc8385704">clang_ModuleMapDescriptor_writeToBuffer</link>(CXModuleMapDescriptor&#32;MMD,&#32;<emphasis role="keywordtype">unsigned</emphasis>,
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;**out_buffer_ptr,
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;*out_buffer_size)&#32;{
+00129 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!MMD&#32;||&#32;!out_buffer_ptr&#32;||&#32;!out_buffer_size)
+00130 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00131 
+00132 &#32;&#32;llvm::SmallString&lt;256&gt;&#32;Buf;
+00133 &#32;&#32;llvm::raw_svector_ostream&#32;OS(Buf);
+00134 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;framework&#32;module&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;MMD-&gt;ModuleName&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;{\n&quot;</emphasis>;
+00135 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;umbrella&#32;header&#32;\&quot;&quot;</emphasis>;
+00136 &#32;&#32;OS.write_escaped(MMD-&gt;UmbrellaHeader)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;\n&quot;</emphasis>;
+00137 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00138 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;export&#32;*\n&quot;</emphasis>;
+00139 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;module&#32;*&#32;{&#32;export&#32;*&#32;}\n&quot;</emphasis>;
+00140 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00141 
+00142 &#32;&#32;StringRef&#32;Data&#32;=&#32;OS.str();
+00143 &#32;&#32;*out_buffer_ptr&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">char</emphasis>*<emphasis role="keyword">&gt;</emphasis>(llvm::safe_malloc(Data.size()));
+00144 &#32;&#32;*out_buffer_size&#32;=&#32;Data.size();
+00145 &#32;&#32;memcpy(*out_buffer_ptr,&#32;Data.data(),&#32;Data.size());
+00146 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_Success;
+00147 }
+00148 
+<anchor xml:id="__build_system_8cpp_source_1l00149"/><link linkend="__build_system_8cpp_1ae16b87d92a1f2435b25724cbaf007ce5">00149</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__build_system_8cpp_1ae16b87d92a1f2435b25724cbaf007ce5">clang_ModuleMapDescriptor_dispose</link>(CXModuleMapDescriptor&#32;MMD)&#32;{
+00150 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;MMD;
+00151 }
+</programlisting></section>

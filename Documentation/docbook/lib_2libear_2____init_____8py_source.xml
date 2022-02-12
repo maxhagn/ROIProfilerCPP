@@ -1,0 +1,264 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_lib_2libear_2____init_____8py_source" xml:lang="en-US">
+<title>__init__.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libear/__init__.py</primary></indexterm>
+<programlisting><anchor xml:id="_lib_2libear_2____init_____8py_source_1l00001"/><link linkend="_namespacelibear">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 <emphasis role="stringliteral">&quot;&quot;&quot;&#32;This&#32;module&#32;compiles&#32;the&#32;intercept&#32;library.&#32;&quot;&quot;&quot;</emphasis>
+00006 
+00007 <emphasis role="keyword">import</emphasis>&#32;sys
+00008 <emphasis role="keyword">import</emphasis>&#32;os
+00009 <emphasis role="keyword">import</emphasis>&#32;os.path
+00010 <emphasis role="keyword">import</emphasis>&#32;re
+00011 <emphasis role="keyword">import</emphasis>&#32;tempfile
+00012 <emphasis role="keyword">import</emphasis>&#32;shutil
+00013 <emphasis role="keyword">import</emphasis>&#32;contextlib
+00014 <emphasis role="keyword">import</emphasis>&#32;logging
+00015 
+00016 __all__&#32;=&#32;[<emphasis role="stringliteral">&apos;build_libear&apos;</emphasis>]
+00017 
+00018 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00019"/><link linkend="_namespacelibear_1a817eb807bbbffe9ca98d7fa2777cd182">00019</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a817eb807bbbffe9ca98d7fa2777cd182">build_libear</link>(compiler,&#32;dst_dir):
+00020 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;the&#32;full&#32;path&#32;to&#32;the&#32;&apos;libear&apos;&#32;library.&#32;&quot;&quot;&quot;</emphasis>
+00021 
+00022 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;src_dir&#32;=&#32;os.path.dirname(os.path.realpath(__file__))
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset&#32;=&#32;<link linkend="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f">make_toolset</link>(src_dir)
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset.set_compiler(compiler)
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset.set_language_standard(<emphasis role="stringliteral">&apos;c99&apos;</emphasis>)
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset.add_definitions([<emphasis role="stringliteral">&apos;-D_GNU_SOURCE&apos;</emphasis>])
+00028 
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure&#32;=&#32;<link linkend="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74">do_configure</link>(toolset)
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execve&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVE&apos;</emphasis>)
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execv&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECV&apos;</emphasis>)
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execvpe&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVPE&apos;</emphasis>)
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execvp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVP&apos;</emphasis>)
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execvP&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVP2&apos;</emphasis>)
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;exect&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECT&apos;</emphasis>)
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execl&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECL&apos;</emphasis>)
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execlp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECLP&apos;</emphasis>)
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execle&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECLE&apos;</emphasis>)
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;posix_spawn&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_POSIX_SPAWN&apos;</emphasis>)
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;posix_spawnp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_POSIX_SPAWNP&apos;</emphasis>)
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_symbol_exists(<emphasis role="stringliteral">&apos;_NSGetEnviron&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;crt_externs.h&apos;</emphasis>,
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;HAVE_NSGETENVIRON&apos;</emphasis>)
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.write_by_template(
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(src_dir,&#32;<emphasis role="stringliteral">&apos;config.h.in&apos;</emphasis>),
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(dst_dir,&#32;<emphasis role="stringliteral">&apos;config.h&apos;</emphasis>))
+00046 
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target&#32;=&#32;<link linkend="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8">create_shared_library</link>(<emphasis role="stringliteral">&apos;ear&apos;</emphasis>,&#32;toolset)
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.add_include(dst_dir)
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.add_sources(<emphasis role="stringliteral">&apos;ear.c&apos;</emphasis>)
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.link_against(toolset.dl_libraries())
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.link_against([<emphasis role="stringliteral">&apos;pthread&apos;</emphasis>])
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.build_release(dst_dir)
+00053 
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.path.join(dst_dir,&#32;target.name)
+00055 
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception:
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.info(<emphasis role="stringliteral">&quot;Could&#32;not&#32;build&#32;interception&#32;library.&quot;</emphasis>,&#32;exc_info=<emphasis role="keyword">True</emphasis>)
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00059 
+00060 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00061"/><link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">00061</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">execute</link>(cmd,&#32;*args,&#32;**kwargs):
+00062 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Make&#32;subprocess&#32;execution&#32;silent.&#32;&quot;&quot;&quot;</emphasis>
+00063 
+00064 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;subprocess
+00065 &#32;&#32;&#32;&#32;kwargs.update({<emphasis role="stringliteral">&apos;stdout&apos;</emphasis>:&#32;subprocess.PIPE,&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>:&#32;subprocess.STDOUT})
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;subprocess.check_call(cmd,&#32;*args,&#32;**kwargs)
+00067 
+00068 
+00069 <emphasis role="preprocessor">@contextlib.contextmanager</emphasis>
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00070"/><link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">00070</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">TemporaryDirectory</link>(**kwargs):
+00071 &#32;&#32;&#32;&#32;name&#32;=&#32;tempfile.mkdtemp(**kwargs)
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;name
+00074 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">finally</emphasis>:
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;shutil.rmtree(name)
+00076 
+00077 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00078"/><link linkend="_classlibear_1_1_toolset">00078</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classlibear_1_1_toolset">Toolset</link>(object):
+00079 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Abstract&#32;class&#32;to&#32;represent&#32;different&#32;toolset.&#32;&quot;&quot;&quot;</emphasis>
+00080 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00081"/><link linkend="_classlibear_1_1_toolset_1a637c61d4605601ee0279278dc928820e">00081</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1a637c61d4605601ee0279278dc928820e">__init__</link>(self,&#32;src_dir):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00082"/><link linkend="_classlibear_1_1_toolset_1aa6854b29e51d2af56d607091fc3f601f">00082</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_toolset_1aa6854b29e51d2af56d607091fc3f601f">src_dir</link>src_dir&#32;=&#32;src_dir
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00083"/><link linkend="_classlibear_1_1_toolset_1a7bedfd68632a849fc280edb08a376eed">00083</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_toolset_1a7bedfd68632a849fc280edb08a376eed">compiler</link>compiler&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00084"/><link linkend="_classlibear_1_1_toolset_1acd8cdd564a11418a2dcc5f26d09e35cd">00084</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_toolset_1acd8cdd564a11418a2dcc5f26d09e35cd">c_flags</link>c_flags&#32;=&#32;[]
+00085 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00086"/><link linkend="_classlibear_1_1_toolset_1ac7156c5e1f9dd11ea54417c4bc8e4915">00086</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1ac7156c5e1f9dd11ea54417c4bc8e4915">set_compiler</link>(self,&#32;compiler):
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;part&#32;of&#32;public&#32;interface&#32;&quot;&quot;&quot;</emphasis>
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_toolset_1a7bedfd68632a849fc280edb08a376eed">compiler</link>compiler&#32;=&#32;compiler
+00089 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00090"/><link linkend="_classlibear_1_1_toolset_1aeede4015f05c5b4b2e3ef14fce72a79b">00090</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1aeede4015f05c5b4b2e3ef14fce72a79b">set_language_standard</link>(self,&#32;standard):
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;part&#32;of&#32;public&#32;interface&#32;&quot;&quot;&quot;</emphasis>
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_toolset_1acd8cdd564a11418a2dcc5f26d09e35cd">c_flags</link>c_flags.append(<emphasis role="stringliteral">&apos;-std=&apos;</emphasis>&#32;+&#32;standard)
+00093 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00094"/><link linkend="_classlibear_1_1_toolset_1aeb17bbce4e16b23605d19a4f98d87ec8">00094</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1aeb17bbce4e16b23605d19a4f98d87ec8">add_definitions</link>(self,&#32;defines):
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;part&#32;of&#32;public&#32;interface&#32;&quot;&quot;&quot;</emphasis>
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_toolset_1acd8cdd564a11418a2dcc5f26d09e35cd">c_flags</link>c_flags.extend(defines)
+00097 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00098"/><link linkend="_classlibear_1_1_toolset_1a2048c14010b93c8bef8cc5ba35dd7d32">00098</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1a2048c14010b93c8bef8cc5ba35dd7d32">dl_libraries</link>(self):
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;NotImplementedError()
+00100 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00101"/><link linkend="_classlibear_1_1_toolset_1a51d4a40b9382e16cdebc145df8642113">00101</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1a51d4a40b9382e16cdebc145df8642113">shared_library_name</link>(self,&#32;name):
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;NotImplementedError()
+00103 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00104"/><link linkend="_classlibear_1_1_toolset_1a9e5b76ee096a9ee1fd9f6d5886908b9f">00104</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1a9e5b76ee096a9ee1fd9f6d5886908b9f">shared_library_c_flags</link>(self,&#32;release):
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;extra&#32;=&#32;[<emphasis role="stringliteral">&apos;-DNDEBUG&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-O3&apos;</emphasis>]&#32;<emphasis role="keywordflow">if</emphasis>&#32;release&#32;<emphasis role="keywordflow">else</emphasis>&#32;[]
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;extra&#32;+&#32;[<emphasis role="stringliteral">&apos;-fPIC&apos;</emphasis>]&#32;+&#32;self.<link linkend="_classlibear_1_1_toolset_1acd8cdd564a11418a2dcc5f26d09e35cd">c_flags</link>c_flags
+00107 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00108"/><link linkend="_classlibear_1_1_toolset_1a918d0146b103e387c8192abf36f45ebc">00108</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_toolset_1a918d0146b103e387c8192abf36f45ebc">shared_library_ld_flags</link>(self,&#32;release,&#32;name):
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;NotImplementedError()
+00110 
+00111 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00112"/><link linkend="_classlibear_1_1_darwin_toolset">00112</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classlibear_1_1_darwin_toolset">DarwinToolset</link>(<link linkend="_classlibear_1_1_toolset">Toolset</link>):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00113"/><link linkend="_classlibear_1_1_darwin_toolset_1afd0cf14ac83ea72bfb85b6f33f6d3677">00113</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_darwin_toolset_1afd0cf14ac83ea72bfb85b6f33f6d3677">__init__</link>(self,&#32;src_dir):
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Toolset.__init__(self,&#32;src_dir)
+00115 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00116"/><link linkend="_classlibear_1_1_darwin_toolset_1aea4a89f5ae9e74afaad47851a9ba4925">00116</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_darwin_toolset_1aea4a89f5ae9e74afaad47851a9ba4925">dl_libraries</link>(self):
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[]
+00118 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00119"/><link linkend="_classlibear_1_1_darwin_toolset_1a41076c4350b3d58e32f271e1a799a703">00119</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_darwin_toolset_1a41076c4350b3d58e32f271e1a799a703">shared_library_name</link>(self,&#32;name):
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;lib&apos;</emphasis>&#32;+&#32;name&#32;+&#32;<emphasis role="stringliteral">&apos;.dylib&apos;</emphasis>
+00121 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00122"/><link linkend="_classlibear_1_1_darwin_toolset_1ac98d80068f8e9c1b6322f2dbbb508747">00122</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_darwin_toolset_1ac98d80068f8e9c1b6322f2dbbb508747">shared_library_ld_flags</link>(self,&#32;release,&#32;name):
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;extra&#32;=&#32;[<emphasis role="stringliteral">&apos;-dead_strip&apos;</emphasis>]&#32;<emphasis role="keywordflow">if</emphasis>&#32;release&#32;<emphasis role="keywordflow">else</emphasis>&#32;[]
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;extra&#32;+&#32;[<emphasis role="stringliteral">&apos;-dynamiclib&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-install_name&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;@rpath/&apos;</emphasis>&#32;+&#32;name]
+00125 
+00126 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00127"/><link linkend="_classlibear_1_1_unix_toolset">00127</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classlibear_1_1_unix_toolset">UnixToolset</link>(<link linkend="_classlibear_1_1_toolset">Toolset</link>):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00128"/><link linkend="_classlibear_1_1_unix_toolset_1a2b69706c98338bc79dfb690b2fc9d661">00128</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_unix_toolset_1a2b69706c98338bc79dfb690b2fc9d661">__init__</link>(self,&#32;src_dir):
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Toolset.__init__(self,&#32;src_dir)
+00130 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00131"/><link linkend="_classlibear_1_1_unix_toolset_1a417e663e5a9b2e3d6b9b635e261643e7">00131</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_unix_toolset_1a417e663e5a9b2e3d6b9b635e261643e7">dl_libraries</link>(self):
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[]
+00133 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00134"/><link linkend="_classlibear_1_1_unix_toolset_1a38c3a8b73e844c1feaa8e3193e370695">00134</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_unix_toolset_1a38c3a8b73e844c1feaa8e3193e370695">shared_library_name</link>(self,&#32;name):
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;lib&apos;</emphasis>&#32;+&#32;name&#32;+&#32;<emphasis role="stringliteral">&apos;.so&apos;</emphasis>
+00136 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00137"/><link linkend="_classlibear_1_1_unix_toolset_1a604c260d491d1be95dd11d176c4366a1">00137</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_unix_toolset_1a604c260d491d1be95dd11d176c4366a1">shared_library_ld_flags</link>(self,&#32;release,&#32;name):
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;extra&#32;=&#32;[]&#32;<emphasis role="keywordflow">if</emphasis>&#32;release&#32;<emphasis role="keywordflow">else</emphasis>&#32;[]
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;extra&#32;+&#32;[<emphasis role="stringliteral">&apos;-shared&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-Wl,-soname,&apos;</emphasis>&#32;+&#32;name]
+00140 
+00141 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00142"/><link linkend="_classlibear_1_1_linux_toolset">00142</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classlibear_1_1_linux_toolset">LinuxToolset</link>(<link linkend="_classlibear_1_1_unix_toolset">UnixToolset</link>):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00143"/><link linkend="_classlibear_1_1_linux_toolset_1a97cc9fb5e89c53329de71e562ce0baa3">00143</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_linux_toolset_1a97cc9fb5e89c53329de71e562ce0baa3">__init__</link>(self,&#32;src_dir):
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;UnixToolset.__init__(self,&#32;src_dir)
+00145 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00146"/><link linkend="_classlibear_1_1_linux_toolset_1a7014fd3a583e4ce31efeb4202336633e">00146</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_linux_toolset_1a7014fd3a583e4ce31efeb4202336633e">dl_libraries</link>(self):
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[<emphasis role="stringliteral">&apos;dl&apos;</emphasis>]
+00148 
+00149 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00150"/><link linkend="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f">00150</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f">make_toolset</link>(src_dir):
+00151 &#32;&#32;&#32;&#32;platform&#32;=&#32;sys.platform
+00152 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;platform&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;win32&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;cygwin&apos;</emphasis>}:
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;RuntimeError(<emphasis role="stringliteral">&apos;not&#32;implemented&#32;on&#32;this&#32;platform&apos;</emphasis>)
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>:
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classlibear_1_1_darwin_toolset">DarwinToolset</link>(src_dir)
+00156 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;platform&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;linux&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;linux2&apos;</emphasis>}:
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classlibear_1_1_linux_toolset">LinuxToolset</link>(src_dir)
+00158 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classlibear_1_1_unix_toolset">UnixToolset</link>(src_dir)
+00160 
+00161 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00162"/><link linkend="_classlibear_1_1_configure">00162</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classlibear_1_1_configure">Configure</link>(object):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00163"/><link linkend="_classlibear_1_1_configure_1a3f4601b0f8e9365aca3e7acbe7246ab5">00163</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_configure_1a3f4601b0f8e9365aca3e7acbe7246ab5">__init__</link>(self,&#32;toolset):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00164"/><link linkend="_classlibear_1_1_configure_1a4a8516e9b110b44b5b364605b2aca81f">00164</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_configure_1a4a8516e9b110b44b5b364605b2aca81f">ctx</link>ctx&#32;=&#32;toolset
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00165"/><link linkend="_classlibear_1_1_configure_1a178d4e7ef60c070bb059ff6a323c6346">00165</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_configure_1a178d4e7ef60c070bb059ff6a323c6346">results</link>results&#32;=&#32;{<emphasis role="stringliteral">&apos;APPLE&apos;</emphasis>:&#32;sys.platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>}
+00166 
+00167 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>_try_to_compile_and_link(self,&#32;source):
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">TemporaryDirectory</link>()&#32;<emphasis role="keyword">as</emphasis>&#32;work_dir:
+00170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;src_file&#32;=&#32;<emphasis role="stringliteral">&apos;check.c&apos;</emphasis>
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(os.path.join(work_dir,&#32;src_file),&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00172 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;handle.write(source)
+00173 
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">execute</link>([self.<link linkend="_classlibear_1_1_configure_1a4a8516e9b110b44b5b364605b2aca81f">ctx</link>ctx.compiler,&#32;src_file]&#32;+&#32;self.<link linkend="_classlibear_1_1_configure_1a4a8516e9b110b44b5b364605b2aca81f">ctx</link>ctx.c_flags,
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cwd=work_dir)
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">True</emphasis>
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception:
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">False</emphasis>
+00179 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00180"/><link linkend="_classlibear_1_1_configure_1aeca7da633ffbc41d6d6324fb80877204">00180</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_configure_1aeca7da633ffbc41d6d6324fb80877204">check_function_exists</link>(self,&#32;function,&#32;name):
+00181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;template&#32;=&#32;<emphasis role="stringliteral">&quot;int&#32;FUNCTION();&#32;int&#32;main()&#32;{&#32;return&#32;FUNCTION();&#32;}&quot;</emphasis>
+00182 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;source&#32;=&#32;template.replace(<emphasis role="stringliteral">&quot;FUNCTION&quot;</emphasis>,&#32;function)
+00183 
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Checking&#32;function&#32;%s&apos;</emphasis>,&#32;function)
+00185 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;found&#32;=&#32;self.<link linkend="_classlibear_1_1_configure_1a67fa83fe41722980e3a2788a98639df7">_try_to_compile_and_link</link>_try_to_compile_and_link(source)
+00186 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Checking&#32;function&#32;%s&#32;--&#32;%s&apos;</emphasis>,&#32;function,
+00187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;found&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;found&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;not&#32;found&apos;</emphasis>)
+00188 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_configure_1a178d4e7ef60c070bb059ff6a323c6346">results</link>results.update({name:&#32;found})
+00189 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00190"/><link linkend="_classlibear_1_1_configure_1affd581061f9fb9bcbf0de013309816b6">00190</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_configure_1affd581061f9fb9bcbf0de013309816b6">check_symbol_exists</link>(self,&#32;symbol,&#32;include,&#32;name):
+00191 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;template&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;#include&#32;&lt;INCLUDE&gt;</emphasis>
+00192 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;int&#32;main()&#32;{&#32;return&#32;((int*)(&amp;SYMBOL))[0];&#32;}&quot;&quot;&quot;</emphasis>
+00193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;source&#32;=&#32;template.replace(<emphasis role="stringliteral">&apos;INCLUDE&apos;</emphasis>,&#32;include).replace(<emphasis role="stringliteral">&quot;SYMBOL&quot;</emphasis>,&#32;symbol)
+00194 
+00195 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Checking&#32;symbol&#32;%s&apos;</emphasis>,&#32;symbol)
+00196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;found&#32;=&#32;self.<link linkend="_classlibear_1_1_configure_1a67fa83fe41722980e3a2788a98639df7">_try_to_compile_and_link</link>_try_to_compile_and_link(source)
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Checking&#32;symbol&#32;%s&#32;--&#32;%s&apos;</emphasis>,&#32;symbol,
+00198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;found&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;found&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;not&#32;found&apos;</emphasis>)
+00199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_configure_1a178d4e7ef60c070bb059ff6a323c6346">results</link>results.update({name:&#32;found})
+00200 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00201"/><link linkend="_classlibear_1_1_configure_1a6414da9ba96a9c31e748f098f9d7d268">00201</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_configure_1a6414da9ba96a9c31e748f098f9d7d268">write_by_template</link>(self,&#32;template,&#32;output):
+00202 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>transform(line,&#32;definitions):
+00203 
+00204 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;pattern&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;^#cmakedefine\s+(\S+)&apos;</emphasis>)
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;m&#32;=&#32;pattern.match(line)
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;m:
+00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;key&#32;=&#32;m.group(1)
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;key&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordflow">in</emphasis>&#32;definitions&#32;<emphasis role="keywordflow">or</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;definitions[key]:
+00209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;/*&#32;#undef&#32;{0}&#32;*/{1}&apos;</emphasis>.format(key,&#32;os.linesep)
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;#define&#32;{0}{1}&apos;</emphasis>.format(key,&#32;os.linesep)
+00212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;line
+00213 
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(template,&#32;<emphasis role="stringliteral">&apos;r&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;src_handle:
+00215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Writing&#32;config&#32;to&#32;%s&apos;</emphasis>,&#32;output)
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(output,&#32;<emphasis role="stringliteral">&apos;w&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;dst_handle:
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;src_handle:
+00218 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dst_handle.write(transform(line,&#32;self.<link linkend="_classlibear_1_1_configure_1a178d4e7ef60c070bb059ff6a323c6346">results</link>results))
+00219 
+00220 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00221"/><link linkend="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74">00221</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74">do_configure</link>(toolset):
+00222 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classlibear_1_1_configure">Configure</link>(toolset)
+00223 
+00224 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00225"/><link linkend="_classlibear_1_1_shared_library">00225</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classlibear_1_1_shared_library">SharedLibrary</link>(object):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00226"/><link linkend="_classlibear_1_1_shared_library_1aba9e5ea25584ee5694c11f002dbd0086">00226</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_shared_library_1aba9e5ea25584ee5694c11f002dbd0086">__init__</link>(self,&#32;name,&#32;toolset):
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00227"/><link linkend="_classlibear_1_1_shared_library_1a30a8fad3e3ec97123777f6b3ec5f38e9">00227</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1a30a8fad3e3ec97123777f6b3ec5f38e9">name</link>name&#32;=&#32;toolset.shared_library_name(name)
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00228"/><link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">00228</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">ctx</link>ctx&#32;=&#32;toolset
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00229"/><link linkend="_classlibear_1_1_shared_library_1acef17eedaf68e064c063de57b4c1d014">00229</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1acef17eedaf68e064c063de57b4c1d014">inc</link>inc&#32;=&#32;[]
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00230"/><link linkend="_classlibear_1_1_shared_library_1abc77b0af905a9cff14bb339166b8236f">00230</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1abc77b0af905a9cff14bb339166b8236f">src</link>src&#32;=&#32;[]
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00231"/><link linkend="_classlibear_1_1_shared_library_1a36581dd78e7ab9028a5b37b57cb8bf13">00231</link> &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1a36581dd78e7ab9028a5b37b57cb8bf13">lib</link>lib&#32;=&#32;[]
+00232 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00233"/><link linkend="_classlibear_1_1_shared_library_1a007b68fdbd61034d91c5a309afdbd8d1">00233</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_shared_library_1a007b68fdbd61034d91c5a309afdbd8d1">add_include</link>(self,&#32;directory):
+00234 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1acef17eedaf68e064c063de57b4c1d014">inc</link>inc.extend([<emphasis role="stringliteral">&apos;-I&apos;</emphasis>,&#32;directory])
+00235 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00236"/><link linkend="_classlibear_1_1_shared_library_1a24422390d71be2624ee4a5efff46a59a">00236</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_shared_library_1a24422390d71be2624ee4a5efff46a59a">add_sources</link>(self,&#32;source):
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1abc77b0af905a9cff14bb339166b8236f">src</link>src.append(source)
+00238 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00239"/><link linkend="_classlibear_1_1_shared_library_1a163d8e12bf2dba6579603db4d3b9eb53">00239</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_shared_library_1a163d8e12bf2dba6579603db4d3b9eb53">link_against</link>(self,&#32;libraries):
+00240 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1a36581dd78e7ab9028a5b37b57cb8bf13">lib</link>lib.extend([<emphasis role="stringliteral">&apos;-l&apos;</emphasis>&#32;+&#32;lib&#32;<emphasis role="keywordflow">for</emphasis>&#32;lib&#32;<emphasis role="keywordflow">in</emphasis>&#32;libraries])
+00241 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00242"/><link linkend="_classlibear_1_1_shared_library_1a2328a5cab18e2ca401bd1d745799f2e7">00242</link> &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classlibear_1_1_shared_library_1a2328a5cab18e2ca401bd1d745799f2e7">build_release</link>(self,&#32;directory):
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;src&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_classlibear_1_1_shared_library_1abc77b0af905a9cff14bb339166b8236f">src</link>src:
+00244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Compiling&#32;%s&apos;</emphasis>,&#32;src)
+00245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">execute</link>(
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[self.<link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">ctx</link>ctx.compiler,&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>,&#32;os.path.join(self.<link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">ctx</link>ctx.src_dir,&#32;src),
+00247 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-o&apos;</emphasis>,&#32;src&#32;+&#32;<emphasis role="stringliteral">&apos;.o&apos;</emphasis>]&#32;+&#32;self.<link linkend="_classlibear_1_1_shared_library_1acef17eedaf68e064c063de57b4c1d014">inc</link>inc&#32;+
+00248 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">ctx</link>ctx.shared_library_c_flags(<emphasis role="keyword">True</emphasis>),
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cwd=directory)
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.debug(<emphasis role="stringliteral">&apos;Linking&#32;%s&apos;</emphasis>,&#32;self.<link linkend="_classlibear_1_1_shared_library_1a30a8fad3e3ec97123777f6b3ec5f38e9">name</link>name)
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">execute</link>(
+00252 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[self.<link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">ctx</link>ctx.compiler]&#32;+&#32;[src&#32;+&#32;<emphasis role="stringliteral">&apos;.o&apos;</emphasis>&#32;<emphasis role="keywordflow">for</emphasis>&#32;src&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.<link linkend="_classlibear_1_1_shared_library_1abc77b0af905a9cff14bb339166b8236f">src</link>src]&#32;+
+00253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="stringliteral">&apos;-o&apos;</emphasis>,&#32;self.<link linkend="_classlibear_1_1_shared_library_1a30a8fad3e3ec97123777f6b3ec5f38e9">name</link>name]&#32;+&#32;self.<link linkend="_classlibear_1_1_shared_library_1a36581dd78e7ab9028a5b37b57cb8bf13">lib</link>lib&#32;+
+00254 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.<link linkend="_classlibear_1_1_shared_library_1a07b351826daafed4e93fefd9f4b5103c">ctx</link>ctx.shared_library_ld_flags(<emphasis role="keyword">True</emphasis>,&#32;self.<link linkend="_classlibear_1_1_shared_library_1a30a8fad3e3ec97123777f6b3ec5f38e9">name</link>name),
+00255 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cwd=directory)
+00256 
+00257 
+<anchor xml:id="_lib_2libear_2____init_____8py_source_1l00258"/><link linkend="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8">00258</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8">create_shared_library</link>(name,&#32;toolset):
+00259 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_classlibear_1_1_shared_library">SharedLibrary</link>(name,&#32;toolset)
+</programlisting></section>

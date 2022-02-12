@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_cc1__main_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/driver/cc1_main.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/driver/cc1_main.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Basic/Stack.h&quot;
+#include &quot;clang/Basic/TargetOptions.h&quot;
+#include &quot;clang/CodeGen/ObjectFilePCHContainerOperations.h&quot;
+#include &quot;clang/Config/config.h&quot;
+#include &quot;clang/Driver/DriverDiagnostic.h&quot;
+#include &quot;clang/Driver/Options.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Frontend/CompilerInvocation.h&quot;
+#include &quot;clang/Frontend/FrontendDiagnostic.h&quot;
+#include &quot;clang/Frontend/TextDiagnosticBuffer.h&quot;
+#include &quot;clang/Frontend/TextDiagnosticPrinter.h&quot;
+#include &quot;clang/Frontend/Utils.h&quot;
+#include &quot;clang/FrontendTool/Utils.h&quot;
+#include &quot;llvm/ADT/Statistic.h&quot;
+#include &quot;llvm/Config/llvm-config.h&quot;
+#include &quot;llvm/LinkAllPasses.h&quot;
+#include &quot;llvm/Option/Arg.h&quot;
+#include &quot;llvm/Option/ArgList.h&quot;
+#include &quot;llvm/Option/OptTable.h&quot;
+#include &quot;llvm/Support/BuryPointer.h&quot;
+#include &quot;llvm/Support/Compiler.h&quot;
+#include &quot;llvm/Support/ErrorHandling.h&quot;
+#include &quot;llvm/Support/ManagedStatic.h&quot;
+#include &quot;llvm/Support/Path.h&quot;
+#include &quot;llvm/Support/Process.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/TargetRegistry.h&quot;
+#include &quot;llvm/Support/TargetSelect.h&quot;
+#include &quot;llvm/Support/TimeProfiler.h&quot;
+#include &quot;llvm/Support/Timer.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+#include &quot;llvm/Target/TargetMachine.h&quot;
+#include &lt;cstdio&gt;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="_cc1__main_8cpp_1a86ac52e41ae670905ca66a8bf1eb04b9">cc1_main</link> (ArrayRef&lt; const char * &gt; Argv, const char *Argv0, void *MainAddr)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_cc1__main_8cpp_1a86ac52e41ae670905ca66a8bf1eb04b9"/>    <section>
+    <title>cc1_main()</title>
+<indexterm><primary>cc1_main</primary><secondary>cc1_main.cpp</secondary></indexterm>
+<indexterm><primary>cc1_main.cpp</primary><secondary>cc1_main</secondary></indexterm>
+<para><computeroutput>int cc1_main (ArrayRef&lt; const char * &gt; Argv, const char * Argv0, void * MainAddr)</computeroutput></para><para>
+Definition at line <link linkend="_cc1__main_8cpp_source_1l00184">184</link> of file <link linkend="_cc1__main_8cpp_source">cc1_main.cpp</link>.</para>
+<programlisting>00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00185 &#32;&#32;ensureSufficientStack();
+00186 
+00187 &#32;&#32;std::unique_ptr&lt;CompilerInstance&gt;&#32;Clang(<emphasis role="keyword">new</emphasis>&#32;CompilerInstance());
+00188 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticIDs&gt;&#32;DiagID(<emphasis role="keyword">new</emphasis>&#32;DiagnosticIDs());
+00189 
+00190 &#32;&#32;<emphasis role="comment">//&#32;Register&#32;the&#32;support&#32;for&#32;object-file-wrapped&#32;Clang&#32;modules.</emphasis>
+00191 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;PCHOps&#32;=&#32;Clang-&gt;getPCHContainerOperations();
+00192 &#32;&#32;PCHOps-&gt;registerWriter(std::make_unique&lt;ObjectFilePCHContainerWriter&gt;());
+00193 &#32;&#32;PCHOps-&gt;registerReader(std::make_unique&lt;ObjectFilePCHContainerReader&gt;());
+00194 
+00195 &#32;&#32;<emphasis role="comment">//&#32;Initialize&#32;targets&#32;first,&#32;so&#32;that&#32;--version&#32;shows&#32;registered&#32;targets.</emphasis>
+00196 &#32;&#32;llvm::InitializeAllTargets();
+00197 &#32;&#32;llvm::InitializeAllTargetMCs();
+00198 &#32;&#32;llvm::InitializeAllAsmPrinters();
+00199 &#32;&#32;llvm::InitializeAllAsmParsers();
+00200 
+00201 &#32;&#32;<emphasis role="comment">//&#32;Buffer&#32;diagnostics&#32;from&#32;argument&#32;parsing&#32;so&#32;that&#32;we&#32;can&#32;output&#32;them&#32;using&#32;a</emphasis>
+00202 &#32;&#32;<emphasis role="comment">//&#32;well&#32;formed&#32;diagnostic&#32;object.</emphasis>
+00203 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticOptions&gt;&#32;DiagOpts&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions();
+00204 &#32;&#32;TextDiagnosticBuffer&#32;*DiagsBuffer&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;TextDiagnosticBuffer;
+00205 &#32;&#32;DiagnosticsEngine&#32;Diags(DiagID,&#32;&amp;*DiagOpts,&#32;DiagsBuffer);
+00206 
+00207 &#32;&#32;<emphasis role="comment">//&#32;Setup&#32;round-trip&#32;remarks&#32;for&#32;the&#32;DiagnosticsEngine&#32;used&#32;in&#32;CreateFromArgs.</emphasis>
+00208 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(find(Argv,&#32;StringRef(<emphasis role="stringliteral">&quot;-Rround-trip-cc1-args&quot;</emphasis>))&#32;!=&#32;Argv.end())
+00209 &#32;&#32;&#32;&#32;Diags.setSeverity(diag::remark_cc1_round_trip_generated,
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diag::Severity::Remark,&#32;{});
+00211 
+00212 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Success&#32;=&#32;CompilerInvocation::CreateFromArgs(Clang-&gt;getInvocation(),
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Argv,&#32;Diags,&#32;Argv0);
+00214 
+00215 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Clang-&gt;getFrontendOpts().TimeTrace)&#32;{
+00216 &#32;&#32;&#32;&#32;llvm::timeTraceProfilerInitialize(
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Clang-&gt;getFrontendOpts().TimeTraceGranularity,&#32;Argv0);
+00218 &#32;&#32;}
+00219 &#32;&#32;<emphasis role="comment">//&#32;--print-supported-cpus&#32;takes&#32;priority&#32;over&#32;the&#32;actual&#32;compilation.</emphasis>
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Clang-&gt;getFrontendOpts().PrintSupportedCPUs)
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;PrintSupportedCPUs(Clang-&gt;getTargetOpts().Triple);
+00222 
+00223 &#32;&#32;<emphasis role="comment">//&#32;Infer&#32;the&#32;builtin&#32;include&#32;path&#32;if&#32;unspecified.</emphasis>
+00224 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Clang-&gt;getHeaderSearchOpts().UseBuiltinIncludes&#32;&amp;&amp;
+00225 &#32;&#32;&#32;&#32;&#32;&#32;Clang-&gt;getHeaderSearchOpts().ResourceDir.empty())
+00226 &#32;&#32;&#32;&#32;Clang-&gt;getHeaderSearchOpts().ResourceDir&#32;=
+00227 &#32;&#32;&#32;&#32;&#32;&#32;CompilerInvocation::GetResourcesPath(Argv0,&#32;MainAddr);
+00228 
+00229 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;the&#32;actual&#32;diagnostics&#32;engine.</emphasis>
+00230 &#32;&#32;Clang-&gt;createDiagnostics();
+00231 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Clang-&gt;hasDiagnostics())
+00232 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00233 
+00234 &#32;&#32;<emphasis role="comment">//&#32;Set&#32;an&#32;error&#32;handler,&#32;so&#32;that&#32;any&#32;LLVM&#32;backend&#32;diagnostics&#32;go&#32;through&#32;our</emphasis>
+00235 &#32;&#32;<emphasis role="comment">//&#32;error&#32;handler.</emphasis>
+00236 &#32;&#32;llvm::install_fatal_error_handler(LLVMErrorHandler,
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>*<emphasis role="keyword">&gt;</emphasis>(&amp;Clang-&gt;getDiagnostics()));
+00238 
+00239 &#32;&#32;DiagsBuffer-&gt;FlushDiagnostics(Clang-&gt;getDiagnostics());
+00240 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Success)
+00241 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00242 
+00243 &#32;&#32;<emphasis role="comment">//&#32;Execute&#32;the&#32;frontend&#32;actions.</emphasis>
+00244 &#32;&#32;{
+00245 &#32;&#32;&#32;&#32;llvm::TimeTraceScope&#32;TimeScope(<emphasis role="stringliteral">&quot;ExecuteCompiler&quot;</emphasis>);
+00246 &#32;&#32;&#32;&#32;Success&#32;=&#32;ExecuteCompilerInvocation(Clang.get());
+00247 &#32;&#32;}
+00248 
+00249 &#32;&#32;<emphasis role="comment">//&#32;If&#32;any&#32;timers&#32;were&#32;active&#32;but&#32;haven&apos;t&#32;been&#32;destroyed&#32;yet,&#32;print&#32;their</emphasis>
+00250 &#32;&#32;<emphasis role="comment">//&#32;results&#32;now.&#32;&#32;This&#32;happens&#32;in&#32;-disable-free&#32;mode.</emphasis>
+00251 &#32;&#32;llvm::TimerGroup::printAll(llvm::errs());
+00252 &#32;&#32;llvm::TimerGroup::clearAll();
+00253 
+00254 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::timeTraceProfilerEnabled())&#32;{
+00255 &#32;&#32;&#32;&#32;SmallString&lt;128&gt;&#32;Path(Clang-&gt;getFrontendOpts().OutputFile);
+00256 &#32;&#32;&#32;&#32;llvm::sys::path::replace_extension(Path,&#32;<emphasis role="stringliteral">&quot;json&quot;</emphasis>);
+00257 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;profilerOutput&#32;=&#32;Clang-&gt;createOutputFile(
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Path.str(),&#32;<emphasis role="comment">/*Binary=*/</emphasis><emphasis role="keyword">false</emphasis>,&#32;<emphasis role="comment">/*RemoveFileOnSignal=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00259 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*useTemporary=*/</emphasis><emphasis role="keyword">false</emphasis>))&#32;{
+00260 &#32;&#32;&#32;&#32;&#32;&#32;llvm::timeTraceProfilerWrite(*profilerOutput);
+00261 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME(ibiryukov):&#32;make&#32;profilerOutput&#32;flush&#32;in&#32;destructor&#32;instead.</emphasis>
+00262 &#32;&#32;&#32;&#32;&#32;&#32;profilerOutput-&gt;flush();
+00263 &#32;&#32;&#32;&#32;&#32;&#32;llvm::timeTraceProfilerCleanup();
+00264 &#32;&#32;&#32;&#32;&#32;&#32;Clang-&gt;clearOutputFiles(<emphasis role="keyword">false</emphasis>);
+00265 &#32;&#32;&#32;&#32;}
+00266 &#32;&#32;}
+00267 
+00268 &#32;&#32;<emphasis role="comment">//&#32;Our&#32;error&#32;handler&#32;depends&#32;on&#32;the&#32;Diagnostics&#32;object,&#32;which&#32;we&apos;re</emphasis>
+00269 &#32;&#32;<emphasis role="comment">//&#32;potentially&#32;about&#32;to&#32;delete.&#32;Uninstall&#32;the&#32;handler&#32;now&#32;so&#32;that&#32;any</emphasis>
+00270 &#32;&#32;<emphasis role="comment">//&#32;later&#32;errors&#32;use&#32;the&#32;default&#32;handling&#32;behavior&#32;instead.</emphasis>
+00271 &#32;&#32;llvm::remove_fatal_error_handler();
+00272 
+00273 &#32;&#32;<emphasis role="comment">//&#32;When&#32;running&#32;with&#32;-disable-free,&#32;don&apos;t&#32;do&#32;any&#32;destruction&#32;or&#32;shutdown.</emphasis>
+00274 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Clang-&gt;getFrontendOpts().DisableFree)&#32;{
+00275 &#32;&#32;&#32;&#32;llvm::BuryPointer(std::move(Clang));
+00276 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!Success;
+00277 &#32;&#32;}
+00278 
+00279 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!Success;
+00280 }
+</programlisting></section>
+</section>
+</section>

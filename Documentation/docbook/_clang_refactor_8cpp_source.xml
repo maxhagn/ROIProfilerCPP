@@ -1,0 +1,612 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_refactor_8cpp_source" xml:lang="en-US">
+<title>ClangRefactor.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-refactor/ClangRefactor.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===---&#32;ClangRefactor.cpp&#32;-&#32;Clang-based&#32;refactoring&#32;tool&#32;-----------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00014 
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__test_support_8h">TestSupport.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CommandLineSourceLoc.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/TextDiagnosticPrinter.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Rewrite/Core/Rewriter.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/CommonOptionsParser.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring/RefactoringAction.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring/RefactoringOptions.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Refactoring/Rename/RenamingAction.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Tooling.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00030 
+00031 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00032 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>tooling;
+00033 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>refactor;
+00034 <emphasis role="keyword">namespace&#32;</emphasis>cl&#32;=&#32;llvm::cl;
+00035 
+<anchor xml:id="__clang_refactor_8cpp_source_1l00036"/><link linkend="_namespaceopts">00036</link> <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceopts">opts</link>&#32;{
+00037 
+00038 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;CommonRefactorOptions(<emphasis role="stringliteral">&quot;Refactoring&#32;options&quot;</emphasis>);
+00039 
+00040 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Verbose(<emphasis role="stringliteral">&quot;v&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Use&#32;verbose&#32;output&quot;</emphasis>),
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(cl::GeneralCategory),
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::sub(*cl::AllSubCommands));
+00043 
+00044 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Inplace(<emphasis role="stringliteral">&quot;i&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Inplace&#32;edit&#32;&lt;file&gt;s&quot;</emphasis>),
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(cl::GeneralCategory),
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::sub(*cl::AllSubCommands));
+00047 
+00048 }&#32;<emphasis role="comment">//&#32;end&#32;namespace&#32;opts</emphasis>
+00049 
+00050 <emphasis role="keyword">namespace&#32;</emphasis>{
+00051 
+00053 <emphasis role="keyword">class&#32;</emphasis>SourceSelectionArgument&#32;{
+00054 <emphasis role="keyword">public</emphasis>:
+00055 &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;~SourceSelectionArgument()&#32;{}
+00056 
+00060 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;std::unique_ptr&lt;SourceSelectionArgument&gt;&#32;fromString(StringRef&#32;Value);
+00061 
+00064 &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(raw_ostream&#32;&amp;OS)&#32;{}
+00065 
+00074 &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;std::unique_ptr&lt;ClangRefactorToolConsumerInterface&gt;
+00075 &#32;&#32;createCustomConsumer()&#32;{
+00076 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00077 &#32;&#32;}
+00078 
+00082 &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>
+00083 &#32;&#32;forAllRanges(<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::function_ref&lt;<emphasis role="keywordtype">void</emphasis>(SourceRange&#32;R)&gt;&#32;Callback)&#32;=&#32;0;
+00085 };
+00086 
+00088 <emphasis role="keyword">class&#32;</emphasis>TestSourceSelectionArgument&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;SourceSelectionArgument&#32;{
+00089 <emphasis role="keyword">public</emphasis>:
+00090 &#32;&#32;TestSourceSelectionArgument(<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link>&#32;TestSelections)
+00091 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;TestSelections(std::move(TestSelections))&#32;{}
+00092 
+00093 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(raw_ostream&#32;&amp;OS)<emphasis role="keyword">&#32;override&#32;</emphasis>{&#32;TestSelections.dump(OS);&#32;}
+00094 
+00095 &#32;&#32;std::unique_ptr&lt;ClangRefactorToolConsumerInterface&gt;
+00096 &#32;&#32;createCustomConsumer()<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TestSelections.createConsumer();
+00098 &#32;&#32;}
+00099 
+00102 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;forAllRanges(<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::function_ref&lt;<emphasis role="keywordtype">void</emphasis>(SourceRange&#32;R)&gt;&#32;Callback)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00104 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TestSelections.foreachRange(SM,&#32;Callback);
+00105 &#32;&#32;}
+00106 
+00107 <emphasis role="keyword">private</emphasis>:
+00108 &#32;&#32;<link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link>&#32;TestSelections;
+00109 };
+00110 
+00112 <emphasis role="keyword">class&#32;</emphasis>SourceRangeSelectionArgument&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;SourceSelectionArgument&#32;{
+00113 <emphasis role="keyword">public</emphasis>:
+00114 &#32;&#32;SourceRangeSelectionArgument(ParsedSourceRange&#32;Range)
+00115 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;Range(std::move(Range))&#32;{}
+00116 
+00117 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;forAllRanges(<emphasis role="keyword">const</emphasis>&#32;SourceManager&#32;&amp;SM,
+00118 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::function_ref&lt;<emphasis role="keywordtype">void</emphasis>(SourceRange&#32;R)&gt;&#32;Callback)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00119 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;FE&#32;=&#32;SM.getFileManager().getFile(Range.FileName);
+00120 &#32;&#32;&#32;&#32;FileID&#32;FID&#32;=&#32;FE&#32;?&#32;SM.translateFile(*FE)&#32;:&#32;FileID();
+00121 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FE&#32;||&#32;FID.isInvalid())&#32;{
+00122 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-selection=&quot;</emphasis>&#32;&lt;&lt;&#32;Range.FileName
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:...&#32;:&#32;given&#32;file&#32;is&#32;not&#32;in&#32;the&#32;target&#32;TU\n&quot;</emphasis>;
+00124 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00125 &#32;&#32;&#32;&#32;}
+00126 
+00127 &#32;&#32;&#32;&#32;SourceLocation&#32;Start&#32;=&#32;SM.getMacroArgExpandedLocation(
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SM.translateLineCol(FID,&#32;Range.Begin.first,&#32;Range.Begin.second));
+00129 &#32;&#32;&#32;&#32;SourceLocation&#32;End&#32;=&#32;SM.getMacroArgExpandedLocation(
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SM.translateLineCol(FID,&#32;Range.End.first,&#32;Range.End.second));
+00131 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Start.isInvalid()&#32;||&#32;End.isInvalid())&#32;{
+00132 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;-selection=&quot;</emphasis>&#32;&lt;&lt;&#32;Range.FileName&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;Range.Begin.first&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;Range.Begin.second&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;-&apos;</emphasis>
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;Range.End.first&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;Range.End.second
+00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;:&#32;invalid&#32;source&#32;location\n&quot;</emphasis>;
+00136 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00137 &#32;&#32;&#32;&#32;}
+00138 &#32;&#32;&#32;&#32;Callback(SourceRange(Start,&#32;End));
+00139 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00140 &#32;&#32;}
+00141 
+00142 <emphasis role="keyword">private</emphasis>:
+00143 &#32;&#32;ParsedSourceRange&#32;Range;
+00144 };
+00145 
+00146 std::unique_ptr&lt;SourceSelectionArgument&gt;
+00147 SourceSelectionArgument::fromString(StringRef&#32;Value)&#32;{
+00148 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Value.startswith(<emphasis role="stringliteral">&quot;test:&quot;</emphasis>))&#32;{
+00149 &#32;&#32;&#32;&#32;StringRef&#32;Filename&#32;=&#32;Value.drop_front(strlen(<emphasis role="stringliteral">&quot;test:&quot;</emphasis>));
+00150 &#32;&#32;&#32;&#32;Optional&lt;TestSelectionRangesInFile&gt;&#32;ParsedTestSelection&#32;=
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1refactor_1ad9b16108537eeb4a03f8b06f785bdb0f">findTestSelectionRanges</link>(Filename);
+00152 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ParsedTestSelection)
+00153 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;&#32;<emphasis role="comment">//&#32;A&#32;parsing&#32;error&#32;was&#32;already&#32;reported.</emphasis>
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TestSourceSelectionArgument&gt;(
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::move(*ParsedTestSelection));
+00156 &#32;&#32;}
+00157 &#32;&#32;Optional&lt;ParsedSourceRange&gt;&#32;Range&#32;=&#32;ParsedSourceRange::fromString(Value);
+00158 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Range)
+00159 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;SourceRangeSelectionArgument&gt;(std::move(*Range));
+00160 &#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;&apos;-selection&apos;&#32;option&#32;must&#32;be&#32;specified&#32;using&#32;&quot;</emphasis>
+00161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&lt;file&gt;:&lt;line&gt;:&lt;column&gt;&#32;or&#32;&quot;</emphasis>
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&lt;file&gt;:&lt;line&gt;:&lt;column&gt;-&lt;line&gt;:&lt;column&gt;&#32;format\n&quot;</emphasis>;
+00163 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00164 }
+00165 
+00168 <emphasis role="keyword">class&#32;</emphasis>RefactoringActionCommandLineOptions&#32;{
+00169 <emphasis role="keyword">public</emphasis>:
+00170 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;addStringOption(<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;&amp;Option,
+00171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;cl::opt&lt;std::string&gt;&gt;&#32;CLOption)&#32;{
+00172 &#32;&#32;&#32;&#32;StringOptions[&amp;Option]&#32;=&#32;std::move(CLOption);
+00173 &#32;&#32;}
+00174 
+00175 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;&amp;
+00176 &#32;&#32;getStringOption(<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;&amp;Opt)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00177 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;It&#32;=&#32;StringOptions.find(&amp;Opt);
+00178 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;*It-&gt;second;
+00179 &#32;&#32;}
+00180 
+00181 <emphasis role="keyword">private</emphasis>:
+00182 &#32;&#32;llvm::DenseMap&lt;<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;*,
+00183 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;cl::opt&lt;std::string&gt;&gt;&gt;
+00184 &#32;&#32;&#32;&#32;&#32;&#32;StringOptions;
+00185 };
+00186 
+00189 <emphasis role="keyword">class&#32;</emphasis>CommandLineRefactoringOptionVisitor&#32;final
+00190 &#32;&#32;&#32;&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;RefactoringOptionVisitor&#32;{
+00191 <emphasis role="keyword">public</emphasis>:
+00192 &#32;&#32;CommandLineRefactoringOptionVisitor(
+00193 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RefactoringActionCommandLineOptions&#32;&amp;Options)
+00194 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;Options(Options)&#32;{}
+00195 
+00196 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;visit(<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;&amp;Opt,
+00197 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Optional&lt;std::string&gt;&#32;&amp;Value)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00198 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;&amp;CLOpt&#32;=&#32;Options.getStringOption(Opt);
+00199 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CLOpt.getValue().empty())&#32;{
+00200 &#32;&#32;&#32;&#32;&#32;&#32;Value&#32;=&#32;CLOpt.getValue();
+00201 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00202 &#32;&#32;&#32;&#32;}
+00203 &#32;&#32;&#32;&#32;Value&#32;=&#32;None;
+00204 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Opt.isRequired())
+00205 &#32;&#32;&#32;&#32;&#32;&#32;MissingRequiredOptions.push_back(&amp;Opt);
+00206 &#32;&#32;}
+00207 
+00208 &#32;&#32;ArrayRef&lt;const&#32;RefactoringOption&#32;*&gt;&#32;getMissingRequiredOptions()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00209 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;MissingRequiredOptions;
+00210 &#32;&#32;}
+00211 
+00212 <emphasis role="keyword">private</emphasis>:
+00213 &#32;&#32;llvm::SmallVector&lt;const&#32;RefactoringOption&#32;*,&#32;4&gt;&#32;MissingRequiredOptions;
+00214 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RefactoringActionCommandLineOptions&#32;&amp;Options;
+00215 };
+00216 
+00219 <emphasis role="keyword">class&#32;</emphasis>CommandLineRefactoringOptionCreator&#32;final
+00220 &#32;&#32;&#32;&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;RefactoringOptionVisitor&#32;{
+00221 <emphasis role="keyword">public</emphasis>:
+00222 &#32;&#32;CommandLineRefactoringOptionCreator(
+00223 &#32;&#32;&#32;&#32;&#32;&#32;cl::OptionCategory&#32;&amp;Category,&#32;cl::SubCommand&#32;&amp;Subcommand,
+00224 &#32;&#32;&#32;&#32;&#32;&#32;RefactoringActionCommandLineOptions&#32;&amp;Options)
+00225 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;Category(Category),&#32;Subcommand(Subcommand),&#32;Options(Options)&#32;{}
+00226 
+00227 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;visit(<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;&amp;Opt,&#32;Optional&lt;std::string&gt;&#32;&amp;)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00228 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Visited.insert(&amp;Opt).second)
+00229 &#32;&#32;&#32;&#32;&#32;&#32;Options.addStringOption(Opt,&#32;create&lt;std::string&gt;(Opt));
+00230 &#32;&#32;}
+00231 
+00232 <emphasis role="keyword">private</emphasis>:
+00233 &#32;&#32;<emphasis role="keyword">template</emphasis>&#32;&lt;<emphasis role="keyword">typename</emphasis>&#32;T&gt;
+00234 &#32;&#32;std::unique_ptr&lt;cl::opt&lt;T&gt;&gt;&#32;create(<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;&amp;Opt)&#32;{
+00235 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OptionNames.insert(Opt.getName()).second)
+00236 &#32;&#32;&#32;&#32;&#32;&#32;llvm::report_fatal_error(<emphasis role="stringliteral">&quot;Multiple&#32;identical&#32;refactoring&#32;options&#32;&quot;</emphasis>
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;specified&#32;for&#32;one&#32;refactoring&#32;action&quot;</emphasis>);
+00238 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;cl::Required&#32;can&#32;be&#32;specified&#32;when&#32;this&#32;option&#32;is&#32;present</emphasis>
+00239 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;in&#32;all&#32;rules&#32;in&#32;an&#32;action.</emphasis>
+00240 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;cl::opt&lt;T&gt;&gt;(
+00241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Opt.getName(),&#32;cl::desc(Opt.getDescription()),&#32;cl::Optional,
+00242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(Category),&#32;cl::sub(Subcommand));
+00243 &#32;&#32;}
+00244 
+00245 &#32;&#32;llvm::SmallPtrSet&lt;const&#32;RefactoringOption&#32;*,&#32;8&gt;&#32;Visited;
+00246 &#32;&#32;llvm::StringSet&lt;&gt;&#32;OptionNames;
+00247 &#32;&#32;cl::OptionCategory&#32;&amp;Category;
+00248 &#32;&#32;cl::SubCommand&#32;&amp;Subcommand;
+00249 &#32;&#32;RefactoringActionCommandLineOptions&#32;&amp;Options;
+00250 };
+00251 
+00253 <emphasis role="keyword">class&#32;</emphasis>RefactoringActionSubcommand&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;cl::SubCommand&#32;{
+00254 <emphasis role="keyword">public</emphasis>:
+00255 &#32;&#32;RefactoringActionSubcommand(std::unique_ptr&lt;RefactoringAction&gt;&#32;Action,
+00256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RefactoringActionRules&#32;ActionRules,
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::OptionCategory&#32;&amp;Category)
+00258 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;SubCommand(Action-&gt;getCommand(),&#32;Action-&gt;getDescription()),
+00259 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Action(std::move(Action)),&#32;ActionRules(std::move(ActionRules))&#32;{
+00260 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;the&#32;selection&#32;option&#32;is&#32;supported.</emphasis>
+00261 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Rule&#32;:&#32;this-&gt;ActionRules)&#32;{
+00262 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Rule-&gt;hasSelectionRequirement())&#32;{
+00263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Selection&#32;=&#32;std::make_unique&lt;cl::opt&lt;std::string&gt;&gt;(
+00264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;selection&quot;</emphasis>,
+00265 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(
+00266 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;The&#32;selected&#32;source&#32;range&#32;in&#32;which&#32;the&#32;refactoring&#32;should&#32;&quot;</emphasis>
+00267 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;be&#32;initiated&#32;(&lt;file&gt;:&lt;line&gt;:&lt;column&gt;-&lt;line&gt;:&lt;column&gt;&#32;or&#32;&quot;</emphasis>
+00268 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&lt;file&gt;:&lt;line&gt;:&lt;column&gt;)&quot;</emphasis>),
+00269 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(Category),&#32;cl::sub(*<emphasis role="keyword">this</emphasis>));
+00270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00271 &#32;&#32;&#32;&#32;&#32;&#32;}
+00272 &#32;&#32;&#32;&#32;}
+00273 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Create&#32;the&#32;refactoring&#32;options.</emphasis>
+00274 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Rule&#32;:&#32;this-&gt;ActionRules)&#32;{
+00275 &#32;&#32;&#32;&#32;&#32;&#32;CommandLineRefactoringOptionCreator&#32;OptionCreator(Category,&#32;*<emphasis role="keyword">this</emphasis>,
+00276 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Options);
+00277 &#32;&#32;&#32;&#32;&#32;&#32;Rule-&gt;visitRefactoringOptions(OptionCreator);
+00278 &#32;&#32;&#32;&#32;}
+00279 &#32;&#32;}
+00280 
+00281 &#32;&#32;~RefactoringActionSubcommand()&#32;{&#32;unregisterSubCommand();&#32;}
+00282 
+00283 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RefactoringActionRules&#32;&amp;getActionRules()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;ActionRules;&#32;}
+00284 
+00288 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;parseSelectionArgument()&#32;{
+00289 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Selection)&#32;{
+00290 &#32;&#32;&#32;&#32;&#32;&#32;ParsedSelection&#32;=&#32;SourceSelectionArgument::fromString(*Selection);
+00291 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ParsedSelection)
+00292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00293 &#32;&#32;&#32;&#32;}
+00294 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00295 &#32;&#32;}
+00296 
+00297 &#32;&#32;SourceSelectionArgument&#32;*getSelection()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00298 &#32;&#32;&#32;&#32;assert(Selection&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;selection&#32;not&#32;supported!&quot;</emphasis>);
+00299 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ParsedSelection.get();
+00300 &#32;&#32;}
+00301 
+00302 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RefactoringActionCommandLineOptions&#32;&amp;getOptions()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00303 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Options;
+00304 &#32;&#32;}
+00305 
+00306 <emphasis role="keyword">private</emphasis>:
+00307 &#32;&#32;std::unique_ptr&lt;RefactoringAction&gt;&#32;Action;
+00308 &#32;&#32;RefactoringActionRules&#32;ActionRules;
+00309 &#32;&#32;std::unique_ptr&lt;cl::opt&lt;std::string&gt;&gt;&#32;Selection;
+00310 &#32;&#32;std::unique_ptr&lt;SourceSelectionArgument&gt;&#32;ParsedSelection;
+00311 &#32;&#32;RefactoringActionCommandLineOptions&#32;Options;
+00312 };
+00313 
+00314 <emphasis role="keyword">class&#32;</emphasis>ClangRefactorConsumer&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface">ClangRefactorToolConsumerInterface</link>&#32;{
+00315 <emphasis role="keyword">public</emphasis>:
+00316 &#32;&#32;ClangRefactorConsumer(AtomicChanges&#32;&amp;Changes)&#32;:&#32;SourceChanges(&amp;Changes)&#32;{}
+00317 
+00318 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handleError(llvm::Error&#32;Err)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00319 &#32;&#32;&#32;&#32;Optional&lt;PartialDiagnosticAt&gt;&#32;Diag&#32;=&#32;DiagnosticError::take(Err);
+00320 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Diag)&#32;{
+00321 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(std::move(Err))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00322 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00323 &#32;&#32;&#32;&#32;}
+00324 &#32;&#32;&#32;&#32;llvm::cantFail(std::move(Err));&#32;<emphasis role="comment">//&#32;This&#32;is&#32;a&#32;success.</emphasis>
+00325 &#32;&#32;&#32;&#32;DiagnosticBuilder&#32;DB(
+00326 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getDiags().Report(Diag-&gt;first,&#32;Diag-&gt;second.getDiagID()));
+00327 &#32;&#32;&#32;&#32;Diag-&gt;second.Emit(DB);
+00328 &#32;&#32;}
+00329 
+00330 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handle(AtomicChanges&#32;Changes)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00331 &#32;&#32;&#32;&#32;SourceChanges-&gt;insert(SourceChanges-&gt;begin(),&#32;Changes.begin(),
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Changes.end());
+00333 &#32;&#32;}
+00334 
+00335 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;handle(SymbolOccurrences&#32;Occurrences)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00336 &#32;&#32;&#32;&#32;llvm_unreachable(<emphasis role="stringliteral">&quot;symbol&#32;occurrence&#32;results&#32;are&#32;not&#32;handled&#32;yet&quot;</emphasis>);
+00337 &#32;&#32;}
+00338 
+00339 <emphasis role="keyword">private</emphasis>:
+00340 &#32;&#32;AtomicChanges&#32;*SourceChanges;
+00341 };
+00342 
+00343 <emphasis role="keyword">class&#32;</emphasis>ClangRefactorTool&#32;{
+00344 <emphasis role="keyword">public</emphasis>:
+00345 &#32;&#32;ClangRefactorTool()
+00346 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;SelectedSubcommand(nullptr),&#32;MatchingRule(nullptr),
+00347 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_consumer">Consumer</link>(new&#32;ClangRefactorConsumer(Changes)),&#32;HasFailed(false)&#32;{
+00348 &#32;&#32;&#32;&#32;std::vector&lt;std::unique_ptr&lt;RefactoringAction&gt;&gt;&#32;Actions&#32;=
+00349 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;createRefactoringActions();
+00350 
+00351 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Actions&#32;must&#32;have&#32;unique&#32;command&#32;names&#32;so&#32;that&#32;we&#32;can&#32;map&#32;them&#32;to&#32;one</emphasis>
+00352 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;subcommand.</emphasis>
+00353 &#32;&#32;&#32;&#32;llvm::StringSet&lt;&gt;&#32;CommandNames;
+00354 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Action&#32;:&#32;Actions)&#32;{
+00355 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CommandNames.insert(Action-&gt;getCommand()).second)&#32;{
+00356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;duplicate&#32;refactoring&#32;action&#32;command&#32;&apos;&quot;</emphasis>
+00357 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;Action-&gt;getCommand()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;!&quot;</emphasis>;
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit(1);
+00359 &#32;&#32;&#32;&#32;&#32;&#32;}
+00360 &#32;&#32;&#32;&#32;}
+00361 
+00362 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Create&#32;subcommands&#32;and&#32;command-line&#32;options.</emphasis>
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Action&#32;:&#32;Actions)&#32;{
+00364 &#32;&#32;&#32;&#32;&#32;&#32;SubCommands.push_back(std::make_unique&lt;RefactoringActionSubcommand&gt;(
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::move(Action),&#32;Action-&gt;createActiveActionRules(),
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;opts::CommonRefactorOptions));
+00367 &#32;&#32;&#32;&#32;}
+00368 &#32;&#32;}
+00369 
+00370 &#32;&#32;<emphasis role="comment">//&#32;Initializes&#32;the&#32;selected&#32;subcommand&#32;and&#32;refactoring&#32;rule&#32;based&#32;on&#32;the</emphasis>
+00371 &#32;&#32;<emphasis role="comment">//&#32;command&#32;line&#32;options.</emphasis>
+00372 &#32;&#32;llvm::Error&#32;Init()&#32;{
+00373 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Subcommand&#32;=&#32;getSelectedSubcommand();
+00374 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Subcommand)
+00375 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Subcommand.takeError();
+00376 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Rule&#32;=&#32;getMatchingRule(**Subcommand);
+00377 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Rule)
+00378 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Rule.takeError();
+00379 
+00380 &#32;&#32;&#32;&#32;SelectedSubcommand&#32;=&#32;*Subcommand;
+00381 &#32;&#32;&#32;&#32;MatchingRule&#32;=&#32;*Rule;
+00382 
+00383 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::Error::success();
+00384 &#32;&#32;}
+00385 
+00386 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;hasFailed()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;HasFailed;&#32;}
+00387 
+00388 &#32;&#32;<emphasis role="keyword">using</emphasis>&#32;TUCallbackType&#32;=&#32;std::function&lt;void(ASTContext&#32;&amp;)&gt;;
+00389 
+00390 &#32;&#32;<emphasis role="comment">//&#32;Callback&#32;of&#32;an&#32;AST&#32;action.&#32;This&#32;invokes&#32;the&#32;matching&#32;rule&#32;on&#32;the&#32;given&#32;AST.</emphasis>
+00391 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;callback(ASTContext&#32;&amp;AST)&#32;{
+00392 &#32;&#32;&#32;&#32;assert(SelectedSubcommand&#32;&amp;&amp;&#32;MatchingRule&#32;&amp;&amp;&#32;<link linkend="_class_consumer">Consumer</link>);
+00393 &#32;&#32;&#32;&#32;RefactoringRuleContext&#32;Context(AST.getSourceManager());
+00394 &#32;&#32;&#32;&#32;Context.setASTContext(AST);
+00395 
+00396 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;the&#32;selection&#32;option&#32;is&#32;test&#32;specific,&#32;we&#32;use&#32;a&#32;test-specific</emphasis>
+00397 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;consumer.</emphasis>
+00398 &#32;&#32;&#32;&#32;std::unique_ptr&lt;ClangRefactorToolConsumerInterface&gt;&#32;TestConsumer;
+00399 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HasSelection&#32;=&#32;MatchingRule-&gt;hasSelectionRequirement();
+00400 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasSelection)
+00401 &#32;&#32;&#32;&#32;&#32;&#32;TestConsumer&#32;=&#32;SelectedSubcommand-&gt;getSelection()-&gt;createCustomConsumer();
+00402 &#32;&#32;&#32;&#32;<link linkend="_classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface">ClangRefactorToolConsumerInterface</link>&#32;*ActiveConsumer&#32;=
+00403 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TestConsumer&#32;?&#32;TestConsumer.get()&#32;:&#32;<link linkend="_class_consumer">Consumer</link>.get();
+00404 &#32;&#32;&#32;&#32;ActiveConsumer-&gt;<link linkend="_classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface_1a13ef9fd59ed53ecf20a8949f11ceeb5b">beginTU</link>(AST);
+00405 
+00406 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;InvokeRule&#32;=&#32;[&amp;](RefactoringResultConsumer&#32;&amp;<link linkend="_class_consumer">Consumer</link>)&#32;{
+00407 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(opts::Verbose)
+00408 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logInvocation(*SelectedSubcommand,&#32;Context);
+00409 &#32;&#32;&#32;&#32;&#32;&#32;MatchingRule-&gt;invoke(*ActiveConsumer,&#32;Context);
+00410 &#32;&#32;&#32;&#32;};
+00411 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasSelection)&#32;{
+00412 &#32;&#32;&#32;&#32;&#32;&#32;assert(SelectedSubcommand-&gt;getSelection()&#32;&amp;&amp;
+00413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Missing&#32;selection&#32;argument?&quot;</emphasis>);
+00414 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(opts::Verbose)
+00415 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SelectedSubcommand-&gt;getSelection()-&gt;print(llvm::outs());
+00416 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SelectedSubcommand-&gt;getSelection()-&gt;forAllRanges(
+00417 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Context.getSources(),&#32;[&amp;](SourceRange&#32;R)&#32;{
+00418 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Context.setSelectionRange(R);
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InvokeRule(*ActiveConsumer);
+00420 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}))
+00421 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;HasFailed&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00422 &#32;&#32;&#32;&#32;&#32;&#32;ActiveConsumer-&gt;<link linkend="_classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface_1a683752cb4413da0bf2889519ea688a7b">endTU</link>();
+00423 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00424 &#32;&#32;&#32;&#32;}
+00425 &#32;&#32;&#32;&#32;InvokeRule(*ActiveConsumer);
+00426 &#32;&#32;&#32;&#32;ActiveConsumer-&gt;<link linkend="_classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface_1a683752cb4413da0bf2889519ea688a7b">endTU</link>();
+00427 &#32;&#32;}
+00428 
+00429 &#32;&#32;llvm::Expected&lt;std::unique_ptr&lt;FrontendActionFactory&gt;&gt;
+00430 &#32;&#32;getFrontendActionFactory()&#32;{
+00431 &#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis>ToolASTConsumer&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ASTConsumer&#32;{
+00432 &#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>:
+00433 &#32;&#32;&#32;&#32;&#32;&#32;TUCallbackType&#32;Callback;
+00434 &#32;&#32;&#32;&#32;&#32;&#32;ToolASTConsumer(TUCallbackType&#32;Callback)
+00435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Callback(std::move(Callback))&#32;{}
+00436 
+00437 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;HandleTranslationUnit(ASTContext&#32;&amp;Context)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00438 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Callback(Context);
+00439 &#32;&#32;&#32;&#32;&#32;&#32;}
+00440 &#32;&#32;&#32;&#32;};
+00441 &#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis>ToolASTAction&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;ASTFrontendAction&#32;{
+00442 &#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>:
+00443 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">explicit</emphasis>&#32;ToolASTAction(TUCallbackType&#32;Callback)
+00444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Callback(std::move(Callback))&#32;{}
+00445 
+00446 &#32;&#32;&#32;&#32;<emphasis role="keyword">protected</emphasis>:
+00447 &#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;clang::ASTConsumer&gt;
+00448 &#32;&#32;&#32;&#32;&#32;&#32;CreateASTConsumer(clang::CompilerInstance&#32;&amp;compiler,
+00449 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;<emphasis role="comment">/*&#32;dummy&#32;*/</emphasis>)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00450 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;clang::ASTConsumer&gt;&#32;<link linkend="_class_consumer">Consumer</link>{
+00451 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">new</emphasis>&#32;ToolASTConsumer(Callback)};
+00452 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_class_consumer">Consumer</link>;
+00453 &#32;&#32;&#32;&#32;&#32;&#32;}
+00454 
+00455 &#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>:
+00456 &#32;&#32;&#32;&#32;&#32;&#32;TUCallbackType&#32;Callback;
+00457 &#32;&#32;&#32;&#32;};
+00458 
+00459 &#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis>ToolActionFactory&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;FrontendActionFactory&#32;{
+00460 &#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>:
+00461 &#32;&#32;&#32;&#32;&#32;&#32;ToolActionFactory(TUCallbackType&#32;Callback)
+00462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Callback(std::move(Callback))&#32;{}
+00463 
+00464 &#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;FrontendAction&gt;&#32;create()<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00465 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;ToolASTAction&gt;(Callback);
+00466 &#32;&#32;&#32;&#32;&#32;&#32;}
+00467 
+00468 &#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>:
+00469 &#32;&#32;&#32;&#32;&#32;&#32;TUCallbackType&#32;Callback;
+00470 &#32;&#32;&#32;&#32;};
+00471 
+00472 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;ToolActionFactory&gt;(
+00473 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="keyword">this</emphasis>](ASTContext&#32;&amp;AST)&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;callback(AST);&#32;});
+00474 &#32;&#32;}
+00475 
+00476 &#32;&#32;<emphasis role="comment">//&#32;FIXME(ioeric):&#32;this&#32;seems&#32;to&#32;only&#32;works&#32;for&#32;changes&#32;in&#32;a&#32;single&#32;file&#32;at</emphasis>
+00477 &#32;&#32;<emphasis role="comment">//&#32;this&#32;point.</emphasis>
+00478 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;applySourceChanges()&#32;{
+00479 &#32;&#32;&#32;&#32;std::set&lt;std::string&gt;&#32;Files;
+00480 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Change&#32;:&#32;Changes)
+00481 &#32;&#32;&#32;&#32;&#32;&#32;Files.insert(Change.getFilePath());
+00482 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;Add&#32;automatic&#32;formatting&#32;support&#32;as&#32;well.</emphasis>
+00483 &#32;&#32;&#32;&#32;tooling::ApplyChangesSpec&#32;Spec;
+00484 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;We&#32;should&#32;probably&#32;cleanup&#32;the&#32;result&#32;by&#32;default&#32;as&#32;well.</emphasis>
+00485 &#32;&#32;&#32;&#32;Spec.Cleanup&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00486 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;File&#32;:&#32;Files)&#32;{
+00487 &#32;&#32;&#32;&#32;&#32;&#32;llvm::ErrorOr&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt;&#32;BufferErr&#32;=
+00488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFile(File);
+00489 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BufferErr)&#32;{
+00490 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;failed&#32;to&#32;open&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;File&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;for&#32;rewriting\n&quot;</emphasis>;
+00491 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00492 &#32;&#32;&#32;&#32;&#32;&#32;}
+00493 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Result&#32;=&#32;tooling::applyAtomicChanges(File,&#32;(*BufferErr)-&gt;getBuffer(),
+00494 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Changes,&#32;Spec);
+00495 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Result)&#32;{
+00496 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;toString(Result.takeError());
+00497 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00498 &#32;&#32;&#32;&#32;&#32;&#32;}
+00499 
+00500 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(opts::Inplace)&#32;{
+00501 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::error_code&#32;EC;
+00502 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_fd_ostream&#32;OS(File,&#32;EC,&#32;llvm::sys::fs::OF_TextWithCRLF);
+00503 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00504 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;EC.message()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00505 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00506 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00507 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;*Result;
+00508 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00509 &#32;&#32;&#32;&#32;&#32;&#32;}
+00510 
+00511 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;*Result;
+00512 &#32;&#32;&#32;&#32;}
+00513 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00514 &#32;&#32;}
+00515 
+00516 <emphasis role="keyword">private</emphasis>:
+00518 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;logInvocation(RefactoringActionSubcommand&#32;&amp;Subcommand,
+00519 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;RefactoringRuleContext&#32;&amp;Context)&#32;{
+00520 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;invoking&#32;action&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Subcommand.getName()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;:\n&quot;</emphasis>;
+00521 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Context.getSelectionRange().isValid())&#32;{
+00522 &#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;R&#32;=&#32;Context.getSelectionRange();
+00523 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;-selection=&quot;</emphasis>;
+00524 &#32;&#32;&#32;&#32;&#32;&#32;R.getBegin().print(llvm::outs(),&#32;Context.getSources());
+00525 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;-&gt;&#32;&quot;</emphasis>;
+00526 &#32;&#32;&#32;&#32;&#32;&#32;R.getEnd().print(llvm::outs(),&#32;Context.getSources());
+00527 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00528 &#32;&#32;&#32;&#32;}
+00529 &#32;&#32;}
+00530 
+00531 &#32;&#32;llvm::Expected&lt;RefactoringActionRule&#32;*&gt;
+00532 &#32;&#32;getMatchingRule(RefactoringActionSubcommand&#32;&amp;Subcommand)&#32;{
+00533 &#32;&#32;&#32;&#32;SmallVector&lt;RefactoringActionRule&#32;*,&#32;4&gt;&#32;MatchingRules;
+00534 &#32;&#32;&#32;&#32;llvm::StringSet&lt;&gt;&#32;MissingOptions;
+00535 
+00536 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Rule&#32;:&#32;Subcommand.getActionRules())&#32;{
+00537 &#32;&#32;&#32;&#32;&#32;&#32;CommandLineRefactoringOptionVisitor&#32;Visitor(Subcommand.getOptions());
+00538 &#32;&#32;&#32;&#32;&#32;&#32;Rule-&gt;visitRefactoringOptions(Visitor);
+00539 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Visitor.getMissingRequiredOptions().empty())&#32;{
+00540 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Rule-&gt;hasSelectionRequirement())&#32;{
+00541 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MatchingRules.push_back(Rule.get());
+00542 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00543 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Subcommand.parseSelectionArgument();
+00544 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Subcommand.getSelection())&#32;{
+00545 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MatchingRules.push_back(Rule.get());
+00546 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00547 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MissingOptions.insert(<emphasis role="stringliteral">&quot;selection&quot;</emphasis>);
+00548 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00549 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00550 &#32;&#32;&#32;&#32;&#32;&#32;}
+00551 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;RefactoringOption&#32;*Opt&#32;:&#32;Visitor.getMissingRequiredOptions())
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MissingOptions.insert(Opt-&gt;getName());
+00553 &#32;&#32;&#32;&#32;}
+00554 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MatchingRules.empty())&#32;{
+00555 &#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;Error;
+00556 &#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_string_ostream&#32;OS(Error);
+00557 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;ERROR:&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Subcommand.getName()
+00558 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;can&apos;t&#32;be&#32;invoked&#32;with&#32;the&#32;given&#32;arguments:\n&quot;</emphasis>;
+00559 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Opt&#32;:&#32;MissingOptions)
+00560 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;missing&#32;&apos;-&quot;</emphasis>&#32;&lt;&lt;&#32;Opt.getKey()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;option\n&quot;</emphasis>;
+00561 &#32;&#32;&#32;&#32;&#32;&#32;OS.flush();
+00562 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::make_error&lt;llvm::StringError&gt;(
+00563 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Error,&#32;llvm::inconvertibleErrorCode());
+00564 &#32;&#32;&#32;&#32;}
+00565 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MatchingRules.size()&#32;!=&#32;1)&#32;{
+00566 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::make_error&lt;llvm::StringError&gt;(
+00567 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::Twine(<emphasis role="stringliteral">&quot;ERROR:&#32;more&#32;than&#32;one&#32;matching&#32;rule&#32;of&#32;action&quot;</emphasis>)&#32;+
+00568 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Subcommand.getName()&#32;+&#32;<emphasis role="stringliteral">&quot;was&#32;found&#32;with&#32;given&#32;options.&quot;</emphasis>,
+00569 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::inconvertibleErrorCode());
+00570 &#32;&#32;&#32;&#32;}
+00571 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;MatchingRules.front();
+00572 &#32;&#32;}
+00573 &#32;&#32;<emphasis role="comment">//&#32;Figure&#32;out&#32;which&#32;action&#32;is&#32;specified&#32;by&#32;the&#32;user.&#32;The&#32;user&#32;must&#32;specify&#32;the</emphasis>
+00574 &#32;&#32;<emphasis role="comment">//&#32;action&#32;using&#32;a&#32;command-line&#32;subcommand,&#32;e.g.&#32;the&#32;invocation&#32;`clang-refactor</emphasis>
+00575 &#32;&#32;<emphasis role="comment">//&#32;local-rename`&#32;corresponds&#32;to&#32;the&#32;`LocalRename`&#32;refactoring&#32;action.&#32;All</emphasis>
+00576 &#32;&#32;<emphasis role="comment">//&#32;subcommands&#32;must&#32;have&#32;a&#32;unique&#32;names.&#32;This&#32;allows&#32;us&#32;to&#32;figure&#32;out&#32;which</emphasis>
+00577 &#32;&#32;<emphasis role="comment">//&#32;refactoring&#32;action&#32;should&#32;be&#32;invoked&#32;by&#32;looking&#32;at&#32;the&#32;first&#32;subcommand</emphasis>
+00578 &#32;&#32;<emphasis role="comment">//&#32;that&apos;s&#32;enabled&#32;by&#32;LLVM&apos;s&#32;command-line&#32;parser.</emphasis>
+00579 &#32;&#32;llvm::Expected&lt;RefactoringActionSubcommand&#32;*&gt;&#32;getSelectedSubcommand()&#32;{
+00580 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;It&#32;=&#32;llvm::find_if(
+00581 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SubCommands,
+00582 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[](<emphasis role="keyword">const</emphasis>&#32;std::unique_ptr&lt;RefactoringActionSubcommand&gt;&#32;&amp;SubCommand)&#32;{
+00583 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!!(*SubCommand);
+00584 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;});
+00585 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(It&#32;==&#32;SubCommands.end())&#32;{
+00586 &#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;Error;
+00587 &#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_string_ostream&#32;OS(Error);
+00588 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;no&#32;refactoring&#32;action&#32;given\n&quot;</emphasis>;
+00589 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;note:&#32;the&#32;following&#32;actions&#32;are&#32;supported:\n&quot;</emphasis>;
+00590 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Subcommand&#32;:&#32;SubCommands)
+00591 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS.indent(2)&#32;&lt;&lt;&#32;Subcommand-&gt;getName()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00592 &#32;&#32;&#32;&#32;&#32;&#32;OS.flush();
+00593 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::make_error&lt;llvm::StringError&gt;(
+00594 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Error,&#32;llvm::inconvertibleErrorCode());
+00595 &#32;&#32;&#32;&#32;}
+00596 &#32;&#32;&#32;&#32;RefactoringActionSubcommand&#32;*Subcommand&#32;=&#32;&amp;(**It);
+00597 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Subcommand;
+00598 &#32;&#32;}
+00599 
+00600 &#32;&#32;std::vector&lt;std::unique_ptr&lt;RefactoringActionSubcommand&gt;&gt;&#32;SubCommands;
+00601 &#32;&#32;RefactoringActionSubcommand&#32;*SelectedSubcommand;
+00602 &#32;&#32;RefactoringActionRule&#32;*MatchingRule;
+00603 &#32;&#32;std::unique_ptr&lt;ClangRefactorToolConsumerInterface&gt;&#32;<link linkend="_class_consumer">Consumer</link>;
+00604 &#32;&#32;AtomicChanges&#32;Changes;
+00605 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HasFailed;
+00606 };
+00607 
+00608 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00609 
+<anchor xml:id="__clang_refactor_8cpp_source_1l00610"/><link linkend="__clang_refactor_8cpp_1a217dbf8b442f20279ea00b898af96f52">00610</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_refactor_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00611 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+00612 
+00613 &#32;&#32;ClangRefactorTool&#32;RefactorTool;
+00614 
+00615 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=&#32;CommonOptionsParser::create(
+00616 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,&#32;cl::GeneralCategory,&#32;cl::ZeroOrMore,
+00617 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Clang-based&#32;refactoring&#32;tool&#32;for&#32;C,&#32;C++&#32;and&#32;Objective-C&quot;</emphasis>);
+00618 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00619 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00620 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00621 &#32;&#32;}
+00622 &#32;&#32;CommonOptionsParser&#32;&amp;Options&#32;=&#32;ExpectedParser.get();
+00623 
+00624 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;Err&#32;=&#32;RefactorTool.Init())&#32;{
+00625 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(std::move(Err))&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00626 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00627 &#32;&#32;}
+00628 
+00629 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ActionFactory&#32;=&#32;RefactorTool.getFrontendActionFactory();
+00630 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ActionFactory)&#32;{
+00631 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;llvm::toString(ActionFactory.takeError())&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00632 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00633 &#32;&#32;}
+00634 &#32;&#32;ClangTool&#32;Tool(Options.getCompilations(),&#32;Options.getSourcePathList());
+00635 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Failed&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00636 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Tool.run(ActionFactory-&gt;get())&#32;!=&#32;0)&#32;{
+00637 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Failed&#32;to&#32;run&#32;refactoring&#32;action&#32;on&#32;files\n&quot;</emphasis>;
+00638 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;It&#32;is&#32;possible&#32;that&#32;TUs&#32;are&#32;broken&#32;while&#32;changes&#32;are&#32;generated&#32;correctly,</emphasis>
+00639 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;so&#32;we&#32;still&#32;try&#32;applying&#32;changes.</emphasis>
+00640 &#32;&#32;&#32;&#32;Failed&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00641 &#32;&#32;}
+00642 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;RefactorTool.applySourceChanges()&#32;||&#32;Failed&#32;||
+00643 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;RefactorTool.hasFailed();
+00644 }
+</programlisting></section>

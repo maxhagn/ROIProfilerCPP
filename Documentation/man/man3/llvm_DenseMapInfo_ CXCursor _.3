@@ -1,0 +1,79 @@
+.TH "llvm::DenseMapInfo< CXCursor >" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+llvm::DenseMapInfo< CXCursor >
+.SH SYNOPSIS
+.br
+.PP
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static CXCursor \fBgetEmptyKey\fP ()"
+.br
+.ti -1c
+.RI "static CXCursor \fBgetTombstoneKey\fP ()"
+.br
+.ti -1c
+.RI "static unsigned \fBgetHashValue\fP (const CXCursor &cursor)"
+.br
+.ti -1c
+.RI "static bool \fBisEqual\fP (const CXCursor &x, const CXCursor &y)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 1470 of file CXCursor\&.cpp\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "static CXCursor llvm::DenseMapInfo< CXCursor >::getEmptyKey ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 1472 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1472                                        {
+1473     return MakeCXCursorInvalid(CXCursor_InvalidFile);
+1474   }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursorInvalid()\&.
+.SS "static unsigned llvm::DenseMapInfo< CXCursor >::getHashValue (const CXCursor & cursor)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 1478 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1478                                                               {
+1479     return llvm::DenseMapInfo<std::pair<const void *, const void *>>::
+1480         getHashValue(std::make_pair(cursor\&.data[0], cursor\&.data[1]));
+1481   }
+.fi
+.SS "static CXCursor llvm::DenseMapInfo< CXCursor >::getTombstoneKey ()\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 1475 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1475                                            {
+1476     return MakeCXCursorInvalid(CXCursor_NoDeclFound);
+1477   }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursorInvalid()\&.
+.SS "static bool llvm::DenseMapInfo< CXCursor >::isEqual (const CXCursor & x, const CXCursor & y)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 1482 of file CXCursor\&.cpp\&.
+.PP
+.nf
+1482                                                                    {
+1483     return x\&.kind == y\&.kind && x\&.data[0] == y\&.data[0] && x\&.data[1] == y\&.data[1];
+1484   }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

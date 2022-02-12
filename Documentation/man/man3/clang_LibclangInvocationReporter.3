@@ -1,0 +1,138 @@
+.TH "clang::LibclangInvocationReporter" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::LibclangInvocationReporter
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CIndexer\&.h>\fP
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum class \fBOperationKind\fP { \fBParseOperation\fP, \fBCompletionOperation\fP }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBLibclangInvocationReporter\fP (\fBCIndexer\fP &Idx, \fBOperationKind\fP Op, unsigned ParseOptions, llvm::ArrayRef< const char * > Args, llvm::ArrayRef< std::string > InvocationArgs, llvm::ArrayRef< CXUnsavedFile > UnsavedFiles)"
+.br
+.ti -1c
+.RI "\fB~LibclangInvocationReporter\fP ()"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Logs information about a particular libclang operation like parsing to a new file in the invocation emission path\&. 
+.PP
+Definition at line 89 of file CIndexer\&.h\&.
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBclang::LibclangInvocationReporter::OperationKind\fP\fC [strong]\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIParseOperation \fP\fP
+.TP
+\fB\fICompletionOperation \fP\fP
+.PP
+Definition at line 91 of file CIndexer\&.h\&.
+.PP
+.nf
+91 { ParseOperation, CompletionOperation };
+.fi
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "LibclangInvocationReporter::LibclangInvocationReporter (\fBCIndexer\fP & Idx, \fBOperationKind\fP Op, unsigned ParseOptions, llvm::ArrayRef< const char * > Args, llvm::ArrayRef< std::string > InvocationArgs, llvm::ArrayRef< CXUnsavedFile > UnsavedFiles)"
+
+.PP
+Definition at line 152 of file CIndexer\&.cpp\&.
+.PP
+.nf
+156                                               {
+157   StringRef Path = Idx\&.getInvocationEmissionPath();
+158   if (Path\&.empty())
+159     return;
+160 
+161   // Create a temporary file for the invocation log\&.
+162   SmallString<256> TempPath;
+163   TempPath = Path;
+164   llvm::sys::path::append(TempPath, "libclang-%%%%%%%%%%%%");
+165   int FD;
+166   if (llvm::sys::fs::createUniqueFile(TempPath, FD, TempPath,
+167                                       llvm::sys::fs::OF_Text))
+168     return;
+169   File = std::string(TempPath\&.begin(), TempPath\&.end());
+170   llvm::raw_fd_ostream OS(FD, /*ShouldClose=*/true);
+171 
+172   // Write out the information about the invocation to it\&.
+173   auto WriteStringKey = [&OS](StringRef Key, StringRef Value) {
+174     OS << R"(")" << Key << R"(":")";
+175     OS << llvm::yaml::escape(Value) << '"';
+176   };
+177   OS << '{';
+178   WriteStringKey("toolchain", Idx\&.getClangToolchainPath());
+179   OS << ',';
+180   WriteStringKey("libclang\&.operation",
+181                  Op == OperationKind::ParseOperation ? "parse" : "complete");
+182   OS << ',';
+183   OS << R"("libclang\&.opts":)" << ParseOptions;
+184   OS << ',';
+185   OS << R"("args":[)";
+186   for (const auto &I : llvm::enumerate(Args)) {
+187     if (I\&.index())
+188       OS << ',';
+189     OS << '"' << llvm::yaml::escape(I\&.value()) << '"';
+190   }
+191   if (!InvocationArgs\&.empty()) {
+192     OS << R"(],"invocation-args":[)";
+193     for (const auto &I : llvm::enumerate(InvocationArgs)) {
+194       if (I\&.index())
+195         OS << ',';
+196       OS << '"' << llvm::yaml::escape(I\&.value()) << '"';
+197     }
+198   }
+199   if (!UnsavedFiles\&.empty()) {
+200     OS << R"(],"unsaved_file_hashes":[)";
+201     for (const auto &UF : llvm::enumerate(UnsavedFiles)) {
+202       if (UF\&.index())
+203         OS << ',';
+204       OS << '{';
+205       WriteStringKey("name", UF\&.value()\&.Filename);
+206       OS << ',';
+207       llvm::MD5 Hash;
+208       Hash\&.update(getContents(UF\&.value()));
+209       llvm::MD5::MD5Result Result;
+210       Hash\&.final(Result);
+211       SmallString<32> Digest = Result\&.digest();
+212       WriteStringKey("md5", Digest);
+213       OS << '}';
+214     }
+215   }
+216   OS << "]}";
+217 }
+.fi
+.PP
+References libscanbuild\&.report::escape(), clang::CIndexer::getClangToolchainPath(), clang::CIndexer::getInvocationEmissionPath(), and ParseOperation\&.
+.SS "LibclangInvocationReporter::~LibclangInvocationReporter ()"
+
+.PP
+Definition at line 219 of file CIndexer\&.cpp\&.
+.PP
+.nf
+219                                                         {
+220   if (!File\&.empty())
+221     llvm::sys::fs::remove(File);
+222 }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

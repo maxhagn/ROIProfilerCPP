@@ -1,0 +1,174 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespacelibear" xml:lang="en-US">
+<title>libear Namespace Reference</title>
+<indexterm><primary>libear</primary></indexterm>
+<simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>class <link linkend="_classlibear_1_1_toolset">Toolset</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_classlibear_1_1_darwin_toolset">DarwinToolset</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_classlibear_1_1_unix_toolset">UnixToolset</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_classlibear_1_1_linux_toolset">LinuxToolset</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_classlibear_1_1_configure">Configure</link></para>
+</listitem>
+            <listitem><para>class <link linkend="_classlibear_1_1_shared_library">SharedLibrary</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_namespacelibear_1a817eb807bbbffe9ca98d7fa2777cd182">build_libear</link> (compiler, dst_dir)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">execute</link> (cmd, *args, **kwargs)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">TemporaryDirectory</link> (**kwargs)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f">make_toolset</link> (src_dir)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74">do_configure</link> (toolset)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8">create_shared_library</link> (name, toolset)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespacelibear_1a817eb807bbbffe9ca98d7fa2777cd182"/>    <section>
+    <title>build_libear()</title>
+<indexterm><primary>build_libear</primary><secondary>libear</secondary></indexterm>
+<indexterm><primary>libear</primary><secondary>build_libear</secondary></indexterm>
+<para><computeroutput>def libear.build_libear ( compiler,  dst_dir)</computeroutput></para>
+<para><literallayout><computeroutput> Returns the full path to the &apos;libear&apos; library. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_lib_2libear_2____init_____8py_source_1l00019">19</link> of file <link linkend="_lib_2libear_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00019 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a817eb807bbbffe9ca98d7fa2777cd182">build_libear</link>(compiler,&#32;dst_dir):
+00020 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;the&#32;full&#32;path&#32;to&#32;the&#32;&apos;libear&apos;&#32;library.&#32;&quot;&quot;&quot;</emphasis>
+00021 
+00022 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;src_dir&#32;=&#32;os.path.dirname(os.path.realpath(__file__))
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset&#32;=&#32;<link linkend="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f">make_toolset</link>(src_dir)
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset.set_compiler(compiler)
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset.set_language_standard(<emphasis role="stringliteral">&apos;c99&apos;</emphasis>)
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;toolset.add_definitions([<emphasis role="stringliteral">&apos;-D_GNU_SOURCE&apos;</emphasis>])
+00028 
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure&#32;=&#32;<link linkend="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74">do_configure</link>(toolset)
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execve&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVE&apos;</emphasis>)
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execv&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECV&apos;</emphasis>)
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execvpe&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVPE&apos;</emphasis>)
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execvp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVP&apos;</emphasis>)
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execvP&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECVP2&apos;</emphasis>)
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;exect&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECT&apos;</emphasis>)
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execl&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECL&apos;</emphasis>)
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execlp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECLP&apos;</emphasis>)
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;execle&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_EXECLE&apos;</emphasis>)
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;posix_spawn&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_POSIX_SPAWN&apos;</emphasis>)
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_function_exists(<emphasis role="stringliteral">&apos;posix_spawnp&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;HAVE_POSIX_SPAWNP&apos;</emphasis>)
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.check_symbol_exists(<emphasis role="stringliteral">&apos;_NSGetEnviron&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;crt_externs.h&apos;</emphasis>,
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;HAVE_NSGETENVIRON&apos;</emphasis>)
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;configure.write_by_template(
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(src_dir,&#32;<emphasis role="stringliteral">&apos;config.h.in&apos;</emphasis>),
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(dst_dir,&#32;<emphasis role="stringliteral">&apos;config.h&apos;</emphasis>))
+00046 
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target&#32;=&#32;<link linkend="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8">create_shared_library</link>(<emphasis role="stringliteral">&apos;ear&apos;</emphasis>,&#32;toolset)
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.add_include(dst_dir)
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.add_sources(<emphasis role="stringliteral">&apos;ear.c&apos;</emphasis>)
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.link_against(toolset.dl_libraries())
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.link_against([<emphasis role="stringliteral">&apos;pthread&apos;</emphasis>])
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;target.build_release(dst_dir)
+00053 
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.path.join(dst_dir,&#32;target.name)
+00055 
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>&#32;Exception:
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;logging.info(<emphasis role="stringliteral">&quot;Could&#32;not&#32;build&#32;interception&#32;library.&quot;</emphasis>,&#32;exc_info=<emphasis role="keyword">True</emphasis>)
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00059 
+00060 
+</programlisting><para>
+References <link linkend="_lib_2libear_2____init_____8py_source_1l00258">create_shared_library()</link>, <link linkend="_lib_2libear_2____init_____8py_source_1l00221">do_configure()</link>, and <link linkend="_lib_2libear_2____init_____8py_source_1l00150">make_toolset()</link>.</para>
+<para>
+Referenced by <link linkend="_intercept_8py_source_1l00102">libscanbuild.intercept.setup_environment()</link>.</para>
+    </section><anchor xml:id="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8"/>    <section>
+    <title>create_shared_library()</title>
+<indexterm><primary>create_shared_library</primary><secondary>libear</secondary></indexterm>
+<indexterm><primary>libear</primary><secondary>create_shared_library</secondary></indexterm>
+<para><computeroutput>def libear.create_shared_library ( name,  toolset)</computeroutput></para><para>
+Definition at line <link linkend="_lib_2libear_2____init_____8py_source_1l00258">258</link> of file <link linkend="_lib_2libear_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00258 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a6bcdf6d0f3455dcec08687640d5a1fb8">create_shared_library</link>(name,&#32;toolset):
+00259 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SharedLibrary(name,&#32;toolset)
+</programlisting><para>
+Referenced by <link linkend="_lib_2libear_2____init_____8py_source_1l00019">build_libear()</link>.</para>
+    </section><anchor xml:id="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74"/>    <section>
+    <title>do_configure()</title>
+<indexterm><primary>do_configure</primary><secondary>libear</secondary></indexterm>
+<indexterm><primary>libear</primary><secondary>do_configure</secondary></indexterm>
+<para><computeroutput>def libear.do_configure ( toolset)</computeroutput></para><para>
+Definition at line <link linkend="_lib_2libear_2____init_____8py_source_1l00221">221</link> of file <link linkend="_lib_2libear_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00221 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a1bbedcb489579093fd26434d695b5c74">do_configure</link>(toolset):
+00222 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Configure(toolset)
+00223 
+00224 
+</programlisting><para>
+Referenced by <link linkend="_lib_2libear_2____init_____8py_source_1l00019">build_libear()</link>.</para>
+    </section><anchor xml:id="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b"/>    <section>
+    <title>execute()</title>
+<indexterm><primary>execute</primary><secondary>libear</secondary></indexterm>
+<indexterm><primary>libear</primary><secondary>execute</secondary></indexterm>
+<para><computeroutput>def libear.execute ( cmd, * args, ** kwargs)</computeroutput></para>
+<para><literallayout><computeroutput> Make subprocess execution silent. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_lib_2libear_2____init_____8py_source_1l00061">61</link> of file <link linkend="_lib_2libear_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00061 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a011d707003ffa7443b73f8761c2a121b">execute</link>(cmd,&#32;*args,&#32;**kwargs):
+00062 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Make&#32;subprocess&#32;execution&#32;silent.&#32;&quot;&quot;&quot;</emphasis>
+00063 
+00064 &#32;&#32;&#32;&#32;<emphasis role="keyword">import</emphasis>&#32;subprocess
+00065 &#32;&#32;&#32;&#32;kwargs.update({<emphasis role="stringliteral">&apos;stdout&apos;</emphasis>:&#32;subprocess.PIPE,&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>:&#32;subprocess.STDOUT})
+00066 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;subprocess.check_call(cmd,&#32;*args,&#32;**kwargs)
+00067 
+00068 
+00069 <emphasis role="preprocessor">@contextlib.contextmanager</emphasis>
+</programlisting><para>
+Referenced by <link linkend="_lib_2libear_2____init_____8py_source_1l00242">libear.SharedLibrary.build_release()</link>, and <link linkend="_test__exec__anatomy_8py_source_1l00014">tests.functional.cases.test_exec_anatomy.run()</link>.</para>
+    </section><anchor xml:id="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f"/>    <section>
+    <title>make_toolset()</title>
+<indexterm><primary>make_toolset</primary><secondary>libear</secondary></indexterm>
+<indexterm><primary>libear</primary><secondary>make_toolset</secondary></indexterm>
+<para><computeroutput>def libear.make_toolset ( src_dir)</computeroutput></para><para>
+Definition at line <link linkend="_lib_2libear_2____init_____8py_source_1l00150">150</link> of file <link linkend="_lib_2libear_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00150 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a31e25a343a18711aeaa422a6fc7ff57f">make_toolset</link>(src_dir):
+00151 &#32;&#32;&#32;&#32;platform&#32;=&#32;sys.platform
+00152 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;platform&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;win32&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;cygwin&apos;</emphasis>}:
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;RuntimeError(<emphasis role="stringliteral">&apos;not&#32;implemented&#32;on&#32;this&#32;platform&apos;</emphasis>)
+00154 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;platform&#32;==&#32;<emphasis role="stringliteral">&apos;darwin&apos;</emphasis>:
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;DarwinToolset(src_dir)
+00156 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;platform&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;linux&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;linux2&apos;</emphasis>}:
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LinuxToolset(src_dir)
+00158 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00159 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;UnixToolset(src_dir)
+00160 
+00161 
+</programlisting><para>
+Referenced by <link linkend="_lib_2libear_2____init_____8py_source_1l00019">build_libear()</link>.</para>
+    </section><anchor xml:id="_namespacelibear_1a44657565063241a3d383ec724243c023"/>    <section>
+    <title>TemporaryDirectory()</title>
+<indexterm><primary>TemporaryDirectory</primary><secondary>libear</secondary></indexterm>
+<indexterm><primary>libear</primary><secondary>TemporaryDirectory</secondary></indexterm>
+<para><computeroutput>def libear.TemporaryDirectory (** kwargs)</computeroutput></para><para>
+Definition at line <link linkend="_lib_2libear_2____init_____8py_source_1l00070">70</link> of file <link linkend="_lib_2libear_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00070 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibear_1a44657565063241a3d383ec724243c023">TemporaryDirectory</link>(**kwargs):
+00071 &#32;&#32;&#32;&#32;name&#32;=&#32;tempfile.mkdtemp(**kwargs)
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">yield</emphasis>&#32;name
+00074 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">finally</emphasis>:
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;shutil.rmtree(name)
+00076 
+00077 
+</programlisting><para>
+Referenced by <link linkend="_test__create__cdb_8py_source_1l00154">tests.functional.cases.test_create_cdb.ResultFormatingTest.assert_command_creates_entry()</link>, <link linkend="_test__create__cdb_8py_source_1l00139">tests.functional.cases.test_create_cdb.ResultFormatingTest.assert_creates_number_of_entries()</link>, <link linkend="_intercept_8py_source_1l00058">libscanbuild.intercept.capture()</link>, <link linkend="_test__analyze_8py_source_1l00131">tests.unit.test_analyze.RunAnalyzerTest.run_analyzer()</link>, <link linkend="_test__report_8py_source_1l00014">tests.unit.test_report.run_bug_parse()</link>, <link linkend="_test__report_8py_source_1l00023">tests.unit.test_report.run_crash_parse()</link>, <link linkend="_test__exec__anatomy_8py_source_1l00044">tests.functional.cases.test_exec_anatomy.ExecAnatomyTest.test_all_exec_calls()</link>, <link linkend="_test__create__cdb_8py_source_1l00119">tests.functional.cases.test_create_cdb.ResumeFeatureTest.test_append_to_existing_cdb()</link>, <link linkend="_test__from__cdb_8py_source_1l00165">tests.functional.cases.test_from_cdb.FailureReportTest.test_broken_creates_failure_reports()</link>, <link linkend="_test__from__cdb_8py_source_1l00172">tests.functional.cases.test_from_cdb.FailureReportTest.test_broken_does_not_creates_failure_reports()</link>, <link linkend="_test__from__cdb_8py_source_1l00043">tests.functional.cases.test_from_cdb.OutputDirectoryTest.test_clear_deletes_report_dir()</link>, <link linkend="_test__from__cmd_8py_source_1l00029">tests.functional.cases.test_from_cmd.OutputDirectoryTest.test_clear_deletes_report_dir()</link>, <link linkend="_test__from__cdb_8py_source_1l00063">tests.functional.cases.test_from_cdb.ExitCodeTest.test_clear_does_not_set_exit_code()</link>, <link linkend="_test__from__cdb_8py_source_1l00075">tests.functional.cases.test_from_cdb.ExitCodeTest.test_clear_does_not_set_exit_code_if_asked()</link>, <link linkend="_test__from__cdb_8py_source_1l00088">tests.functional.cases.test_from_cdb.ExitCodeTest.test_clear_does_not_set_exit_code_if_asked_from_plist()</link>, <link linkend="_test__from__cdb_8py_source_1l00049">tests.functional.cases.test_from_cdb.OutputDirectoryTest.test_clear_keeps_report_dir_when_asked()</link>, <link linkend="_test__from__cmd_8py_source_1l00035">tests.functional.cases.test_from_cmd.OutputDirectoryTest.test_clear_keeps_report_dir_when_asked()</link>, <link linkend="_test__from__cdb_8py_source_1l00109">tests.functional.cases.test_from_cdb.OutputFormatTest.test_default_only_creates_html_report()</link>, <link linkend="_test__from__cdb_8py_source_1l00201">tests.functional.cases.test_from_cdb.TitleTest.test_default_title_in_report()</link>, <link linkend="_test__analyze_8py_source_1l00019">tests.unit.test_analyze.ReportDirectoryTest.test_directory_name_comparison()</link>, <link linkend="_test__clang_8py_source_1l00023">tests.unit.test_clang.ClangGetArgumentsTest.test_get_clang_arguments()</link>, <link linkend="_test__from__cdb_8py_source_1l00207">tests.functional.cases.test_from_cdb.TitleTest.test_given_title_in_report()</link>, <link linkend="_test__from__cmd_8py_source_1l00103">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_cc_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00111">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_cxx_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00069">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_library_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00058">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_wrapper_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00089">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_cc_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00096">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_cxx_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00048">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_works()</link>, <link linkend="_test__report_8py_source_1l00382">tests.unit.test_report.MergeSarifTest.test_merge_updates_embedded_link()</link>, <link linkend="_test__report_8py_source_1l00152">tests.unit.test_report.MergeSarifTest.test_merging_sarif()</link>, <link linkend="_test__create__cdb_8py_source_1l00067">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_not_successful_build()</link>, <link linkend="_test__create__cdb_8py_source_1l00090">tests.functional.cases.test_create_cdb.ExitCodeTest.test_not_successful_build()</link>, <link linkend="_test__report_8py_source_1l00554">tests.unit.test_report.MergeSarifTest.test_overflow_run_count()</link>, <link linkend="_test__create__cdb_8py_source_1l00111">tests.functional.cases.test_create_cdb.ResumeFeatureTest.test_overwrite_existing_cdb()</link>, <link linkend="_test__report_8py_source_1l00077">tests.unit.test_report.ParseFileTest.test_parse_real_crash()</link>, <link linkend="_test__from__cdb_8py_source_1l00119">tests.functional.cases.test_from_cdb.OutputFormatTest.test_plist_and_html_creates_html_and_plist_reports()</link>, <link linkend="_test__from__cdb_8py_source_1l00129">tests.functional.cases.test_from_cdb.OutputFormatTest.test_plist_only_creates_plist_report()</link>, <link linkend="_test__from__cdb_8py_source_1l00057">tests.functional.cases.test_from_cdb.ExitCodeTest.test_regular_does_not_set_exit_code()</link>, <link linkend="_test__from__cdb_8py_source_1l00037">tests.functional.cases.test_from_cdb.OutputDirectoryTest.test_regular_keeps_report_dir()</link>, <link linkend="_test__from__cmd_8py_source_1l00023">tests.functional.cases.test_from_cmd.OutputDirectoryTest.test_regular_keeps_report_dir()</link>, <link linkend="_test__from__cdb_8py_source_1l00069">tests.functional.cases.test_from_cdb.ExitCodeTest.test_regular_sets_exit_code_if_asked()</link>, <link linkend="_test__from__cdb_8py_source_1l00081">tests.functional.cases.test_from_cdb.ExitCodeTest.test_regular_sets_exit_code_if_asked_from_plist()</link>, <link linkend="_test__analyze_8py_source_1l00190">tests.unit.test_analyze.ReportFailureTest.test_report_failure_create_files()</link>, <link linkend="_test__from__cdb_8py_source_1l00151">tests.functional.cases.test_from_cdb.OutputFormatTest.test_sarif_and_html_creates_sarif_and_html_reports()</link>, <link linkend="_test__from__cdb_8py_source_1l00139">tests.functional.cases.test_from_cdb.OutputFormatTest.test_sarif_only_creates_sarif_result()</link>, <link linkend="_test__intercept_8py_source_1l00038">tests.unit.test_intercept.InterceptUtilTest.test_sip()</link>, <link linkend="_test__create__cdb_8py_source_1l00029">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build()</link>, <link linkend="_test__create__cdb_8py_source_1l00085">tests.functional.cases.test_create_cdb.ExitCodeTest.test_successful_build()</link>, <link linkend="_test__create__cdb_8py_source_1l00061">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_all_in_one()</link>, <link linkend="_test__create__cdb_8py_source_1l00052">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_on_empty_env()</link>, <link linkend="_test__create__cdb_8py_source_1l00045">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_parallel()</link>, and <link linkend="_test__create__cdb_8py_source_1l00035">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_with_wrapper()</link>.</para>
+</section>
+</section>
+</section>

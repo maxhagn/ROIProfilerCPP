@@ -1,0 +1,1342 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_offload_bundler_8cpp_source" xml:lang="en-US">
+<title>ClangOffloadBundler.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-offload-bundler/ClangOffloadBundler.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;clang-offload-bundler/ClangOffloadBundler.cpp&#32;---------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00015 <emphasis role="comment"></emphasis><emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00016 
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/Version.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/ArrayRef.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallString.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/SmallVector.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringMap.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringRef.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/StringSwitch.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/Triple.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/Object/Archive.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;llvm/Object/ArchiveWriter.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;llvm/Object/Binary.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;llvm/Object/ObjectFile.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Casting.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Debug.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Errc.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Error.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/ErrorOr.h&quot;</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00036 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Host.h&quot;</emphasis>
+00037 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/MemoryBuffer.h&quot;</emphasis>
+00038 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Path.h&quot;</emphasis>
+00039 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Program.h&quot;</emphasis>
+00040 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00041 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/StringSaver.h&quot;</emphasis>
+00042 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/WithColor.h&quot;</emphasis>
+00043 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00044 <emphasis role="preprocessor">#include&#32;&lt;algorithm&gt;</emphasis>
+00045 <emphasis role="preprocessor">#include&#32;&lt;cassert&gt;</emphasis>
+00046 <emphasis role="preprocessor">#include&#32;&lt;cstddef&gt;</emphasis>
+00047 <emphasis role="preprocessor">#include&#32;&lt;cstdint&gt;</emphasis>
+00048 <emphasis role="preprocessor">#include&#32;&lt;forward_list&gt;</emphasis>
+00049 <emphasis role="preprocessor">#include&#32;&lt;memory&gt;</emphasis>
+00050 <emphasis role="preprocessor">#include&#32;&lt;set&gt;</emphasis>
+00051 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00052 <emphasis role="preprocessor">#include&#32;&lt;system_error&gt;</emphasis>
+00053 <emphasis role="preprocessor">#include&#32;&lt;utility&gt;</emphasis>
+00054 
+00055 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00056 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>llvm::object;
+00057 
+00058 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;Help(<emphasis role="stringliteral">&quot;h&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Alias&#32;for&#32;-help&quot;</emphasis>),&#32;cl::Hidden);
+00059 
+00060 <emphasis role="comment">//&#32;Mark&#32;all&#32;our&#32;options&#32;with&#32;this&#32;category,&#32;everything&#32;else&#32;(except&#32;for&#32;-version</emphasis>
+00061 <emphasis role="comment">//&#32;and&#32;-help)&#32;will&#32;be&#32;hidden.</emphasis>
+00062 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory
+00063 &#32;&#32;&#32;&#32;ClangOffloadBundlerCategory(<emphasis role="stringliteral">&quot;clang-offload-bundler&#32;options&quot;</emphasis>);
+00064 
+00065 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;
+00066 &#32;&#32;&#32;&#32;InputFileNames(<emphasis role="stringliteral">&quot;inputs&quot;</emphasis>,&#32;cl::CommaSeparated,&#32;cl::OneOrMore,
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;[&lt;input&#32;file&gt;,...]&quot;</emphasis>),
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangOffloadBundlerCategory));
+00069 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;
+00070 &#32;&#32;&#32;&#32;OutputFileNames(<emphasis role="stringliteral">&quot;outputs&quot;</emphasis>,&#32;cl::CommaSeparated,
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;[&lt;output&#32;file&gt;,...]&quot;</emphasis>),
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangOffloadBundlerCategory));
+00073 <emphasis role="keyword">static</emphasis>&#32;cl::list&lt;std::string&gt;
+00074 &#32;&#32;&#32;&#32;TargetNames(<emphasis role="stringliteral">&quot;targets&quot;</emphasis>,&#32;cl::CommaSeparated,
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;[&lt;offload&#32;kind&gt;-&lt;target&#32;triple&gt;,...]&quot;</emphasis>),
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangOffloadBundlerCategory));
+00077 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00078 &#32;&#32;&#32;&#32;FilesType(<emphasis role="stringliteral">&quot;type&quot;</emphasis>,&#32;cl::Required,
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Type&#32;of&#32;the&#32;files&#32;to&#32;be&#32;bundled/unbundled.\n&quot;</emphasis>
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Current&#32;supported&#32;types&#32;are:\n&quot;</emphasis>
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;i&#32;&#32;&#32;-&#32;cpp-output\n&quot;</emphasis>
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;ii&#32;&#32;-&#32;c++-cpp-output\n&quot;</emphasis>
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;cui&#32;-&#32;cuda/hip-output\n&quot;</emphasis>
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;d&#32;&#32;&#32;-&#32;dependency\n&quot;</emphasis>
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;ll&#32;&#32;-&#32;llvm\n&quot;</emphasis>
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;bc&#32;&#32;-&#32;llvm-bc\n&quot;</emphasis>
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;s&#32;&#32;&#32;-&#32;assembler\n&quot;</emphasis>
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;o&#32;&#32;&#32;-&#32;object\n&quot;</emphasis>
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;a&#32;&#32;&#32;-&#32;archive&#32;of&#32;objects\n&quot;</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;gch&#32;-&#32;precompiled-header\n&quot;</emphasis>
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;ast&#32;-&#32;clang&#32;AST&#32;file&quot;</emphasis>),
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangOffloadBundlerCategory));
+00093 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00094 &#32;&#32;&#32;&#32;Unbundle(<emphasis role="stringliteral">&quot;unbundle&quot;</emphasis>,
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Unbundle&#32;bundled&#32;file&#32;into&#32;several&#32;output&#32;files.\n&quot;</emphasis>),
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangOffloadBundlerCategory));
+00097 
+00098 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00099 &#32;&#32;&#32;&#32;ListBundleIDs(<emphasis role="stringliteral">&quot;list&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;List&#32;bundle&#32;IDs&#32;in&#32;the&#32;bundled&#32;file.\n&quot;</emphasis>),
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangOffloadBundlerCategory));
+00101 
+00102 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;PrintExternalCommands(
+00103 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;###&quot;</emphasis>,
+00104 &#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;any&#32;external&#32;commands&#32;that&#32;are&#32;to&#32;be&#32;executed&#32;&quot;</emphasis>
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;instead&#32;of&#32;actually&#32;executing&#32;them&#32;-&#32;for&#32;testing&#32;purposes.\n&quot;</emphasis>),
+00106 &#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangOffloadBundlerCategory));
+00107 
+00108 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00109 &#32;&#32;&#32;&#32;AllowMissingBundles(<emphasis role="stringliteral">&quot;allow-missing-bundles&quot;</emphasis>,
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Create&#32;empty&#32;files&#32;if&#32;bundles&#32;are&#32;missing&#32;&quot;</emphasis>
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;when&#32;unbundling.\n&quot;</emphasis>),
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(<emphasis role="keyword">false</emphasis>),&#32;cl::cat(ClangOffloadBundlerCategory));
+00113 
+00114 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;unsigned&gt;
+00115 &#32;&#32;&#32;&#32;BundleAlignment(<emphasis role="stringliteral">&quot;bundle-align&quot;</emphasis>,
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Alignment&#32;of&#32;bundle&#32;for&#32;binary&#32;files&quot;</emphasis>),
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::init(1),&#32;cl::cat(ClangOffloadBundlerCategory));
+00118 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00120"/><link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">00120</link> <emphasis role="preprocessor">#define&#32;OFFLOAD_BUNDLER_MAGIC_STR&#32;&quot;__CLANG_OFFLOAD_BUNDLE__&quot;</emphasis>
+00121 
+00123 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;HostInputIndex&#32;=&#32;~0u;
+00124 
+00126 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;AllowNoHost&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00127 
+00129 <emphasis role="keyword">static</emphasis>&#32;std::string&#32;BundlerExecutable;
+00130 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00139"/><link linkend="_struct_offload_target_info">00139</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_struct_offload_target_info">OffloadTargetInfo</link>&#32;{
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00140"/><link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">00140</link> &#32;&#32;StringRef&#32;<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>;
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00141"/><link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">00141</link> &#32;&#32;llvm::Triple&#32;<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>;
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00142"/><link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">00142</link> &#32;&#32;StringRef&#32;<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>;
+00143 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00144"/><link linkend="_struct_offload_target_info_1a201b4e994213afcdd776867b7b6d1eae">00144</link> &#32;&#32;<link linkend="_struct_offload_target_info_1a201b4e994213afcdd776867b7b6d1eae">OffloadTargetInfo</link>(<emphasis role="keyword">const</emphasis>&#32;StringRef&#32;Target)&#32;{
+00145 &#32;&#32;&#32;&#32;SmallVector&lt;StringRef,&#32;6&gt;&#32;Components;
+00146 &#32;&#32;&#32;&#32;Target.split(Components,&#32;<emphasis role="charliteral">&apos;-&apos;</emphasis>,&#32;5);
+00147 &#32;&#32;&#32;&#32;Components.resize(6);
+00148 &#32;&#32;&#32;&#32;this-&gt;OffloadKind&#32;=&#32;Components[0];
+00149 &#32;&#32;&#32;&#32;this-&gt;Triple&#32;=&#32;llvm::Triple(Components[1],&#32;Components[2],&#32;Components[3],
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Components[4]);
+00151 &#32;&#32;&#32;&#32;this-&gt;GPUArch&#32;=&#32;Components[5];
+00152 &#32;&#32;}
+00153 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00154"/><link linkend="_struct_offload_target_info_1a2eb3794ca870118bef52b97bd65a6ad0">00154</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_struct_offload_target_info_1a2eb3794ca870118bef52b97bd65a6ad0">hasHostKind</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;this-&gt;OffloadKind&#32;==&#32;<emphasis role="stringliteral">&quot;host&quot;</emphasis>;&#32;}
+00155 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00156"/><link linkend="_struct_offload_target_info_1ab482a9cf689cd876afbe7c5bc1befca3">00156</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_struct_offload_target_info_1ab482a9cf689cd876afbe7c5bc1befca3">isOffloadKindValid</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00157 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;OffloadKind&#32;==&#32;<emphasis role="stringliteral">&quot;host&quot;</emphasis>&#32;||&#32;OffloadKind&#32;==&#32;<emphasis role="stringliteral">&quot;openmp&quot;</emphasis>&#32;||
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OffloadKind&#32;==&#32;<emphasis role="stringliteral">&quot;hip&quot;</emphasis>&#32;||&#32;OffloadKind&#32;==&#32;<emphasis role="stringliteral">&quot;hipv4&quot;</emphasis>;
+00159 &#32;&#32;}
+00160 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00161"/><link linkend="_struct_offload_target_info_1a659a3f9dcf7c8df811d60209d4387a23">00161</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_struct_offload_target_info_1a659a3f9dcf7c8df811d60209d4387a23">isTripleValid</link>()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00162 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!Triple.str().empty()&#32;&amp;&amp;&#32;Triple.getArch()&#32;!=&#32;Triple::UnknownArch;
+00163 &#32;&#32;}
+00164 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00165"/><link linkend="_struct_offload_target_info_1a55d64188846e6f5cf8d94ddc7a086177">00165</link> &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_struct_offload_target_info_1a55d64188846e6f5cf8d94ddc7a086177">operator==</link>(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>&#32;&amp;Target)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00166 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;OffloadKind&#32;==&#32;Target.<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;&amp;&amp;
+00167 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Triple.isCompatibleWith(Target.<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>)&#32;&amp;&amp;&#32;GPUArch&#32;==&#32;Target.<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>;
+00168 &#32;&#32;}
+00169 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00170"/><link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">00170</link> &#32;&#32;std::string&#32;<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()&#32;{
+00171 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Twine(OffloadKind&#32;+&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>&#32;+&#32;Triple.str()&#32;+&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>&#32;+&#32;GPUArch).str();
+00172 &#32;&#32;}
+00173 };
+00174 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00176"/><link linkend="_class_file_handler">00176</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_file_handler">FileHandler</link>&#32;{
+00177 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00178"/><link linkend="_struct_file_handler_1_1_bundle_info">00178</link> &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis><link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;{
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00179"/><link linkend="_struct_file_handler_1_1_bundle_info_1ac99122961a6bf48af90dccaf408d8ff3">00179</link> &#32;&#32;&#32;&#32;StringRef&#32;<link linkend="_struct_file_handler_1_1_bundle_info_1ac99122961a6bf48af90dccaf408d8ff3">BundleID</link>;
+00180 &#32;&#32;};
+00181 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00182"/><link linkend="_class_file_handler_1a0d1ac8e9911e19255e8b2d99c2d93f43">00182</link> &#32;&#32;<link linkend="_class_file_handler_1a0d1ac8e9911e19255e8b2d99c2d93f43">FileHandler</link>()&#32;{}
+00183 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00184"/><link linkend="_class_file_handler_1a7763aaf84828a6eaaa5f14daca6b0797">00184</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;<link linkend="_class_file_handler_1a7763aaf84828a6eaaa5f14daca6b0797">~FileHandler</link>()&#32;{}
+00185 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00188"/><link linkend="_class_file_handler_1a0b973008bf7d7a53bc33d0f75b0dadef">00188</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1a0b973008bf7d7a53bc33d0f75b0dadef">ReadHeader</link>(MemoryBuffer&#32;&amp;Input)&#32;=&#32;0;
+00189 
+00193 &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00194"/><link linkend="_class_file_handler_1a5b31037af59fa8c77b8287d8ae9d84c4">00194</link> &#32;&#32;<link linkend="_class_file_handler_1a5b31037af59fa8c77b8287d8ae9d84c4">ReadBundleStart</link>(MemoryBuffer&#32;&amp;Input)&#32;=&#32;0;
+00195 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00197"/><link linkend="_class_file_handler_1a0dc30eeb824c348cc6f9bba853c93c41">00197</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1a0dc30eeb824c348cc6f9bba853c93c41">ReadBundleEnd</link>(MemoryBuffer&#32;&amp;Input)&#32;=&#32;0;
+00198 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00200"/><link linkend="_class_file_handler_1a6e4e497d5160eff3cab43dfdfd7e2a13">00200</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1a6e4e497d5160eff3cab43dfdfd7e2a13">ReadBundle</link>(raw_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;=&#32;0;
+00201 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00204"/><link linkend="_class_file_handler_1ab587b57538b319ab796b4f9ac060db56">00204</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1ab587b57538b319ab796b4f9ac060db56">WriteHeader</link>(raw_fd_ostream&#32;&amp;OS,
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;Inputs)&#32;=&#32;0;
+00206 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00209"/><link linkend="_class_file_handler_1a023196b877e9ab83859f7194e9b38d9e">00209</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1a023196b877e9ab83859f7194e9b38d9e">WriteBundleStart</link>(raw_fd_ostream&#32;&amp;OS,
+00210 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;TargetTriple)&#32;=&#32;0;
+00211 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00214"/><link linkend="_class_file_handler_1a716f51f009426d516f30cd7527f25681">00214</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1a716f51f009426d516f30cd7527f25681">WriteBundleEnd</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;=&#32;0;
+00215 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00217"/><link linkend="_class_file_handler_1aa308cfef5f3c06d3c15478097799e0e5">00217</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1aa308cfef5f3c06d3c15478097799e0e5">WriteBundle</link>(raw_fd_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;=&#32;0;
+00218 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00220"/><link linkend="_class_file_handler_1a70cbb9c0347d248c018e52993a13255b">00220</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1a70cbb9c0347d248c018e52993a13255b">listBundleIDs</link>(MemoryBuffer&#32;&amp;Input)&#32;{
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;ReadHeader(Input))
+00222 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00223 
+00224 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;forEachBundle(Input,&#32;[&amp;](<emphasis role="keyword">const</emphasis>&#32;<link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;&amp;Info)&#32;-&gt;&#32;Error&#32;{
+00225 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;Info.<link linkend="_struct_file_handler_1_1_bundle_info_1ac99122961a6bf48af90dccaf408d8ff3">BundleID</link>&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00226 &#32;&#32;&#32;&#32;&#32;&#32;Error&#32;Err&#32;=&#32;listBundleIDsCallback(Input,&#32;Info);
+00227 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err)
+00228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00229 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00230 &#32;&#32;&#32;&#32;});
+00231 &#32;&#32;}
+00232 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00234"/><link linkend="_class_file_handler_1a70ed8dd129df99dcd5d5e42fffd7b125">00234</link> &#32;&#32;Error&#32;<link linkend="_class_file_handler_1a70ed8dd129df99dcd5d5e42fffd7b125">forEachBundle</link>(MemoryBuffer&#32;&amp;Input,
+00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::function&lt;Error(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;&amp;)&gt;&#32;Func)&#32;{
+00236 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(<emphasis role="keyword">true</emphasis>)&#32;{
+00237 &#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;CurTripleOrErr&#32;=&#32;ReadBundleStart(Input);
+00238 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CurTripleOrErr)
+00239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CurTripleOrErr.takeError();
+00240 
+00241 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;No&#32;more&#32;bundles.</emphasis>
+00242 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!*CurTripleOrErr)
+00243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00244 
+00245 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;CurTriple&#32;=&#32;**CurTripleOrErr;
+00246 &#32;&#32;&#32;&#32;&#32;&#32;assert(!CurTriple.empty());
+00247 
+00248 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;Info{CurTriple};
+00249 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;Func(Info))
+00250 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00251 &#32;&#32;&#32;&#32;}
+00252 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00253 &#32;&#32;}
+00254 
+00255 <emphasis role="keyword">protected</emphasis>:
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00256"/><link linkend="_class_file_handler_1af0a452c5014ddb59b9558614d21daaed">00256</link> &#32;&#32;<emphasis role="keyword">virtual</emphasis>&#32;Error&#32;<link linkend="_class_file_handler_1af0a452c5014ddb59b9558614d21daaed">listBundleIDsCallback</link>(MemoryBuffer&#32;&amp;Input,
+00257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;&amp;Info)&#32;{
+00258 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00259 &#32;&#32;}
+00260 };
+00261 
+00284 
+00286 <emphasis role="keyword">static</emphasis>&#32;uint64_t&#32;Read8byteIntegerFromBuffer(StringRef&#32;Buffer,&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;pos)&#32;{
+00287 &#32;&#32;uint64_t&#32;Res&#32;=&#32;0;
+00288 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Data&#32;=&#32;Buffer.data();
+00289 
+00290 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;&lt;&#32;8;&#32;++i)&#32;{
+00291 &#32;&#32;&#32;&#32;Res&#32;&lt;&lt;=&#32;8;
+00292 &#32;&#32;&#32;&#32;uint64_t&#32;Char&#32;=&#32;(uint64_t)Data[pos&#32;+&#32;7&#32;-&#32;i];
+00293 &#32;&#32;&#32;&#32;Res&#32;|=&#32;0xffu&#32;&amp;&#32;Char;
+00294 &#32;&#32;}
+00295 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Res;
+00296 }
+00297 
+00299 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;Write8byteIntegerToBuffer(raw_fd_ostream&#32;&amp;OS,&#32;uint64_t&#32;Val)&#32;{
+00300 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;&lt;&#32;8;&#32;++i)&#32;{
+00301 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;Char&#32;=&#32;(char)(Val&#32;&amp;&#32;0xffu);
+00302 &#32;&#32;&#32;&#32;OS.write(&amp;Char,&#32;1);
+00303 &#32;&#32;&#32;&#32;Val&#32;&gt;&gt;=&#32;8;
+00304 &#32;&#32;}
+00305 }
+00306 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00307"/><link linkend="_class_binary_file_handler">00307</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_binary_file_handler">BinaryFileHandler</link>&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_class_file_handler">FileHandler</link>&#32;{
+00309 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>BinaryBundleInfo&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;{
+00311 &#32;&#32;&#32;&#32;uint64_t&#32;Size&#32;=&#32;0u;
+00313 &#32;&#32;&#32;&#32;uint64_t&#32;Offset&#32;=&#32;0u;
+00314 
+00315 &#32;&#32;&#32;&#32;BinaryBundleInfo()&#32;{}
+00316 &#32;&#32;&#32;&#32;BinaryBundleInfo(uint64_t&#32;Size,&#32;uint64_t&#32;Offset)
+00317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Size(Size),&#32;Offset(Offset)&#32;{}
+00318 &#32;&#32;};
+00319 
+00321 &#32;&#32;StringMap&lt;BinaryBundleInfo&gt;&#32;BundlesInfo;
+00322 
+00324 &#32;&#32;StringMap&lt;BinaryBundleInfo&gt;::iterator&#32;CurBundleInfo;
+00325 &#32;&#32;StringMap&lt;BinaryBundleInfo&gt;::iterator&#32;NextBundleInfo;
+00326 
+00328 &#32;&#32;std::string&#32;CurWriteBundleTarget;
+00329 
+00330 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00331"/><link linkend="_class_binary_file_handler_1a8995d1aab6edeb1d07205257d899ba5f">00331</link> &#32;&#32;<link linkend="_class_binary_file_handler_1a8995d1aab6edeb1d07205257d899ba5f">BinaryFileHandler</link>()&#32;:&#32;<link linkend="_class_file_handler">FileHandler</link>()&#32;{}
+00332 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00333"/><link linkend="_class_binary_file_handler_1a965643ec1f3e41b71f02ab3bc30ddeb4">00333</link> &#32;&#32;<link linkend="_class_binary_file_handler_1a965643ec1f3e41b71f02ab3bc30ddeb4">~BinaryFileHandler</link>()&#32;final&#32;{}
+00334 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00335"/><link linkend="_class_binary_file_handler_1a4129cf2eeac5c792f546db1e43d5433c">00335</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1a4129cf2eeac5c792f546db1e43d5433c">ReadHeader</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00336 &#32;&#32;&#32;&#32;StringRef&#32;FC&#32;=&#32;Input.getBuffer();
+00337 
+00338 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Initialize&#32;the&#32;current&#32;bundle&#32;with&#32;the&#32;end&#32;of&#32;the&#32;container.</emphasis>
+00339 &#32;&#32;&#32;&#32;CurBundleInfo&#32;=&#32;BundlesInfo.end();
+00340 
+00341 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;buffer&#32;is&#32;smaller&#32;than&#32;magic&#32;string.</emphasis>
+00342 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;ReadChars&#32;=&#32;<emphasis role="keyword">sizeof</emphasis>(<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>)&#32;-&#32;1;
+00343 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;&gt;&#32;FC.size())
+00344 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00345 
+00346 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;no&#32;magic&#32;was&#32;found.</emphasis>
+00347 &#32;&#32;&#32;&#32;StringRef&#32;Magic(FC.data(),&#32;<emphasis role="keyword">sizeof</emphasis>(<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>)&#32;-&#32;1);
+00348 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Magic.equals(<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>))
+00349 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00350 
+00351 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;number&#32;of&#32;bundles.</emphasis>
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;+&#32;8&#32;&gt;&#32;FC.size())
+00353 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00354 
+00355 &#32;&#32;&#32;&#32;uint64_t&#32;NumberOfBundles&#32;=&#32;Read8byteIntegerFromBuffer(FC,&#32;ReadChars);
+00356 &#32;&#32;&#32;&#32;ReadChars&#32;+=&#32;8;
+00357 
+00358 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;bundle&#32;offsets,&#32;sizes&#32;and&#32;triples.</emphasis>
+00359 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(uint64_t&#32;i&#32;=&#32;0;&#32;i&#32;&lt;&#32;NumberOfBundles;&#32;++i)&#32;{
+00360 
+00361 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;offset.</emphasis>
+00362 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;+&#32;8&#32;&gt;&#32;FC.size())
+00363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00364 
+00365 &#32;&#32;&#32;&#32;&#32;&#32;uint64_t&#32;Offset&#32;=&#32;Read8byteIntegerFromBuffer(FC,&#32;ReadChars);
+00366 &#32;&#32;&#32;&#32;&#32;&#32;ReadChars&#32;+=&#32;8;
+00367 
+00368 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;size.</emphasis>
+00369 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;+&#32;8&#32;&gt;&#32;FC.size())
+00370 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00371 
+00372 &#32;&#32;&#32;&#32;&#32;&#32;uint64_t&#32;Size&#32;=&#32;Read8byteIntegerFromBuffer(FC,&#32;ReadChars);
+00373 &#32;&#32;&#32;&#32;&#32;&#32;ReadChars&#32;+=&#32;8;
+00374 
+00375 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;triple&#32;size.</emphasis>
+00376 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;+&#32;8&#32;&gt;&#32;FC.size())
+00377 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00378 
+00379 &#32;&#32;&#32;&#32;&#32;&#32;uint64_t&#32;TripleSize&#32;=&#32;Read8byteIntegerFromBuffer(FC,&#32;ReadChars);
+00380 &#32;&#32;&#32;&#32;&#32;&#32;ReadChars&#32;+=&#32;8;
+00381 
+00382 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;triple.</emphasis>
+00383 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;+&#32;TripleSize&#32;&gt;&#32;FC.size())
+00384 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00385 
+00386 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;Triple(&amp;FC.data()[ReadChars],&#32;TripleSize);
+00387 &#32;&#32;&#32;&#32;&#32;&#32;ReadChars&#32;+=&#32;TripleSize;
+00388 
+00389 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;the&#32;offset&#32;and&#32;size&#32;make&#32;sense.</emphasis>
+00390 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Offset&#32;||&#32;Offset&#32;+&#32;Size&#32;&gt;&#32;FC.size())
+00391 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00392 
+00393 &#32;&#32;&#32;&#32;&#32;&#32;assert(BundlesInfo.find(Triple)&#32;==&#32;BundlesInfo.end()&#32;&amp;&amp;
+00394 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Triple&#32;is&#32;duplicated??&quot;</emphasis>);
+00395 &#32;&#32;&#32;&#32;&#32;&#32;BundlesInfo[Triple]&#32;=&#32;BinaryBundleInfo(Size,&#32;Offset);
+00396 &#32;&#32;&#32;&#32;}
+00397 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Set&#32;the&#32;iterator&#32;to&#32;where&#32;we&#32;will&#32;start&#32;to&#32;read.</emphasis>
+00398 &#32;&#32;&#32;&#32;CurBundleInfo&#32;=&#32;BundlesInfo.end();
+00399 &#32;&#32;&#32;&#32;NextBundleInfo&#32;=&#32;BundlesInfo.begin();
+00400 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00401 &#32;&#32;}
+00402 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00403"/><link linkend="_class_binary_file_handler_1a9ca3dc3dc36f16258fdd01844531f129">00403</link> &#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;<link linkend="_class_binary_file_handler_1a9ca3dc3dc36f16258fdd01844531f129">ReadBundleStart</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00404 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NextBundleInfo&#32;==&#32;BundlesInfo.end())
+00405 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00406 &#32;&#32;&#32;&#32;CurBundleInfo&#32;=&#32;NextBundleInfo++;
+00407 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CurBundleInfo-&gt;first();
+00408 &#32;&#32;}
+00409 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00410"/><link linkend="_class_binary_file_handler_1af938c83df04fa66fe04c7e0563ade0f0">00410</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1af938c83df04fa66fe04c7e0563ade0f0">ReadBundleEnd</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00411 &#32;&#32;&#32;&#32;assert(CurBundleInfo&#32;!=&#32;BundlesInfo.end()&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;reader&#32;info!&quot;</emphasis>);
+00412 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00413 &#32;&#32;}
+00414 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00415"/><link linkend="_class_binary_file_handler_1a03f6f2509a8d6d78e3ab800995f7f779">00415</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1a03f6f2509a8d6d78e3ab800995f7f779">ReadBundle</link>(raw_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00416 &#32;&#32;&#32;&#32;assert(CurBundleInfo&#32;!=&#32;BundlesInfo.end()&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Invalid&#32;reader&#32;info!&quot;</emphasis>);
+00417 &#32;&#32;&#32;&#32;StringRef&#32;FC&#32;=&#32;Input.getBuffer();
+00418 &#32;&#32;&#32;&#32;OS.write(FC.data()&#32;+&#32;CurBundleInfo-&gt;second.Offset,
+00419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CurBundleInfo-&gt;second.Size);
+00420 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00421 &#32;&#32;}
+00422 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00423"/><link linkend="_class_binary_file_handler_1ab80cac5e41eaab070a155716de55c84d">00423</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1ab80cac5e41eaab070a155716de55c84d">WriteHeader</link>(raw_fd_ostream&#32;&amp;OS,
+00424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;Inputs)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00425 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Compute&#32;size&#32;of&#32;the&#32;header.</emphasis>
+00426 &#32;&#32;&#32;&#32;uint64_t&#32;HeaderSize&#32;=&#32;0;
+00427 
+00428 &#32;&#32;&#32;&#32;HeaderSize&#32;+=&#32;<emphasis role="keyword">sizeof</emphasis>(<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>)&#32;-&#32;1;
+00429 &#32;&#32;&#32;&#32;HeaderSize&#32;+=&#32;8;&#32;<emphasis role="comment">//&#32;Number&#32;of&#32;Bundles</emphasis>
+00430 
+00431 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;T&#32;:&#32;TargetNames)&#32;{
+00432 &#32;&#32;&#32;&#32;&#32;&#32;HeaderSize&#32;+=&#32;3&#32;*&#32;8;&#32;<emphasis role="comment">//&#32;Bundle&#32;offset,&#32;Size&#32;of&#32;bundle&#32;and&#32;size&#32;of&#32;triple.</emphasis>
+00433 &#32;&#32;&#32;&#32;&#32;&#32;HeaderSize&#32;+=&#32;T.size();&#32;<emphasis role="comment">//&#32;The&#32;triple.</emphasis>
+00434 &#32;&#32;&#32;&#32;}
+00435 
+00436 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Write&#32;to&#32;the&#32;buffer&#32;the&#32;header.</emphasis>
+00437 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>;
+00438 
+00439 &#32;&#32;&#32;&#32;Write8byteIntegerToBuffer(OS,&#32;TargetNames.size());
+00440 
+00441 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Idx&#32;=&#32;0;
+00442 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;T&#32;:&#32;TargetNames)&#32;{
+00443 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer&#32;&amp;MB&#32;=&#32;*Inputs[Idx++];
+00444 &#32;&#32;&#32;&#32;&#32;&#32;HeaderSize&#32;=&#32;alignTo(HeaderSize,&#32;BundleAlignment);
+00445 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Bundle&#32;offset.</emphasis>
+00446 &#32;&#32;&#32;&#32;&#32;&#32;Write8byteIntegerToBuffer(OS,&#32;HeaderSize);
+00447 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Size&#32;of&#32;the&#32;bundle&#32;(adds&#32;to&#32;the&#32;next&#32;bundle&apos;s&#32;offset)</emphasis>
+00448 &#32;&#32;&#32;&#32;&#32;&#32;Write8byteIntegerToBuffer(OS,&#32;MB.getBufferSize());
+00449 &#32;&#32;&#32;&#32;&#32;&#32;BundlesInfo[T]&#32;=&#32;BinaryBundleInfo(MB.getBufferSize(),&#32;HeaderSize);
+00450 &#32;&#32;&#32;&#32;&#32;&#32;HeaderSize&#32;+=&#32;MB.getBufferSize();
+00451 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Size&#32;of&#32;the&#32;triple</emphasis>
+00452 &#32;&#32;&#32;&#32;&#32;&#32;Write8byteIntegerToBuffer(OS,&#32;T.size());
+00453 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Triple</emphasis>
+00454 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;T;
+00455 &#32;&#32;&#32;&#32;}
+00456 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00457 &#32;&#32;}
+00458 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00459"/><link linkend="_class_binary_file_handler_1aae0993fd9bf54ca80c3302f5e0810a8e">00459</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1aae0993fd9bf54ca80c3302f5e0810a8e">WriteBundleStart</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00460 &#32;&#32;&#32;&#32;CurWriteBundleTarget&#32;=&#32;TargetTriple.str();
+00461 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00462 &#32;&#32;}
+00463 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00464"/><link linkend="_class_binary_file_handler_1ae8babe5e1a76494820097329a35f72ae">00464</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1ae8babe5e1a76494820097329a35f72ae">WriteBundleEnd</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00465 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00466 &#32;&#32;}
+00467 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00468"/><link linkend="_class_binary_file_handler_1ae293c57008f6d941531c76839d0cd371">00468</link> &#32;&#32;Error&#32;<link linkend="_class_binary_file_handler_1ae293c57008f6d941531c76839d0cd371">WriteBundle</link>(raw_fd_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00469 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;BI&#32;=&#32;BundlesInfo[CurWriteBundleTarget];
+00470 &#32;&#32;&#32;&#32;OS.seek(BI.Offset);
+00471 &#32;&#32;&#32;&#32;OS.write(Input.getBufferStart(),&#32;Input.getBufferSize());
+00472 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00473 &#32;&#32;}
+00474 };
+00475 
+00476 <emphasis role="keyword">namespace&#32;</emphasis>{
+00477 
+00478 <emphasis role="comment">//&#32;This&#32;class&#32;implements&#32;a&#32;list&#32;of&#32;temporary&#32;files&#32;that&#32;are&#32;removed&#32;upon</emphasis>
+00479 <emphasis role="comment">//&#32;object&#32;destruction.</emphasis>
+00480 <emphasis role="keyword">class&#32;</emphasis>TempFileHandlerRAII&#32;{
+00481 <emphasis role="keyword">public</emphasis>:
+00482 &#32;&#32;~TempFileHandlerRAII()&#32;{
+00483 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;File&#32;:&#32;Files)
+00484 &#32;&#32;&#32;&#32;&#32;&#32;sys::fs::remove(File);
+00485 &#32;&#32;}
+00486 
+00487 &#32;&#32;<emphasis role="comment">//&#32;Creates&#32;temporary&#32;file&#32;with&#32;given&#32;contents.</emphasis>
+00488 &#32;&#32;Expected&lt;StringRef&gt;&#32;Create(Optional&lt;ArrayRef&lt;char&gt;&gt;&#32;Contents)&#32;{
+00489 &#32;&#32;&#32;&#32;SmallString&lt;128u&gt;&#32;File;
+00490 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=
+00491 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sys::fs::createTemporaryFile(<emphasis role="stringliteral">&quot;clang-offload-bundler&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;tmp&quot;</emphasis>,&#32;File))
+00492 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(File,&#32;EC);
+00493 &#32;&#32;&#32;&#32;Files.push_front(File);
+00494 
+00495 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Contents)&#32;{
+00496 &#32;&#32;&#32;&#32;&#32;&#32;std::error_code&#32;EC;
+00497 &#32;&#32;&#32;&#32;&#32;&#32;raw_fd_ostream&#32;OS(File,&#32;EC);
+00498 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)
+00499 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(File,&#32;EC);
+00500 &#32;&#32;&#32;&#32;&#32;&#32;OS.write(Contents-&gt;data(),&#32;Contents-&gt;size());
+00501 &#32;&#32;&#32;&#32;}
+00502 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Files.front();
+00503 &#32;&#32;}
+00504 
+00505 <emphasis role="keyword">private</emphasis>:
+00506 &#32;&#32;std::forward_list&lt;SmallString&lt;128u&gt;&gt;&#32;Files;
+00507 };
+00508 
+00509 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace</emphasis>
+00510 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00515"/><link linkend="_class_object_file_handler">00515</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_object_file_handler">ObjectFileHandler</link>&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_class_file_handler">FileHandler</link>&#32;{
+00516 
+00518 &#32;&#32;std::unique_ptr&lt;ObjectFile&gt;&#32;Obj;
+00519 
+00521 &#32;&#32;StringRef&#32;getInputFileContents()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Obj-&gt;getData();&#32;}
+00522 
+00525 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;IsOffloadSection(SectionRef&#32;CurSection)&#32;{
+00526 &#32;&#32;&#32;&#32;Expected&lt;StringRef&gt;&#32;NameOrErr&#32;=&#32;CurSection.getName();
+00527 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!NameOrErr)
+00528 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;NameOrErr.takeError();
+00529 
+00530 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;it&#32;does&#32;not&#32;start&#32;with&#32;the&#32;reserved&#32;suffix,&#32;just&#32;skip&#32;this&#32;section.</emphasis>
+00531 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!NameOrErr-&gt;startswith(<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>))
+00532 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00533 
+00534 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Return&#32;the&#32;triple&#32;that&#32;is&#32;right&#32;after&#32;the&#32;reserved&#32;prefix.</emphasis>
+00535 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;NameOrErr-&gt;substr(<emphasis role="keyword">sizeof</emphasis>(<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>)&#32;-&#32;1);
+00536 &#32;&#32;}
+00537 
+00539 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;NumberOfInputs&#32;=&#32;0;
+00540 
+00543 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;NumberOfProcessedInputs&#32;=&#32;0;
+00544 
+00546 &#32;&#32;section_iterator&#32;CurrentSection;
+00547 &#32;&#32;section_iterator&#32;NextSection;
+00548 
+00549 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00550"/><link linkend="_class_object_file_handler_1a6d8bdf5bea2b4d5e6ab08a698406758d">00550</link> &#32;&#32;<link linkend="_class_object_file_handler_1a6d8bdf5bea2b4d5e6ab08a698406758d">ObjectFileHandler</link>(std::unique_ptr&lt;ObjectFile&gt;&#32;ObjIn)
+00551 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;<link linkend="_class_file_handler">FileHandler</link>(),&#32;Obj(std::move(ObjIn)),
+00552 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CurrentSection(Obj-&gt;section_begin()),
+00553 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NextSection(Obj-&gt;section_begin())&#32;{}
+00554 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00555"/><link linkend="_class_object_file_handler_1aa32a0f47a2433eccee0d8812a4ddd31c">00555</link> &#32;&#32;<link linkend="_class_object_file_handler_1aa32a0f47a2433eccee0d8812a4ddd31c">~ObjectFileHandler</link>()&#32;final&#32;{}
+00556 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00557"/><link linkend="_class_object_file_handler_1a721cdcac5b3554e5685c96f4788bc655">00557</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1a721cdcac5b3554e5685c96f4788bc655">ReadHeader</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();&#32;}
+00558 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00559"/><link linkend="_class_object_file_handler_1ab8cb60c1eecea680fcdb327779cf66c3">00559</link> &#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;<link linkend="_class_object_file_handler_1ab8cb60c1eecea680fcdb327779cf66c3">ReadBundleStart</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00560 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(NextSection&#32;!=&#32;Obj-&gt;section_end())&#32;{
+00561 &#32;&#32;&#32;&#32;&#32;&#32;CurrentSection&#32;=&#32;NextSection;
+00562 &#32;&#32;&#32;&#32;&#32;&#32;++NextSection;
+00563 
+00564 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;the&#32;current&#32;section&#32;name&#32;starts&#32;with&#32;the&#32;reserved&#32;prefix.&#32;If</emphasis>
+00565 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;so,&#32;return&#32;the&#32;triple.</emphasis>
+00566 &#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;TripleOrErr&#32;=
+00567 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IsOffloadSection(*CurrentSection);
+00568 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TripleOrErr)
+00569 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TripleOrErr.takeError();
+00570 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(*TripleOrErr)
+00571 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;**TripleOrErr;
+00572 &#32;&#32;&#32;&#32;}
+00573 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00574 &#32;&#32;}
+00575 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00576"/><link linkend="_class_object_file_handler_1ada66ffa9cbb4567b92dc3b371ea01481">00576</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1ada66ffa9cbb4567b92dc3b371ea01481">ReadBundleEnd</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();&#32;}
+00577 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00578"/><link linkend="_class_object_file_handler_1a8cf5a7c710bc3c27212d1976c80a8258">00578</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1a8cf5a7c710bc3c27212d1976c80a8258">ReadBundle</link>(raw_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00579 &#32;&#32;&#32;&#32;Expected&lt;StringRef&gt;&#32;ContentOrErr&#32;=&#32;CurrentSection-&gt;getContents();
+00580 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ContentOrErr)
+00581 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ContentOrErr.takeError();
+00582 &#32;&#32;&#32;&#32;StringRef&#32;Content&#32;=&#32;*ContentOrErr;
+00583 
+00584 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Copy&#32;fat&#32;object&#32;contents&#32;to&#32;the&#32;output&#32;when&#32;extracting&#32;host&#32;bundle.</emphasis>
+00585 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Content.size()&#32;==&#32;1u&#32;&amp;&amp;&#32;Content.front()&#32;==&#32;0)
+00586 &#32;&#32;&#32;&#32;&#32;&#32;Content&#32;=&#32;StringRef(Input.getBufferStart(),&#32;Input.getBufferSize());
+00587 
+00588 &#32;&#32;&#32;&#32;OS.write(Content.data(),&#32;Content.size());
+00589 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00590 &#32;&#32;}
+00591 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00592"/><link linkend="_class_object_file_handler_1a6bad7c10b02f3f50d099204afbc663a0">00592</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1a6bad7c10b02f3f50d099204afbc663a0">WriteHeader</link>(raw_fd_ostream&#32;&amp;OS,
+00593 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;Inputs)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00594 &#32;&#32;&#32;&#32;assert(HostInputIndex&#32;!=&#32;~0u&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Host&#32;input&#32;index&#32;not&#32;defined.&quot;</emphasis>);
+00595 
+00596 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Record&#32;number&#32;of&#32;inputs.</emphasis>
+00597 &#32;&#32;&#32;&#32;NumberOfInputs&#32;=&#32;Inputs.size();
+00598 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00599 &#32;&#32;}
+00600 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00601"/><link linkend="_class_object_file_handler_1a959f87929ecfa735f661b55a38695eda">00601</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1a959f87929ecfa735f661b55a38695eda">WriteBundleStart</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00602 &#32;&#32;&#32;&#32;++NumberOfProcessedInputs;
+00603 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00604 &#32;&#32;}
+00605 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00606"/><link linkend="_class_object_file_handler_1aa0f573b07d6599ba4c403dfd4b43471a">00606</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1aa0f573b07d6599ba4c403dfd4b43471a">WriteBundleEnd</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00607 &#32;&#32;&#32;&#32;assert(NumberOfProcessedInputs&#32;&lt;=&#32;NumberOfInputs&#32;&amp;&amp;
+00608 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Processing&#32;more&#32;inputs&#32;that&#32;actually&#32;exist!&quot;</emphasis>);
+00609 &#32;&#32;&#32;&#32;assert(HostInputIndex&#32;!=&#32;~0u&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Host&#32;input&#32;index&#32;not&#32;defined.&quot;</emphasis>);
+00610 
+00611 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;this&#32;is&#32;not&#32;the&#32;last&#32;output,&#32;we&#32;don&apos;t&#32;have&#32;to&#32;do&#32;anything.</emphasis>
+00612 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(NumberOfProcessedInputs&#32;!=&#32;NumberOfInputs)
+00613 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00614 
+00615 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;will&#32;use&#32;llvm-objcopy&#32;to&#32;add&#32;target&#32;objects&#32;sections&#32;to&#32;the&#32;output</emphasis>
+00616 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;fat&#32;object.&#32;These&#32;sections&#32;should&#32;have&#32;&apos;exclude&apos;&#32;flag&#32;set&#32;which&#32;tells</emphasis>
+00617 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;link&#32;editor&#32;to&#32;remove&#32;them&#32;from&#32;linker&#32;inputs&#32;when&#32;linking&#32;executable&#32;or</emphasis>
+00618 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;shared&#32;library.</emphasis>
+00619 
+00620 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Find&#32;llvm-objcopy&#32;in&#32;order&#32;to&#32;create&#32;the&#32;bundle&#32;binary.</emphasis>
+00621 &#32;&#32;&#32;&#32;ErrorOr&lt;std::string&gt;&#32;Objcopy&#32;=&#32;sys::findProgramByName(
+00622 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;llvm-objcopy&quot;</emphasis>,&#32;sys::path::parent_path(BundlerExecutable));
+00623 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Objcopy)
+00624 &#32;&#32;&#32;&#32;&#32;&#32;Objcopy&#32;=&#32;sys::findProgramByName(<emphasis role="stringliteral">&quot;llvm-objcopy&quot;</emphasis>);
+00625 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Objcopy)
+00626 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(Objcopy.getError(),
+00627 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;unable&#32;to&#32;find&#32;&apos;llvm-objcopy&apos;&#32;in&#32;path&quot;</emphasis>);
+00628 
+00629 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;write&#32;to&#32;the&#32;output&#32;file&#32;directly.&#32;So,&#32;we&#32;close&#32;it&#32;and&#32;use&#32;the&#32;name</emphasis>
+00630 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;to&#32;pass&#32;down&#32;to&#32;llvm-objcopy.</emphasis>
+00631 &#32;&#32;&#32;&#32;OS.close();
+00632 
+00633 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Temporary&#32;files&#32;that&#32;need&#32;to&#32;be&#32;removed.</emphasis>
+00634 &#32;&#32;&#32;&#32;TempFileHandlerRAII&#32;TempFiles;
+00635 
+00636 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Compose&#32;llvm-objcopy&#32;command&#32;line&#32;for&#32;add&#32;target&#32;objects&apos;&#32;sections&#32;with</emphasis>
+00637 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;appropriate&#32;flags.</emphasis>
+00638 &#32;&#32;&#32;&#32;BumpPtrAllocator&#32;Alloc;
+00639 &#32;&#32;&#32;&#32;StringSaver&#32;SS{Alloc};
+00640 &#32;&#32;&#32;&#32;SmallVector&lt;StringRef,&#32;8u&gt;&#32;ObjcopyArgs{<emphasis role="stringliteral">&quot;llvm-objcopy&quot;</emphasis>};
+00641 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;&#32;I&#32;&lt;&#32;NumberOfInputs;&#32;++I)&#32;{
+00642 &#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;InputFile&#32;=&#32;InputFileNames[I];
+00643 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;==&#32;HostInputIndex)&#32;{
+00644 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Special&#32;handling&#32;for&#32;the&#32;host&#32;bundle.&#32;We&#32;do&#32;not&#32;need&#32;to&#32;add&#32;a</emphasis>
+00645 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;standard&#32;bundle&#32;for&#32;the&#32;host&#32;object&#32;since&#32;we&#32;are&#32;going&#32;to&#32;use&#32;fat</emphasis>
+00646 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;object&#32;as&#32;a&#32;host&#32;object.&#32;Therefore&#32;use&#32;dummy&#32;contents&#32;(one&#32;zero&#32;byte)</emphasis>
+00647 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;when&#32;creating&#32;section&#32;for&#32;the&#32;host&#32;bundle.</emphasis>
+00648 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;StringRef&gt;&#32;TempFileOrErr&#32;=&#32;TempFiles.Create(ArrayRef&lt;char&gt;(0));
+00649 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TempFileOrErr)
+00650 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TempFileOrErr.takeError();
+00651 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InputFile&#32;=&#32;*TempFileOrErr;
+00652 &#32;&#32;&#32;&#32;&#32;&#32;}
+00653 
+00654 &#32;&#32;&#32;&#32;&#32;&#32;ObjcopyArgs.push_back(SS.save(Twine(<emphasis role="stringliteral">&quot;--add-section=&quot;</emphasis>)&#32;+
+00655 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>&#32;+&#32;TargetNames[I]&#32;+
+00656 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;=&quot;</emphasis>&#32;+&#32;InputFile));
+00657 &#32;&#32;&#32;&#32;&#32;&#32;ObjcopyArgs.push_back(SS.save(Twine(<emphasis role="stringliteral">&quot;--set-section-flags=&quot;</emphasis>)&#32;+
+00658 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>&#32;+&#32;TargetNames[I]&#32;+
+00659 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;=readonly,exclude&quot;</emphasis>));
+00660 &#32;&#32;&#32;&#32;}
+00661 &#32;&#32;&#32;&#32;ObjcopyArgs.push_back(<emphasis role="stringliteral">&quot;--&quot;</emphasis>);
+00662 &#32;&#32;&#32;&#32;ObjcopyArgs.push_back(InputFileNames[HostInputIndex]);
+00663 &#32;&#32;&#32;&#32;ObjcopyArgs.push_back(OutputFileNames.front());
+00664 
+00665 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;executeObjcopy(*Objcopy,&#32;ObjcopyArgs))
+00666 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00667 
+00668 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00669 &#32;&#32;}
+00670 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00671"/><link linkend="_class_object_file_handler_1ae617802036593fc283753c6ddf0ea221">00671</link> &#32;&#32;Error&#32;<link linkend="_class_object_file_handler_1ae617802036593fc283753c6ddf0ea221">WriteBundle</link>(raw_fd_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00672 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00673 &#32;&#32;}
+00674 
+00675 <emphasis role="keyword">private</emphasis>:
+00676 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;Error&#32;executeObjcopy(StringRef&#32;Objcopy,&#32;ArrayRef&lt;StringRef&gt;&#32;Args)&#32;{
+00677 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;the&#32;user&#32;asked&#32;for&#32;the&#32;commands&#32;to&#32;be&#32;printed&#32;out,&#32;we&#32;do&#32;that</emphasis>
+00678 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;instead&#32;of&#32;executing&#32;it.</emphasis>
+00679 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(PrintExternalCommands)&#32;{
+00680 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;Objcopy&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>;
+00681 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(StringRef&#32;Arg&#32;:&#32;drop_begin(Args,&#32;1))
+00682 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;\&quot;&quot;</emphasis>&#32;&lt;&lt;&#32;Arg&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\&quot;&quot;</emphasis>;
+00683 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00684 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00685 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(sys::ExecuteAndWait(Objcopy,&#32;Args))
+00686 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(inconvertibleErrorCode(),
+00687 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&apos;llvm-objcopy&apos;&#32;tool&#32;failed&quot;</emphasis>);
+00688 &#32;&#32;&#32;&#32;}
+00689 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00690 &#32;&#32;}
+00691 };
+00692 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00702"/><link linkend="_class_text_file_handler">00702</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_class_text_file_handler">TextFileHandler</link>&#32;final&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;<link linkend="_class_file_handler">FileHandler</link>&#32;{
+00704 &#32;&#32;StringRef&#32;Comment;
+00705 
+00707 &#32;&#32;std::string&#32;BundleStartString;
+00708 
+00710 &#32;&#32;std::string&#32;BundleEndString;
+00711 
+00713 &#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;ReadChars&#32;=&#32;0u;
+00714 
+00715 <emphasis role="keyword">protected</emphasis>:
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00716"/><link linkend="_class_text_file_handler_1a1a17e99dd7b8dc26960f7cf517efe495">00716</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1a1a17e99dd7b8dc26960f7cf517efe495">ReadHeader</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();&#32;}
+00717 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00718"/><link linkend="_class_text_file_handler_1a6d1891944c44694f060e29b6782ccb23">00718</link> &#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;<link linkend="_class_text_file_handler_1a6d1891944c44694f060e29b6782ccb23">ReadBundleStart</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00719 &#32;&#32;&#32;&#32;StringRef&#32;FC&#32;=&#32;Input.getBuffer();
+00720 
+00721 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Find&#32;start&#32;of&#32;the&#32;bundle.</emphasis>
+00722 &#32;&#32;&#32;&#32;ReadChars&#32;=&#32;FC.find(BundleStartString,&#32;ReadChars);
+00723 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ReadChars&#32;==&#32;FC.npos)
+00724 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00725 
+00726 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;position&#32;of&#32;the&#32;triple.</emphasis>
+00727 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;TripleStart&#32;=&#32;ReadChars&#32;=&#32;ReadChars&#32;+&#32;BundleStartString.size();
+00728 
+00729 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;position&#32;that&#32;closes&#32;the&#32;triple.</emphasis>
+00730 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;TripleEnd&#32;=&#32;ReadChars&#32;=&#32;FC.find(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>,&#32;ReadChars);
+00731 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TripleEnd&#32;==&#32;FC.npos)
+00732 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00733 
+00734 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Next&#32;time&#32;we&#32;read&#32;after&#32;the&#32;new&#32;line.</emphasis>
+00735 &#32;&#32;&#32;&#32;++ReadChars;
+00736 
+00737 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;StringRef(&amp;FC.data()[TripleStart],&#32;TripleEnd&#32;-&#32;TripleStart);
+00738 &#32;&#32;}
+00739 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00740"/><link linkend="_class_text_file_handler_1ac39e2d78fcd9e6bb858e7b6efee23d65">00740</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1ac39e2d78fcd9e6bb858e7b6efee23d65">ReadBundleEnd</link>(MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00741 &#32;&#32;&#32;&#32;StringRef&#32;FC&#32;=&#32;Input.getBuffer();
+00742 
+00743 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Read&#32;up&#32;to&#32;the&#32;next&#32;new&#32;line.</emphasis>
+00744 &#32;&#32;&#32;&#32;assert(FC[ReadChars]&#32;==&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;The&#32;bundle&#32;should&#32;end&#32;with&#32;a&#32;new&#32;line.&quot;</emphasis>);
+00745 
+00746 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;TripleEnd&#32;=&#32;ReadChars&#32;=&#32;FC.find(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>,&#32;ReadChars&#32;+&#32;1);
+00747 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TripleEnd&#32;!=&#32;FC.npos)
+00748 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Next&#32;time&#32;we&#32;read&#32;after&#32;the&#32;new&#32;line.</emphasis>
+00749 &#32;&#32;&#32;&#32;&#32;&#32;++ReadChars;
+00750 
+00751 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00752 &#32;&#32;}
+00753 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00754"/><link linkend="_class_text_file_handler_1a9c3c03be3a980778c30eb310515cd8d9">00754</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1a9c3c03be3a980778c30eb310515cd8d9">ReadBundle</link>(raw_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00755 &#32;&#32;&#32;&#32;StringRef&#32;FC&#32;=&#32;Input.getBuffer();
+00756 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;BundleStart&#32;=&#32;ReadChars;
+00757 
+00758 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Find&#32;end&#32;of&#32;the&#32;bundle.</emphasis>
+00759 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;BundleEnd&#32;=&#32;ReadChars&#32;=&#32;FC.find(BundleEndString,&#32;ReadChars);
+00760 
+00761 &#32;&#32;&#32;&#32;StringRef&#32;Bundle(&amp;FC.data()[BundleStart],&#32;BundleEnd&#32;-&#32;BundleStart);
+00762 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Bundle;
+00763 
+00764 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00765 &#32;&#32;}
+00766 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00767"/><link linkend="_class_text_file_handler_1a08d81ba747fa631f4487236685048f82">00767</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1a08d81ba747fa631f4487236685048f82">WriteHeader</link>(raw_fd_ostream&#32;&amp;OS,
+00768 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;Inputs)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00769 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00770 &#32;&#32;}
+00771 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00772"/><link linkend="_class_text_file_handler_1a2820cc3bdbf5f3070206e2a6dfd40b5c">00772</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1a2820cc3bdbf5f3070206e2a6dfd40b5c">WriteBundleStart</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00773 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;BundleStartString&#32;&lt;&lt;&#32;TargetTriple&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00774 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00775 &#32;&#32;}
+00776 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00777"/><link linkend="_class_text_file_handler_1a00f79b24f0428f2e285eaac0963367b5">00777</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1a00f79b24f0428f2e285eaac0963367b5">WriteBundleEnd</link>(raw_fd_ostream&#32;&amp;OS,&#32;StringRef&#32;TargetTriple)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00778 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;BundleEndString&#32;&lt;&lt;&#32;TargetTriple&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00779 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00780 &#32;&#32;}
+00781 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00782"/><link linkend="_class_text_file_handler_1adad2a5ac6ba229cc8142dcf09d707246">00782</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1adad2a5ac6ba229cc8142dcf09d707246">WriteBundle</link>(raw_fd_ostream&#32;&amp;OS,&#32;MemoryBuffer&#32;&amp;Input)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00783 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Input.getBuffer();
+00784 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00785 &#32;&#32;}
+00786 
+00787 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00788"/><link linkend="_class_text_file_handler_1a9012588218a8342dbb3216f2fd2ad1f0">00788</link> &#32;&#32;<link linkend="_class_text_file_handler_1a9012588218a8342dbb3216f2fd2ad1f0">TextFileHandler</link>(StringRef&#32;Comment)
+00789 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;<link linkend="_class_file_handler">FileHandler</link>(),&#32;Comment(Comment),&#32;ReadChars(0)&#32;{
+00790 &#32;&#32;&#32;&#32;BundleStartString&#32;=
+00791 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;+&#32;Comment.str()&#32;+&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>&#32;<emphasis role="stringliteral">&quot;__START__&#32;&quot;</emphasis>;
+00792 &#32;&#32;&#32;&#32;BundleEndString&#32;=
+00793 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;+&#32;Comment.str()&#32;+&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>&#32;<link linkend="__clang_offload_bundler_8cpp_1a8261baf2ddbb8a17f287149d5415eebf">OFFLOAD_BUNDLER_MAGIC_STR</link>&#32;<emphasis role="stringliteral">&quot;__END__&#32;&quot;</emphasis>;
+00794 &#32;&#32;}
+00795 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l00796"/><link linkend="_class_text_file_handler_1a87e2401d42b38125b706e0827723d5ec">00796</link> &#32;&#32;Error&#32;<link linkend="_class_text_file_handler_1a87e2401d42b38125b706e0827723d5ec">listBundleIDsCallback</link>(MemoryBuffer&#32;&amp;Input,
+00797 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_struct_file_handler_1_1_bundle_info">BundleInfo</link>&#32;&amp;Info)&#32;<emphasis role="keyword">final</emphasis>&#32;{
+00798 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;TODO:&#32;To&#32;list&#32;bundle&#32;IDs&#32;in&#32;a&#32;bundled&#32;text&#32;file&#32;we&#32;need&#32;to&#32;go&#32;through</emphasis>
+00799 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;all&#32;bundles.&#32;The&#32;format&#32;of&#32;bundled&#32;text&#32;file&#32;may&#32;need&#32;to&#32;include&#32;a</emphasis>
+00800 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;header&#32;if&#32;the&#32;performance&#32;of&#32;listing&#32;bundle&#32;IDs&#32;of&#32;bundled&#32;text&#32;file&#32;is</emphasis>
+00801 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;important.</emphasis>
+00802 &#32;&#32;&#32;&#32;ReadChars&#32;=&#32;Input.getBuffer().find(BundleEndString,&#32;ReadChars);
+00803 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;ReadBundleEnd(Input))
+00804 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00805 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00806 &#32;&#32;}
+00807 };
+00808 
+00812 <emphasis role="keyword">static</emphasis>&#32;std::unique_ptr&lt;FileHandler&gt;
+00813 CreateObjectFileHandler(MemoryBuffer&#32;&amp;FirstInput)&#32;{
+00814 &#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;the&#32;input&#32;file&#32;format&#32;is&#32;one&#32;that&#32;we&#32;know&#32;how&#32;to&#32;deal&#32;with.</emphasis>
+00815 &#32;&#32;Expected&lt;std::unique_ptr&lt;Binary&gt;&gt;&#32;BinaryOrErr&#32;=&#32;createBinary(FirstInput);
+00816 
+00817 &#32;&#32;<emphasis role="comment">//&#32;We&#32;only&#32;support&#32;regular&#32;object&#32;files.&#32;If&#32;failed&#32;to&#32;open&#32;the&#32;input&#32;as&#32;a</emphasis>
+00818 &#32;&#32;<emphasis role="comment">//&#32;known&#32;binary&#32;or&#32;this&#32;is&#32;not&#32;an&#32;object&#32;file&#32;use&#32;the&#32;default&#32;binary&#32;handler.</emphasis>
+00819 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(errorToBool(BinaryOrErr.takeError())&#32;||&#32;!isa&lt;ObjectFile&gt;(*BinaryOrErr))
+00820 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;BinaryFileHandler&gt;();
+00821 
+00822 &#32;&#32;<emphasis role="comment">//&#32;Otherwise&#32;create&#32;an&#32;object&#32;file&#32;handler.&#32;The&#32;handler&#32;will&#32;be&#32;owned&#32;by&#32;the</emphasis>
+00823 &#32;&#32;<emphasis role="comment">//&#32;client&#32;of&#32;this&#32;function.</emphasis>
+00824 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;ObjectFileHandler&gt;(
+00825 &#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;ObjectFile&gt;(cast&lt;ObjectFile&gt;(BinaryOrErr-&gt;release())));
+00826 }
+00827 
+00829 <emphasis role="keyword">static</emphasis>&#32;Expected&lt;std::unique_ptr&lt;FileHandler&gt;&gt;
+00830 CreateFileHandler(MemoryBuffer&#32;&amp;FirstInput)&#32;{
+00831 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;i&quot;</emphasis>)
+00832 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TextFileHandler&gt;(<emphasis role="comment">/*Comment=*/</emphasis><emphasis role="stringliteral">&quot;//&quot;</emphasis>);
+00833 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;ii&quot;</emphasis>)
+00834 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TextFileHandler&gt;(<emphasis role="comment">/*Comment=*/</emphasis><emphasis role="stringliteral">&quot;//&quot;</emphasis>);
+00835 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;cui&quot;</emphasis>)
+00836 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TextFileHandler&gt;(<emphasis role="comment">/*Comment=*/</emphasis><emphasis role="stringliteral">&quot;//&quot;</emphasis>);
+00837 &#32;&#32;<emphasis role="comment">//&#32;TODO:&#32;`.d`&#32;should&#32;be&#32;eventually&#32;removed&#32;once&#32;`-M`&#32;and&#32;its&#32;variants&#32;are</emphasis>
+00838 &#32;&#32;<emphasis role="comment">//&#32;handled&#32;properly&#32;in&#32;offload&#32;compilation.</emphasis>
+00839 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;d&quot;</emphasis>)
+00840 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TextFileHandler&gt;(<emphasis role="comment">/*Comment=*/</emphasis><emphasis role="stringliteral">&quot;#&quot;</emphasis>);
+00841 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;ll&quot;</emphasis>)
+00842 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TextFileHandler&gt;(<emphasis role="comment">/*Comment=*/</emphasis><emphasis role="stringliteral">&quot;;&quot;</emphasis>);
+00843 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;bc&quot;</emphasis>)
+00844 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;BinaryFileHandler&gt;();
+00845 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;s&quot;</emphasis>)
+00846 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;TextFileHandler&gt;(<emphasis role="comment">/*Comment=*/</emphasis><emphasis role="stringliteral">&quot;#&quot;</emphasis>);
+00847 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;o&quot;</emphasis>)
+00848 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CreateObjectFileHandler(FirstInput);
+00849 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;a&quot;</emphasis>)
+00850 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CreateObjectFileHandler(FirstInput);
+00851 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;gch&quot;</emphasis>)
+00852 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;BinaryFileHandler&gt;();
+00853 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;ast&quot;</emphasis>)
+00854 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;BinaryFileHandler&gt;();
+00855 
+00856 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(errc::invalid_argument,
+00857 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>&#32;+&#32;FilesType&#32;+&#32;<emphasis role="stringliteral">&quot;&apos;:&#32;invalid&#32;file&#32;type&#32;specified&quot;</emphasis>);
+00858 }
+00859 
+00861 <emphasis role="keyword">static</emphasis>&#32;Error&#32;BundleFiles()&#32;{
+00862 &#32;&#32;std::error_code&#32;EC;
+00863 
+00864 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;output&#32;file.</emphasis>
+00865 &#32;&#32;raw_fd_ostream&#32;OutputFile(OutputFileNames.front(),&#32;EC,&#32;sys::fs::OF_None);
+00866 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)
+00867 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(OutputFileNames.front(),&#32;EC);
+00868 
+00869 &#32;&#32;<emphasis role="comment">//&#32;Open&#32;input&#32;files.</emphasis>
+00870 &#32;&#32;SmallVector&lt;std::unique_ptr&lt;MemoryBuffer&gt;,&#32;8u&gt;&#32;InputBuffers;
+00871 &#32;&#32;InputBuffers.reserve(InputFileNames.size());
+00872 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;I&#32;:&#32;InputFileNames)&#32;{
+00873 &#32;&#32;&#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;CodeOrErr&#32;=
+00874 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(I);
+00875 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;CodeOrErr.getError())
+00876 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(I,&#32;EC);
+00877 &#32;&#32;&#32;&#32;InputBuffers.emplace_back(std::move(*CodeOrErr));
+00878 &#32;&#32;}
+00879 
+00880 &#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;file&#32;handler.&#32;We&#32;use&#32;the&#32;host&#32;buffer&#32;as&#32;reference.</emphasis>
+00881 &#32;&#32;assert((HostInputIndex&#32;!=&#32;~0u&#32;||&#32;AllowNoHost)&#32;&amp;&amp;
+00882 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Host&#32;input&#32;index&#32;undefined??&quot;</emphasis>);
+00883 &#32;&#32;Expected&lt;std::unique_ptr&lt;FileHandler&gt;&gt;&#32;FileHandlerOrErr&#32;=
+00884 &#32;&#32;&#32;&#32;&#32;&#32;CreateFileHandler(*InputBuffers[AllowNoHost&#32;?&#32;0&#32;:&#32;HostInputIndex]);
+00885 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FileHandlerOrErr)
+00886 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FileHandlerOrErr.takeError();
+00887 
+00888 &#32;&#32;std::unique_ptr&lt;FileHandler&gt;&#32;&amp;FH&#32;=&#32;*FileHandlerOrErr;
+00889 &#32;&#32;assert(FH);
+00890 
+00891 &#32;&#32;<emphasis role="comment">//&#32;Write&#32;header.</emphasis>
+00892 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;WriteHeader(OutputFile,&#32;InputBuffers))
+00893 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00894 
+00895 &#32;&#32;<emphasis role="comment">//&#32;Write&#32;all&#32;bundles&#32;along&#32;with&#32;the&#32;start/end&#32;markers.&#32;If&#32;an&#32;error&#32;was&#32;found</emphasis>
+00896 &#32;&#32;<emphasis role="comment">//&#32;writing&#32;the&#32;end&#32;of&#32;the&#32;bundle&#32;component,&#32;abort&#32;the&#32;bundle&#32;writing.</emphasis>
+00897 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Input&#32;=&#32;InputBuffers.begin();
+00898 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Triple&#32;:&#32;TargetNames)&#32;{
+00899 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;WriteBundleStart(OutputFile,&#32;Triple))
+00900 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00901 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;WriteBundle(OutputFile,&#32;**Input))
+00902 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00903 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;WriteBundleEnd(OutputFile,&#32;Triple))
+00904 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00905 &#32;&#32;&#32;&#32;++Input;
+00906 &#32;&#32;}
+00907 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+00908 }
+00909 
+00910 <emphasis role="comment">//&#32;List&#32;bundle&#32;IDs.&#32;Return&#32;true&#32;if&#32;an&#32;error&#32;was&#32;found.</emphasis>
+00911 <emphasis role="keyword">static</emphasis>&#32;Error&#32;ListBundleIDsInFile(StringRef&#32;InputFileName)&#32;{
+00912 &#32;&#32;<emphasis role="comment">//&#32;Open&#32;Input&#32;file.</emphasis>
+00913 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;CodeOrErr&#32;=
+00914 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(InputFileName);
+00915 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;CodeOrErr.getError())
+00916 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(InputFileName,&#32;EC);
+00917 
+00918 &#32;&#32;MemoryBuffer&#32;&amp;Input&#32;=&#32;**CodeOrErr;
+00919 
+00920 &#32;&#32;<emphasis role="comment">//&#32;Select&#32;the&#32;right&#32;files&#32;handler.</emphasis>
+00921 &#32;&#32;Expected&lt;std::unique_ptr&lt;FileHandler&gt;&gt;&#32;FileHandlerOrErr&#32;=
+00922 &#32;&#32;&#32;&#32;&#32;&#32;CreateFileHandler(Input);
+00923 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FileHandlerOrErr)
+00924 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FileHandlerOrErr.takeError();
+00925 
+00926 &#32;&#32;std::unique_ptr&lt;FileHandler&gt;&#32;&amp;FH&#32;=&#32;*FileHandlerOrErr;
+00927 &#32;&#32;assert(FH);
+00928 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FH-&gt;listBundleIDs(Input);
+00929 }
+00930 
+00931 <emphasis role="comment">//&#32;Unbundle&#32;the&#32;files.&#32;Return&#32;true&#32;if&#32;an&#32;error&#32;was&#32;found.</emphasis>
+00932 <emphasis role="keyword">static</emphasis>&#32;Error&#32;UnbundleFiles()&#32;{
+00933 &#32;&#32;<emphasis role="comment">//&#32;Open&#32;Input&#32;file.</emphasis>
+00934 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;CodeOrErr&#32;=
+00935 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(InputFileNames.front());
+00936 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;CodeOrErr.getError())
+00937 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(InputFileNames.front(),&#32;EC);
+00938 
+00939 &#32;&#32;MemoryBuffer&#32;&amp;Input&#32;=&#32;**CodeOrErr;
+00940 
+00941 &#32;&#32;<emphasis role="comment">//&#32;Select&#32;the&#32;right&#32;files&#32;handler.</emphasis>
+00942 &#32;&#32;Expected&lt;std::unique_ptr&lt;FileHandler&gt;&gt;&#32;FileHandlerOrErr&#32;=
+00943 &#32;&#32;&#32;&#32;&#32;&#32;CreateFileHandler(Input);
+00944 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FileHandlerOrErr)
+00945 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FileHandlerOrErr.takeError();
+00946 
+00947 &#32;&#32;std::unique_ptr&lt;FileHandler&gt;&#32;&amp;FH&#32;=&#32;*FileHandlerOrErr;
+00948 &#32;&#32;assert(FH);
+00949 
+00950 &#32;&#32;<emphasis role="comment">//&#32;Read&#32;the&#32;header&#32;of&#32;the&#32;bundled&#32;file.</emphasis>
+00951 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;ReadHeader(Input))
+00952 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00953 
+00954 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;a&#32;work&#32;list&#32;that&#32;consist&#32;of&#32;the&#32;map&#32;triple/output&#32;file.</emphasis>
+00955 &#32;&#32;StringMap&lt;StringRef&gt;&#32;Worklist;
+00956 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Output&#32;=&#32;OutputFileNames.begin();
+00957 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Triple&#32;:&#32;TargetNames)&#32;{
+00958 &#32;&#32;&#32;&#32;Worklist[Triple]&#32;=&#32;*Output;
+00959 &#32;&#32;&#32;&#32;++Output;
+00960 &#32;&#32;}
+00961 
+00962 &#32;&#32;<emphasis role="comment">//&#32;Read&#32;all&#32;the&#32;bundles&#32;that&#32;are&#32;in&#32;the&#32;work&#32;list.&#32;If&#32;we&#32;find&#32;no&#32;bundles&#32;we</emphasis>
+00963 &#32;&#32;<emphasis role="comment">//&#32;assume&#32;the&#32;file&#32;is&#32;meant&#32;for&#32;the&#32;host&#32;target.</emphasis>
+00964 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;FoundHostBundle&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00965 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(!Worklist.empty())&#32;{
+00966 &#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;CurTripleOrErr&#32;=&#32;FH-&gt;ReadBundleStart(Input);
+00967 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CurTripleOrErr)
+00968 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CurTripleOrErr.takeError();
+00969 
+00970 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;don&apos;t&#32;have&#32;more&#32;bundles.</emphasis>
+00971 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!*CurTripleOrErr)
+00972 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+00973 
+00974 &#32;&#32;&#32;&#32;StringRef&#32;CurTriple&#32;=&#32;**CurTripleOrErr;
+00975 &#32;&#32;&#32;&#32;assert(!CurTriple.empty());
+00976 
+00977 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Output&#32;=&#32;Worklist.find(CurTriple);
+00978 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;file&#32;may&#32;have&#32;more&#32;bundles&#32;for&#32;other&#32;targets,&#32;that&#32;we&#32;don&apos;t&#32;care</emphasis>
+00979 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;about.&#32;Therefore,&#32;move&#32;on&#32;to&#32;the&#32;next&#32;triple</emphasis>
+00980 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Output&#32;==&#32;Worklist.end())
+00981 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00982 
+00983 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Check&#32;if&#32;the&#32;output&#32;file&#32;can&#32;be&#32;opened&#32;and&#32;copy&#32;the&#32;bundle&#32;to&#32;it.</emphasis>
+00984 &#32;&#32;&#32;&#32;std::error_code&#32;EC;
+00985 &#32;&#32;&#32;&#32;raw_fd_ostream&#32;OutputFile(Output-&gt;second,&#32;EC,&#32;sys::fs::OF_None);
+00986 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)
+00987 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(Output-&gt;second,&#32;EC);
+00988 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;ReadBundle(OutputFile,&#32;Input))
+00989 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00990 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;FH-&gt;ReadBundleEnd(Input))
+00991 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+00992 &#32;&#32;&#32;&#32;Worklist.erase(Output);
+00993 
+00994 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Record&#32;if&#32;we&#32;found&#32;the&#32;host&#32;bundle.</emphasis>
+00995 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;OffloadInfo&#32;=&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>(CurTriple);
+00996 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OffloadInfo.hasHostKind())
+00997 &#32;&#32;&#32;&#32;&#32;&#32;FoundHostBundle&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00998 &#32;&#32;}
+00999 
+01000 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AllowMissingBundles&#32;&amp;&amp;&#32;!Worklist.empty())&#32;{
+01001 &#32;&#32;&#32;&#32;std::string&#32;ErrMsg&#32;=&#32;<emphasis role="stringliteral">&quot;Can&apos;t&#32;find&#32;bundles&#32;for&quot;</emphasis>;
+01002 &#32;&#32;&#32;&#32;std::set&lt;StringRef&gt;&#32;Sorted;
+01003 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;E&#32;:&#32;Worklist)
+01004 &#32;&#32;&#32;&#32;&#32;&#32;Sorted.insert(E.first());
+01005 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I&#32;=&#32;0;
+01006 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Last&#32;=&#32;Sorted.size()&#32;-&#32;1;
+01007 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;E&#32;:&#32;Sorted)&#32;{
+01008 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;!=&#32;0&#32;&amp;&amp;&#32;Last&#32;&gt;&#32;1)
+01009 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ErrMsg&#32;+=&#32;<emphasis role="stringliteral">&quot;,&quot;</emphasis>;
+01010 &#32;&#32;&#32;&#32;&#32;&#32;ErrMsg&#32;+=&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>;
+01011 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;==&#32;Last&#32;&amp;&amp;&#32;I&#32;!=&#32;0)
+01012 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ErrMsg&#32;+=&#32;<emphasis role="stringliteral">&quot;and&#32;&quot;</emphasis>;
+01013 &#32;&#32;&#32;&#32;&#32;&#32;ErrMsg&#32;+=&#32;E.str();
+01014 &#32;&#32;&#32;&#32;&#32;&#32;++I;
+01015 &#32;&#32;&#32;&#32;}
+01016 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(inconvertibleErrorCode(),&#32;ErrMsg);
+01017 &#32;&#32;}
+01018 
+01019 &#32;&#32;<emphasis role="comment">//&#32;If&#32;no&#32;bundles&#32;were&#32;found,&#32;assume&#32;the&#32;input&#32;file&#32;is&#32;the&#32;host&#32;bundle&#32;and</emphasis>
+01020 &#32;&#32;<emphasis role="comment">//&#32;create&#32;empty&#32;files&#32;for&#32;the&#32;remaining&#32;targets.</emphasis>
+01021 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Worklist.size()&#32;==&#32;TargetNames.size())&#32;{
+01022 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;E&#32;:&#32;Worklist)&#32;{
+01023 &#32;&#32;&#32;&#32;&#32;&#32;std::error_code&#32;EC;
+01024 &#32;&#32;&#32;&#32;&#32;&#32;raw_fd_ostream&#32;OutputFile(E.second,&#32;EC,&#32;sys::fs::OF_None);
+01025 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)
+01026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(E.second,&#32;EC);
+01027 
+01028 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;this&#32;entry&#32;has&#32;a&#32;host&#32;kind,&#32;copy&#32;the&#32;input&#32;file&#32;to&#32;the&#32;output&#32;file.</emphasis>
+01029 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;OffloadInfo&#32;=&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>(E.getKey());
+01030 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OffloadInfo.hasHostKind())
+01031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OutputFile.write(Input.getBufferStart(),&#32;Input.getBufferSize());
+01032 &#32;&#32;&#32;&#32;}
+01033 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+01034 &#32;&#32;}
+01035 
+01036 &#32;&#32;<emphasis role="comment">//&#32;If&#32;we&#32;found&#32;elements,&#32;we&#32;emit&#32;an&#32;error&#32;if&#32;none&#32;of&#32;those&#32;were&#32;for&#32;the&#32;host</emphasis>
+01037 &#32;&#32;<emphasis role="comment">//&#32;in&#32;case&#32;host&#32;bundle&#32;name&#32;was&#32;provided&#32;in&#32;command&#32;line.</emphasis>
+01038 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FoundHostBundle&#32;&amp;&amp;&#32;HostInputIndex&#32;!=&#32;~0u)
+01039 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(inconvertibleErrorCode(),
+01040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Can&apos;t&#32;find&#32;bundle&#32;for&#32;the&#32;host&#32;target&quot;</emphasis>);
+01041 
+01042 &#32;&#32;<emphasis role="comment">//&#32;If&#32;we&#32;still&#32;have&#32;any&#32;elements&#32;in&#32;the&#32;worklist,&#32;create&#32;empty&#32;files&#32;for&#32;them.</emphasis>
+01043 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;E&#32;:&#32;Worklist)&#32;{
+01044 &#32;&#32;&#32;&#32;std::error_code&#32;EC;
+01045 &#32;&#32;&#32;&#32;raw_fd_ostream&#32;OutputFile(E.second,&#32;EC,&#32;sys::fs::OF_None);
+01046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)
+01047 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(E.second,&#32;EC);
+01048 &#32;&#32;}
+01049 
+01050 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+01051 }
+01052 
+01053 <emphasis role="keyword">static</emphasis>&#32;Archive::Kind&#32;getDefaultArchiveKindForHost()&#32;{
+01054 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Triple(sys::getDefaultTargetTriple()).isOSDarwin()&#32;?&#32;Archive::K_DARWIN
+01055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;Archive::K_GNU;
+01056 }
+01057 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l01061"/><link linkend="__clang_offload_bundler_8cpp_1a2e0e96a489012901de23db69a0d042d8">01061</link> <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="__clang_offload_bundler_8cpp_1a2e0e96a489012901de23db69a0d042d8">isCodeObjectCompatible</link>(<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>&#32;&amp;CodeObjectInfo,
+01062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>&#32;&amp;TargetInfo)&#32;{
+01063 
+01064 &#32;&#32;<emphasis role="comment">//&#32;Compatible&#32;in&#32;case&#32;of&#32;exact&#32;match.</emphasis>
+01065 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CodeObjectInfo&#32;==&#32;TargetInfo)&#32;{
+01066 &#32;&#32;&#32;&#32;DEBUG_WITH_TYPE(
+01067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;CodeObjectCompatibility&quot;</emphasis>,
+01068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dbgs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Compatible:&#32;Exact&#32;match:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;CodeObjectInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+01069 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01070 &#32;&#32;}
+01071 
+01072 &#32;&#32;<emphasis role="comment">//&#32;Incompatible&#32;if&#32;Kinds&#32;or&#32;Triples&#32;mismatch.</emphasis>
+01073 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CodeObjectInfo.<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;!=&#32;TargetInfo.<link linkend="_struct_offload_target_info_1a3500cd32ca481f827bc251452563624b">OffloadKind</link>&#32;||
+01074 &#32;&#32;&#32;&#32;&#32;&#32;!CodeObjectInfo.<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>.isCompatibleWith(TargetInfo.<link linkend="_struct_offload_target_info_1abca120d4035beee4a3b0604008683fc4">Triple</link>))&#32;{
+01075 &#32;&#32;&#32;&#32;DEBUG_WITH_TYPE(
+01076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;CodeObjectCompatibility&quot;</emphasis>,
+01077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dbgs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Incompatible:&#32;Kind/Triple&#32;mismatch&#32;\t[CodeObject:&#32;&quot;</emphasis>
+01078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;CodeObjectInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\t:\t[Target:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;TargetInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()
+01079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\n&quot;</emphasis>);
+01080 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01081 &#32;&#32;}
+01082 
+01083 &#32;&#32;<emphasis role="comment">//&#32;Incompatible&#32;if&#32;GPUArch&#32;mismatch.</emphasis>
+01084 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CodeObjectInfo.<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>&#32;!=&#32;TargetInfo.<link linkend="_struct_offload_target_info_1a14d040744b4d59e6780bf54b26685739">GPUArch</link>)&#32;{
+01085 &#32;&#32;&#32;&#32;DEBUG_WITH_TYPE(<emphasis role="stringliteral">&quot;CodeObjectCompatibility&quot;</emphasis>,
+01086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dbgs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Incompatible:&#32;GPU&#32;Arch&#32;mismatch&#32;\t[CodeObject:&#32;&quot;</emphasis>
+01087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;CodeObjectInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()
+01088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\t:\t[Target:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;TargetInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\n&quot;</emphasis>);
+01089 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01090 &#32;&#32;}
+01091 
+01092 &#32;&#32;DEBUG_WITH_TYPE(
+01093 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;CodeObjectCompatibility&quot;</emphasis>,
+01094 &#32;&#32;&#32;&#32;&#32;&#32;dbgs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Compatible:&#32;Code&#32;Objects&#32;are&#32;compatible&#32;\t[CodeObject:&#32;&quot;</emphasis>
+01095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;CodeObjectInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\t:\t[Target:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;TargetInfo.<link linkend="_struct_offload_target_info_1a3fc2f34e4f9bdb04326326811f5f3ad4">str</link>()
+01096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]\n&quot;</emphasis>);
+01097 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01098 }
+01099 
+01106 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>
+01107 getCompatibleOffloadTargets(<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>&#32;&amp;CodeObjectInfo,
+01108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;StringRef&gt;&#32;&amp;CompatibleTargets)&#32;{
+01109 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CompatibleTargets.empty())&#32;{
+01110 &#32;&#32;&#32;&#32;DEBUG_WITH_TYPE(<emphasis role="stringliteral">&quot;CodeObjectCompatibility&quot;</emphasis>,
+01111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dbgs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;CompatibleTargets&#32;list&#32;should&#32;be&#32;empty\n&quot;</emphasis>);
+01112 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01113 &#32;&#32;}
+01114 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Target&#32;:&#32;TargetNames)&#32;{
+01115 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;TargetInfo&#32;=&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>(Target);
+01116 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__clang_offload_bundler_8cpp_1a2e0e96a489012901de23db69a0d042d8">isCodeObjectCompatible</link>(CodeObjectInfo,&#32;TargetInfo))
+01117 &#32;&#32;&#32;&#32;&#32;&#32;CompatibleTargets.push_back(Target);
+01118 &#32;&#32;}
+01119 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!CompatibleTargets.empty();
+01120 }
+01121 
+01129 <emphasis role="keyword">static</emphasis>&#32;Error&#32;UnbundleArchive()&#32;{
+01130 &#32;&#32;std::vector&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;ArchiveBuffers;
+01131 
+01134 &#32;&#32;StringMap&lt;std::vector&lt;NewArchiveMember&gt;&gt;&#32;OutputArchivesMap;
+01135 
+01136 &#32;&#32;<emphasis role="comment">//&#32;Map&#32;of&#32;target&#32;names&#32;and&#32;output&#32;archive&#32;filenames</emphasis>
+01137 &#32;&#32;StringMap&lt;StringRef&gt;&#32;TargetOutputFileNameMap;
+01138 
+01139 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Output&#32;=&#32;OutputFileNames.begin();
+01140 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Target&#32;:&#32;TargetNames)&#32;{
+01141 &#32;&#32;&#32;&#32;TargetOutputFileNameMap[Target]&#32;=&#32;*Output;
+01142 &#32;&#32;&#32;&#32;++Output;
+01143 &#32;&#32;}
+01144 
+01145 &#32;&#32;StringRef&#32;IFName&#32;=&#32;InputFileNames.front();
+01146 &#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;BufOrErr&#32;=
+01147 &#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(IFName,&#32;-1,&#32;<emphasis role="keyword">false</emphasis>);
+01148 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;BufOrErr.getError())
+01149 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createFileError(InputFileNames.front(),&#32;EC);
+01150 
+01151 &#32;&#32;ArchiveBuffers.push_back(std::move(*BufOrErr));
+01152 &#32;&#32;Expected&lt;std::unique_ptr&lt;llvm::object::Archive&gt;&gt;&#32;LibOrErr&#32;=
+01153 &#32;&#32;&#32;&#32;&#32;&#32;Archive::create(ArchiveBuffers.back()-&gt;getMemBufferRef());
+01154 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!LibOrErr)
+01155 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;LibOrErr.takeError();
+01156 
+01157 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Archive&#32;=&#32;std::move(*LibOrErr);
+01158 
+01159 &#32;&#32;Error&#32;ArchiveErr&#32;=&#32;Error::success();
+01160 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ChildEnd&#32;=&#32;Archive-&gt;child_end();
+01161 
+01163 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;ArchiveIter&#32;=&#32;Archive-&gt;child_begin(ArchiveErr);
+01164 &#32;&#32;&#32;&#32;&#32;&#32;&#32;ArchiveIter&#32;!=&#32;ChildEnd;&#32;++ArchiveIter)&#32;{
+01165 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ArchiveErr)
+01166 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ArchiveErr;
+01167 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ArchiveChildNameOrErr&#32;=&#32;(*ArchiveIter).getName();
+01168 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ArchiveChildNameOrErr)
+01169 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ArchiveChildNameOrErr.takeError();
+01170 
+01171 &#32;&#32;&#32;&#32;StringRef&#32;BundledObjectFile&#32;=&#32;sys::path::filename(*ArchiveChildNameOrErr);
+01172 
+01173 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CodeObjectBufferRefOrErr&#32;=&#32;(*ArchiveIter).getMemoryBufferRef();
+01174 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CodeObjectBufferRefOrErr)
+01175 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CodeObjectBufferRefOrErr.takeError();
+01176 
+01177 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CodeObjectBuffer&#32;=
+01178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getMemBuffer(*CodeObjectBufferRefOrErr,&#32;<emphasis role="keyword">false</emphasis>);
+01179 
+01180 &#32;&#32;&#32;&#32;Expected&lt;std::unique_ptr&lt;FileHandler&gt;&gt;&#32;FileHandlerOrErr&#32;=
+01181 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CreateFileHandler(*CodeObjectBuffer);
+01182 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FileHandlerOrErr)
+01183 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FileHandlerOrErr.takeError();
+01184 
+01185 &#32;&#32;&#32;&#32;std::unique_ptr&lt;FileHandler&gt;&#32;&amp;<link linkend="_class_file_handler">FileHandler</link>&#32;=&#32;*FileHandlerOrErr;
+01186 &#32;&#32;&#32;&#32;assert(<link linkend="_class_file_handler">FileHandler</link>&#32;&amp;&amp;
+01187 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;FileHandle&#32;creation&#32;failed&#32;for&#32;file&#32;in&#32;the&#32;archive!&quot;</emphasis>);
+01188 
+01189 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;ReadErr&#32;=&#32;<link linkend="_class_file_handler">FileHandler</link>.get()-&gt;<link linkend="_class_file_handler_1a0b973008bf7d7a53bc33d0f75b0dadef">ReadHeader</link>(*CodeObjectBuffer))
+01190 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ReadErr;
+01191 
+01192 &#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;CurBundleIDOrErr&#32;=
+01193 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_file_handler">FileHandler</link>-&gt;<link linkend="_class_file_handler_1a5b31037af59fa8c77b8287d8ae9d84c4">ReadBundleStart</link>(*CodeObjectBuffer);
+01194 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CurBundleIDOrErr)
+01195 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CurBundleIDOrErr.takeError();
+01196 
+01197 &#32;&#32;&#32;&#32;Optional&lt;StringRef&gt;&#32;OptionalCurBundleID&#32;=&#32;*CurBundleIDOrErr;
+01198 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;No&#32;device&#32;code&#32;in&#32;this&#32;child,&#32;skip.</emphasis>
+01199 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!OptionalCurBundleID.hasValue())
+01200 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+01201 &#32;&#32;&#32;&#32;StringRef&#32;CodeObject&#32;=&#32;*OptionalCurBundleID;
+01202 
+01203 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Process&#32;all&#32;bundle&#32;entries&#32;(CodeObjects)&#32;found&#32;in&#32;this&#32;child&#32;of&#32;input</emphasis>
+01204 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;archive.</emphasis>
+01205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(!CodeObject.empty())&#32;{
+01206 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;StringRef&gt;&#32;CompatibleTargets;
+01207 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CodeObjectInfo&#32;=&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>(CodeObject);
+01208 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CodeObjectInfo.<link linkend="_struct_offload_target_info_1a2eb3794ca870118bef52b97bd65a6ad0">hasHostKind</link>())&#32;{
+01209 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Do&#32;nothing,&#32;we&#32;don&apos;t&#32;extract&#32;host&#32;code&#32;yet.</emphasis>
+01210 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getCompatibleOffloadTargets(CodeObjectInfo,
+01211 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CompatibleTargets))&#32;{
+01212 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;BundleData;
+01213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_string_ostream&#32;DataStream(BundleData);
+01214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=
+01215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_file_handler">FileHandler</link>.get()-&gt;<link linkend="_class_file_handler_1a6e4e497d5160eff3cab43dfdfd7e2a13">ReadBundle</link>(DataStream,&#32;*CodeObjectBuffer))
+01216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+01217 
+01218 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;CompatibleTarget&#32;:&#32;CompatibleTargets)&#32;{
+01219 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallString&lt;128&gt;&#32;BundledObjectFileName;
+01220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;BundledObjectFileName.assign(BundledObjectFile);
+01221 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;OutputBundleName&#32;=
+01222 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Twine(llvm::sys::path::stem(BundledObjectFileName)&#32;+&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>&#32;+
+01223 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeObject)
+01224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.str();
+01225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Replace&#32;&apos;:&apos;&#32;in&#32;optional&#32;target&#32;feature&#32;list&#32;with&#32;&apos;_&apos;&#32;to&#32;ensure</emphasis>
+01226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;cross-platform&#32;validity.</emphasis>
+01227 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::replace(OutputBundleName.begin(),&#32;OutputBundleName.end(),&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>,
+01228 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="charliteral">&apos;_&apos;</emphasis>);
+01229 
+01230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::unique_ptr&lt;MemoryBuffer&gt;&#32;MemBuf&#32;=&#32;MemoryBuffer::getMemBufferCopy(
+01231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DataStream.str(),&#32;OutputBundleName);
+01232 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArchiveBuffers.push_back(std::move(MemBuf));
+01233 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBufferRef&#32;MemBufRef&#32;=
+01234 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBufferRef(*(ArchiveBuffers.back()));
+01235 
+01236 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;For&#32;inserting&#32;&lt;CompatibleTarget,&#32;list&lt;CodeObject&gt;&gt;&#32;entry&#32;in</emphasis>
+01237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;OutputArchivesMap.</emphasis>
+01238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputArchivesMap.find(CompatibleTarget)&#32;==
+01239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OutputArchivesMap.end())&#32;{
+01240 
+01241 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::vector&lt;NewArchiveMember&gt;&#32;ArchiveMembers;
+01242 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArchiveMembers.push_back(NewArchiveMember(MemBufRef));
+01243 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OutputArchivesMap.insert_or_assign(CompatibleTarget,
+01244 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::move(ArchiveMembers));
+01245 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OutputArchivesMap[CompatibleTarget].push_back(
+01247 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NewArchiveMember(MemBufRef));
+01248 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+01249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+01250 &#32;&#32;&#32;&#32;&#32;&#32;}
+01251 
+01252 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;Err&#32;=&#32;<link linkend="_class_file_handler">FileHandler</link>.get()-&gt;<link linkend="_class_file_handler_1a0dc30eeb824c348cc6f9bba853c93c41">ReadBundleEnd</link>(*CodeObjectBuffer))
+01253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Err;
+01254 
+01255 &#32;&#32;&#32;&#32;&#32;&#32;Expected&lt;Optional&lt;StringRef&gt;&gt;&#32;NextTripleOrErr&#32;=
+01256 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_file_handler">FileHandler</link>-&gt;<link linkend="_class_file_handler_1a5b31037af59fa8c77b8287d8ae9d84c4">ReadBundleStart</link>(*CodeObjectBuffer);
+01257 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!NextTripleOrErr)
+01258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;NextTripleOrErr.takeError();
+01259 
+01260 &#32;&#32;&#32;&#32;&#32;&#32;CodeObject&#32;=&#32;((*NextTripleOrErr).hasValue())&#32;?&#32;**NextTripleOrErr&#32;:&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+01261 &#32;&#32;&#32;&#32;}&#32;<emphasis role="comment">//&#32;End&#32;of&#32;processing&#32;of&#32;all&#32;bundle&#32;entries&#32;of&#32;this&#32;child&#32;of&#32;input&#32;archive.</emphasis>
+01262 &#32;&#32;}&#32;&#32;&#32;<emphasis role="comment">//&#32;End&#32;of&#32;while&#32;over&#32;children&#32;of&#32;input&#32;archive.</emphasis>
+01263 
+01264 &#32;&#32;assert(!ArchiveErr&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Error&#32;occured&#32;while&#32;reading&#32;archive!&quot;</emphasis>);
+01265 
+01267 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;Target&#32;:&#32;TargetNames)&#32;{
+01268 &#32;&#32;&#32;&#32;StringRef&#32;FileName&#32;=&#32;TargetOutputFileNameMap[Target];
+01269 &#32;&#32;&#32;&#32;StringMapIterator&lt;std::vector&lt;llvm::NewArchiveMember&gt;&gt;&#32;CurArchiveMembers&#32;=
+01270 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OutputArchivesMap.find(Target);
+01271 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CurArchiveMembers&#32;!=&#32;OutputArchivesMap.end())&#32;{
+01272 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Error&#32;WriteErr&#32;=&#32;writeArchive(FileName,&#32;CurArchiveMembers-&gt;getValue(),
+01273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">true</emphasis>,&#32;getDefaultArchiveKindForHost(),
+01274 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">true</emphasis>,&#32;<emphasis role="keyword">false</emphasis>,&#32;<emphasis role="keyword">nullptr</emphasis>))
+01275 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;WriteErr;
+01276 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AllowMissingBundles)&#32;{
+01277 &#32;&#32;&#32;&#32;&#32;&#32;std::string&#32;ErrMsg&#32;=
+01278 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Twine(<emphasis role="stringliteral">&quot;no&#32;compatible&#32;code&#32;object&#32;found&#32;for&#32;the&#32;target&#32;&apos;&quot;</emphasis>&#32;+&#32;Target&#32;+
+01279 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&apos;&#32;in&#32;heterogenous&#32;archive&#32;library:&#32;&quot;</emphasis>&#32;+&#32;IFName)
+01280 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;.str();
+01281 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;createStringError(inconvertibleErrorCode(),&#32;ErrMsg);
+01282 &#32;&#32;&#32;&#32;}
+01283 &#32;&#32;}
+01284 
+01285 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Error::success();
+01286 }
+01287 
+01288 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;PrintVersion(raw_ostream&#32;&amp;OS)&#32;{
+01289 &#32;&#32;OS&#32;&lt;&lt;&#32;clang::getClangToolFullVersion(<emphasis role="stringliteral">&quot;clang-offload-bundler&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+01290 }
+01291 
+<anchor xml:id="__clang_offload_bundler_8cpp_source_1l01292"/><link linkend="__clang_offload_bundler_8cpp_1a217dbf8b442f20279ea00b898af96f52">01292</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_offload_bundler_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+01293 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0]);
+01294 
+01295 &#32;&#32;cl::HideUnrelatedOptions(ClangOffloadBundlerCategory);
+01296 &#32;&#32;cl::SetVersionPrinter(PrintVersion);
+01297 &#32;&#32;cl::ParseCommandLineOptions(
+01298 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,
+01299 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;A&#32;tool&#32;to&#32;bundle&#32;several&#32;input&#32;files&#32;of&#32;the&#32;specified&#32;type&#32;&lt;type&gt;&#32;\n&quot;</emphasis>
+01300 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;referring&#32;to&#32;the&#32;same&#32;source&#32;file&#32;but&#32;different&#32;targets&#32;into&#32;a&#32;single&#32;\n&quot;</emphasis>
+01301 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;one.&#32;The&#32;resulting&#32;file&#32;can&#32;also&#32;be&#32;unbundled&#32;into&#32;different&#32;files&#32;by&#32;\n&quot;</emphasis>
+01302 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;this&#32;tool&#32;if&#32;-unbundle&#32;is&#32;provided.\n&quot;</emphasis>);
+01303 
+01304 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Help)&#32;{
+01305 &#32;&#32;&#32;&#32;cl::PrintHelpMessage();
+01306 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01307 &#32;&#32;}
+01308 
+01309 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;reportError&#32;=&#32;[argv](Error&#32;E)&#32;{
+01310 &#32;&#32;&#32;&#32;logAllUnhandledErrors(std::move(E),&#32;WithColor::error(errs(),&#32;argv[0]));
+01311 &#32;&#32;&#32;&#32;exit(1);
+01312 &#32;&#32;};
+01313 
+01314 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;doWork&#32;=&#32;[&amp;](std::function&lt;llvm::Error()&gt;&#32;Work)&#32;{
+01315 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Save&#32;the&#32;current&#32;executable&#32;directory&#32;as&#32;it&#32;will&#32;be&#32;useful&#32;to&#32;find&#32;other</emphasis>
+01316 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;tools.</emphasis>
+01317 &#32;&#32;&#32;&#32;BundlerExecutable&#32;=&#32;argv[0];
+01318 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!llvm::sys::fs::exists(BundlerExecutable))
+01319 &#32;&#32;&#32;&#32;&#32;&#32;BundlerExecutable&#32;=
+01320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;sys::fs::getMainExecutable(argv[0],&#32;&amp;BundlerExecutable);
+01321 
+01322 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::Error&#32;Err&#32;=&#32;Work())&#32;{
+01323 &#32;&#32;&#32;&#32;&#32;&#32;reportError(std::move(Err));
+01324 &#32;&#32;&#32;&#32;}
+01325 &#32;&#32;};
+01326 
+01327 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ListBundleIDs)&#32;{
+01328 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Unbundle)&#32;{
+01329 &#32;&#32;&#32;&#32;&#32;&#32;reportError(
+01330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;createStringError(errc::invalid_argument,
+01331 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;-unbundle&#32;and&#32;-list&#32;cannot&#32;be&#32;used&#32;together&quot;</emphasis>));
+01332 &#32;&#32;&#32;&#32;}
+01333 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InputFileNames.size()&#32;!=&#32;1)&#32;{
+01334 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01335 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;only&#32;one&#32;input&#32;file&#32;supported&#32;for&#32;-list&quot;</emphasis>));
+01336 &#32;&#32;&#32;&#32;}
+01337 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputFileNames.size())&#32;{
+01338 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01339 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;-outputs&#32;option&#32;is&#32;invalid&#32;for&#32;-list&quot;</emphasis>));
+01340 &#32;&#32;&#32;&#32;}
+01341 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TargetNames.size())&#32;{
+01342 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;-targets&#32;option&#32;is&#32;invalid&#32;for&#32;-list&quot;</emphasis>));
+01344 &#32;&#32;&#32;&#32;}
+01345 
+01346 &#32;&#32;&#32;&#32;doWork([]()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;ListBundleIDsInFile(InputFileNames.front());&#32;});
+01347 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01348 &#32;&#32;}
+01349 
+01350 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputFileNames.getNumOccurrences()&#32;==&#32;0)&#32;{
+01351 &#32;&#32;&#32;&#32;reportError(createStringError(
+01352 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,
+01353 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;for&#32;the&#32;--outputs&#32;option:&#32;must&#32;be&#32;specified&#32;at&#32;least&#32;once!&quot;</emphasis>));
+01354 &#32;&#32;}
+01355 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TargetNames.getNumOccurrences()&#32;==&#32;0)&#32;{
+01356 &#32;&#32;&#32;&#32;reportError(createStringError(
+01357 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,
+01358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;for&#32;the&#32;--targets&#32;option:&#32;must&#32;be&#32;specified&#32;at&#32;least&#32;once!&quot;</emphasis>));
+01359 &#32;&#32;}
+01360 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Unbundle)&#32;{
+01361 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InputFileNames.size()&#32;!=&#32;1)&#32;{
+01362 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(
+01363 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,
+01364 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;only&#32;one&#32;input&#32;file&#32;supported&#32;in&#32;unbundling&#32;mode&quot;</emphasis>));
+01365 &#32;&#32;&#32;&#32;}
+01366 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputFileNames.size()&#32;!=&#32;TargetNames.size())&#32;{
+01367 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;number&#32;of&#32;output&#32;files&#32;and&#32;targets&#32;should&#32;&quot;</emphasis>
+01369 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;match&#32;in&#32;unbundling&#32;mode&quot;</emphasis>));
+01370 &#32;&#32;&#32;&#32;}
+01371 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01372 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;a&quot;</emphasis>)&#32;{
+01373 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01374 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Archive&#32;files&#32;are&#32;only&#32;supported&#32;&quot;</emphasis>
+01375 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;for&#32;unbundling&quot;</emphasis>));
+01376 &#32;&#32;&#32;&#32;}
+01377 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OutputFileNames.size()&#32;!=&#32;1)&#32;{
+01378 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(
+01379 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,
+01380 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;only&#32;one&#32;output&#32;file&#32;supported&#32;in&#32;bundling&#32;mode&quot;</emphasis>));
+01381 &#32;&#32;&#32;&#32;}
+01382 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InputFileNames.size()&#32;!=&#32;TargetNames.size())&#32;{
+01383 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(
+01384 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,
+01385 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;number&#32;of&#32;input&#32;files&#32;and&#32;targets&#32;should&#32;match&#32;in&#32;bundling&#32;mode&quot;</emphasis>));
+01386 &#32;&#32;&#32;&#32;}
+01387 &#32;&#32;}
+01388 
+01389 &#32;&#32;<emphasis role="comment">//&#32;Verify&#32;that&#32;the&#32;offload&#32;kinds&#32;and&#32;triples&#32;are&#32;known.&#32;We&#32;also&#32;check&#32;that&#32;we</emphasis>
+01390 &#32;&#32;<emphasis role="comment">//&#32;have&#32;exactly&#32;one&#32;host&#32;target.</emphasis>
+01391 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Index&#32;=&#32;0u;
+01392 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;HostTargetNum&#32;=&#32;0u;
+01393 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HIPOnly&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+01394 &#32;&#32;llvm::DenseSet&lt;StringRef&gt;&#32;ParsedTargets;
+01395 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(StringRef&#32;Target&#32;:&#32;TargetNames)&#32;{
+01396 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ParsedTargets.contains(Target))&#32;{
+01397 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01398 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Duplicate&#32;targets&#32;are&#32;not&#32;allowed&quot;</emphasis>));
+01399 &#32;&#32;&#32;&#32;}
+01400 &#32;&#32;&#32;&#32;ParsedTargets.insert(Target);
+01401 
+01402 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;OffloadInfo&#32;=&#32;<link linkend="_struct_offload_target_info">OffloadTargetInfo</link>(Target);
+01403 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;KindIsValid&#32;=&#32;OffloadInfo.isOffloadKindValid();
+01404 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;TripleIsValid&#32;=&#32;OffloadInfo.isTripleValid();
+01405 
+01406 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!KindIsValid&#32;||&#32;!TripleIsValid)&#32;{
+01407 &#32;&#32;&#32;&#32;&#32;&#32;SmallVector&lt;char,&#32;128u&gt;&#32;Buf;
+01408 &#32;&#32;&#32;&#32;&#32;&#32;raw_svector_ostream&#32;Msg(Buf);
+01409 &#32;&#32;&#32;&#32;&#32;&#32;Msg&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;invalid&#32;target&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;Target&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+01410 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!KindIsValid)
+01411 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Msg&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;unknown&#32;offloading&#32;kind&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;OffloadInfo.OffloadKind&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+01412 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!TripleIsValid)
+01413 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Msg&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;,&#32;unknown&#32;target&#32;triple&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;OffloadInfo.Triple.str()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>;
+01414 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,&#32;Msg.str()));
+01415 &#32;&#32;&#32;&#32;}
+01416 
+01417 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(KindIsValid&#32;&amp;&amp;&#32;OffloadInfo.hasHostKind())&#32;{
+01418 &#32;&#32;&#32;&#32;&#32;&#32;++HostTargetNum;
+01419 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Save&#32;the&#32;index&#32;of&#32;the&#32;input&#32;that&#32;refers&#32;to&#32;the&#32;host.</emphasis>
+01420 &#32;&#32;&#32;&#32;&#32;&#32;HostInputIndex&#32;=&#32;Index;
+01421 &#32;&#32;&#32;&#32;}
+01422 
+01423 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(OffloadInfo.OffloadKind&#32;!=&#32;<emphasis role="stringliteral">&quot;hip&quot;</emphasis>&#32;&amp;&amp;&#32;OffloadInfo.OffloadKind&#32;!=&#32;<emphasis role="stringliteral">&quot;hipv4&quot;</emphasis>)
+01424 &#32;&#32;&#32;&#32;&#32;&#32;HIPOnly&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+01425 
+01426 &#32;&#32;&#32;&#32;++Index;
+01427 &#32;&#32;}
+01428 
+01429 &#32;&#32;<emphasis role="comment">//&#32;HIP&#32;uses&#32;clang-offload-bundler&#32;to&#32;bundle&#32;device-only&#32;compilation&#32;results</emphasis>
+01430 &#32;&#32;<emphasis role="comment">//&#32;for&#32;multiple&#32;GPU&#32;archs,&#32;therefore&#32;allow&#32;no&#32;host&#32;target&#32;if&#32;all&#32;entries</emphasis>
+01431 &#32;&#32;<emphasis role="comment">//&#32;are&#32;for&#32;HIP.</emphasis>
+01432 &#32;&#32;AllowNoHost&#32;=&#32;HIPOnly;
+01433 
+01434 &#32;&#32;<emphasis role="comment">//&#32;Host&#32;triple&#32;is&#32;not&#32;really&#32;needed&#32;for&#32;unbundling&#32;operation,&#32;so&#32;do&#32;not</emphasis>
+01435 &#32;&#32;<emphasis role="comment">//&#32;treat&#32;missing&#32;host&#32;triple&#32;as&#32;error&#32;if&#32;we&#32;do&#32;unbundling.</emphasis>
+01436 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((Unbundle&#32;&amp;&amp;&#32;HostTargetNum&#32;&gt;&#32;1)&#32;||
+01437 &#32;&#32;&#32;&#32;&#32;&#32;(!Unbundle&#32;&amp;&amp;&#32;HostTargetNum&#32;!=&#32;1&#32;&amp;&amp;&#32;!AllowNoHost))&#32;{
+01438 &#32;&#32;&#32;&#32;reportError(createStringError(errc::invalid_argument,
+01439 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;expecting&#32;exactly&#32;one&#32;host&#32;target&#32;but&#32;got&#32;&quot;</emphasis>&#32;+
+01440 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Twine(HostTargetNum)));
+01441 &#32;&#32;}
+01442 
+01443 &#32;&#32;doWork([]()&#32;{
+01444 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Unbundle)&#32;{
+01445 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(FilesType&#32;==&#32;<emphasis role="stringliteral">&quot;a&quot;</emphasis>)
+01446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;UnbundleArchive();
+01447 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+01448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;UnbundleFiles();
+01449 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>
+01450 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;BundleFiles();
+01451 &#32;&#32;});
+01452 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01453 }
+</programlisting></section>

@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_classclang-format-sublime_1_1_clang_format_command" xml:lang="en-US">
+<title>clang-format-sublime.ClangFormatCommand Class Reference</title>
+<indexterm><primary>clang-format-sublime.ClangFormatCommand</primary></indexterm>
+<para>Inheritance diagram for clang-format-sublime.ClangFormatCommand:    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classclang-format-sublime_1_1_clang_format_command.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_classclang-format-sublime_1_1_clang_format_command_1a3748e4bfa2b7dfb6d0216f85c2be64a5">run</link> (self, edit)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+<para>
+Definition at line <link linkend="_clang-format-sublime_8py_source_1l00029">29</link> of file <link linkend="_clang-format-sublime_8py_source">clang-format-sublime.py</link>.</para>
+</section>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_classclang-format-sublime_1_1_clang_format_command_1a3748e4bfa2b7dfb6d0216f85c2be64a5"/>    <section>
+    <title>run()</title>
+<indexterm><primary>run</primary><secondary>clang-format-sublime.ClangFormatCommand</secondary></indexterm>
+<indexterm><primary>clang-format-sublime.ClangFormatCommand</primary><secondary>run</secondary></indexterm>
+<para><computeroutput>def clang-format-sublime.ClangFormatCommand.run ( self,  edit)</computeroutput></para><para>
+Definition at line <link linkend="_clang-format-sublime_8py_source_1l00030">30</link> of file <link linkend="_clang-format-sublime_8py_source">clang-format-sublime.py</link>.</para>
+<programlisting>00030 &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1analyze_1a505fccfeb836b113101687366a231f5f">run</link>(self,&#32;edit):
+00031 &#32;&#32;&#32;&#32;encoding&#32;=&#32;self.view.encoding()
+00032 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;encoding&#32;==&#32;<emphasis role="stringliteral">&apos;Undefined&apos;</emphasis>:
+00033 &#32;&#32;&#32;&#32;&#32;&#32;encoding&#32;=&#32;<emphasis role="stringliteral">&apos;utf-8&apos;</emphasis>
+00034 &#32;&#32;&#32;&#32;regions&#32;=&#32;[]
+00035 &#32;&#32;&#32;&#32;command&#32;=&#32;[binary]
+00036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;style:
+00037 &#32;&#32;&#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-style&apos;</emphasis>,&#32;style])
+00038 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;region&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.view.sel():
+00039 &#32;&#32;&#32;&#32;&#32;&#32;regions.append(region)
+00040 &#32;&#32;&#32;&#32;&#32;&#32;region_offset&#32;=&#32;min(region.a,&#32;region.b)
+00041 &#32;&#32;&#32;&#32;&#32;&#32;region_length&#32;=&#32;abs(region.b&#32;-&#32;region.a)
+00042 &#32;&#32;&#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-offset&apos;</emphasis>,&#32;str(region_offset),
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-length&apos;</emphasis>,&#32;str(region_length),
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-assume-filename&apos;</emphasis>,&#32;str(self.view.file_name())])
+00045 &#32;&#32;&#32;&#32;old_viewport_position&#32;=&#32;self.view.viewport_position()
+00046 &#32;&#32;&#32;&#32;buf&#32;=&#32;self.view.substr(sublime.Region(0,&#32;self.view.size()))
+00047 &#32;&#32;&#32;&#32;p&#32;=&#32;subprocess.Popen(command,&#32;stdout=subprocess.PIPE,
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderr=subprocess.PIPE,&#32;stdin=subprocess.PIPE)
+00049 &#32;&#32;&#32;&#32;output,&#32;error&#32;=&#32;p.communicate(buf.encode(encoding))
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;error:
+00051 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(error)
+00052 &#32;&#32;&#32;&#32;self.view.replace(
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;edit,&#32;sublime.Region(0,&#32;self.view.size()),
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;output.decode(encoding))
+00055 &#32;&#32;&#32;&#32;self.view.sel().clear()
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;region&#32;<emphasis role="keywordflow">in</emphasis>&#32;regions:
+00057 &#32;&#32;&#32;&#32;&#32;&#32;self.view.sel().add(region)
+00058 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;FIXME:&#32;Without&#32;the&#32;10ms&#32;delay,&#32;the&#32;viewport&#32;sometimes&#32;jumps.</emphasis>
+00059 &#32;&#32;&#32;&#32;sublime.set_timeout(<emphasis role="keyword">lambda</emphasis>:&#32;self.view.set_viewport_position(
+00060 &#32;&#32;&#32;&#32;&#32;&#32;old_viewport_position,&#32;<emphasis role="keyword">False</emphasis>),&#32;10)
+</programlisting><para>
+References <link linkend="__function_call_decl_8cpp_source_1l00003">print()</link>.</para>
+</section>
+<para>
+The documentation for this class was generated from the following file:</para>
+/Users/maximilian/clang-llvm/clang/tools/clang-format/<link linkend="_clang-format-sublime_8py">clang-format-sublime.py</link></section>
+</section>

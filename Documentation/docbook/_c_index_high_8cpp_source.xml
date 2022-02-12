@@ -1,0 +1,525 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_high_8cpp_source" xml:lang="en-US">
+<title>CIndexHigh.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexHigh.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CIndexHigh.cpp&#32;-&#32;Higher&#32;level&#32;API&#32;functions&#32;------------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__cursor_visitor_8h">CursorVisitor.h</link>&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_log_8h">CLog.h</link>&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_cursor_8h">CXCursor.h</link>&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_source_location_8h">CXSourceLocation.h</link>&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclObjC.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Compiler.h&quot;</emphasis>
+00017 
+00018 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00019 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxcursor;
+00020 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>cxindex;
+00021 
+00022 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;getTopOverriddenMethods(CXTranslationUnit&#32;TU,
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;const&#32;Decl&#32;*&gt;&#32;&amp;Methods)&#32;{
+00025 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00026 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00027 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!isa&lt;ObjCMethodDecl&gt;(D)&#32;&amp;&amp;&#32;!isa&lt;CXXMethodDecl&gt;(D))
+00028 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00029 
+00030 &#32;&#32;SmallVector&lt;CXCursor,&#32;8&gt;&#32;Overridden;
+00031 &#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ada86f0e873b92af5429ba6da7c7cd56f">cxcursor::getOverriddenCursors</link>(<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(D,&#32;TU),&#32;Overridden);
+00032 &#32;&#32;
+00033 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Overridden.empty())&#32;{
+00034 &#32;&#32;&#32;&#32;Methods.push_back(D-&gt;getCanonicalDecl());
+00035 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00036 &#32;&#32;}
+00037 
+00038 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(SmallVectorImpl&lt;CXCursor&gt;::iterator
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;Overridden.begin(),&#32;E&#32;=&#32;Overridden.end();&#32;I&#32;!=&#32;E;&#32;++I)
+00040 &#32;&#32;&#32;&#32;getTopOverriddenMethods(TU,&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(*I),&#32;Methods);
+00041 }
+00042 
+00043 <emphasis role="keyword">namespace&#32;</emphasis>{
+00044 
+00045 <emphasis role="keyword">struct&#32;</emphasis>FindFileIdRefVisitData&#32;{
+00046 &#32;&#32;CXTranslationUnit&#32;TU;
+00047 &#32;&#32;FileID&#32;FID;
+00048 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*Dcl;
+00049 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;SelectorIdIdx;
+00050 &#32;&#32;CXCursorAndRangeVisitor&#32;visitor;
+00051 
+00052 &#32;&#32;<emphasis role="keyword">typedef</emphasis>&#32;SmallVector&lt;const&#32;Decl&#32;*,&#32;8&gt;&#32;TopMethodsTy;
+00053 &#32;&#32;TopMethodsTy&#32;TopMethods;
+00054 
+00055 &#32;&#32;FindFileIdRefVisitData(CXTranslationUnit&#32;TU,&#32;FileID&#32;FID,
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;<emphasis role="keywordtype">int</emphasis>&#32;selectorIdIdx,
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;visitor)
+00058 &#32;&#32;&#32;&#32;:&#32;TU(TU),&#32;FID(FID),&#32;SelectorIdIdx(selectorIdIdx),&#32;visitor(visitor)&#32;{
+00059 &#32;&#32;&#32;&#32;Dcl&#32;=&#32;getCanonical(D);
+00060 &#32;&#32;&#32;&#32;getTopOverriddenMethods(TU,&#32;Dcl,&#32;TopMethods);
+00061 &#32;&#32;}
+00062 
+00063 &#32;&#32;ASTContext&#32;&amp;getASTContext()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cxtu::getASTUnit(TU)-&gt;getASTContext();
+00065 &#32;&#32;}
+00066 
+00078 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*getCanonical(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00080 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00081 
+00082 &#32;&#32;&#32;&#32;D&#32;=&#32;D-&gt;getCanonicalDecl();
+00083 
+00084 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCImplDecl&#32;*ImplD&#32;=&#32;dyn_cast&lt;ObjCImplDecl&gt;(D))&#32;{
+00085 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ImplD-&gt;getClassInterface())
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getCanonical(ImplD-&gt;getClassInterface());
+00087 
+00088 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXConstructorDecl&#32;*CXXCtorD&#32;=
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast&lt;CXXConstructorDecl&gt;(D))&#32;{
+00090 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getCanonical(CXXCtorD-&gt;getParent());
+00091 &#32;&#32;&#32;&#32;}
+00092 &#32;&#32;&#32;&#32;
+00093 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D;
+00094 &#32;&#32;}
+00095 
+00096 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isHit(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00098 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00099 
+00100 &#32;&#32;&#32;&#32;D&#32;=&#32;getCanonical(D);
+00101 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D&#32;==&#32;Dcl)
+00102 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00103 
+00104 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;ObjCMethodDecl&gt;(D)&#32;||&#32;isa&lt;CXXMethodDecl&gt;(D))
+00105 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;isOverriddingMethod(D);
+00106 
+00107 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00108 &#32;&#32;}
+00109 
+00110 <emphasis role="keyword">private</emphasis>:
+00111 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isOverriddingMethod(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D)<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00112 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::find(TopMethods,&#32;D)&#32;!=&#32;TopMethods.end())
+00113 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00114 
+00115 &#32;&#32;&#32;&#32;TopMethodsTy&#32;methods;
+00116 &#32;&#32;&#32;&#32;getTopOverriddenMethods(TU,&#32;D,&#32;methods);
+00117 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(TopMethodsTy::iterator
+00118 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;=&#32;methods.begin(),&#32;E&#32;=&#32;methods.end();&#32;I&#32;!=&#32;E;&#32;++I)&#32;{
+00119 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(llvm::find(TopMethods,&#32;*I)&#32;!=&#32;TopMethods.end())
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00121 &#32;&#32;&#32;&#32;}
+00122 
+00123 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00124 &#32;&#32;}
+00125 };
+00126 
+00127 }&#32;<emphasis role="comment">//&#32;end&#32;anonymous&#32;namespace.</emphasis>
+00128 
+00132 <emphasis role="keyword">static</emphasis>&#32;SourceLocation&#32;getFileSpellingLoc(SourceManager&#32;&amp;SM,
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;&amp;isMacroArg)&#32;{
+00135 &#32;&#32;assert(Loc.isMacroID());
+00136 &#32;&#32;SourceLocation&#32;SpellLoc&#32;=&#32;SM.getImmediateSpellingLoc(Loc);
+00137 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SpellLoc.isMacroID())
+00138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;getFileSpellingLoc(SM,&#32;SpellLoc,&#32;isMacroArg);
+00139 &#32;&#32;
+00140 &#32;&#32;isMacroArg&#32;=&#32;SM.isMacroArgExpansion(Loc);
+00141 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SpellLoc;
+00142 }
+00143 
+00144 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">enum</emphasis>&#32;CXChildVisitResult&#32;findFileIdRefVisit(CXCursor&#32;cursor,
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursor&#32;parent,
+00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;client_data)&#32;{
+00147 &#32;&#32;CXCursor&#32;declCursor&#32;=&#32;<link linkend="__c_index_8cpp_1ab26fc466345d015d7f9d418080166dc7">clang_getCursorReferenced</link>(cursor);
+00148 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(declCursor.kind))
+00149 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+00150 
+00151 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(declCursor);
+00152 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!D)
+00153 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00154 
+00155 &#32;&#32;FindFileIdRefVisitData&#32;*data&#32;=&#32;(FindFileIdRefVisitData&#32;*)client_data;
+00156 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(data-&gt;isHit(D))&#32;{
+00157 &#32;&#32;&#32;&#32;cursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3fd86e25b3fca940466669d13b0ea93e">cxcursor::getSelectorIdentifierCursor</link>(data-&gt;SelectorIdIdx,&#32;cursor);
+00158 
+00159 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;are&#32;looking&#32;for&#32;identifiers&#32;to&#32;highlight&#32;so&#32;for&#32;objc&#32;methods&#32;(and</emphasis>
+00160 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;not&#32;a&#32;parameter)&#32;we&#32;can&#32;only&#32;highlight&#32;the&#32;selector&#32;identifiers.</emphasis>
+00161 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((cursor.kind&#32;==&#32;CXCursor_ObjCClassMethodDecl&#32;||
+00162 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;==&#32;CXCursor_ObjCInstanceMethodDecl)&#32;&amp;&amp;
+00163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cxcursor::getSelectorIdentifierIndex(cursor)&#32;==&#32;-1)
+00164 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+00165 
+00166 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(cursor.kind))&#32;{
+00167 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_DeclRefExpr&#32;||
+00168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;==&#32;CXCursor_MemberRefExpr)&#32;{
+00169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;continue..</emphasis>
+00170 
+00171 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_ObjCMessageExpr&#32;&amp;&amp;
+00172 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cxcursor::getSelectorIdentifierIndex(cursor)&#32;!=&#32;-1)&#32;{
+00173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;continue..</emphasis>
+00174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
+00175 &#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+00177 &#32;&#32;&#32;&#32;}
+00178 
+00179 &#32;&#32;&#32;&#32;SourceLocation
+00180 &#32;&#32;&#32;&#32;&#32;&#32;Loc&#32;=&#32;cxloc::translateSourceLocation(<link linkend="__c_index_8cpp_1a98001a3f8eb3a76d9c12821c45ef3708">clang_getCursorLocation</link>(cursor));
+00181 &#32;&#32;&#32;&#32;SourceLocation&#32;SelIdLoc&#32;=&#32;cxcursor::getSelectorIdentifierLoc(cursor);
+00182 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SelIdLoc.isValid())
+00183 &#32;&#32;&#32;&#32;&#32;&#32;Loc&#32;=&#32;SelIdLoc;
+00184 
+00185 &#32;&#32;&#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;data-&gt;getASTContext();
+00186 &#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00187 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isInMacroDef&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00188 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isMacroID())&#32;{
+00189 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isMacroArg;
+00190 &#32;&#32;&#32;&#32;&#32;&#32;Loc&#32;=&#32;getFileSpellingLoc(SM,&#32;Loc,&#32;isMacroArg);
+00191 &#32;&#32;&#32;&#32;&#32;&#32;isInMacroDef&#32;=&#32;!isMacroArg;
+00192 &#32;&#32;&#32;&#32;}
+00193 
+00194 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;are&#32;looking&#32;for&#32;identifiers&#32;in&#32;a&#32;specific&#32;file.</emphasis>
+00195 &#32;&#32;&#32;&#32;std::pair&lt;FileID,&#32;unsigned&gt;&#32;LocInfo&#32;=&#32;SM.getDecomposedLoc(Loc);
+00196 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(LocInfo.first&#32;!=&#32;data-&gt;FID)
+00197 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+00198 
+00199 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isInMacroDef)&#32;{
+00200 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;For&#32;a&#32;macro&#32;definition&#32;make&#32;sure&#32;that&#32;all&#32;expansions</emphasis>
+00201 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;of&#32;it&#32;expand&#32;to&#32;the&#32;same&#32;reference&#32;before&#32;allowing&#32;to&#32;point&#32;to&#32;it.</emphasis>
+00202 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+00203 &#32;&#32;&#32;&#32;}
+00204 
+00205 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(data-&gt;visitor.visit(data-&gt;visitor.context,&#32;cursor,
+00206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">cxloc::translateSourceRange</link>(Ctx,&#32;Loc))&#32;==&#32;CXVisit_Break)
+00207 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Break;
+00208 &#32;&#32;}
+00209 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+00210 }
+00211 
+00212 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;findIdRefsInFile(CXTranslationUnit&#32;TU,&#32;CXCursor&#32;declCursor,
+00213 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00214 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;Visitor)&#32;{
+00215 &#32;&#32;assert(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(declCursor.kind));
+00216 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;cxtu::getASTUnit(TU)-&gt;getSourceManager();
+00217 
+00218 &#32;&#32;FileID&#32;FID&#32;=&#32;SM.translateFile(File);
+00219 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*Dcl&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(declCursor);
+00220 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Dcl)
+00221 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00222 
+00223 &#32;&#32;FindFileIdRefVisitData&#32;data(TU,&#32;FID,&#32;Dcl,
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cxcursor::getSelectorIdentifierIndex(declCursor),
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Visitor);
+00226 
+00227 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;DeclContext&#32;*DC&#32;=&#32;Dcl-&gt;getParentFunctionOrMethod())&#32;{
+00228 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1a68f5626687386695a7c431807b46f085">clang_visitChildren</link>(<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(cast&lt;Decl&gt;(DC),&#32;TU),
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;findFileIdRefVisit,&#32;&amp;data);
+00230 &#32;&#32;}
+00231 
+00232 &#32;&#32;SourceRange&#32;Range(SM.getLocForStartOfFile(FID),&#32;SM.getLocForEndOfFile(FID));
+00233 &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor">CursorVisitor</link>&#32;FindIdRefsVisitor(TU,
+00234 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;findFileIdRefVisit,&#32;&amp;data,
+00235 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitPreprocessorLast=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00236 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitIncludedEntities=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Range,
+00238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitDeclsOnly=*/</emphasis><emphasis role="keyword">true</emphasis>);
+00239 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FindIdRefsVisitor.visitFileRegion();
+00240 }
+00241 
+00242 <emphasis role="keyword">namespace&#32;</emphasis>{
+00243 
+00244 <emphasis role="keyword">struct&#32;</emphasis>FindFileMacroRefVisitData&#32;{
+00245 &#32;&#32;ASTUnit&#32;&amp;Unit;
+00246 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File;
+00247 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Macro;
+00248 &#32;&#32;CXCursorAndRangeVisitor&#32;visitor;
+00249 
+00250 &#32;&#32;FindFileMacroRefVisitData(ASTUnit&#32;&amp;Unit,&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00251 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Macro,
+00252 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;visitor)
+00253 &#32;&#32;&#32;&#32;:&#32;Unit(Unit),&#32;File(File),&#32;Macro(Macro),&#32;visitor(visitor)&#32;{&#32;}
+00254 
+00255 &#32;&#32;ASTContext&#32;&amp;getASTContext()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00256 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Unit.getASTContext();
+00257 &#32;&#32;}
+00258 };
+00259 
+00260 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00261 
+00262 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">enum</emphasis>&#32;CXChildVisitResult&#32;findFileMacroRefVisit(CXCursor&#32;cursor,
+00263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursor&#32;parent,
+00264 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;client_data)&#32;{
+00265 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Macro&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00266 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_MacroDefinition)
+00267 &#32;&#32;&#32;&#32;Macro&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">getCursorMacroDefinition</link>(cursor)-&gt;getName();
+00268 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_MacroExpansion)
+00269 &#32;&#32;&#32;&#32;Macro&#32;=&#32;getCursorMacroExpansion(cursor).getName();
+00270 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Macro)
+00271 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00272 
+00273 &#32;&#32;FindFileMacroRefVisitData&#32;*data&#32;=&#32;(FindFileMacroRefVisitData&#32;*)client_data;
+00274 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(data-&gt;Macro&#32;!=&#32;Macro)
+00275 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00276 
+00277 &#32;&#32;SourceLocation
+00278 &#32;&#32;&#32;&#32;Loc&#32;=&#32;cxloc::translateSourceLocation(<link linkend="__c_index_8cpp_1a98001a3f8eb3a76d9c12821c45ef3708">clang_getCursorLocation</link>(cursor));
+00279 
+00280 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;data-&gt;getASTContext();
+00281 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00282 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isInMacroDef&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00283 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Loc.isMacroID())&#32;{
+00284 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isMacroArg;
+00285 &#32;&#32;&#32;&#32;Loc&#32;=&#32;getFileSpellingLoc(SM,&#32;Loc,&#32;isMacroArg);
+00286 &#32;&#32;&#32;&#32;isInMacroDef&#32;=&#32;!isMacroArg;
+00287 &#32;&#32;}
+00288 
+00289 &#32;&#32;<emphasis role="comment">//&#32;We&#32;are&#32;looking&#32;for&#32;identifiers&#32;in&#32;a&#32;specific&#32;file.</emphasis>
+00290 &#32;&#32;std::pair&lt;FileID,&#32;unsigned&gt;&#32;LocInfo&#32;=&#32;SM.getDecomposedLoc(Loc);
+00291 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SM.getFileEntryForID(LocInfo.first)&#32;!=&#32;data-&gt;File)
+00292 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00293 
+00294 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isInMacroDef)&#32;{
+00295 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;For&#32;a&#32;macro&#32;definition&#32;make&#32;sure&#32;that&#32;all&#32;expansions</emphasis>
+00296 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;of&#32;it&#32;expand&#32;to&#32;the&#32;same&#32;reference&#32;before&#32;allowing&#32;to&#32;point&#32;to&#32;it.</emphasis>
+00297 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00298 &#32;&#32;}
+00299 
+00300 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(data-&gt;visitor.visit(data-&gt;visitor.context,&#32;cursor,
+00301 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">cxloc::translateSourceRange</link>(Ctx,&#32;Loc))&#32;==&#32;CXVisit_Break)
+00302 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Break;
+00303 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00304 }
+00305 
+00306 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;findMacroRefsInFile(CXTranslationUnit&#32;TU,&#32;CXCursor&#32;Cursor,
+00307 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;Visitor)&#32;{
+00309 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Cursor.kind&#32;!=&#32;CXCursor_MacroDefinition&#32;&amp;&amp;
+00310 &#32;&#32;&#32;&#32;&#32;&#32;Cursor.kind&#32;!=&#32;CXCursor_MacroExpansion)
+00311 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00312 
+00313 &#32;&#32;ASTUnit&#32;*Unit&#32;=&#32;cxtu::getASTUnit(TU);
+00314 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Unit-&gt;getSourceManager();
+00315 
+00316 &#32;&#32;FileID&#32;FID&#32;=&#32;SM.translateFile(File);
+00317 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Macro&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00318 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Cursor.kind&#32;==&#32;CXCursor_MacroDefinition)
+00319 &#32;&#32;&#32;&#32;Macro&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">getCursorMacroDefinition</link>(Cursor)-&gt;getName();
+00320 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00321 &#32;&#32;&#32;&#32;Macro&#32;=&#32;getCursorMacroExpansion(Cursor).getName();
+00322 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Macro)
+00323 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00324 
+00325 &#32;&#32;FindFileMacroRefVisitData&#32;data(*Unit,&#32;File,&#32;Macro,&#32;Visitor);
+00326 
+00327 &#32;&#32;SourceRange&#32;Range(SM.getLocForStartOfFile(FID),&#32;SM.getLocForEndOfFile(FID));
+00328 &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor">CursorVisitor</link>&#32;FindMacroRefsVisitor(TU,
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;findFileMacroRefVisit,&#32;&amp;data,
+00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitPreprocessorLast=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00331 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitIncludedEntities=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Range);
+00333 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FindMacroRefsVisitor.visitPreprocessedEntitiesInRegion();
+00334 }
+00335 
+00336 <emphasis role="keyword">namespace&#32;</emphasis>{
+00337 
+00338 <emphasis role="keyword">struct&#32;</emphasis>FindFileIncludesVisitor&#32;{
+00339 &#32;&#32;ASTUnit&#32;&amp;Unit;
+00340 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File;
+00341 &#32;&#32;CXCursorAndRangeVisitor&#32;visitor;
+00342 
+00343 &#32;&#32;FindFileIncludesVisitor(ASTUnit&#32;&amp;Unit,&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;visitor)
+00345 &#32;&#32;&#32;&#32;:&#32;Unit(Unit),&#32;File(File),&#32;visitor(visitor)&#32;{&#32;}
+00346 
+00347 &#32;&#32;ASTContext&#32;&amp;getASTContext()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00348 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Unit.getASTContext();
+00349 &#32;&#32;}
+00350 
+00351 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXChildVisitResult&#32;visit(CXCursor&#32;cursor,&#32;CXCursor&#32;parent)&#32;{
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;!=&#32;CXCursor_InclusionDirective)
+00353 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00354 
+00355 &#32;&#32;&#32;&#32;SourceLocation
+00356 &#32;&#32;&#32;&#32;&#32;&#32;Loc&#32;=&#32;cxloc::translateSourceLocation(<link linkend="__c_index_8cpp_1a98001a3f8eb3a76d9c12821c45ef3708">clang_getCursorLocation</link>(cursor));
+00357 
+00358 &#32;&#32;&#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;getASTContext();
+00359 &#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00360 
+00361 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;are&#32;looking&#32;for&#32;includes&#32;in&#32;a&#32;specific&#32;file.</emphasis>
+00362 &#32;&#32;&#32;&#32;std::pair&lt;FileID,&#32;unsigned&gt;&#32;LocInfo&#32;=&#32;SM.getDecomposedLoc(Loc);
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SM.getFileEntryForID(LocInfo.first)&#32;!=&#32;File)
+00364 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00365 
+00366 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(visitor.visit(visitor.context,&#32;cursor,
+00367 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxloc_1a39d02b462b1f3233518f01951d83d035">cxloc::translateSourceRange</link>(Ctx,&#32;Loc))&#32;==&#32;CXVisit_Break)
+00368 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Break;
+00369 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+00370 &#32;&#32;}
+00371 
+00372 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">enum</emphasis>&#32;CXChildVisitResult&#32;visit(CXCursor&#32;cursor,&#32;CXCursor&#32;parent,
+00373 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;client_data)&#32;{
+00374 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>FindFileIncludesVisitor*<emphasis role="keyword">&gt;</emphasis>(client_data)-&gt;
+00375 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;visit(cursor,&#32;parent);
+00376 &#32;&#32;}
+00377 };
+00378 
+00379 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00380 
+00381 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;findIncludesInFile(CXTranslationUnit&#32;TU,&#32;<emphasis role="keyword">const</emphasis>&#32;FileEntry&#32;*File,
+00382 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;Visitor)&#32;{
+00383 &#32;&#32;assert(TU&#32;&amp;&amp;&#32;File&#32;&amp;&amp;&#32;Visitor.visit);
+00384 
+00385 &#32;&#32;ASTUnit&#32;*Unit&#32;=&#32;cxtu::getASTUnit(TU);
+00386 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Unit-&gt;getSourceManager();
+00387 
+00388 &#32;&#32;FileID&#32;FID&#32;=&#32;SM.translateFile(File);
+00389 
+00390 &#32;&#32;FindFileIncludesVisitor&#32;IncludesVisitor(*Unit,&#32;File,&#32;Visitor);
+00391 
+00392 &#32;&#32;SourceRange&#32;Range(SM.getLocForStartOfFile(FID),&#32;SM.getLocForEndOfFile(FID));
+00393 &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_cursor_visitor">CursorVisitor</link>&#32;InclusionCursorsVisitor(TU,
+00394 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FindFileIncludesVisitor::visit,
+00395 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;IncludesVisitor,
+00396 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitPreprocessorLast=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00397 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*VisitIncludedEntities=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00398 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Range);
+00399 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;InclusionCursorsVisitor.visitPreprocessedEntitiesInRegion();
+00400 }
+00401 
+00402 
+00403 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00404 <emphasis role="comment">//&#32;libclang&#32;public&#32;APIs.</emphasis>
+00405 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00406 
+00407 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="stringliteral">&quot;C&quot;</emphasis>&#32;{
+00408 
+<anchor xml:id="__c_index_high_8cpp_source_1l00409"/><link linkend="__c_index_high_8cpp_1a6b21283c57156038f976fb60e3f268c2">00409</link> CXResult&#32;<link linkend="__c_index_high_8cpp_1a6b21283c57156038f976fb60e3f268c2">clang_findReferencesInFile</link>(CXCursor&#32;cursor,&#32;CXFile&#32;file,
+00410 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;visitor)&#32;{
+00411 &#32;&#32;<link linkend="_namespaceclang_1_1cxindex_1a404a46a001568431816a6c375e7cd810">LogRef</link>&#32;Log&#32;=&#32;Logger::make(__func__);
+00412 
+00413 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_x_cursor_8cpp_1af734553e3bac74a4a1f6f7450513cf0f">clang_Cursor_isNull</link>(cursor))&#32;{
+00414 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00415 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Null&#32;cursor&quot;</emphasis>;
+00416 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00417 &#32;&#32;}
+00418 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_NoDeclFound)&#32;{
+00419 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00420 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Got&#32;CXCursor_NoDeclFound&quot;</emphasis>;
+00421 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00422 &#32;&#32;}
+00423 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!file)&#32;{
+00424 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00425 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Null&#32;file&quot;</emphasis>;
+00426 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00427 &#32;&#32;}
+00428 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!visitor.visit)&#32;{
+00429 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00430 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Null&#32;visitor&quot;</emphasis>;
+00431 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00432 &#32;&#32;}
+00433 
+00434 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00435 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;cursor&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;@&quot;</emphasis>&#32;&lt;&lt;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(file);
+00436 
+00437 &#32;&#32;ASTUnit&#32;*CXXUnit&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">cxcursor::getCursorASTUnit</link>(cursor);
+00438 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CXXUnit)
+00439 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00440 
+00441 &#32;&#32;ASTUnit::ConcurrencyCheck&#32;Check(*CXXUnit);
+00442 
+00443 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_MacroDefinition&#32;||
+00444 &#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;==&#32;CXCursor_MacroExpansion)&#32;{
+00445 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(findMacroRefsInFile(<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(cursor),
+00446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cursor,
+00447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(file),
+00448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;visitor))
+00449 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_VisitBreak;
+00450 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Success;
+00451 &#32;&#32;}
+00452 
+00453 &#32;&#32;<emphasis role="comment">//&#32;We&#32;are&#32;interested&#32;in&#32;semantics&#32;of&#32;identifiers&#32;so&#32;for&#32;C++&#32;constructor&#32;exprs</emphasis>
+00454 &#32;&#32;<emphasis role="comment">//&#32;prefer&#32;type&#32;references,&#32;e.g.:</emphasis>
+00455 &#32;&#32;<emphasis role="comment">//</emphasis>
+00456 &#32;&#32;<emphasis role="comment">//&#32;&#32;return&#32;MyStruct();</emphasis>
+00457 &#32;&#32;<emphasis role="comment">//</emphasis>
+00458 &#32;&#32;<emphasis role="comment">//&#32;for&#32;&apos;MyStruct&apos;&#32;we&apos;ll&#32;have&#32;a&#32;cursor&#32;pointing&#32;at&#32;the&#32;constructor&#32;decl&#32;but</emphasis>
+00459 &#32;&#32;<emphasis role="comment">//&#32;we&#32;are&#32;actually&#32;interested&#32;in&#32;the&#32;type&#32;declaration.</emphasis>
+00460 &#32;&#32;cursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa5198a2a166b25337d2c20917d3d28ce">cxcursor::getTypeRefCursor</link>(cursor);
+00461 
+00462 &#32;&#32;CXCursor&#32;refCursor&#32;=&#32;<link linkend="__c_index_8cpp_1ab26fc466345d015d7f9d418080166dc7">clang_getCursorReferenced</link>(cursor);
+00463 
+00464 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(refCursor.kind))&#32;{
+00465 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00466 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;cursor&#32;is&#32;not&#32;referencing&#32;a&#32;declaration&quot;</emphasis>;
+00467 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00468 &#32;&#32;}
+00469 
+00470 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(findIdRefsInFile(<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(cursor),
+00471 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;refCursor,
+00472 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(file),
+00473 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;visitor))
+00474 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_VisitBreak;
+00475 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Success;
+00476 }
+00477 
+<anchor xml:id="__c_index_high_8cpp_source_1l00478"/><link linkend="__c_index_high_8cpp_1a152126673cad4e1f7f0fb80eb8e2044d">00478</link> CXResult&#32;<link linkend="__c_index_high_8cpp_1a152126673cad4e1f7f0fb80eb8e2044d">clang_findIncludesInFile</link>(CXTranslationUnit&#32;TU,&#32;CXFile&#32;file,
+00479 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursorAndRangeVisitor&#32;visitor)&#32;{
+00480 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(TU))&#32;{
+00481 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(TU);
+00482 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00483 &#32;&#32;}
+00484 
+00485 &#32;&#32;<link linkend="_namespaceclang_1_1cxindex_1a404a46a001568431816a6c375e7cd810">LogRef</link>&#32;Log&#32;=&#32;Logger::make(__func__);
+00486 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!file)&#32;{
+00487 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00488 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Null&#32;file&quot;</emphasis>;
+00489 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00490 &#32;&#32;}
+00491 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!visitor.visit)&#32;{
+00492 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00493 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Null&#32;visitor&quot;</emphasis>;
+00494 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00495 &#32;&#32;}
+00496 
+00497 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Log)
+00498 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;TU&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;@&quot;</emphasis>&#32;&lt;&lt;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(file);
+00499 
+00500 &#32;&#32;ASTUnit&#32;*CXXUnit&#32;=&#32;cxtu::getASTUnit(TU);
+00501 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CXXUnit)
+00502 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Invalid;
+00503 
+00504 &#32;&#32;ASTUnit::ConcurrencyCheck&#32;Check(*CXXUnit);
+00505 
+00506 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(findIncludesInFile(TU,&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(file),&#32;visitor))
+00507 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_VisitBreak;
+00508 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXResult_Success;
+00509 }
+00510 
+00511 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">enum</emphasis>&#32;CXVisitorResult&#32;_visitCursorAndRange(<emphasis role="keywordtype">void</emphasis>&#32;*context,
+00512 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCursor&#32;cursor,
+00513 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXSourceRange&#32;range)&#32;{
+00514 &#32;&#32;<link linkend="_struct___c_x_cursor_and_range_visitor_block">CXCursorAndRangeVisitorBlock</link>&#32;block&#32;=&#32;(<link linkend="__index___internal_8h_1a7ecf674b2986737e29df0f5e88dbf83b">CXCursorAndRangeVisitorBlock</link>)context;
+00515 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__index___internal_8h_1ac0a2b80018865726a593e344012872b5">INVOKE_BLOCK2</link>(block,&#32;cursor,&#32;range);
+00516 }
+00517 
+<anchor xml:id="__c_index_high_8cpp_source_1l00518"/><link linkend="__c_index_high_8cpp_1a76deaf432db9e0e8b5480435ef25761e">00518</link> CXResult&#32;<link linkend="__c_index_high_8cpp_1a76deaf432db9e0e8b5480435ef25761e">clang_findReferencesInFileWithBlock</link>(CXCursor&#32;cursor,
+00519 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXFile&#32;file,
+00520 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct___c_x_cursor_and_range_visitor_block">CXCursorAndRangeVisitorBlock</link>&#32;block)&#32;{
+00521 &#32;&#32;CXCursorAndRangeVisitor&#32;visitor&#32;=&#32;{&#32;block,
+00522 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;block&#32;?&#32;_visitCursorAndRange&#32;:&#32;<emphasis role="keyword">nullptr</emphasis>&#32;};
+00523 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_high_8cpp_1a6b21283c57156038f976fb60e3f268c2">clang_findReferencesInFile</link>(cursor,&#32;file,&#32;visitor);
+00524 }
+00525 
+<anchor xml:id="__c_index_high_8cpp_source_1l00526"/><link linkend="__c_index_high_8cpp_1a0362005a5a487c97584f724b3964a65b">00526</link> CXResult&#32;<link linkend="__c_index_high_8cpp_1a0362005a5a487c97584f724b3964a65b">clang_findIncludesInFileWithBlock</link>(CXTranslationUnit&#32;TU,
+00527 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXFile&#32;file,
+00528 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_struct___c_x_cursor_and_range_visitor_block">CXCursorAndRangeVisitorBlock</link>&#32;block)&#32;{
+00529 &#32;&#32;CXCursorAndRangeVisitor&#32;visitor&#32;=&#32;{&#32;block,
+00530 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;block&#32;?&#32;_visitCursorAndRange&#32;:&#32;<emphasis role="keyword">nullptr</emphasis>&#32;};
+00531 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_high_8cpp_1a152126673cad4e1f7f0fb80eb8e2044d">clang_findIncludesInFile</link>(TU,&#32;file,&#32;visitor);
+00532 }
+00533 
+00534 }&#32;<emphasis role="comment">//&#32;end:&#32;extern&#32;&quot;C&quot;</emphasis>
+</programlisting></section>

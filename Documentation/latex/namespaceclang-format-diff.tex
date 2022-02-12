@@ -1,0 +1,124 @@
+\hypertarget{namespaceclang-format-diff}{}\doxysection{clang-\/format-\/diff Namespace Reference}
+\label{namespaceclang-format-diff}\index{clang-\/format-\/diff@{clang-\/format-\/diff}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespaceclang-format-diff_a553c862e1db275c4ea38057eb3283b46}{main}} ()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang-format-diff_a553c862e1db275c4ea38057eb3283b46}\label{namespaceclang-format-diff_a553c862e1db275c4ea38057eb3283b46}} 
+\index{clang-\/format-\/diff@{clang-\/format-\/diff}!main@{main}}
+\index{main@{main}!clang-\/format-\/diff@{clang-\/format-\/diff}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily def clang-\/format-\/diff.\+main (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 38 of file clang-\/format-\/diff.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{38 \textcolor{keyword}{def }\mbox{\hyperlink{namespaceclang-format-diff_a553c862e1db275c4ea38057eb3283b46}{main}}():}
+\DoxyCodeLine{39   parser = argparse.ArgumentParser(description=\_\_doc\_\_,}
+\DoxyCodeLine{40                                    formatter\_class=}
+\DoxyCodeLine{41                                            argparse.RawDescriptionHelpFormatter)}
+\DoxyCodeLine{42   parser.add\_argument(\textcolor{stringliteral}{'-\/i'}, action=\textcolor{stringliteral}{'store\_true'}, default=\textcolor{keyword}{False},}
+\DoxyCodeLine{43                       help=\textcolor{stringliteral}{'apply edits to files instead of displaying a diff'})}
+\DoxyCodeLine{44   parser.add\_argument(\textcolor{stringliteral}{'-\/p'}, metavar=\textcolor{stringliteral}{'NUM'}, default=0,}
+\DoxyCodeLine{45                       help=\textcolor{stringliteral}{'strip the smallest prefix containing P slashes'})}
+\DoxyCodeLine{46   parser.add\_argument(\textcolor{stringliteral}{'-\/regex'}, metavar=\textcolor{stringliteral}{'PATTERN'}, default=\textcolor{keywordtype}{None},}
+\DoxyCodeLine{47                       help=\textcolor{stringliteral}{'custom pattern selecting file paths to reformat '}}
+\DoxyCodeLine{48                       \textcolor{stringliteral}{'(case sensitive, overrides -\/iregex)'})}
+\DoxyCodeLine{49   parser.add\_argument(\textcolor{stringliteral}{'-\/iregex'}, metavar=\textcolor{stringliteral}{'PATTERN'}, default=}
+\DoxyCodeLine{50                       \textcolor{stringliteral}{r'.*\(\backslash\).(cpp|cc|c\(\backslash\)+\(\backslash\)+|cxx|c|cl|h|hh|hpp|hxx|m|mm|inc|js|ts'}}
+\DoxyCodeLine{51                       \textcolor{stringliteral}{r'|proto|protodevel|java|cs|json)'},}
+\DoxyCodeLine{52                       help=\textcolor{stringliteral}{'custom pattern selecting file paths to reformat '}}
+\DoxyCodeLine{53                       \textcolor{stringliteral}{'(case insensitive, overridden by -\/regex)'})}
+\DoxyCodeLine{54   parser.add\_argument(\textcolor{stringliteral}{'-\/sort-\/includes'}, action=\textcolor{stringliteral}{'store\_true'}, default=\textcolor{keyword}{False},}
+\DoxyCodeLine{55                       help=\textcolor{stringliteral}{'let clang-\/format sort include blocks'})}
+\DoxyCodeLine{56   parser.add\_argument(\textcolor{stringliteral}{'-\/v'}, \textcolor{stringliteral}{'-\/-\/verbose'}, action=\textcolor{stringliteral}{'store\_true'},}
+\DoxyCodeLine{57                       help=\textcolor{stringliteral}{'be more verbose, ineffective without -\/i'})}
+\DoxyCodeLine{58   parser.add\_argument(\textcolor{stringliteral}{'-\/style'},}
+\DoxyCodeLine{59                       help=\textcolor{stringliteral}{'formatting style to apply (LLVM, GNU, Google, Chromium, '}}
+\DoxyCodeLine{60                       \textcolor{stringliteral}{'Microsoft, Mozilla, WebKit)'})}
+\DoxyCodeLine{61   parser.add\_argument(\textcolor{stringliteral}{'-\/binary'}, default=\textcolor{stringliteral}{'clang-\/format'},}
+\DoxyCodeLine{62                       help=\textcolor{stringliteral}{'location of binary to use for clang-\/format'})}
+\DoxyCodeLine{63   args = parser.parse\_args()}
+\DoxyCodeLine{64 }
+\DoxyCodeLine{65   \textcolor{comment}{\# Extract changed lines for each file.}}
+\DoxyCodeLine{66   filename = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{67   lines\_by\_file = \{\}}
+\DoxyCodeLine{68   \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} sys.stdin:}
+\DoxyCodeLine{69     match = re.search(\textcolor{stringliteral}{r'\string^\(\backslash\)+\(\backslash\)+\(\backslash\)+\(\backslash\) (.*?/)\{\%s\}(\(\backslash\)S*)'} \% args.p, line)}
+\DoxyCodeLine{70     \textcolor{keywordflow}{if} match:}
+\DoxyCodeLine{71       filename = match.group(2)}
+\DoxyCodeLine{72     \textcolor{keywordflow}{if} filename \textcolor{keywordflow}{is} \textcolor{keywordtype}{None}:}
+\DoxyCodeLine{73       \textcolor{keywordflow}{continue}}
+\DoxyCodeLine{74 }
+\DoxyCodeLine{75     \textcolor{keywordflow}{if} args.regex \textcolor{keywordflow}{is} \textcolor{keywordflow}{not} \textcolor{keywordtype}{None}:}
+\DoxyCodeLine{76       \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} re.match(\textcolor{stringliteral}{'\string^\%s\$'} \% args.regex, filename):}
+\DoxyCodeLine{77         \textcolor{keywordflow}{continue}}
+\DoxyCodeLine{78     \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{79       \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} re.match(\textcolor{stringliteral}{'\string^\%s\$'} \% args.iregex, filename, re.IGNORECASE):}
+\DoxyCodeLine{80         \textcolor{keywordflow}{continue}}
+\DoxyCodeLine{81 }
+\DoxyCodeLine{82     match = re.search(\textcolor{stringliteral}{r'\string^@@.*\(\backslash\)+(\(\backslash\)d+)(,(\(\backslash\)d+))?'}, line)}
+\DoxyCodeLine{83     \textcolor{keywordflow}{if} match:}
+\DoxyCodeLine{84       start\_line = int(match.group(1))}
+\DoxyCodeLine{85       line\_count = 1}
+\DoxyCodeLine{86       \textcolor{keywordflow}{if} match.group(3):}
+\DoxyCodeLine{87         line\_count = int(match.group(3))}
+\DoxyCodeLine{88       \textcolor{keywordflow}{if} line\_count == 0:}
+\DoxyCodeLine{89         \textcolor{keywordflow}{continue}}
+\DoxyCodeLine{90       end\_line = start\_line + line\_count -\/ 1}
+\DoxyCodeLine{91       lines\_by\_file.setdefault(filename, []).extend(}
+\DoxyCodeLine{92           [\textcolor{stringliteral}{'-\/lines'}, str(start\_line) + \textcolor{stringliteral}{':'} + str(end\_line)])}
+\DoxyCodeLine{93 }
+\DoxyCodeLine{94   \textcolor{comment}{\# Reformat files containing changes in place.}}
+\DoxyCodeLine{95   \textcolor{keywordflow}{for} filename, lines \textcolor{keywordflow}{in} lines\_by\_file.items():}
+\DoxyCodeLine{96     \textcolor{keywordflow}{if} args.i \textcolor{keywordflow}{and} args.verbose:}
+\DoxyCodeLine{97       \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{'Formatting \{\}'}.format(filename))}
+\DoxyCodeLine{98     command = [args.binary, filename]}
+\DoxyCodeLine{99     \textcolor{keywordflow}{if} args.i:}
+\DoxyCodeLine{100       command.append(\textcolor{stringliteral}{'-\/i'})}
+\DoxyCodeLine{101     \textcolor{keywordflow}{if} args.sort\_includes:}
+\DoxyCodeLine{102       command.append(\textcolor{stringliteral}{'-\/sort-\/includes'})}
+\DoxyCodeLine{103     command.extend(lines)}
+\DoxyCodeLine{104     \textcolor{keywordflow}{if} args.style:}
+\DoxyCodeLine{105       command.extend([\textcolor{stringliteral}{'-\/style'}, args.style])}
+\DoxyCodeLine{106 }
+\DoxyCodeLine{107     \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{108       p = subprocess.Popen(command,}
+\DoxyCodeLine{109                            stdout=subprocess.PIPE,}
+\DoxyCodeLine{110                            stderr=\textcolor{keywordtype}{None},}
+\DoxyCodeLine{111                            stdin=subprocess.PIPE,}
+\DoxyCodeLine{112                            universal\_newlines=\textcolor{keyword}{True})}
+\DoxyCodeLine{113     \textcolor{keywordflow}{except} OSError \textcolor{keyword}{as} e:}
+\DoxyCodeLine{114       \textcolor{comment}{\# Give the user more context when clang-\/format isn't}}
+\DoxyCodeLine{115       \textcolor{comment}{\# found/isn't executable, etc.}}
+\DoxyCodeLine{116       \textcolor{keywordflow}{raise} RuntimeError(}
+\DoxyCodeLine{117         \textcolor{stringliteral}{'Failed to run "{}\%s"{} -\/ \%s"{}'} \% (\textcolor{stringliteral}{"{} "{}}.join(command), e.strerror))}
+\DoxyCodeLine{118 }
+\DoxyCodeLine{119     stdout, stderr = p.communicate()}
+\DoxyCodeLine{120     \textcolor{keywordflow}{if} p.returncode != 0:}
+\DoxyCodeLine{121       sys.exit(p.returncode)}
+\DoxyCodeLine{122 }
+\DoxyCodeLine{123     \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} args.i:}
+\DoxyCodeLine{124       \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(filename) \textcolor{keyword}{as} f:}
+\DoxyCodeLine{125         code = f.readlines()}
+\DoxyCodeLine{126       formatted\_code = StringIO(stdout).readlines()}
+\DoxyCodeLine{127       diff = difflib.unified\_diff(code, formatted\_code,}
+\DoxyCodeLine{128                                   filename, filename,}
+\DoxyCodeLine{129                                   \textcolor{stringliteral}{'(before formatting)'}, \textcolor{stringliteral}{'(after formatting)'})}
+\DoxyCodeLine{130       diff\_string = \textcolor{stringliteral}{''}.join(diff)}
+\DoxyCodeLine{131       \textcolor{keywordflow}{if} len(diff\_string) > 0:}
+\DoxyCodeLine{132         sys.stdout.write(diff\_string)}
+\DoxyCodeLine{133 }
+
+\end{DoxyCode}
+
+
+References startfile.\+open(), and print().
+

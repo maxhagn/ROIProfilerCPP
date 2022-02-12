@@ -1,0 +1,88 @@
+\hypertarget{_clang_format_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/\+Clang\+Format.cpp File Reference}
+\label{_clang_format_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/ClangFormat.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/ClangFormat.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Diagnostic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Diagnostic\+Options.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+File\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Source\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Version.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Format/\+Format.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Rewrite/\+Core/\+Rewriter.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Init\+LLVM.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Process.\+h\char`\"{}}\newline
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespaceclang}{clang}}
+\begin{DoxyCompactList}\small\item\em -\/rename \end{DoxyCompactList}\item 
+ \mbox{\hyperlink{namespaceclang_1_1format}{clang\+::format}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_format_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file implements a clang-\/format tool that automatically formats (fragments of) C++ code. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_format_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_format_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangFormat.cpp@{ClangFormat.cpp}!main@{main}}
+\index{main@{main}!ClangFormat.cpp@{ClangFormat.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 512 of file Clang\+Format.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{512                                       \{}
+\DoxyCodeLine{513   llvm::InitLLVM X(argc, argv);}
+\DoxyCodeLine{514 }
+\DoxyCodeLine{515   cl::HideUnrelatedOptions(ClangFormatCategory);}
+\DoxyCodeLine{516 }
+\DoxyCodeLine{517   cl::SetVersionPrinter(PrintVersion);}
+\DoxyCodeLine{518   cl::ParseCommandLineOptions(}
+\DoxyCodeLine{519       argc, argv,}
+\DoxyCodeLine{520       \textcolor{stringliteral}{"{}A tool to format C/C++/Java/JavaScript/JSON/Objective-\/C/Protobuf/C\# "{}}}
+\DoxyCodeLine{521       \textcolor{stringliteral}{"{}code.\(\backslash\)n\(\backslash\)n"{}}}
+\DoxyCodeLine{522       \textcolor{stringliteral}{"{}If no arguments are specified, it formats the code from standard input\(\backslash\)n"{}}}
+\DoxyCodeLine{523       \textcolor{stringliteral}{"{}and writes the result to the standard output.\(\backslash\)n"{}}}
+\DoxyCodeLine{524       \textcolor{stringliteral}{"{}If <file>s are given, it reformats the files. If -\/i is specified\(\backslash\)n"{}}}
+\DoxyCodeLine{525       \textcolor{stringliteral}{"{}together with <file>s, the files are edited in-\/place. Otherwise, the\(\backslash\)n"{}}}
+\DoxyCodeLine{526       \textcolor{stringliteral}{"{}result is written to the standard output.\(\backslash\)n"{}});}
+\DoxyCodeLine{527 }
+\DoxyCodeLine{528   \textcolor{keywordflow}{if} (Help) \{}
+\DoxyCodeLine{529     cl::PrintHelpMessage();}
+\DoxyCodeLine{530     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{531   \}}
+\DoxyCodeLine{532 }
+\DoxyCodeLine{533   \textcolor{keywordflow}{if} (DumpConfig) \{}
+\DoxyCodeLine{534     \textcolor{keywordflow}{return} dumpConfig();}
+\DoxyCodeLine{535   \}}
+\DoxyCodeLine{536 }
+\DoxyCodeLine{537   \textcolor{keywordtype}{bool} Error = \textcolor{keyword}{false};}
+\DoxyCodeLine{538   \textcolor{keywordflow}{if} (FileNames.empty()) \{}
+\DoxyCodeLine{539     Error = clang::format::format(\textcolor{stringliteral}{"{}-\/"{}});}
+\DoxyCodeLine{540     \textcolor{keywordflow}{return} Error ? 1 : 0;}
+\DoxyCodeLine{541   \}}
+\DoxyCodeLine{542   \textcolor{keywordflow}{if} (FileNames.size() != 1 \&\&}
+\DoxyCodeLine{543       (!Offsets.empty() || !Lengths.empty() || !LineRanges.empty())) \{}
+\DoxyCodeLine{544     errs() << \textcolor{stringliteral}{"{}error: -\/offset, -\/length and -\/lines can only be used for "{}}}
+\DoxyCodeLine{545               \textcolor{stringliteral}{"{}single file.\(\backslash\)n"{}};}
+\DoxyCodeLine{546     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{547   \}}
+\DoxyCodeLine{548   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} \&FileName : FileNames) \{}
+\DoxyCodeLine{549     \textcolor{keywordflow}{if} (Verbose)}
+\DoxyCodeLine{550       errs() << \textcolor{stringliteral}{"{}Formatting "{}} << FileName << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{551     Error |= clang::format::format(FileName);}
+\DoxyCodeLine{552   \}}
+\DoxyCodeLine{553   \textcolor{keywordflow}{return} Error ? 1 : 0;}
+\DoxyCodeLine{554 \}}
+
+\end{DoxyCode}

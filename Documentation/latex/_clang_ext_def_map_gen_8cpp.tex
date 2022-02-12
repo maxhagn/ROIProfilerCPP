@@ -1,0 +1,64 @@
+\hypertarget{_clang_ext_def_map_gen_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/extdef-\/mapping/\+Clang\+Ext\+Def\+Map\+Gen.cpp File Reference}
+\label{_clang_ext_def_map_gen_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/extdef-\/mapping/ClangExtDefMapGen.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/extdef-\/mapping/ClangExtDefMapGen.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+AST/\+ASTConsumer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+ASTContext.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Source\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Cross\+TU/\+Cross\+Translation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Frontend\+Actions.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Common\+Options\+Parser.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Tooling.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$sstream$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{class_map_ext_def_names_consumer}{Map\+Ext\+Def\+Names\+Consumer}}
+\item 
+class \mbox{\hyperlink{class_map_ext_def_names_action}{Map\+Ext\+Def\+Names\+Action}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_ext_def_map_gen_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_ext_def_map_gen_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_ext_def_map_gen_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangExtDefMapGen.cpp@{ClangExtDefMapGen.cpp}!main@{main}}
+\index{main@{main}!ClangExtDefMapGen.cpp@{ClangExtDefMapGen.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 114 of file Clang\+Ext\+Def\+Map\+Gen.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{114                                       \{}
+\DoxyCodeLine{115   \textcolor{comment}{// Print a stack trace if we signal out.}}
+\DoxyCodeLine{116   sys::PrintStackTraceOnErrorSignal(argv[0], \textcolor{keyword}{false});}
+\DoxyCodeLine{117   PrettyStackTraceProgram X(argc, argv);}
+\DoxyCodeLine{118 }
+\DoxyCodeLine{119   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *Overview = \textcolor{stringliteral}{"{}\(\backslash\)nThis tool collects the USR name and location "{}}}
+\DoxyCodeLine{120                          \textcolor{stringliteral}{"{}of external definitions in the source files "{}}}
+\DoxyCodeLine{121                          \textcolor{stringliteral}{"{}(excluding headers).\(\backslash\)n"{}};}
+\DoxyCodeLine{122   \textcolor{keyword}{auto} ExpectedParser = CommonOptionsParser::create(}
+\DoxyCodeLine{123       argc, argv, ClangExtDefMapGenCategory, cl::ZeroOrMore, Overview);}
+\DoxyCodeLine{124   \textcolor{keywordflow}{if} (!ExpectedParser) \{}
+\DoxyCodeLine{125     llvm::errs() << ExpectedParser.takeError();}
+\DoxyCodeLine{126     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{127   \}}
+\DoxyCodeLine{128   CommonOptionsParser \&OptionsParser = ExpectedParser.get();}
+\DoxyCodeLine{129 }
+\DoxyCodeLine{130   ClangTool Tool(OptionsParser.getCompilations(),}
+\DoxyCodeLine{131                  OptionsParser.getSourcePathList());}
+\DoxyCodeLine{132 }
+\DoxyCodeLine{133   \textcolor{keywordflow}{return} Tool.run(newFrontendActionFactory<MapExtDefNamesAction>().\mbox{\hyperlink{namespacestartfile_af8790d592af0bdf089efd317cbd70e2e}{get}}());}
+\DoxyCodeLine{134 \}}
+
+\end{DoxyCode}

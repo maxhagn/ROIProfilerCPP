@@ -1,0 +1,130 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-diff/ClangDiff.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-diff/ClangDiff.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Tooling/ASTDiff/ASTDiff\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CommonOptionsParser\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Tooling\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 443 of file ClangDiff\&.cpp\&.
+.PP
+.nf
+443                                       {
+444   std::string ErrorMessage;
+445   std::unique_ptr<CompilationDatabase> CommonCompilations =
+446       FixedCompilationDatabase::loadFromCommandLine(argc, argv, ErrorMessage);
+447   if (!CommonCompilations && !ErrorMessage\&.empty())
+448     llvm::errs() << ErrorMessage;
+449   cl::HideUnrelatedOptions(ClangDiffCategory);
+450   if (!cl::ParseCommandLineOptions(argc, argv)) {
+451     cl::PrintOptionValues();
+452     return 1;
+453   }
+454 
+455   addExtraArgs(CommonCompilations);
+456 
+457   if (ASTDump || ASTDumpJson) {
+458     if (!DestinationPath\&.empty()) {
+459       llvm::errs() << "Error: Please specify exactly one filename\&.\n";
+460       return 1;
+461     }
+462     std::unique_ptr<ASTUnit> AST = getAST(CommonCompilations, SourcePath);
+463     if (!AST)
+464       return 1;
+465     diff::SyntaxTree Tree(AST->getASTContext());
+466     if (ASTDump) {
+467       printTree(llvm::outs(), Tree);
+468       return 0;
+469     }
+470     llvm::outs() << R"({"filename":")";
+471     printJsonString(llvm::outs(), SourcePath);
+472     llvm::outs() << R"(","root":)";
+473     printNodeAsJson(llvm::outs(), Tree, Tree\&.getRootId());
+474     llvm::outs() << "}\n";
+475     return 0;
+476   }
+477 
+478   if (DestinationPath\&.empty()) {
+479     llvm::errs() << "Error: Exactly two paths are required\&.\n";
+480     return 1;
+481   }
+482 
+483   std::unique_ptr<ASTUnit> Src = getAST(CommonCompilations, SourcePath);
+484   std::unique_ptr<ASTUnit> Dst = getAST(CommonCompilations, DestinationPath);
+485   if (!Src || !Dst)
+486     return 1;
+487 
+488   diff::ComparisonOptions Options;
+489   if (MaxSize != -1)
+490     Options\&.MaxSize = MaxSize;
+491   if (!StopAfter\&.empty()) {
+492     if (StopAfter == "topdown")
+493       Options\&.StopAfterTopDown = true;
+494     else if (StopAfter != "bottomup") {
+495       llvm::errs() << "Error: Invalid argument for -stop-after\n";
+496       return 1;
+497     }
+498   }
+499   diff::SyntaxTree SrcTree(Src->getASTContext());
+500   diff::SyntaxTree DstTree(Dst->getASTContext());
+501   diff::ASTDiff Diff(SrcTree, DstTree, Options);
+502 
+503   if (HtmlDiff) {
+504     llvm::outs() << HtmlDiffHeader << "<pre>";
+505     llvm::outs() << "<div id='L' class='code'>";
+506     printHtmlForNode(llvm::outs(), Diff, SrcTree, true, SrcTree\&.getRootId(), 0);
+507     llvm::outs() << "</div>";
+508     llvm::outs() << "<div id='R' class='code'>";
+509     printHtmlForNode(llvm::outs(), Diff, DstTree, false, DstTree\&.getRootId(),
+510                      0);
+511     llvm::outs() << "</div>";
+512     llvm::outs() << "</pre></div></body></html>\n";
+513     return 0;
+514   }
+515 
+516   for (diff::NodeId Dst : DstTree) {
+517     diff::NodeId Src = Diff\&.getMapped(DstTree, Dst);
+518     if (PrintMatches && Src\&.isValid()) {
+519       llvm::outs() << "Match ";
+520       printNode(llvm::outs(), SrcTree, Src);
+521       llvm::outs() << " to ";
+522       printNode(llvm::outs(), DstTree, Dst);
+523       llvm::outs() << "\n";
+524     }
+525     printDstChange(llvm::outs(), Diff, SrcTree, DstTree, Dst);
+526   }
+527   for (diff::NodeId Src : SrcTree) {
+528     if (Diff\&.getMapped(SrcTree, Src)\&.isInvalid()) {
+529       llvm::outs() << "Delete ";
+530       printNode(llvm::outs(), SrcTree, Src);
+531       llvm::outs() << "\n";
+532     }
+533   }
+534 
+535   return 0;
+536 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

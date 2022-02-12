@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_clang-format-sublime_8py_source" xml:lang="en-US">
+<title>clang-format-sublime.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format/clang-format-sublime.py</primary></indexterm>
+<programlisting><anchor xml:id="_clang-format-sublime_8py_source_1l00001"/><link linkend="_namespaceclang-format-sublime">00001</link> <emphasis role="comment">#&#32;This&#32;file&#32;is&#32;a&#32;minimal&#32;clang-format&#32;sublime-integration.&#32;To&#32;install:</emphasis>
+00002 <emphasis role="comment">#&#32;-&#32;Change&#32;&apos;binary&apos;&#32;if&#32;clang-format&#32;is&#32;not&#32;on&#32;the&#32;path&#32;(see&#32;below).</emphasis>
+00003 <emphasis role="comment">#&#32;-&#32;Put&#32;this&#32;file&#32;into&#32;your&#32;sublime&#32;Packages&#32;directory,&#32;e.g.&#32;on&#32;Linux:</emphasis>
+00004 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;~/.config/sublime-text-2/Packages/User/clang-format-sublime.py</emphasis>
+00005 <emphasis role="comment">#&#32;-&#32;Add&#32;a&#32;key&#32;binding:</emphasis>
+00006 <emphasis role="comment">#&#32;&#32;&#32;&#32;&#32;{&#32;&quot;keys&quot;:&#32;[&quot;ctrl+shift+c&quot;],&#32;&quot;command&quot;:&#32;&quot;clang_format&quot;&#32;},</emphasis>
+00007 <emphasis role="comment">#</emphasis>
+00008 <emphasis role="comment">#&#32;With&#32;this&#32;integration&#32;you&#32;can&#32;press&#32;the&#32;bound&#32;key&#32;and&#32;clang-format&#32;will</emphasis>
+00009 <emphasis role="comment">#&#32;format&#32;the&#32;current&#32;lines&#32;and&#32;selections&#32;for&#32;all&#32;cursor&#32;positions.&#32;The&#32;lines</emphasis>
+00010 <emphasis role="comment">#&#32;or&#32;regions&#32;are&#32;extended&#32;to&#32;the&#32;next&#32;bigger&#32;syntactic&#32;entities.</emphasis>
+00011 <emphasis role="comment">#</emphasis>
+00012 <emphasis role="comment">#&#32;It&#32;operates&#32;on&#32;the&#32;current,&#32;potentially&#32;unsaved&#32;buffer&#32;and&#32;does&#32;not&#32;create</emphasis>
+00013 <emphasis role="comment">#&#32;or&#32;save&#32;any&#32;files.&#32;To&#32;revert&#32;a&#32;formatting,&#32;just&#32;undo.</emphasis>
+00014 
+00015 <emphasis role="keyword">from</emphasis>&#32;__future__&#32;<emphasis role="keyword">import</emphasis>&#32;absolute_import,&#32;division,&#32;print_function
+00016 <emphasis role="keyword">import</emphasis>&#32;sublime
+00017 <emphasis role="keyword">import</emphasis>&#32;sublime_plugin
+00018 <emphasis role="keyword">import</emphasis>&#32;subprocess
+00019 
+00020 <emphasis role="comment">#&#32;Change&#32;this&#32;to&#32;the&#32;full&#32;path&#32;if&#32;clang-format&#32;is&#32;not&#32;on&#32;the&#32;path.</emphasis>
+<anchor xml:id="_clang-format-sublime_8py_source_1l00021"/><link linkend="_namespaceclang-format-sublime_1a74a71e574fc1512fe754dd874dfe907b">00021</link> binary&#32;=&#32;<emphasis role="stringliteral">&apos;clang-format&apos;</emphasis>
+00022 
+00023 <emphasis role="comment">#&#32;Change&#32;this&#32;to&#32;format&#32;according&#32;to&#32;other&#32;formatting&#32;styles.&#32;See&#32;the&#32;output&#32;of</emphasis>
+00024 <emphasis role="comment">#&#32;&apos;clang-format&#32;--help&apos;&#32;for&#32;a&#32;list&#32;of&#32;supported&#32;styles.&#32;The&#32;default&#32;looks&#32;for</emphasis>
+00025 <emphasis role="comment">#&#32;a&#32;&apos;.clang-format&apos;&#32;or&#32;&apos;_clang-format&apos;&#32;file&#32;to&#32;indicate&#32;the&#32;style&#32;that&#32;should&#32;be</emphasis>
+00026 <emphasis role="comment">#&#32;used.</emphasis>
+<anchor xml:id="_clang-format-sublime_8py_source_1l00027"/><link linkend="_namespaceclang-format-sublime_1afb746fb3e7a3601b15024ae2549492ae">00027</link> style&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00028 
+<anchor xml:id="_clang-format-sublime_8py_source_1l00029"/><link linkend="_classclang-format-sublime_1_1_clang_format_command">00029</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang-format-sublime_1_1_clang_format_command">ClangFormatCommand</link>(sublime_plugin.TextCommand):
+<anchor xml:id="_clang-format-sublime_8py_source_1l00030"/><link linkend="_classclang-format-sublime_1_1_clang_format_command_1a3748e4bfa2b7dfb6d0216f85c2be64a5">00030</link> &#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_classclang-format-sublime_1_1_clang_format_command_1a3748e4bfa2b7dfb6d0216f85c2be64a5">run</link>(self,&#32;edit):
+00031 &#32;&#32;&#32;&#32;encoding&#32;=&#32;self.view.encoding()
+00032 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;encoding&#32;==&#32;<emphasis role="stringliteral">&apos;Undefined&apos;</emphasis>:
+00033 &#32;&#32;&#32;&#32;&#32;&#32;encoding&#32;=&#32;<emphasis role="stringliteral">&apos;utf-8&apos;</emphasis>
+00034 &#32;&#32;&#32;&#32;regions&#32;=&#32;[]
+00035 &#32;&#32;&#32;&#32;command&#32;=&#32;[binary]
+00036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;style:
+00037 &#32;&#32;&#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-style&apos;</emphasis>,&#32;style])
+00038 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;region&#32;<emphasis role="keywordflow">in</emphasis>&#32;self.view.sel():
+00039 &#32;&#32;&#32;&#32;&#32;&#32;regions.append(region)
+00040 &#32;&#32;&#32;&#32;&#32;&#32;region_offset&#32;=&#32;min(region.a,&#32;region.b)
+00041 &#32;&#32;&#32;&#32;&#32;&#32;region_length&#32;=&#32;abs(region.b&#32;-&#32;region.a)
+00042 &#32;&#32;&#32;&#32;&#32;&#32;command.extend([<emphasis role="stringliteral">&apos;-offset&apos;</emphasis>,&#32;str(region_offset),
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-length&apos;</emphasis>,&#32;str(region_length),
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-assume-filename&apos;</emphasis>,&#32;str(self.view.file_name())])
+00045 &#32;&#32;&#32;&#32;old_viewport_position&#32;=&#32;self.view.viewport_position()
+00046 &#32;&#32;&#32;&#32;buf&#32;=&#32;self.view.substr(sublime.Region(0,&#32;self.view.size()))
+00047 &#32;&#32;&#32;&#32;p&#32;=&#32;subprocess.Popen(command,&#32;stdout=subprocess.PIPE,
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderr=subprocess.PIPE,&#32;stdin=subprocess.PIPE)
+00049 &#32;&#32;&#32;&#32;output,&#32;error&#32;=&#32;p.communicate(buf.encode(encoding))
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;error:
+00051 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__function_call_decl_8cpp_1a388f572c62279f839ee138a9afbdeeb5">print</link>(error)
+00052 &#32;&#32;&#32;&#32;self.view.replace(
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;edit,&#32;sublime.Region(0,&#32;self.view.size()),
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;output.decode(encoding))
+00055 &#32;&#32;&#32;&#32;self.view.sel().clear()
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;region&#32;<emphasis role="keywordflow">in</emphasis>&#32;regions:
+00057 &#32;&#32;&#32;&#32;&#32;&#32;self.view.sel().add(region)
+00058 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;FIXME:&#32;Without&#32;the&#32;10ms&#32;delay,&#32;the&#32;viewport&#32;sometimes&#32;jumps.</emphasis>
+00059 &#32;&#32;&#32;&#32;sublime.set_timeout(<emphasis role="keyword">lambda</emphasis>:&#32;self.view.set_viewport_position(
+00060 &#32;&#32;&#32;&#32;&#32;&#32;old_viewport_position,&#32;<emphasis role="keyword">False</emphasis>),&#32;10)
+</programlisting></section>

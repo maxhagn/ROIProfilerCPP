@@ -1,0 +1,40 @@
+\hypertarget{_clang_format_fuzzer_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/fuzzer/\+Clang\+Format\+Fuzzer.cpp File Reference}
+\label{_clang_format_fuzzer_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/fuzzer/ClangFormatFuzzer.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/format/fuzzer/ClangFormatFuzzer.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Format/\+Format.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_format_fuzzer_8cpp_aecb7ba40a567c045e6eb69209014e460}{LLVMFuzzer\+Test\+One\+Input}} (uint8\+\_\+t $\ast$data, size\+\_\+t size)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file implements a function that runs Clang format on a single input. This function is then linked into the Fuzzer library. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_format_fuzzer_8cpp_aecb7ba40a567c045e6eb69209014e460}\label{_clang_format_fuzzer_8cpp_aecb7ba40a567c045e6eb69209014e460}} 
+\index{ClangFormatFuzzer.cpp@{ClangFormatFuzzer.cpp}!LLVMFuzzerTestOneInput@{LLVMFuzzerTestOneInput}}
+\index{LLVMFuzzerTestOneInput@{LLVMFuzzerTestOneInput}!ClangFormatFuzzer.cpp@{ClangFormatFuzzer.cpp}}
+\doxysubsubsection{\texorpdfstring{LLVMFuzzerTestOneInput()}{LLVMFuzzerTestOneInput()}}
+{\footnotesize\ttfamily int LLVMFuzzer\+Test\+One\+Input (\begin{DoxyParamCaption}\item[{uint8\+\_\+t $\ast$}]{data,  }\item[{size\+\_\+t}]{size }\end{DoxyParamCaption})}
+
+
+
+Definition at line 17 of file Clang\+Format\+Fuzzer.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{17                                                                   \{}
+\DoxyCodeLine{18   \textcolor{comment}{// FIXME: fuzz more things: different styles, different style features.}}
+\DoxyCodeLine{19   std::string s((\textcolor{keyword}{const} \textcolor{keywordtype}{char} *)data, size);}
+\DoxyCodeLine{20   \textcolor{keyword}{auto} Style = getGoogleStyle(clang::format::FormatStyle::LK\_Cpp);}
+\DoxyCodeLine{21   Style.ColumnLimit = 60;}
+\DoxyCodeLine{22   \textcolor{keyword}{auto} Replaces = reformat(Style, s, clang::tooling::Range(0, s.size()));}
+\DoxyCodeLine{23   \textcolor{keyword}{auto} Result = applyAllReplacements(s, Replaces);}
+\DoxyCodeLine{24 }
+\DoxyCodeLine{25   \textcolor{comment}{// Output must be checked, as otherwise we crash.}}
+\DoxyCodeLine{26   \textcolor{keywordflow}{if} (!Result) \{\}}
+\DoxyCodeLine{27   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{28 \}}
+
+\end{DoxyCode}

@@ -1,0 +1,67 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexInclusionStack.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexInclusionStack.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclVisitor\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBclang_getInclusions\fP (CXTranslationUnit TU, CXInclusionVisitor CB, CXClientData clientData)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "void clang_getInclusions (CXTranslationUnit TU, CXInclusionVisitor CB, CXClientData clientData)"
+
+.PP
+Definition at line 69 of file CIndexInclusionStack\&.cpp\&.
+.PP
+.nf
+70                                                   {
+71   if (cxtu::isNotUsableTU(TU)) {
+72     LOG_BAD_TU(TU);
+73     return;
+74   }
+75 
+76   SourceManager &SM = cxtu::getASTUnit(TU)->getSourceManager();
+77   const unsigned n =  SM\&.local_sloc_entry_size();
+78 
+79   // In the case where all the SLocEntries are in an external source, traverse
+80   // those SLocEntries as well\&.  This is the case where we are looking
+81   // at the inclusion stack of an AST/PCH file\&. Also, if we are not looking at
+82   // a AST/PCH file, but this file has a pre-compiled preamble, we also need
+83   // to look in that file\&.
+84   if (n == 1 || SM\&.getPreambleFileID()\&.isValid()) {
+85     getInclusions(/*IsLocal=*/false, SM\&.loaded_sloc_entry_size(), TU, CB,
+86                   clientData);
+87   }
+88 
+89   // Not a PCH/AST file\&. Note, if there is a preamble, it could still be that
+90   // there are #includes in this file (e\&.g\&. for any include after the first
+91   // declaration)\&.
+92   if (n != 1)
+93     getInclusions(/*IsLocal=*/true, n, TU, CB, clientData);
+94 }
+.fi
+.PP
+References LOG_BAD_TU\&.
+.PP
+Referenced by PrintInclusionStack()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

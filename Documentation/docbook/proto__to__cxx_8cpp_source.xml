@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_proto__to__cxx_8cpp_source" xml:lang="en-US">
+<title>proto_to_cxx.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-fuzzer/proto-to-cxx/proto_to_cxx.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//==--&#32;proto_to_cxx.cpp&#32;-&#32;Protobuf-C++&#32;conversion&#32;--------------------------==//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;Implements&#32;functions&#32;for&#32;converting&#32;between&#32;protobufs&#32;and&#32;C++.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="_proto__to__cxx_8h">proto_to_cxx.h</link>&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;cxx_proto.pb.h&quot;</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&lt;ostream&gt;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&lt;sstream&gt;</emphasis>
+00018 
+00019 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang__fuzzer">clang_fuzzer</link>&#32;{
+00020 
+00021 <emphasis role="comment">//&#32;Forward&#32;decls.</emphasis>
+00022 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;BinaryOp&#32;&amp;x);
+00023 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;StatementSeq&#32;&amp;x);
+00024 
+00025 <emphasis role="comment">//&#32;Proto&#32;to&#32;C++.</emphasis>
+00026 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Const&#32;&amp;x)&#32;{
+00027 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;(&quot;</emphasis>&#32;&lt;&lt;&#32;x.val()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;)&quot;</emphasis>;
+00028 }
+00029 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;VarRef&#32;&amp;x)&#32;{
+00030 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;a[&quot;</emphasis>&#32;&lt;&lt;&#32;(<emphasis role="keyword">static_cast&lt;</emphasis>uint32_t<emphasis role="keyword">&gt;</emphasis>(x.varnum())&#32;%&#32;100)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;]&quot;</emphasis>;
+00031 }
+<anchor xml:id="_proto__to__cxx_8cpp_source_1l00032"/><link linkend="_namespaceclang__fuzzer_1a01009d2095a220beb7297b772b95ce61">00032</link> std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Lvalue&#32;&amp;x)&#32;{
+00033 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.varref();
+00034 }
+00035 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Rvalue&#32;&amp;x)&#32;{
+00036 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_varref())&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.varref();
+00037 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_cons())&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.cons();
+00038 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_binop())&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.binop();
+00039 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;1&quot;</emphasis>;
+00040 }
+00041 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;BinaryOp&#32;&amp;x)&#32;{
+00042 &#32;&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;(&quot;</emphasis>&#32;&lt;&lt;&#32;x.left();
+00043 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(x.op())&#32;{
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::PLUS:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;+&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00045 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::MINUS:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;-&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00046 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::MUL:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;*&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00047 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::DIV:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;/&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00048 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::MOD:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;%&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00049 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::XOR:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;^&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::AND:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&amp;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00051 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::OR:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;|&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00052 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::EQ:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;==&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00053 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::NE:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;!=&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00054 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::LE:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;=&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00055 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::GE:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&gt;=&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::LT:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00057 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;BinaryOp::GT:&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&gt;&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+00058 &#32;&#32;}
+00059 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.right()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;)&quot;</emphasis>;
+00060 }
+00061 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;AssignmentStatement&#32;&amp;x)&#32;{
+00062 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.lvalue()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;=&quot;</emphasis>&#32;&lt;&lt;&#32;x.rvalue()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;;\n&quot;</emphasis>;
+00063 }
+<anchor xml:id="_proto__to__cxx_8cpp_source_1l00064"/><link linkend="_namespaceclang__fuzzer_1ae4bbba2bc2bf5451263da160878864db">00064</link> std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;IfElse&#32;&amp;x)&#32;{
+00065 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;if&#32;(&quot;</emphasis>&#32;&lt;&lt;&#32;x.cond()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;){\n&quot;</emphasis>
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;x.if_body()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}&#32;else&#32;{&#32;\n&quot;</emphasis>
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;x.else_body()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00068 }
+<anchor xml:id="_proto__to__cxx_8cpp_source_1l00069"/><link linkend="_namespaceclang__fuzzer_1a193185d5a2a899c1bc864a43049acc79">00069</link> std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;While&#32;&amp;x)&#32;{
+00070 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;while&#32;(&quot;</emphasis>&#32;&lt;&lt;&#32;x.cond()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;){\n&quot;</emphasis>&#32;&lt;&lt;&#32;x.body()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00071 }
+00072 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Statement&#32;&amp;x)&#32;{
+00073 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_assignment())&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.assignment();
+00074 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_ifelse())&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.ifelse();
+00075 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(x.has_while_loop())&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;x.while_loop();
+00076 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;(void)0;\n&quot;</emphasis>;
+00077 }
+00078 std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;StatementSeq&#32;&amp;x)&#32;{
+00079 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;st&#32;:&#32;x.statements())&#32;os&#32;&lt;&lt;&#32;st;
+00080 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os;
+00081 }
+<anchor xml:id="_proto__to__cxx_8cpp_source_1l00082"/><link linkend="_namespaceclang__fuzzer_1adf345027d196651169672de25a74af76">00082</link> std::ostream&#32;&amp;<link linkend="_namespaceclang__fuzzer_1a999bc51b48e947b0f7feb714749b0a21">operator&lt;&lt;</link>(std::ostream&#32;&amp;os,&#32;<emphasis role="keyword">const</emphasis>&#32;Function&#32;&amp;x)&#32;{
+00083 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;void&#32;foo(int&#32;*a)&#32;{\n&quot;</emphasis>&#32;&lt;&lt;&#32;x.statements()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00084 }
+00085 
+00086 <emphasis role="comment">//&#32;---------------------------------</emphasis>
+00087 
+<anchor xml:id="_proto__to__cxx_8cpp_source_1l00088"/><link linkend="_namespaceclang__fuzzer_1a664b8472985d2ee4f34c16b89b02cc90">00088</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1a664b8472985d2ee4f34c16b89b02cc90">FunctionToString</link>(<emphasis role="keyword">const</emphasis>&#32;Function&#32;&amp;input)&#32;{
+00089 &#32;&#32;std::ostringstream&#32;os;
+00090 &#32;&#32;os&#32;&lt;&lt;&#32;input;
+00091 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;os.str();
+00092 
+00093 }
+<anchor xml:id="_proto__to__cxx_8cpp_source_1l00094"/><link linkend="_namespaceclang__fuzzer_1aaf890a8f29ccba77145453c91cad912e">00094</link> std::string&#32;<link linkend="_namespaceclang__fuzzer_1aaf890a8f29ccba77145453c91cad912e">ProtoToCxx</link>(<emphasis role="keyword">const</emphasis>&#32;uint8_t&#32;*data,&#32;<emphasis role="keywordtype">size_t</emphasis>&#32;size)&#32;{
+00095 &#32;&#32;Function&#32;message;
+00096 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!message.ParsePartialFromArray(data,&#32;size))
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;#error&#32;invalid&#32;proto\n&quot;</emphasis>;
+00098 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang__fuzzer_1a664b8472985d2ee4f34c16b89b02cc90">FunctionToString</link>(message);
+00099 }
+00100 
+00101 }&#32;<emphasis role="comment">//&#32;namespace&#32;clang_fuzzer</emphasis>
+</programlisting></section>

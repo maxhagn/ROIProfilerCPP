@@ -1,0 +1,130 @@
+\hypertarget{cc1gen__reproducer__main_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/driver/cc1gen\+\_\+reproducer\+\_\+main.cpp File Reference}
+\label{cc1gen__reproducer__main_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/driver/cc1gen\_reproducer\_main.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/driver/cc1gen\_reproducer\_main.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Diagnostic.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+LLVM.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Compilation.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Driver/\+Driver.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Array\+Ref.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+STLExtras.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Host.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Target\+Select.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Virtual\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+YAMLTraits.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structllvm_1_1yaml_1_1_mapping_traits_3_01_unsaved_file_hash_01_4}{llvm\+::yaml\+::\+Mapping\+Traits$<$ Unsaved\+File\+Hash $>$}}
+\item 
+struct \mbox{\hyperlink{structllvm_1_1yaml_1_1_mapping_traits_3_01_clang_invocation_info_01_4}{llvm\+::yaml\+::\+Mapping\+Traits$<$ Clang\+Invocation\+Info $>$}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespacellvm}{llvm}}
+\item 
+ \mbox{\hyperlink{namespacellvm_1_1yaml}{llvm\+::yaml}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \mbox{\hyperlink{cc1gen__reproducer__main_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{Get\+Executable\+Path}} (const char $\ast$Argv0, bool Canonical\+Prefixes)
+\item 
+int \mbox{\hyperlink{cc1gen__reproducer__main_8cpp_a27f0fa14a18bd4a9c735d321f74779d9}{cc1gen\+\_\+reproducer\+\_\+main}} (Array\+Ref$<$ const char $\ast$ $>$ Argv, const char $\ast$Argv0, void $\ast$Main\+Addr)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{cc1gen__reproducer__main_8cpp_a27f0fa14a18bd4a9c735d321f74779d9}\label{cc1gen__reproducer__main_8cpp_a27f0fa14a18bd4a9c735d321f74779d9}} 
+\index{cc1gen\_reproducer\_main.cpp@{cc1gen\_reproducer\_main.cpp}!cc1gen\_reproducer\_main@{cc1gen\_reproducer\_main}}
+\index{cc1gen\_reproducer\_main@{cc1gen\_reproducer\_main}!cc1gen\_reproducer\_main.cpp@{cc1gen\_reproducer\_main.cpp}}
+\doxysubsubsection{\texorpdfstring{cc1gen\_reproducer\_main()}{cc1gen\_reproducer\_main()}}
+{\footnotesize\ttfamily int cc1gen\+\_\+reproducer\+\_\+main (\begin{DoxyParamCaption}\item[{Array\+Ref$<$ const char $\ast$ $>$}]{Argv,  }\item[{const char $\ast$}]{Argv0,  }\item[{void $\ast$}]{Main\+Addr }\end{DoxyParamCaption})}
+
+
+
+Definition at line 156 of file cc1gen\+\_\+reproducer\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{157                                            \{}
+\DoxyCodeLine{158   \textcolor{keywordflow}{if} (Argv.size() < 1) \{}
+\DoxyCodeLine{159     llvm::errs() << \textcolor{stringliteral}{"{}error: missing invocation file\(\backslash\)n"{}};}
+\DoxyCodeLine{160     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{161   \}}
+\DoxyCodeLine{162   \textcolor{comment}{// Parse the invocation descriptor.}}
+\DoxyCodeLine{163   StringRef Input = Argv[0];}
+\DoxyCodeLine{164   llvm::ErrorOr<std::unique\_ptr<llvm::MemoryBuffer>> Buffer =}
+\DoxyCodeLine{165       llvm::MemoryBuffer::getFile(Input, \textcolor{comment}{/*IsText=*/}\textcolor{keyword}{true});}
+\DoxyCodeLine{166   \textcolor{keywordflow}{if} (!Buffer) \{}
+\DoxyCodeLine{167     llvm::errs() << \textcolor{stringliteral}{"{}error: failed to read "{}} << Input << \textcolor{stringliteral}{"{}: "{}}}
+\DoxyCodeLine{168                  << Buffer.getError().message() << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{169     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{170   \}}
+\DoxyCodeLine{171   llvm::yaml::Input YAML(Buffer.get()-\/>getBuffer());}
+\DoxyCodeLine{172   ClangInvocationInfo InvocationInfo;}
+\DoxyCodeLine{173   YAML >> InvocationInfo;}
+\DoxyCodeLine{174   \textcolor{keywordflow}{if} (Argv.size() > 1 \&\& Argv[1] == StringRef(\textcolor{stringliteral}{"{}-\/v"{}}))}
+\DoxyCodeLine{175     InvocationInfo.Dump = \textcolor{keyword}{true};}
+\DoxyCodeLine{176 }
+\DoxyCodeLine{177   \textcolor{comment}{// Create an invocation that will produce the reproducer.}}
+\DoxyCodeLine{178   std::vector<const char *> DriverArgs;}
+\DoxyCodeLine{179   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} \&Arg : InvocationInfo.Arguments)}
+\DoxyCodeLine{180     DriverArgs.push\_back(Arg.c\_str());}
+\DoxyCodeLine{181   std::string Path = \mbox{\hyperlink{cc1gen__reproducer__main_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{GetExecutablePath}}(Argv0, \textcolor{comment}{/*CanonicalPrefixes=*/}\textcolor{keyword}{true});}
+\DoxyCodeLine{182   DriverArgs[0] = Path.c\_str();}
+\DoxyCodeLine{183   llvm::Optional<driver::Driver::CompilationDiagnosticReport> Report =}
+\DoxyCodeLine{184       generateReproducerForInvocationArguments(DriverArgs, InvocationInfo);}
+\DoxyCodeLine{185 }
+\DoxyCodeLine{186   \textcolor{comment}{// Emit the information about the reproduce files to stdout.}}
+\DoxyCodeLine{187   \textcolor{keywordtype}{int} Result = 1;}
+\DoxyCodeLine{188   \textcolor{keywordflow}{if} (Report) \{}
+\DoxyCodeLine{189     printReproducerInformation(llvm::outs(), InvocationInfo, *Report);}
+\DoxyCodeLine{190     Result = 0;}
+\DoxyCodeLine{191   \}}
+\DoxyCodeLine{192 }
+\DoxyCodeLine{193   \textcolor{comment}{// Remove the input file.}}
+\DoxyCodeLine{194   llvm::sys::fs::remove(Input);}
+\DoxyCodeLine{195   \textcolor{keywordflow}{return} Result;}
+\DoxyCodeLine{196 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{cc1gen__reproducer__main_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}\label{cc1gen__reproducer__main_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}} 
+\index{cc1gen\_reproducer\_main.cpp@{cc1gen\_reproducer\_main.cpp}!GetExecutablePath@{GetExecutablePath}}
+\index{GetExecutablePath@{GetExecutablePath}!cc1gen\_reproducer\_main.cpp@{cc1gen\_reproducer\_main.cpp}}
+\doxysubsubsection{\texorpdfstring{GetExecutablePath()}{GetExecutablePath()}}
+{\footnotesize\ttfamily std\+::string Get\+Executable\+Path (\begin{DoxyParamCaption}\item[{const char $\ast$}]{Argv0,  }\item[{bool}]{Canonical\+Prefixes }\end{DoxyParamCaption})}
+
+
+
+Definition at line 57 of file driver.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{57                                                                        \{}
+\DoxyCodeLine{58   \textcolor{keywordflow}{if} (!CanonicalPrefixes) \{}
+\DoxyCodeLine{59     SmallString<128> ExecutablePath(Argv0);}
+\DoxyCodeLine{60     \textcolor{comment}{// Do a PATH lookup if Argv0 isn't a valid path.}}
+\DoxyCodeLine{61     \textcolor{keywordflow}{if} (!llvm::sys::fs::exists(ExecutablePath))}
+\DoxyCodeLine{62       \textcolor{keywordflow}{if} (llvm::ErrorOr<std::string> P =}
+\DoxyCodeLine{63               llvm::sys::findProgramByName(ExecutablePath))}
+\DoxyCodeLine{64         ExecutablePath = *P;}
+\DoxyCodeLine{65     \textcolor{keywordflow}{return} std::string(ExecutablePath.str());}
+\DoxyCodeLine{66   \}}
+\DoxyCodeLine{67 }
+\DoxyCodeLine{68   \textcolor{comment}{// This just needs to be some symbol in the binary; C++ doesn't}}
+\DoxyCodeLine{69   \textcolor{comment}{// allow taking the address of ::main however.}}
+\DoxyCodeLine{70   \textcolor{keywordtype}{void} *P = (\textcolor{keywordtype}{void}*) (intptr\_t) \mbox{\hyperlink{driver_8cpp_a4ee7e45503dac4f1b4f3604b3c4d8875}{GetExecutablePath}};}
+\DoxyCodeLine{71   \textcolor{keywordflow}{return} llvm::sys::fs::getMainExecutable(Argv0, P);}
+\DoxyCodeLine{72 \}}
+
+\end{DoxyCode}
+
+
+References Get\+Executable\+Path().
+
+
+
+Referenced by Get\+Executable\+Path().
+

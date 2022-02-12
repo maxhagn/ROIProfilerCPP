@@ -1,0 +1,393 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_core__main_8cpp_source" xml:lang="en-US">
+<title>core_main.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/c-index-test/core_main.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===--&#32;core_main.cpp&#32;-&#32;Core&#32;Index&#32;Tool&#32;testbed&#32;---------------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/Mangle.h&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/LangOptions.h&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;clang/CodeGen/ObjectFilePCHContainerOperations.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00013 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00014 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInvocation.h&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/FrontendAction.h&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang/Index/IndexDataConsumer.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Index/IndexingAction.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Index/USRGeneration.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/Lex/Preprocessor.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Serialization/ASTReader.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/FileSystem.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/PrettyStackTrace.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Program.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/StringSaver.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/raw_ostream.h&quot;</emphasis>
+00028 
+00029 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00030 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang_1_1index">clang::index</link>;
+00031 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00032 
+00033 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="stringliteral">&quot;C&quot;</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv);
+00034 <emphasis role="keyword">extern</emphasis>&#32;<emphasis role="stringliteral">&quot;C&quot;</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_core__main_8cpp_1abf8b8cca4d3659c057fd2ab49afb69be">indextest_perform_shell_execution</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*command_line);
+00035 
+00036 <emphasis role="keyword">namespace&#32;</emphasis>{
+00037 
+00038 <emphasis role="keyword">enum&#32;class</emphasis>&#32;ActionType&#32;{
+00039 &#32;&#32;None,
+00040 &#32;&#32;PrintSourceSymbols,
+00041 };
+00042 
+<anchor xml:id="_core__main_8cpp_source_1l00043"/><link linkend="_namespaceoptions">00043</link> <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceoptions">options</link>&#32;{
+00044 
+00045 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;IndexTestCoreCategory(<emphasis role="stringliteral">&quot;index-test-core&#32;options&quot;</emphasis>);
+00046 
+00047 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;ActionType&gt;
+00048 Action(cl::desc(<emphasis role="stringliteral">&quot;Action:&quot;</emphasis>),&#32;cl::init(ActionType::None),
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::values(
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clEnumValN(ActionType::PrintSourceSymbols,
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;print-source-symbols&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Print&#32;symbols&#32;from&#32;source&quot;</emphasis>)),
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(IndexTestCoreCategory));
+00053 
+00054 <emphasis role="keyword">static</emphasis>&#32;cl::extrahelp&#32;MoreHelp(
+00055 &#32;&#32;<emphasis role="stringliteral">&quot;\nAdd&#32;\&quot;--&#32;&lt;compiler&#32;arguments&gt;\&quot;&#32;at&#32;the&#32;end&#32;to&#32;setup&#32;the&#32;compiler&#32;&quot;</emphasis>
+00056 &#32;&#32;<emphasis role="stringliteral">&quot;invocation\n&quot;</emphasis>
+00057 );
+00058 
+00059 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00060 DumpModuleImports(<emphasis role="stringliteral">&quot;dump-imported-module-files&quot;</emphasis>,
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;symbols&#32;and&#32;input&#32;files&#32;from&#32;imported&#32;modules&quot;</emphasis>));
+00062 
+00063 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00064 IncludeLocals(<emphasis role="stringliteral">&quot;include-locals&quot;</emphasis>,&#32;cl::desc(<emphasis role="stringliteral">&quot;Print&#32;local&#32;symbols&quot;</emphasis>));
+00065 
+00066 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;IgnoreMacros(<emphasis role="stringliteral">&quot;ignore-macros&quot;</emphasis>,
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Skip&#32;indexing&#32;macros&quot;</emphasis>));
+00068 
+00069 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00070 ModuleFilePath(<emphasis role="stringliteral">&quot;module-file&quot;</emphasis>,
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Path&#32;to&#32;module&#32;file&#32;to&#32;print&#32;symbols&#32;from&quot;</emphasis>));
+00072 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;
+00073 &#32;&#32;ModuleFormat(<emphasis role="stringliteral">&quot;fmodule-format&quot;</emphasis>,&#32;cl::init(<emphasis role="stringliteral">&quot;raw&quot;</emphasis>),
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;Container&#32;format&#32;for&#32;clang&#32;modules&#32;and&#32;PCH,&#32;&apos;raw&apos;&#32;or&#32;&apos;obj&apos;&quot;</emphasis>));
+00075 
+00076 }
+00077 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00078 
+00079 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSymbolInfo(SymbolInfo&#32;SymInfo,&#32;raw_ostream&#32;&amp;OS);
+00080 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSymbolNameAndUSR(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;ASTContext&#32;&amp;Ctx,
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS);
+00082 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSymbolNameAndUSR(<emphasis role="keyword">const</emphasis>&#32;clang::Module&#32;*Mod,&#32;raw_ostream&#32;&amp;OS);
+00083 
+00084 <emphasis role="keyword">namespace&#32;</emphasis>{
+00085 
+00086 <emphasis role="keyword">class&#32;</emphasis>PrintIndexDataConsumer&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;IndexDataConsumer&#32;{
+00087 &#32;&#32;raw_ostream&#32;&amp;OS;
+00088 &#32;&#32;std::unique_ptr&lt;ASTNameGenerator&gt;&#32;ASTNameGen;
+00089 &#32;&#32;std::shared_ptr&lt;Preprocessor&gt;&#32;PP;
+00090 
+00091 <emphasis role="keyword">public</emphasis>:
+00092 &#32;&#32;PrintIndexDataConsumer(raw_ostream&#32;&amp;OS)&#32;:&#32;OS(OS)&#32;{
+00093 &#32;&#32;}
+00094 
+00095 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;initialize(ASTContext&#32;&amp;Ctx)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00096 &#32;&#32;&#32;&#32;ASTNameGen.reset(<emphasis role="keyword">new</emphasis>&#32;ASTNameGenerator(Ctx));
+00097 &#32;&#32;}
+00098 
+00099 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;setPreprocessor(std::shared_ptr&lt;Preprocessor&gt;&#32;PP)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00100 &#32;&#32;&#32;&#32;this-&gt;PP&#32;=&#32;std::move(PP);
+00101 &#32;&#32;}
+00102 
+00103 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleDeclOccurrence(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;SymbolRoleSet&#32;Roles,
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;SymbolRelation&gt;&#32;Relations,
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;ASTNodeInfo&#32;ASTNode)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00106 &#32;&#32;&#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;D-&gt;getASTContext();
+00107 &#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00108 
+00109 &#32;&#32;&#32;&#32;Loc&#32;=&#32;SM.getFileLoc(Loc);
+00110 &#32;&#32;&#32;&#32;FileID&#32;FID&#32;=&#32;SM.getFileID(Loc);
+00111 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Line&#32;=&#32;SM.getLineNumber(FID,&#32;SM.getFileOffset(Loc));
+00112 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Col&#32;=&#32;SM.getColumnNumber(FID,&#32;SM.getFileOffset(Loc));
+00113 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Line&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;Col&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00114 
+00115 &#32;&#32;&#32;&#32;printSymbolInfo(getSymbolInfo(D),&#32;OS);
+00116 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00117 
+00118 &#32;&#32;&#32;&#32;printSymbolNameAndUSR(D,&#32;Ctx,&#32;OS);
+00119 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00120 
+00121 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTNameGen-&gt;writeName(D,&#32;OS))
+00122 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;no-cgname&gt;&quot;</emphasis>;
+00123 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00124 
+00125 &#32;&#32;&#32;&#32;printSymbolRoles(Roles,&#32;OS);
+00126 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00127 
+00128 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;rel:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Relations.size()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00129 
+00130 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;SymRel&#32;:&#32;Relations)&#32;{
+00131 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\t&apos;</emphasis>;
+00132 &#32;&#32;&#32;&#32;&#32;&#32;printSymbolRoles(SymRel.Roles,&#32;OS);
+00133 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00134 &#32;&#32;&#32;&#32;&#32;&#32;printSymbolNameAndUSR(SymRel.RelatedSymbol,&#32;Ctx,&#32;OS);
+00135 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00136 &#32;&#32;&#32;&#32;}
+00137 
+00138 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00139 &#32;&#32;}
+00140 
+00141 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleModuleOccurrence(<emphasis role="keyword">const</emphasis>&#32;ImportDecl&#32;*ImportD,
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;clang::Module&#32;*Mod,&#32;SymbolRoleSet&#32;Roles,
+00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00144 &#32;&#32;&#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;ImportD-&gt;getASTContext();
+00145 &#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;Ctx.getSourceManager();
+00146 
+00147 &#32;&#32;&#32;&#32;Loc&#32;=&#32;SM.getFileLoc(Loc);
+00148 &#32;&#32;&#32;&#32;FileID&#32;FID&#32;=&#32;SM.getFileID(Loc);
+00149 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Line&#32;=&#32;SM.getLineNumber(FID,&#32;SM.getFileOffset(Loc));
+00150 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Col&#32;=&#32;SM.getColumnNumber(FID,&#32;SM.getFileOffset(Loc));
+00151 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Line&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;Col&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00152 
+00153 &#32;&#32;&#32;&#32;printSymbolInfo(getSymbolInfo(ImportD),&#32;OS);
+00154 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00155 
+00156 &#32;&#32;&#32;&#32;printSymbolNameAndUSR(Mod,&#32;OS);
+00157 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00158 
+00159 &#32;&#32;&#32;&#32;printSymbolRoles(Roles,&#32;OS);
+00160 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|\n&quot;</emphasis>;
+00161 
+00162 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00163 &#32;&#32;}
+00164 
+00165 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;handleMacroOccurrence(<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Name,&#32;<emphasis role="keyword">const</emphasis>&#32;MacroInfo&#32;*MI,
+00166 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SymbolRoleSet&#32;Roles,&#32;SourceLocation&#32;Loc)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00167 &#32;&#32;&#32;&#32;assert(PP);
+00168 &#32;&#32;&#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;PP-&gt;getSourceManager();
+00169 
+00170 &#32;&#32;&#32;&#32;Loc&#32;=&#32;SM.getFileLoc(Loc);
+00171 &#32;&#32;&#32;&#32;FileID&#32;FID&#32;=&#32;SM.getFileID(Loc);
+00172 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Line&#32;=&#32;SM.getLineNumber(FID,&#32;SM.getFileOffset(Loc));
+00173 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Col&#32;=&#32;SM.getColumnNumber(FID,&#32;SM.getFileOffset(Loc));
+00174 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Line&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>&#32;&lt;&lt;&#32;Col&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00175 
+00176 &#32;&#32;&#32;&#32;printSymbolInfo(getSymbolInfoForMacro(*MI),&#32;OS);
+00177 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00178 
+00179 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Name-&gt;getName();
+00180 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00181 
+00182 &#32;&#32;&#32;&#32;SmallString&lt;256&gt;&#32;USRBuf;
+00183 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(generateUSRForMacro(Name-&gt;getName(),&#32;MI-&gt;getDefinitionLoc(),&#32;SM,
+00184 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;USRBuf))&#32;{
+00185 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;no-usr&gt;&quot;</emphasis>;
+00186 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00187 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;USRBuf;
+00188 &#32;&#32;&#32;&#32;}
+00189 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00190 
+00191 &#32;&#32;&#32;&#32;printSymbolRoles(Roles,&#32;OS);
+00192 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|\n&quot;</emphasis>;
+00193 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00194 &#32;&#32;}
+00195 };
+00196 
+00197 }&#32;<emphasis role="comment">//&#32;anonymous&#32;namespace</emphasis>
+00198 
+00199 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00200 <emphasis role="comment">//&#32;Print&#32;Source&#32;Symbols</emphasis>
+00201 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00202 
+00203 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;dumpModuleFileInputs(serialization::ModuleFile&#32;&amp;Mod,
+00204 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ASTReader&#32;&amp;Reader,
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS)&#32;{
+00206 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;----&#32;Module&#32;Inputs&#32;----\n&quot;</emphasis>;
+00207 &#32;&#32;Reader.visitInputFiles(Mod,&#32;<emphasis role="comment">/*IncludeSystem=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;<emphasis role="comment">/*Complain=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](<emphasis role="keyword">const</emphasis>&#32;serialization::InputFile&#32;&amp;IF,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isSystem)&#32;{
+00209 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;(isSystem&#32;?&#32;<emphasis role="stringliteral">&quot;system&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;user&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00210 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;IF.getFile()-&gt;getName()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00211 &#32;&#32;});
+00212 }
+00213 
+00214 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;printSourceSymbols(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*Executable,
+00215 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ArrayRef&lt;const&#32;char&#32;*&gt;&#32;Args,
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;dumpModuleImports,&#32;<emphasis role="keywordtype">bool</emphasis>&#32;indexLocals,
+00217 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;ignoreMacros)&#32;{
+00218 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;ArgsWithProgName;
+00219 &#32;&#32;ArgsWithProgName.push_back(Executable);
+00220 &#32;&#32;ArgsWithProgName.append(Args.begin(),&#32;Args.end());
+00221 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;
+00222 &#32;&#32;&#32;&#32;Diags(CompilerInstance::createDiagnostics(<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions));
+00223 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;CInvok&#32;=&#32;createInvocationFromCommandLine(ArgsWithProgName,&#32;Diags);
+00224 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CInvok)
+00225 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00226 
+00227 &#32;&#32;raw_ostream&#32;&amp;OS&#32;=&#32;outs();
+00228 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;DataConsumer&#32;=&#32;std::make_shared&lt;PrintIndexDataConsumer&gt;(OS);
+00229 &#32;&#32;IndexingOptions&#32;IndexOpts;
+00230 &#32;&#32;IndexOpts.IndexFunctionLocals&#32;=&#32;indexLocals;
+00231 &#32;&#32;IndexOpts.IndexMacros&#32;=&#32;!ignoreMacros;
+00232 &#32;&#32;IndexOpts.IndexMacrosInPreprocessor&#32;=&#32;!ignoreMacros;
+00233 &#32;&#32;std::unique_ptr&lt;FrontendAction&gt;&#32;IndexAction&#32;=
+00234 &#32;&#32;&#32;&#32;&#32;&#32;createIndexingAction(DataConsumer,&#32;IndexOpts);
+00235 
+00236 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;PCHContainerOps&#32;=&#32;std::make_shared&lt;PCHContainerOperations&gt;();
+00237 &#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;Unit(ASTUnit::LoadFromCompilerInvocationAction(
+00238 &#32;&#32;&#32;&#32;&#32;&#32;std::move(CInvok),&#32;PCHContainerOps,&#32;Diags,&#32;IndexAction.get()));
+00239 
+00240 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Unit)
+00241 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00242 
+00243 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(dumpModuleImports)&#32;{
+00244 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;Reader&#32;=&#32;Unit-&gt;getASTReader())&#32;{
+00245 &#32;&#32;&#32;&#32;&#32;&#32;Reader-&gt;getModuleManager().visit([&amp;](serialization::ModuleFile&#32;&amp;Mod)&#32;-&gt;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;{
+00246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;====&#32;Module&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Mod.ModuleName&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;====\n&quot;</emphasis>;
+00247 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;indexModuleFile(Mod,&#32;*Reader,&#32;*DataConsumer,&#32;IndexOpts);
+00248 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dumpModuleFileInputs(Mod,&#32;*Reader,&#32;OS);
+00249 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;&#32;<emphasis role="comment">//&#32;skip&#32;module&#32;dependencies.</emphasis>
+00250 &#32;&#32;&#32;&#32;&#32;&#32;});
+00251 &#32;&#32;&#32;&#32;}
+00252 &#32;&#32;}
+00253 
+00254 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00255 }
+00256 
+00257 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;printSourceSymbolsFromModule(StringRef&#32;modulePath,
+00258 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;StringRef&#32;format)&#32;{
+00259 &#32;&#32;FileSystemOptions&#32;FileSystemOpts;
+00260 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;pchContOps&#32;=&#32;std::make_shared&lt;PCHContainerOperations&gt;();
+00261 &#32;&#32;<emphasis role="comment">//&#32;Register&#32;the&#32;support&#32;for&#32;object-file-wrapped&#32;Clang&#32;modules.</emphasis>
+00262 &#32;&#32;pchContOps-&gt;registerReader(std::make_unique&lt;ObjectFilePCHContainerReader&gt;());
+00263 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;pchRdr&#32;=&#32;pchContOps-&gt;getReaderOrNull(format);
+00264 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!pchRdr)&#32;{
+00265 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;unknown&#32;module&#32;format:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;format&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00266 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00267 &#32;&#32;}
+00268 
+00269 &#32;&#32;IntrusiveRefCntPtr&lt;DiagnosticsEngine&gt;&#32;Diags&#32;=
+00270 &#32;&#32;&#32;&#32;&#32;&#32;CompilerInstance::createDiagnostics(<emphasis role="keyword">new</emphasis>&#32;DiagnosticOptions());
+00271 &#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;AU&#32;=&#32;ASTUnit::LoadFromASTFile(
+00272 &#32;&#32;&#32;&#32;&#32;&#32;std::string(modulePath),&#32;*pchRdr,&#32;ASTUnit::LoadASTOnly,&#32;Diags,
+00273 &#32;&#32;&#32;&#32;&#32;&#32;FileSystemOpts,&#32;<emphasis role="comment">/*UseDebugInfo=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00274 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*OnlyLocalDecls=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;CaptureDiagsKind::None,
+00275 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*AllowASTWithCompilerErrors=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00276 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*UserFilesAreVolatile=*/</emphasis><emphasis role="keyword">false</emphasis>);
+00277 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AU)&#32;{
+00278 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;failed&#32;to&#32;create&#32;TU&#32;for:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;modulePath&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00279 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00280 &#32;&#32;}
+00281 
+00282 &#32;&#32;PrintIndexDataConsumer&#32;DataConsumer(outs());
+00283 &#32;&#32;IndexingOptions&#32;IndexOpts;
+00284 &#32;&#32;indexASTUnit(*AU,&#32;DataConsumer,&#32;IndexOpts);
+00285 
+00286 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00287 }
+00288 
+00289 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00290 <emphasis role="comment">//&#32;Helper&#32;Utils</emphasis>
+00291 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00292 
+00293 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSymbolInfo(SymbolInfo&#32;SymInfo,&#32;raw_ostream&#32;&amp;OS)&#32;{
+00294 &#32;&#32;OS&#32;&lt;&lt;&#32;getSymbolKindString(SymInfo.Kind);
+00295 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SymInfo.SubKind&#32;!=&#32;SymbolSubKind::None)
+00296 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;/&apos;</emphasis>&#32;&lt;&lt;&#32;getSymbolSubKindString(SymInfo.SubKind);
+00297 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SymInfo.Properties)&#32;{
+00298 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;(&apos;</emphasis>;
+00299 &#32;&#32;&#32;&#32;printSymbolProperties(SymInfo.Properties,&#32;OS);
+00300 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;)&apos;</emphasis>;
+00301 &#32;&#32;}
+00302 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;/&apos;</emphasis>&#32;&lt;&lt;&#32;getSymbolLanguageString(SymInfo.Lang);
+00303 }
+00304 
+00305 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSymbolNameAndUSR(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;ASTContext&#32;&amp;Ctx,
+00306 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;raw_ostream&#32;&amp;OS)&#32;{
+00307 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(printSymbolName(D,&#32;Ctx.getLangOpts(),&#32;OS))&#32;{
+00308 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;no-name&gt;&quot;</emphasis>;
+00309 &#32;&#32;}
+00310 &#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00311 
+00312 &#32;&#32;SmallString&lt;256&gt;&#32;USRBuf;
+00313 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(generateUSRForDecl(D,&#32;USRBuf))&#32;{
+00314 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;no-usr&gt;&quot;</emphasis>;
+00315 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00316 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;USRBuf;
+00317 &#32;&#32;}
+00318 }
+00319 
+00320 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">void</emphasis>&#32;printSymbolNameAndUSR(<emphasis role="keyword">const</emphasis>&#32;clang::Module&#32;*Mod,&#32;raw_ostream&#32;&amp;OS)&#32;{
+00321 &#32;&#32;assert(Mod);
+00322 &#32;&#32;OS&#32;&lt;&lt;&#32;Mod-&gt;getFullModuleName()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;|&#32;&quot;</emphasis>;
+00323 &#32;&#32;generateFullUSRForModule(Mod,&#32;OS);
+00324 }
+00325 
+00326 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00327 <emphasis role="comment">//&#32;Command&#32;line&#32;processing.</emphasis>
+00328 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00329 
+<anchor xml:id="_core__main_8cpp_source_1l00330"/><link linkend="_c-index-test_8c_1a246a1675ed106163b7d4f141406d3005">00330</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00331 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0]);
+00332 &#32;&#32;PrettyStackTraceProgram&#32;X(argc,&#32;argv);
+00333 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link>;
+00334 &#32;&#32;std::string&#32;Executable&#32;=&#32;llvm::sys::fs::getMainExecutable(argv[0],&#32;MainAddr);
+00335 
+00336 &#32;&#32;assert(argv[1]&#32;==&#32;StringRef(<emphasis role="stringliteral">&quot;core&quot;</emphasis>));
+00337 &#32;&#32;++argv;
+00338 &#32;&#32;--argc;
+00339 
+00340 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;CompArgs;
+00341 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**DoubleDash&#32;=&#32;std::find(argv,&#32;argv&#32;+&#32;argc,&#32;StringRef(<emphasis role="stringliteral">&quot;--&quot;</emphasis>));
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DoubleDash&#32;!=&#32;argv&#32;+&#32;argc)&#32;{
+00343 &#32;&#32;&#32;&#32;CompArgs&#32;=&#32;std::vector&lt;const&#32;char&#32;*&gt;(DoubleDash&#32;+&#32;1,&#32;argv&#32;+&#32;argc);
+00344 &#32;&#32;&#32;&#32;argc&#32;=&#32;DoubleDash&#32;-&#32;argv;
+00345 &#32;&#32;}
+00346 
+00347 &#32;&#32;cl::HideUnrelatedOptions(options::IndexTestCoreCategory);
+00348 &#32;&#32;cl::ParseCommandLineOptions(argc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;index-test-core&quot;</emphasis>);
+00349 
+00350 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(options::Action&#32;==&#32;ActionType::None)&#32;{
+00351 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;action&#32;required;&#32;pass&#32;&apos;-help&apos;&#32;for&#32;options\n&quot;</emphasis>;
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00353 &#32;&#32;}
+00354 
+00355 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(options::Action&#32;==&#32;ActionType::PrintSourceSymbols)&#32;{
+00356 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!options::ModuleFilePath.empty())&#32;{
+00357 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;printSourceSymbolsFromModule(options::ModuleFilePath,
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::ModuleFormat);
+00359 &#32;&#32;&#32;&#32;}
+00360 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CompArgs.empty())&#32;{
+00361 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;missing&#32;compiler&#32;args;&#32;pass&#32;&apos;--&#32;&lt;compiler&#32;arguments&gt;&apos;\n&quot;</emphasis>;
+00362 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00363 &#32;&#32;&#32;&#32;}
+00364 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;printSourceSymbols(Executable.c_str(),&#32;CompArgs,
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::DumpModuleImports,
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::IncludeLocals,&#32;options::IgnoreMacros);
+00367 &#32;&#32;}
+00368 
+00369 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00370 }
+00371 
+00372 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00373 <emphasis role="comment">//&#32;Utility&#32;functions</emphasis>
+00374 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00375 
+<anchor xml:id="_core__main_8cpp_source_1l00376"/><link linkend="_c-index-test_8c_1abf8b8cca4d3659c057fd2ab49afb69be">00376</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_core__main_8cpp_1abf8b8cca4d3659c057fd2ab49afb69be">indextest_perform_shell_execution</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*command_line)&#32;{
+00377 &#32;&#32;BumpPtrAllocator&#32;Alloc;
+00378 &#32;&#32;llvm::StringSaver&#32;Saver(Alloc);
+00379 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;Args;
+00380 &#32;&#32;llvm::cl::TokenizeGNUCommandLine(command_line,&#32;Saver,&#32;Args);
+00381 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Program&#32;=&#32;llvm::sys::findProgramByName(Args[0]);
+00382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;ec&#32;=&#32;Program.getError())&#32;{
+00383 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;command&#32;not&#32;found:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[0]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00384 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ec.value();
+00385 &#32;&#32;}
+00386 &#32;&#32;SmallVector&lt;StringRef,&#32;8&gt;&#32;execArgs(Args.begin(),&#32;Args.end());
+00387 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::ExecuteAndWait(*Program,&#32;execArgs);
+00388 }
+</programlisting></section>

@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__find_diagnostic_i_d_8cpp_source" xml:lang="en-US">
+<title>FindDiagnosticID.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/diagtool/FindDiagnosticID.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;FindDiagnosticID.cpp&#32;-&#32;diagtool&#32;tool&#32;for&#32;finding&#32;diagnostic&#32;id&#32;-----===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 
+00009 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diag_tool_8h">DiagTool.h</link>&quot;</emphasis>
+00010 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__diagnostic_names_8h">DiagnosticNames.h</link>&quot;</emphasis>
+00011 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/AllDiagnostics.h&quot;</emphasis>
+00012 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/CommandLine.h&quot;</emphasis>
+00013 
+<anchor xml:id="__find_diagnostic_i_d_8cpp_source_1l00014"/><link linkend="__find_diagnostic_i_d_8cpp_1a86d13ab929463f55e0487a33df2ca4c5">00014</link> <link linkend="__find_diagnostic_i_d_8cpp_1a86d13ab929463f55e0487a33df2ca4c5">DEF_DIAGTOOL</link>(<emphasis role="stringliteral">&quot;find-diagnostic-id&quot;</emphasis>,&#32;<emphasis role="stringliteral">&quot;Print&#32;the&#32;id&#32;of&#32;the&#32;given&#32;diagnostic&quot;</emphasis>,
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;FindDiagnosticID)
+00016 
+00017 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00018 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacediagtool">diagtool</link>;
+00019 
+00020 <emphasis role="keyword">static</emphasis>&#32;StringRef&#32;getNameFromID(StringRef&#32;Name)&#32;{
+00021 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;DiagID;
+00022 &#32;&#32;<emphasis role="keywordflow">if</emphasis>(!Name.getAsInteger(0,&#32;DiagID))&#32;{
+00023 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structdiagtool_1_1_diagnostic_record">DiagnosticRecord</link>&#32;&amp;Diag&#32;=&#32;<link linkend="_namespacediagtool_1a88f1c1b7bd8ad9e2ce31fa3d799ca0d2">getDiagnosticForID</link>(DiagID);
+00024 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Diag.<link linkend="_structdiagtool_1_1_diagnostic_record_1a17c34a998b38858dda8c26f7eb8d63fa">getName</link>();
+00025 &#32;&#32;}
+00026 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;StringRef();
+00027 }
+00028 
+00029 <emphasis role="keyword">static</emphasis>&#32;Optional&lt;DiagnosticRecord&gt;
+00030 findDiagnostic(ArrayRef&lt;DiagnosticRecord&gt;&#32;Diagnostics,&#32;StringRef&#32;Name)&#32;{
+00031 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;Diag&#32;:&#32;Diagnostics)&#32;{
+00032 &#32;&#32;&#32;&#32;StringRef&#32;DiagName&#32;=&#32;Diag.getName();
+00033 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DiagName&#32;==&#32;Name)
+00034 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Diag;
+00035 &#32;&#32;}
+00036 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;None;
+00037 }
+00038 
+00039 <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1analyze_1a505fccfeb836b113101687366a231f5f">FindDiagnosticID::run</link>(<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv,
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::raw_ostream&#32;&amp;OS)&#32;{
+00041 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;llvm::cl::OptionCategory&#32;FindDiagnosticIDOptions(
+00042 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;diagtool&#32;find-diagnostic-id&#32;options&quot;</emphasis>);
+00043 
+00044 &#32;&#32;<emphasis role="keyword">static</emphasis>&#32;llvm::cl::opt&lt;std::string&gt;&#32;DiagnosticName(
+00045 &#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::Positional,&#32;llvm::cl::desc(<emphasis role="stringliteral">&quot;&lt;diagnostic-name&gt;&quot;</emphasis>),
+00046 &#32;&#32;&#32;&#32;&#32;&#32;llvm::cl::Required,&#32;llvm::cl::cat(FindDiagnosticIDOptions));
+00047 
+00048 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;Args;
+00049 &#32;&#32;Args.push_back(<emphasis role="stringliteral">&quot;diagtool&#32;find-diagnostic-id&quot;</emphasis>);
+00050 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*A&#32;:&#32;llvm::makeArrayRef(argv,&#32;argc))
+00051 &#32;&#32;&#32;&#32;Args.push_back(A);
+00052 
+00053 &#32;&#32;llvm::cl::HideUnrelatedOptions(FindDiagnosticIDOptions);
+00054 &#32;&#32;llvm::cl::ParseCommandLineOptions((<emphasis role="keywordtype">int</emphasis>)Args.size(),&#32;Args.data(),
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;Diagnostic&#32;ID&#32;mapping&#32;utility&quot;</emphasis>);
+00056 
+00057 &#32;&#32;ArrayRef&lt;DiagnosticRecord&gt;&#32;AllDiagnostics&#32;=&#32;<link linkend="_namespacediagtool_1a84e4f971383375d578c37ad94811fd7a">getBuiltinDiagnosticsByName</link>();
+00058 &#32;&#32;Optional&lt;DiagnosticRecord&gt;&#32;Diag&#32;=
+00059 &#32;&#32;&#32;&#32;&#32;&#32;findDiagnostic(AllDiagnostics,&#32;DiagnosticName);
+00060 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Diag)&#32;{
+00061 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Name&#32;to&#32;id&#32;failed,&#32;so&#32;try&#32;id&#32;to&#32;name.</emphasis>
+00062 &#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Name&#32;=&#32;getNameFromID(DiagnosticName);
+00063 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Name.empty())&#32;{
+00064 &#32;&#32;&#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;Name&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00065 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00066 &#32;&#32;&#32;&#32;}
+00067 
+00068 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;invalid&#32;diagnostic&#32;&apos;&quot;</emphasis>&#32;&lt;&lt;&#32;DiagnosticName&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&apos;\n&quot;</emphasis>;
+00069 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00070 &#32;&#32;}
+00071 &#32;&#32;OS&#32;&lt;&lt;&#32;Diag-&gt;DiagID&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00072 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00073 }
+</programlisting></section>

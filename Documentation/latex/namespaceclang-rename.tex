@@ -1,0 +1,63 @@
+\hypertarget{namespaceclang-rename}{}\doxysection{clang-\/rename Namespace Reference}
+\label{namespaceclang-rename}\index{clang-\/rename@{clang-\/rename}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespaceclang-rename_a72623062ae6b8f10b4d7bb810bb743e4}{main}} ()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang-rename_a72623062ae6b8f10b4d7bb810bb743e4}\label{namespaceclang-rename_a72623062ae6b8f10b4d7bb810bb743e4}} 
+\index{clang-\/rename@{clang-\/rename}!main@{main}}
+\index{main@{main}!clang-\/rename@{clang-\/rename}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily def clang-\/rename.\+main (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 30 of file clang-\/rename.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{30 \textcolor{keyword}{def }\mbox{\hyperlink{namespaceclang-rename_a72623062ae6b8f10b4d7bb810bb743e4}{main}}():}
+\DoxyCodeLine{31     binary = \textcolor{stringliteral}{'clang-\/rename'}}
+\DoxyCodeLine{32     \textcolor{keywordflow}{if} vim.eval(\textcolor{stringliteral}{'exists("{}g:clang\_rename\_path"{})'}) == \textcolor{stringliteral}{"{}1"{}}:}
+\DoxyCodeLine{33         binary = vim.eval(\textcolor{stringliteral}{'g:clang\_rename\_path'})}
+\DoxyCodeLine{34 }
+\DoxyCodeLine{35     \textcolor{comment}{\# Get arguments for clang-\/rename binary.}}
+\DoxyCodeLine{36     offset = int(vim.eval(\textcolor{stringliteral}{'line2byte(line("{}."{}))+col("{}."{})'})) -\/ 2}
+\DoxyCodeLine{37     \textcolor{keywordflow}{if} offset < 0:}
+\DoxyCodeLine{38         \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{'Couldn\(\backslash\)'t determine cursor position. Is your file empty?'},}
+\DoxyCodeLine{39               file=sys.stderr)}
+\DoxyCodeLine{40         \textcolor{keywordflow}{return}}
+\DoxyCodeLine{41     filename = vim.current.buffer.name}
+\DoxyCodeLine{42 }
+\DoxyCodeLine{43     new\_name\_request\_message = \textcolor{stringliteral}{'type new name:'}}
+\DoxyCodeLine{44     new\_name = vim.eval(\textcolor{stringliteral}{"{}input('\{\}\(\backslash\)n')"{}}.format(new\_name\_request\_message))}
+\DoxyCodeLine{45 }
+\DoxyCodeLine{46     \textcolor{comment}{\# Call clang-\/rename.}}
+\DoxyCodeLine{47     command = [binary,}
+\DoxyCodeLine{48                filename,}
+\DoxyCodeLine{49                \textcolor{stringliteral}{'-\/i'},}
+\DoxyCodeLine{50                \textcolor{stringliteral}{'-\/offset'}, str(offset),}
+\DoxyCodeLine{51                \textcolor{stringliteral}{'-\/new-\/name'}, str(new\_name)]}
+\DoxyCodeLine{52     \textcolor{comment}{\# FIXME: make it possible to run the tool on unsaved file.}}
+\DoxyCodeLine{53     p = subprocess.Popen(command,}
+\DoxyCodeLine{54                          stdout=subprocess.PIPE,}
+\DoxyCodeLine{55                          stderr=subprocess.PIPE)}
+\DoxyCodeLine{56     stdout, stderr = p.communicate()}
+\DoxyCodeLine{57 }
+\DoxyCodeLine{58     \textcolor{keywordflow}{if} stderr:}
+\DoxyCodeLine{59         \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(stderr)}
+\DoxyCodeLine{60 }
+\DoxyCodeLine{61     \textcolor{comment}{\# Reload all buffers in Vim.}}
+\DoxyCodeLine{62     vim.command(\textcolor{stringliteral}{"{}checktime"{}})}
+\DoxyCodeLine{63 }
+\DoxyCodeLine{64 }
+
+\end{DoxyCode}
+
+
+References print().
+

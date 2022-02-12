@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_offload_wrapper_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-offload-wrapper/ClangOffloadWrapper.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-offload-wrapper/ClangOffloadWrapper.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Basic/Version.h&quot;
+#include &quot;llvm/ADT/ArrayRef.h&quot;
+#include &quot;llvm/ADT/Triple.h&quot;
+#include &quot;llvm/Bitcode/BitcodeWriter.h&quot;
+#include &quot;llvm/IR/Constants.h&quot;
+#include &quot;llvm/IR/GlobalVariable.h&quot;
+#include &quot;llvm/IR/IRBuilder.h&quot;
+#include &quot;llvm/IR/LLVMContext.h&quot;
+#include &quot;llvm/IR/Module.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/Errc.h&quot;
+#include &quot;llvm/Support/Error.h&quot;
+#include &quot;llvm/Support/ErrorOr.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/MemoryBuffer.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/ToolOutputFile.h&quot;
+#include &quot;llvm/Support/WithColor.h&quot;
+#include &quot;llvm/Support/raw_ostream.h&quot;
+#include &quot;llvm/Transforms/Utils/ModuleUtils.h&quot;
+#include &lt;cassert&gt;
+#include &lt;cstdint&gt;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_offload_wrapper_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+
+<para>Implementation of the offload wrapper tool. It takes offload target binaries as input and creates wrapper bitcode file containing target binaries packaged as data. Wrapper bitcode also includes initialization code which registers target binaries in offloading runtime at program startup. </para>
+<para>
+Definition in file <link linkend="__clang_offload_wrapper_8cpp_source">ClangOffloadWrapper.cpp</link>.</para>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_offload_wrapper_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangOffloadWrapper.cpp</secondary></indexterm>
+<indexterm><primary>ClangOffloadWrapper.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_offload_wrapper_8cpp_source_1l00312">312</link> of file <link linkend="__clang_offload_wrapper_8cpp_source">ClangOffloadWrapper.cpp</link>.</para>
+<programlisting>00312 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00313 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0]);
+00314 
+00315 &#32;&#32;cl::HideUnrelatedOptions(ClangOffloadWrapperCategory);
+00316 &#32;&#32;cl::SetVersionPrinter([](raw_ostream&#32;&amp;OS)&#32;{
+00317 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;clang::getClangToolFullVersion(<emphasis role="stringliteral">&quot;clang-offload-wrapper&quot;</emphasis>)&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00318 &#32;&#32;});
+00319 &#32;&#32;cl::ParseCommandLineOptions(
+00320 &#32;&#32;&#32;&#32;&#32;&#32;argc,&#32;argv,
+00321 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;A&#32;tool&#32;to&#32;create&#32;a&#32;wrapper&#32;bitcode&#32;for&#32;offload&#32;target&#32;binaries.&#32;Takes&#32;&quot;</emphasis>
+00322 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;offload\ntarget&#32;binaries&#32;as&#32;input&#32;and&#32;produces&#32;bitcode&#32;file&#32;containing&#32;&quot;</emphasis>
+00323 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;target&#32;binaries&#32;packaged\nas&#32;data&#32;and&#32;initialization&#32;code&#32;which&#32;&quot;</emphasis>
+00324 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;registers&#32;target&#32;binaries&#32;in&#32;offload&#32;runtime.\n&quot;</emphasis>);
+00325 
+00326 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Help)&#32;{
+00327 &#32;&#32;&#32;&#32;cl::PrintHelpMessage();
+00328 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00329 &#32;&#32;}
+00330 
+00331 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;reportError&#32;=&#32;[argv](Error&#32;E)&#32;{
+00332 &#32;&#32;&#32;&#32;logAllUnhandledErrors(std::move(E),&#32;WithColor::error(errs(),&#32;argv[0]));
+00333 &#32;&#32;};
+00334 
+00335 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Triple(Target).getArch()&#32;==&#32;Triple::UnknownArch)&#32;{
+00336 &#32;&#32;&#32;&#32;reportError(createStringError(
+00337 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errc::invalid_argument,&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>&#32;+&#32;Target&#32;+&#32;<emphasis role="stringliteral">&quot;&apos;:&#32;unsupported&#32;target&#32;triple&quot;</emphasis>));
+00338 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00339 &#32;&#32;}
+00340 
+00341 &#32;&#32;<emphasis role="comment">//&#32;Read&#32;device&#32;binaries.</emphasis>
+00342 &#32;&#32;SmallVector&lt;std::unique_ptr&lt;MemoryBuffer&gt;,&#32;4u&gt;&#32;Buffers;
+00343 &#32;&#32;SmallVector&lt;ArrayRef&lt;char&gt;,&#32;4u&gt;&#32;Images;
+00344 &#32;&#32;Buffers.reserve(Inputs.size());
+00345 &#32;&#32;Images.reserve(Inputs.size());
+00346 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;File&#32;:&#32;Inputs)&#32;{
+00347 &#32;&#32;&#32;&#32;ErrorOr&lt;std::unique_ptr&lt;MemoryBuffer&gt;&gt;&#32;BufOrErr&#32;=
+00348 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MemoryBuffer::getFileOrSTDIN(File);
+00349 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!BufOrErr)&#32;{
+00350 &#32;&#32;&#32;&#32;&#32;&#32;reportError(createFileError(File,&#32;BufOrErr.getError()));
+00351 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00352 &#32;&#32;&#32;&#32;}
+00353 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;std::unique_ptr&lt;MemoryBuffer&gt;&#32;&amp;Buf&#32;=
+00354 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Buffers.emplace_back(std::move(*BufOrErr));
+00355 &#32;&#32;&#32;&#32;Images.emplace_back(Buf-&gt;getBufferStart(),&#32;Buf-&gt;getBufferSize());
+00356 &#32;&#32;}
+00357 
+00358 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;the&#32;output&#32;file&#32;to&#32;write&#32;the&#32;resulting&#32;bitcode&#32;to.</emphasis>
+00359 &#32;&#32;std::error_code&#32;EC;
+00360 &#32;&#32;ToolOutputFile&#32;Out(Output,&#32;EC,&#32;sys::fs::OF_None);
+00361 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00362 &#32;&#32;&#32;&#32;reportError(createFileError(Output,&#32;EC));
+00363 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00364 &#32;&#32;}
+00365 
+00366 &#32;&#32;<emphasis role="comment">//&#32;Create&#32;a&#32;wrapper&#32;for&#32;device&#32;binaries&#32;and&#32;write&#32;its&#32;bitcode&#32;to&#32;the&#32;file.</emphasis>
+00367 &#32;&#32;WriteBitcodeToFile(BinaryWrapper(Target).wrapBinaries(
+00368 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;makeArrayRef(Images.data(),&#32;Images.size())),
+00369 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out.os());
+00370 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Out.os().has_error())&#32;{
+00371 &#32;&#32;&#32;&#32;reportError(createFileError(Output,&#32;Out.os().error()));
+00372 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00373 &#32;&#32;}
+00374 
+00375 &#32;&#32;<emphasis role="comment">//&#32;Success.</emphasis>
+00376 &#32;&#32;Out.keep();
+00377 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00378 }
+</programlisting></section>
+</section>
+</section>

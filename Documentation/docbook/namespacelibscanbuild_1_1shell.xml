@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespacelibscanbuild_1_1shell" xml:lang="en-US">
+<title>libscanbuild.shell Namespace Reference</title>
+<indexterm><primary>libscanbuild.shell</primary></indexterm>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1shell_1ac92beb78a0b5fd06775e27d7b87870ed">encode</link> (command)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacelibscanbuild_1_1shell_1ae2a3d56a48c3f8031021d617491be88c">decode</link> (string)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespacelibscanbuild_1_1shell_1ae2a3d56a48c3f8031021d617491be88c"/>    <section>
+    <title>decode()</title>
+<indexterm><primary>decode</primary><secondary>libscanbuild.shell</secondary></indexterm>
+<indexterm><primary>libscanbuild.shell</primary><secondary>decode</secondary></indexterm>
+<para><computeroutput>def libscanbuild.shell.decode ( string)</computeroutput></para>
+<para><literallayout><computeroutput> Takes a command string and returns as a list. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_shell_8py_source_1l00054">54</link> of file <link linkend="_shell_8py_source">shell.py</link>.</para>
+<programlisting>00054 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1shell_1ae2a3d56a48c3f8031021d617491be88c">decode</link>(string):
+00055 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Takes&#32;a&#32;command&#32;string&#32;and&#32;returns&#32;as&#32;a&#32;list.&#32;&quot;&quot;&quot;</emphasis>
+00056 
+00057 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>unescape(arg):
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Gets&#32;rid&#32;of&#32;the&#32;escaping&#32;characters.&#32;&quot;&quot;&quot;</emphasis>
+00059 
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;len(arg)&#32;&gt;=&#32;2&#32;<emphasis role="keywordflow">and</emphasis>&#32;arg[0]&#32;==&#32;arg[-1]&#32;<emphasis role="keywordflow">and</emphasis>&#32;arg[0]&#32;==&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>:
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;arg&#32;=&#32;arg[1:-1]
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;re.sub(<emphasis role="stringliteral">r&apos;\\([&quot;\\])&apos;</emphasis>,&#32;<emphasis role="stringliteral">r&apos;\1&apos;</emphasis>,&#32;arg)
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;re.sub(<emphasis role="stringliteral">r&apos;\\([\\&#32;$%&amp;\(\)\[\]\{\}\*|&lt;&gt;@?!])&apos;</emphasis>,&#32;<emphasis role="stringliteral">r&apos;\1&apos;</emphasis>,&#32;arg)
+00064 
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[unescape(arg)&#32;<emphasis role="keywordflow">for</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;shlex.split(string)]
+</programlisting><para>
+Referenced by <link linkend="_intercept_8py_source_1l00249">libscanbuild.intercept.entry_hash()</link>, <link linkend="_clang_8py_source_1l00038">libscanbuild.clang.get_arguments()</link>, <link linkend="_analyze_8py_source_1l00447">libscanbuild.analyze.run()</link>, and <link linkend="__scan_view_8py_source_1l00758">ScanView.ScanViewRequestHandler.send_patched_file()</link>.</para>
+    </section><anchor xml:id="_namespacelibscanbuild_1_1shell_1ac92beb78a0b5fd06775e27d7b87870ed"/>    <section>
+    <title>encode()</title>
+<indexterm><primary>encode</primary><secondary>libscanbuild.shell</secondary></indexterm>
+<indexterm><primary>libscanbuild.shell</primary><secondary>encode</secondary></indexterm>
+<para><computeroutput>def libscanbuild.shell.encode ( command)</computeroutput></para>
+<para><literallayout><computeroutput> Takes a command as list and returns a string. </computeroutput></literallayout> </para>
+<para>
+Definition at line <link linkend="_shell_8py_source_1l00013">13</link> of file <link linkend="_shell_8py_source">shell.py</link>.</para>
+<programlisting>00013 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1shell_1ac92beb78a0b5fd06775e27d7b87870ed">encode</link>(command):
+00014 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Takes&#32;a&#32;command&#32;as&#32;list&#32;and&#32;returns&#32;a&#32;string.&#32;&quot;&quot;&quot;</emphasis>
+00015 
+00016 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>needs_quote(word):
+00017 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;true&#32;if&#32;arguments&#32;needs&#32;to&#32;be&#32;protected&#32;by&#32;quotes.</emphasis>
+00018 <emphasis role="stringliteral"></emphasis>
+00019 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Previous&#32;implementation&#32;was&#32;shlex.split&#32;method,&#32;but&#32;that&apos;s&#32;not&#32;good</emphasis>
+00020 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;for&#32;this&#32;job.&#32;Currently&#32;is&#32;running&#32;through&#32;the&#32;string&#32;with&#32;a&#32;basic</emphasis>
+00021 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;checking.&#32;&quot;&quot;&quot;</emphasis>
+00022 
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;reserved&#32;=&#32;{<emphasis role="stringliteral">&apos;&#32;&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;$&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;%&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&amp;&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;(&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;)&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;[&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;]&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;{&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;}&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;*&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;|&apos;</emphasis>,
+00024 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;&lt;&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&gt;&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;@&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;?&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;!&apos;</emphasis>}
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;0
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;current&#32;<emphasis role="keywordflow">in</emphasis>&#32;word:
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;state&#32;==&#32;0&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;<emphasis role="keywordflow">in</emphasis>&#32;reserved:
+00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">True</emphasis>
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;state&#32;==&#32;0&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;==&#32;<emphasis role="stringliteral">&apos;\\&apos;</emphasis>:
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;1
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;state&#32;==&#32;1&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;<emphasis role="keywordflow">in</emphasis>&#32;reserved&#32;|&#32;{<emphasis role="stringliteral">&apos;\\&apos;</emphasis>}:
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;0
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;state&#32;==&#32;0&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;==&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>:
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;2
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;state&#32;==&#32;2&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;==&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>:
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;0
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;state&#32;==&#32;0&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;==&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>:
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;3
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;state&#32;==&#32;3&#32;<emphasis role="keywordflow">and</emphasis>&#32;current&#32;==&#32;<emphasis role="stringliteral">&quot;&apos;&quot;</emphasis>:
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;state&#32;=&#32;0
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;state&#32;!=&#32;0
+00042 
+00043 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(word):
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Do&#32;protect&#32;argument&#32;if&#32;that&apos;s&#32;needed.&#32;&quot;&quot;&quot;</emphasis>
+00045 
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;table&#32;=&#32;{<emphasis role="stringliteral">&apos;\\&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;\\\\&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;\\&quot;&apos;</emphasis>}
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;escaped&#32;=&#32;<emphasis role="stringliteral">&apos;&apos;</emphasis>.join([table.get(c,&#32;c)&#32;<emphasis role="keywordflow">for</emphasis>&#32;c&#32;<emphasis role="keywordflow">in</emphasis>&#32;word])
+00048 
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>&#32;+&#32;escaped&#32;+&#32;<emphasis role="stringliteral">&apos;&quot;&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;needs_quote(word)&#32;<emphasis role="keywordflow">else</emphasis>&#32;escaped
+00050 
+00051 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>.join([<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>(arg)&#32;<emphasis role="keywordflow">for</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;command])
+00052 
+00053 
+</programlisting><para>
+References <link linkend="_report_8py_source_1l00547">libscanbuild.report.escape()</link>.</para>
+<para>
+Referenced by <link linkend="_report_8py_source_1l00533">libscanbuild.report.encode_value()</link>, <link linkend="_intercept_8py_source_1l00204">libscanbuild.intercept.format_entry()</link>, and <link linkend="_clang-format_8py_source_1l00069">clang-format.main()</link>.</para>
+</section>
+</section>
+</section>

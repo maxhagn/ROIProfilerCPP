@@ -1,0 +1,178 @@
+\hypertarget{_rewrite_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+Rewrite.cpp File Reference}
+\label{_rewrite_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/Rewrite.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/Rewrite.cpp}}
+{\ttfamily \#include \char`\"{}clang-\/c/\+Rewrite.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXSource\+Location.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXTranslation\+Unit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Source\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+ASTUnit.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Rewrite/\+Core/\+Rewriter.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXRewriter \mbox{\hyperlink{_rewrite_8cpp_a8cb11432d44a1976b464ad2b46e4cae4}{clang\+\_\+\+CXRewriter\+\_\+create}} (CXTranslation\+Unit TU)
+\item 
+void \mbox{\hyperlink{_rewrite_8cpp_a3faba2a366e9e55647e55a7a4bfa5fa6}{clang\+\_\+\+CXRewriter\+\_\+insert\+Text\+Before}} (CXRewriter Rew, CXSource\+Location Loc, const char $\ast$Insert)
+\item 
+void \mbox{\hyperlink{_rewrite_8cpp_aaf2ed4bc46f8a7f1308dc554d3adddf4}{clang\+\_\+\+CXRewriter\+\_\+replace\+Text}} (CXRewriter Rew, CXSource\+Range To\+Be\+Replaced, const char $\ast$Replacement)
+\item 
+void \mbox{\hyperlink{_rewrite_8cpp_aa070032b429b0d61ab5a4940822d4f37}{clang\+\_\+\+CXRewriter\+\_\+remove\+Text}} (CXRewriter Rew, CXSource\+Range To\+Be\+Removed)
+\item 
+int \mbox{\hyperlink{_rewrite_8cpp_a6e85bb2b3b72a6ba4b4371502fd21060}{clang\+\_\+\+CXRewriter\+\_\+overwrite\+Changed\+Files}} (CXRewriter Rew)
+\item 
+void \mbox{\hyperlink{_rewrite_8cpp_ac7577e0b1ce139d370923eaef5ce50d4}{clang\+\_\+\+CXRewriter\+\_\+write\+Main\+File\+To\+Std\+Out}} (CXRewriter Rew)
+\item 
+void \mbox{\hyperlink{_rewrite_8cpp_a8cb2800b504e554267b5fb9a459deb86}{clang\+\_\+\+CXRewriter\+\_\+dispose}} (CXRewriter Rew)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_rewrite_8cpp_a8cb11432d44a1976b464ad2b46e4cae4}\label{_rewrite_8cpp_a8cb11432d44a1976b464ad2b46e4cae4}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_create@{clang\_CXRewriter\_create}}
+\index{clang\_CXRewriter\_create@{clang\_CXRewriter\_create}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_create()}{clang\_CXRewriter\_create()}}
+{\footnotesize\ttfamily CXRewriter clang\+\_\+\+CXRewriter\+\_\+create (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 16 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{16                                                          \{}
+\DoxyCodeLine{17   \textcolor{keywordflow}{if} (clang::cxtu::isNotUsableTU(TU)) \{}
+\DoxyCodeLine{18     \mbox{\hyperlink{_c_x_translation_unit_8h_a4ec17e6e03ea0baf73e27802eae36106}{LOG\_BAD\_TU}}(TU);}
+\DoxyCodeLine{19     \textcolor{keywordflow}{return} \{\};}
+\DoxyCodeLine{20   \}}
+\DoxyCodeLine{21   clang::ASTUnit *AU = clang::cxtu::getASTUnit(TU);}
+\DoxyCodeLine{22   assert(AU);}
+\DoxyCodeLine{23   \textcolor{keywordflow}{return} \textcolor{keyword}{reinterpret\_cast<}CXRewriter\textcolor{keyword}{>}(}
+\DoxyCodeLine{24       \textcolor{keyword}{new} clang::Rewriter(AU-\/>getSourceManager(), AU-\/>getLangOpts()));}
+\DoxyCodeLine{25 \}}
+
+\end{DoxyCode}
+
+
+References LOG\+\_\+\+BAD\+\_\+\+TU.
+
+\mbox{\Hypertarget{_rewrite_8cpp_a8cb2800b504e554267b5fb9a459deb86}\label{_rewrite_8cpp_a8cb2800b504e554267b5fb9a459deb86}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_dispose@{clang\_CXRewriter\_dispose}}
+\index{clang\_CXRewriter\_dispose@{clang\_CXRewriter\_dispose}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_dispose()}{clang\_CXRewriter\_dispose()}}
+{\footnotesize\ttfamily void clang\+\_\+\+CXRewriter\+\_\+dispose (\begin{DoxyParamCaption}\item[{CXRewriter}]{Rew }\end{DoxyParamCaption})}
+
+
+
+Definition at line 60 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{60                                               \{}
+\DoxyCodeLine{61   \textcolor{keywordflow}{if} (Rew)}
+\DoxyCodeLine{62     \textcolor{keyword}{delete} \textcolor{keyword}{reinterpret\_cast<}clang::Rewriter *\textcolor{keyword}{>}(Rew);}
+\DoxyCodeLine{63 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_rewrite_8cpp_a3faba2a366e9e55647e55a7a4bfa5fa6}\label{_rewrite_8cpp_a3faba2a366e9e55647e55a7a4bfa5fa6}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_insertTextBefore@{clang\_CXRewriter\_insertTextBefore}}
+\index{clang\_CXRewriter\_insertTextBefore@{clang\_CXRewriter\_insertTextBefore}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_insertTextBefore()}{clang\_CXRewriter\_insertTextBefore()}}
+{\footnotesize\ttfamily void clang\+\_\+\+CXRewriter\+\_\+insert\+Text\+Before (\begin{DoxyParamCaption}\item[{CXRewriter}]{Rew,  }\item[{CXSource\+Location}]{Loc,  }\item[{const char $\ast$}]{Insert }\end{DoxyParamCaption})}
+
+
+
+Definition at line 27 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{28                                                 \{}
+\DoxyCodeLine{29   assert(Rew);}
+\DoxyCodeLine{30   clang::Rewriter \&R = *\textcolor{keyword}{reinterpret\_cast<}clang::Rewriter *\textcolor{keyword}{>}(Rew);}
+\DoxyCodeLine{31   R.InsertTextBefore(clang::cxloc::translateSourceLocation(Loc), Insert);}
+\DoxyCodeLine{32 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_rewrite_8cpp_a6e85bb2b3b72a6ba4b4371502fd21060}\label{_rewrite_8cpp_a6e85bb2b3b72a6ba4b4371502fd21060}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_overwriteChangedFiles@{clang\_CXRewriter\_overwriteChangedFiles}}
+\index{clang\_CXRewriter\_overwriteChangedFiles@{clang\_CXRewriter\_overwriteChangedFiles}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_overwriteChangedFiles()}{clang\_CXRewriter\_overwriteChangedFiles()}}
+{\footnotesize\ttfamily int clang\+\_\+\+CXRewriter\+\_\+overwrite\+Changed\+Files (\begin{DoxyParamCaption}\item[{CXRewriter}]{Rew }\end{DoxyParamCaption})}
+
+
+
+Definition at line 48 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{48                                                            \{}
+\DoxyCodeLine{49   assert(Rew);}
+\DoxyCodeLine{50   clang::Rewriter \&R = *\textcolor{keyword}{reinterpret\_cast<}clang::Rewriter *\textcolor{keyword}{>}(Rew);}
+\DoxyCodeLine{51   \textcolor{keywordflow}{return} R.overwriteChangedFiles();}
+\DoxyCodeLine{52 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_rewrite_8cpp_aa070032b429b0d61ab5a4940822d4f37}\label{_rewrite_8cpp_aa070032b429b0d61ab5a4940822d4f37}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_removeText@{clang\_CXRewriter\_removeText}}
+\index{clang\_CXRewriter\_removeText@{clang\_CXRewriter\_removeText}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_removeText()}{clang\_CXRewriter\_removeText()}}
+{\footnotesize\ttfamily void clang\+\_\+\+CXRewriter\+\_\+remove\+Text (\begin{DoxyParamCaption}\item[{CXRewriter}]{Rew,  }\item[{CXSource\+Range}]{To\+Be\+Removed }\end{DoxyParamCaption})}
+
+
+
+Definition at line 42 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{42                                                                             \{}
+\DoxyCodeLine{43   assert(Rew);}
+\DoxyCodeLine{44   clang::Rewriter \&R = *\textcolor{keyword}{reinterpret\_cast<}clang::Rewriter *\textcolor{keyword}{>}(Rew);}
+\DoxyCodeLine{45   R.RemoveText(\mbox{\hyperlink{namespaceclang_1_1cxloc_aa8c3cee435c88a9e8a61f79cc8a0c0da}{clang::cxloc::translateCXRangeToCharRange}}(ToBeRemoved));}
+\DoxyCodeLine{46 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxloc\+::translate\+CXRange\+To\+Char\+Range().
+
+\mbox{\Hypertarget{_rewrite_8cpp_aaf2ed4bc46f8a7f1308dc554d3adddf4}\label{_rewrite_8cpp_aaf2ed4bc46f8a7f1308dc554d3adddf4}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_replaceText@{clang\_CXRewriter\_replaceText}}
+\index{clang\_CXRewriter\_replaceText@{clang\_CXRewriter\_replaceText}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_replaceText()}{clang\_CXRewriter\_replaceText()}}
+{\footnotesize\ttfamily void clang\+\_\+\+CXRewriter\+\_\+replace\+Text (\begin{DoxyParamCaption}\item[{CXRewriter}]{Rew,  }\item[{CXSource\+Range}]{To\+Be\+Replaced,  }\item[{const char $\ast$}]{Replacement }\end{DoxyParamCaption})}
+
+
+
+Definition at line 34 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{35                                                 \{}
+\DoxyCodeLine{36   assert(Rew);}
+\DoxyCodeLine{37   clang::Rewriter \&R = *\textcolor{keyword}{reinterpret\_cast<}clang::Rewriter *\textcolor{keyword}{>}(Rew);}
+\DoxyCodeLine{38   R.ReplaceText(\mbox{\hyperlink{namespaceclang_1_1cxloc_aa8c3cee435c88a9e8a61f79cc8a0c0da}{clang::cxloc::translateCXRangeToCharRange}}(ToBeReplaced),}
+\DoxyCodeLine{39                 Replacement);}
+\DoxyCodeLine{40 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxloc\+::translate\+CXRange\+To\+Char\+Range().
+
+\mbox{\Hypertarget{_rewrite_8cpp_ac7577e0b1ce139d370923eaef5ce50d4}\label{_rewrite_8cpp_ac7577e0b1ce139d370923eaef5ce50d4}} 
+\index{Rewrite.cpp@{Rewrite.cpp}!clang\_CXRewriter\_writeMainFileToStdOut@{clang\_CXRewriter\_writeMainFileToStdOut}}
+\index{clang\_CXRewriter\_writeMainFileToStdOut@{clang\_CXRewriter\_writeMainFileToStdOut}!Rewrite.cpp@{Rewrite.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_CXRewriter\_writeMainFileToStdOut()}{clang\_CXRewriter\_writeMainFileToStdOut()}}
+{\footnotesize\ttfamily void clang\+\_\+\+CXRewriter\+\_\+write\+Main\+File\+To\+Std\+Out (\begin{DoxyParamCaption}\item[{CXRewriter}]{Rew }\end{DoxyParamCaption})}
+
+
+
+Definition at line 54 of file Rewrite.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{54                                                             \{}
+\DoxyCodeLine{55   assert(Rew);}
+\DoxyCodeLine{56   clang::Rewriter \&R = *\textcolor{keyword}{reinterpret\_cast<}clang::Rewriter *\textcolor{keyword}{>}(Rew);}
+\DoxyCodeLine{57   R.getEditBuffer(R.getSourceMgr().getMainFileID()).write(llvm::outs());}
+\DoxyCodeLine{58 \}}
+
+\end{DoxyCode}

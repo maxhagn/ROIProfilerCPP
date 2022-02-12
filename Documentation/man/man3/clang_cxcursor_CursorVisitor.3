@@ -1,0 +1,2173 @@
+.TH "clang::cxcursor::CursorVisitor" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxcursor::CursorVisitor
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CursorVisitor\&.h>\fP
+.PP
+Inherits DeclVisitor< CursorVisitor, bool >, and TypeLocVisitor< CursorVisitor, bool >\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "typedef bool(* \fBPostChildrenVisitorTy\fP) (CXCursor cursor, CXClientData client_data)"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCursorVisitor\fP (CXTranslationUnit TU, CXCursorVisitor Visitor, CXClientData ClientData, bool VisitPreprocessorLast, bool VisitIncludedPreprocessingEntries=false, SourceRange RegionOfInterest=SourceRange(), bool VisitDeclsOnly=false, \fBPostChildrenVisitorTy\fP PostChildrenVisitor=nullptr)"
+.br
+.ti -1c
+.RI "\fB~CursorVisitor\fP ()"
+.br
+.ti -1c
+.RI "ASTUnit * \fBgetASTUnit\fP () const"
+.br
+.ti -1c
+.RI "CXTranslationUnit \fBgetTU\fP () const"
+.br
+.ti -1c
+.RI "bool \fBVisit\fP (CXCursor Cursor, bool CheckedRegionOfInterest=false)"
+.br
+.ti -1c
+.RI "bool \fBvisitFileRegion\fP ()"
+.br
+.ti -1c
+.RI "bool \fBvisitPreprocessedEntitiesInRegion\fP ()"
+.br
+.ti -1c
+.RI "bool \fBshouldVisitIncludedEntities\fP () const"
+.br
+.ti -1c
+.RI "template<typename InputIterator > bool \fBvisitPreprocessedEntities\fP (InputIterator First, InputIterator Last, PreprocessingRecord &PPRec, FileID FID=FileID())"
+.br
+.ti -1c
+.RI "bool \fBVisitChildren\fP (CXCursor Parent)"
+.br
+.ti -1c
+.RI "bool \fBVisitTypeAliasTemplateDecl\fP (TypeAliasTemplateDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitTypeAliasDecl\fP (TypeAliasDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitAttributes\fP (Decl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitBlockDecl\fP (BlockDecl *B)"
+.br
+.ti -1c
+.RI "bool \fBVisitCXXRecordDecl\fP (CXXRecordDecl *D)"
+.br
+.ti -1c
+.RI "Optional< bool > \fBshouldVisitCursor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "bool \fBVisitDeclContext\fP (DeclContext *DC)"
+.br
+.ti -1c
+.RI "bool \fBVisitTranslationUnitDecl\fP (TranslationUnitDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitTypedefDecl\fP (TypedefDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitTagDecl\fP (TagDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitClassTemplateSpecializationDecl\fP (ClassTemplateSpecializationDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitClassTemplatePartialSpecializationDecl\fP (ClassTemplatePartialSpecializationDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitTemplateTypeParmDecl\fP (TemplateTypeParmDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitEnumConstantDecl\fP (EnumConstantDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitDeclaratorDecl\fP (DeclaratorDecl *DD)"
+.br
+.ti -1c
+.RI "bool \fBVisitFunctionDecl\fP (FunctionDecl *ND)"
+.br
+.ti -1c
+.RI "bool \fBVisitFieldDecl\fP (FieldDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitVarDecl\fP (VarDecl *)"
+.br
+.ti -1c
+.RI "bool \fBVisitNonTypeTemplateParmDecl\fP (NonTypeTemplateParmDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitFunctionTemplateDecl\fP (FunctionTemplateDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitClassTemplateDecl\fP (ClassTemplateDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitTemplateTemplateParmDecl\fP (TemplateTemplateParmDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCTypeParamDecl\fP (ObjCTypeParamDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCMethodDecl\fP (ObjCMethodDecl *ND)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCContainerDecl\fP (ObjCContainerDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCCategoryDecl\fP (ObjCCategoryDecl *ND)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCProtocolDecl\fP (ObjCProtocolDecl *PID)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCPropertyDecl\fP (ObjCPropertyDecl *PD)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCTypeParamList\fP (ObjCTypeParamList *typeParamList)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCInterfaceDecl\fP (ObjCInterfaceDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCImplDecl\fP (ObjCImplDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCCategoryImplDecl\fP (ObjCCategoryImplDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCImplementationDecl\fP (ObjCImplementationDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitObjCPropertyImplDecl\fP (ObjCPropertyImplDecl *PD)"
+.br
+.ti -1c
+.RI "bool \fBVisitLinkageSpecDecl\fP (LinkageSpecDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitNamespaceDecl\fP (NamespaceDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitNamespaceAliasDecl\fP (NamespaceAliasDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitUsingDirectiveDecl\fP (UsingDirectiveDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitUsingDecl\fP (UsingDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitUnresolvedUsingValueDecl\fP (UnresolvedUsingValueDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitUnresolvedUsingTypenameDecl\fP (UnresolvedUsingTypenameDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitStaticAssertDecl\fP (StaticAssertDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitFriendDecl\fP (FriendDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitDecompositionDecl\fP (DecompositionDecl *D)"
+.br
+.ti -1c
+.RI "bool \fBVisitDeclarationNameInfo\fP (DeclarationNameInfo Name)"
+.br
+.ti -1c
+.RI "bool \fBVisitNestedNameSpecifier\fP (NestedNameSpecifier *NNS, SourceRange Range)"
+.br
+.ti -1c
+.RI "bool \fBVisitNestedNameSpecifierLoc\fP (NestedNameSpecifierLoc NNS)"
+.br
+.ti -1c
+.RI "bool \fBVisitTemplateParameters\fP (const TemplateParameterList *Params)"
+.br
+.ti -1c
+.RI "bool \fBVisitTemplateName\fP (TemplateName Name, SourceLocation Loc)"
+.br
+.ti -1c
+.RI "bool \fBVisitTemplateArgumentLoc\fP (const TemplateArgumentLoc &TAL)"
+.br
+.ti -1c
+.RI "bool \fBVisitTagTypeLoc\fP (TagTypeLoc TL)"
+.br
+.ti -1c
+.RI "bool \fBVisitArrayTypeLoc\fP (ArrayTypeLoc TL)"
+.br
+.ti -1c
+.RI "bool \fBVisitFunctionTypeLoc\fP (FunctionTypeLoc TL, bool SkipResultType=false)"
+.br
+.ti -1c
+.RI "bool \fBIsInRegionOfInterest\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "bool \fBRunVisitorWorkList\fP (\fBVisitorWorkList\fP &WL)"
+.br
+.ti -1c
+.RI "void \fBEnqueueWorkList\fP (\fBVisitorWorkList\fP &WL, const Stmt *S)"
+.br
+.ti -1c
+.RI "LLVM_ATTRIBUTE_NOINLINE bool \fBVisit\fP (const Stmt *S)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 63 of file CursorVisitor\&.h\&.
+.SH "Member Typedef Documentation"
+.PP 
+.SS "typedef bool(* clang::cxcursor::CursorVisitor::PostChildrenVisitorTy) (CXCursor cursor, CXClientData client_data)"
+Callback called after child nodes of a cursor have been visited\&. Return true to break visitation or false to continue\&. 
+.PP
+Definition at line 68 of file CursorVisitor\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::cxcursor::CursorVisitor::CursorVisitor (CXTranslationUnit TU, CXCursorVisitor Visitor, CXClientData ClientData, bool VisitPreprocessorLast, bool VisitIncludedPreprocessingEntries = \fCfalse\fP, SourceRange RegionOfInterest = \fCSourceRange()\fP, bool VisitDeclsOnly = \fCfalse\fP, \fBPostChildrenVisitorTy\fP PostChildrenVisitor = \fCnullptr\fP)\fC [inline]\fP"
+
+.PP
+Definition at line 150 of file CursorVisitor\&.h\&.
+.PP
+.nf
+156       : TU(TU), AU(cxtu::getASTUnit(TU)), Visitor(Visitor),
+157         PostChildrenVisitor(PostChildrenVisitor), ClientData(ClientData),
+158         VisitPreprocessorLast(VisitPreprocessorLast),
+159         VisitIncludedEntities(VisitIncludedPreprocessingEntries),
+160         RegionOfInterest(RegionOfInterest), VisitDeclsOnly(VisitDeclsOnly),
+161         DI_current(nullptr), FileDI_current(nullptr) {
+162     Parent\&.kind = CXCursor_NoDeclFound;
+163     Parent\&.data[0] = nullptr;
+164     Parent\&.data[1] = nullptr;
+165     Parent\&.data[2] = nullptr;
+166     StmtParent = nullptr;
+167   }
+.fi
+.SS "clang::cxcursor::CursorVisitor::~CursorVisitor ()\fC [inline]\fP"
+
+.PP
+Definition at line 169 of file CursorVisitor\&.h\&.
+.PP
+.nf
+169                    {
+170     // Free the pre-allocated worklists for data-recursion\&.
+171     for (SmallVectorImpl<VisitorWorkList *>::iterator I = WorkListCache\&.begin(),
+172                                                       E = WorkListCache\&.end();
+173          I != E; ++I) {
+174       delete *I;
+175     }
+176   }
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "void CursorVisitor::EnqueueWorkList (\fBVisitorWorkList\fP & WL, const Stmt * S)"
+
+.PP
+Definition at line 3149 of file CIndex\&.cpp\&.
+.PP
+.nf
+3149                                                                       {
+3150   EnqueueVisitor(WL, MakeCXCursor(S, StmtParent, TU, RegionOfInterest))
+3151       \&.Visit(S);
+3152 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "ASTUnit* clang::cxcursor::CursorVisitor::getASTUnit () const\fC [inline]\fP"
+
+.PP
+Definition at line 178 of file CursorVisitor\&.h\&.
+.PP
+.nf
+178 { return AU; }
+.fi
+.SS "CXTranslationUnit clang::cxcursor::CursorVisitor::getTU () const\fC [inline]\fP"
+
+.PP
+Definition at line 179 of file CursorVisitor\&.h\&.
+.PP
+.nf
+179 { return TU; }
+.fi
+.SS "bool CursorVisitor::IsInRegionOfInterest (CXCursor C)"
+
+.PP
+Definition at line 3154 of file CIndex\&.cpp\&.
+.PP
+.nf
+3154                                                    {
+3155   if (RegionOfInterest\&.isValid()) {
+3156     SourceRange Range = getRawCursorExtent(C);
+3157     if (Range\&.isInvalid() || CompareRegionOfInterest(Range))
+3158       return false;
+3159   }
+3160   return true;
+3161 }
+.fi
+.SS "bool CursorVisitor::RunVisitorWorkList (\fBVisitorWorkList\fP & WL)"
+
+.PP
+Definition at line 3163 of file CIndex\&.cpp\&.
+.PP
+.nf
+3163                                                           {
+3164   while (!WL\&.empty()) {
+3165     // Dequeue the worklist item\&.
+3166     VisitorJob LI = WL\&.pop_back_val();
+3167 
+3168     // Set the Parent field, then back to its old value once we're done\&.
+3169     SetParentRAII SetParent(Parent, StmtParent, LI\&.getParent());
+3170 
+3171     switch (LI\&.getKind()) {
+3172     case VisitorJob::DeclVisitKind: {
+3173       const Decl *D = cast<DeclVisit>(&LI)->get();
+3174       if (!D)
+3175         continue;
+3176 
+3177       // For now, perform default visitation for Decls\&.
+3178       if (Visit(MakeCXCursor(D, TU, RegionOfInterest,
+3179                              cast<DeclVisit>(&LI)->isFirst())))
+3180         return true;
+3181 
+3182       continue;
+3183     }
+3184     case VisitorJob::ExplicitTemplateArgsVisitKind: {
+3185       for (const TemplateArgumentLoc &Arg :
+3186            *cast<ExplicitTemplateArgsVisit>(&LI)) {
+3187         if (VisitTemplateArgumentLoc(Arg))
+3188           return true;
+3189       }
+3190       continue;
+3191     }
+3192     case VisitorJob::TypeLocVisitKind: {
+3193       // Perform default visitation for TypeLocs\&.
+3194       if (Visit(cast<TypeLocVisit>(&LI)->get()))
+3195         return true;
+3196       continue;
+3197     }
+3198     case VisitorJob::LabelRefVisitKind: {
+3199       const LabelDecl *LS = cast<LabelRefVisit>(&LI)->get();
+3200       if (LabelStmt *stmt = LS->getStmt()) {
+3201         if (Visit(MakeCursorLabelRef(stmt, cast<LabelRefVisit>(&LI)->getLoc(),
+3202                                      TU))) {
+3203           return true;
+3204         }
+3205       }
+3206       continue;
+3207     }
+3208 
+3209     case VisitorJob::NestedNameSpecifierLocVisitKind: {
+3210       NestedNameSpecifierLocVisit *V = cast<NestedNameSpecifierLocVisit>(&LI);
+3211       if (VisitNestedNameSpecifierLoc(V->get()))
+3212         return true;
+3213       continue;
+3214     }
+3215 
+3216     case VisitorJob::DeclarationNameInfoVisitKind: {
+3217       if (VisitDeclarationNameInfo(cast<DeclarationNameInfoVisit>(&LI)->get()))
+3218         return true;
+3219       continue;
+3220     }
+3221     case VisitorJob::MemberRefVisitKind: {
+3222       MemberRefVisit *V = cast<MemberRefVisit>(&LI);
+3223       if (Visit(MakeCursorMemberRef(V->get(), V->getLoc(), TU)))
+3224         return true;
+3225       continue;
+3226     }
+3227     case VisitorJob::StmtVisitKind: {
+3228       const Stmt *S = cast<StmtVisit>(&LI)->get();
+3229       if (!S)
+3230         continue;
+3231 
+3232       // Update the current cursor\&.
+3233       CXCursor Cursor = MakeCXCursor(S, StmtParent, TU, RegionOfInterest);
+3234       if (!IsInRegionOfInterest(Cursor))
+3235         continue;
+3236       switch (Visitor(Cursor, Parent, ClientData)) {
+3237       case CXChildVisit_Break:
+3238         return true;
+3239       case CXChildVisit_Continue:
+3240         break;
+3241       case CXChildVisit_Recurse:
+3242         if (PostChildrenVisitor)
+3243           WL\&.push_back(PostChildrenVisit(nullptr, Cursor));
+3244         EnqueueWorkList(WL, S);
+3245         break;
+3246       }
+3247       continue;
+3248     }
+3249     case VisitorJob::MemberExprPartsKind: {
+3250       // Handle the other pieces in the MemberExpr besides the base\&.
+3251       const MemberExpr *M = cast<MemberExprParts>(&LI)->get();
+3252 
+3253       // Visit the nested-name-specifier
+3254       if (NestedNameSpecifierLoc QualifierLoc = M->getQualifierLoc())
+3255         if (VisitNestedNameSpecifierLoc(QualifierLoc))
+3256           return true;
+3257 
+3258       // Visit the declaration name\&.
+3259       if (VisitDeclarationNameInfo(M->getMemberNameInfo()))
+3260         return true;
+3261 
+3262       // Visit the explicitly-specified template arguments, if any\&.
+3263       if (M->hasExplicitTemplateArgs()) {
+3264         for (const TemplateArgumentLoc *Arg = M->getTemplateArgs(),
+3265                                        *ArgEnd = Arg + M->getNumTemplateArgs();
+3266              Arg != ArgEnd; ++Arg) {
+3267           if (VisitTemplateArgumentLoc(*Arg))
+3268             return true;
+3269         }
+3270       }
+3271       continue;
+3272     }
+3273     case VisitorJob::DeclRefExprPartsKind: {
+3274       const DeclRefExpr *DR = cast<DeclRefExprParts>(&LI)->get();
+3275       // Visit nested-name-specifier, if present\&.
+3276       if (NestedNameSpecifierLoc QualifierLoc = DR->getQualifierLoc())
+3277         if (VisitNestedNameSpecifierLoc(QualifierLoc))
+3278           return true;
+3279       // Visit declaration name\&.
+3280       if (VisitDeclarationNameInfo(DR->getNameInfo()))
+3281         return true;
+3282       continue;
+3283     }
+3284     case VisitorJob::OverloadExprPartsKind: {
+3285       const OverloadExpr *O = cast<OverloadExprParts>(&LI)->get();
+3286       // Visit the nested-name-specifier\&.
+3287       if (NestedNameSpecifierLoc QualifierLoc = O->getQualifierLoc())
+3288         if (VisitNestedNameSpecifierLoc(QualifierLoc))
+3289           return true;
+3290       // Visit the declaration name\&.
+3291       if (VisitDeclarationNameInfo(O->getNameInfo()))
+3292         return true;
+3293       // Visit the overloaded declaration reference\&.
+3294       if (Visit(MakeCursorOverloadedDeclRef(O, TU)))
+3295         return true;
+3296       continue;
+3297     }
+3298     case VisitorJob::SizeOfPackExprPartsKind: {
+3299       const SizeOfPackExpr *E = cast<SizeOfPackExprParts>(&LI)->get();
+3300       NamedDecl *Pack = E->getPack();
+3301       if (isa<TemplateTypeParmDecl>(Pack)) {
+3302         if (Visit(MakeCursorTypeRef(cast<TemplateTypeParmDecl>(Pack),
+3303                                     E->getPackLoc(), TU)))
+3304           return true;
+3305 
+3306         continue;
+3307       }
+3308 
+3309       if (isa<TemplateTemplateParmDecl>(Pack)) {
+3310         if (Visit(MakeCursorTemplateRef(cast<TemplateTemplateParmDecl>(Pack),
+3311                                         E->getPackLoc(), TU)))
+3312           return true;
+3313 
+3314         continue;
+3315       }
+3316 
+3317       // Non-type template parameter packs and function parameter packs are
+3318       // treated like DeclRefExpr cursors\&.
+3319       continue;
+3320     }
+3321 
+3322     case VisitorJob::LambdaExprPartsKind: {
+3323       // Visit non-init captures\&.
+3324       const LambdaExpr *E = cast<LambdaExprParts>(&LI)->get();
+3325       for (LambdaExpr::capture_iterator C = E->explicit_capture_begin(),
+3326                                         CEnd = E->explicit_capture_end();
+3327            C != CEnd; ++C) {
+3328         if (!C->capturesVariable())
+3329           continue;
+3330 
+3331         if (Visit(MakeCursorVariableRef(C->getCapturedVar(), C->getLocation(),
+3332                                         TU)))
+3333           return true;
+3334       }
+3335       // Visit init captures
+3336       for (auto InitExpr : E->capture_inits()) {
+3337         if (InitExpr && Visit(InitExpr))
+3338           return true;
+3339       }
+3340 
+3341       TypeLoc TL = E->getCallOperator()->getTypeSourceInfo()->getTypeLoc();
+3342       // Visit parameters and return type, if present\&.
+3343       if (FunctionTypeLoc Proto = TL\&.getAs<FunctionProtoTypeLoc>()) {
+3344         if (E->hasExplicitParameters()) {
+3345           // Visit parameters\&.
+3346           for (unsigned I = 0, N = Proto\&.getNumParams(); I != N; ++I)
+3347             if (Visit(MakeCXCursor(Proto\&.getParam(I), TU)))
+3348               return true;
+3349         }
+3350         if (E->hasExplicitResultType()) {
+3351           // Visit result type\&.
+3352           if (Visit(Proto\&.getReturnLoc()))
+3353             return true;
+3354         }
+3355       }
+3356       break;
+3357     }
+3358 
+3359     case VisitorJob::PostChildrenVisitKind:
+3360       if (PostChildrenVisitor(Parent, ClientData))
+3361         return true;
+3362       break;
+3363     }
+3364   }
+3365   return false;
+3366 }
+.fi
+.PP
+References clang::cxcursor::VisitorJob::DeclarationNameInfoVisitKind, clang::cxcursor::VisitorJob::DeclVisitKind, clang::cxcursor::VisitorJob::ExplicitTemplateArgsVisitKind, startfile::get(), clang::cxcursor::VisitorJob::getKind(), clang::cxcursor::VisitorJob::getParent(), clang::cxcursor::VisitorJob::LabelRefVisitKind, clang::cxcursor::MakeCursorLabelRef(), clang::cxcursor::MakeCursorMemberRef(), clang::cxcursor::MakeCXCursor(), clang::cxcursor::VisitorJob::MemberRefVisitKind, clang::cxcursor::VisitorJob::NestedNameSpecifierLocVisitKind, clang::cxcursor::VisitorJob::StmtVisitKind, and clang::cxcursor::VisitorJob::TypeLocVisitKind\&.
+.SS "Optional< bool > CursorVisitor::shouldVisitCursor (CXCursor C)"
+
+.PP
+Definition at line 602 of file CIndex\&.cpp\&.
+.PP
+.nf
+602                                                                {
+603   if (RegionOfInterest\&.isValid()) {
+604     SourceRange Range = getFullCursorExtent(Cursor, AU->getSourceManager());
+605     if (Range\&.isInvalid())
+606       return None;
+607 
+608     switch (CompareRegionOfInterest(Range)) {
+609     case RangeBefore:
+610       // This declaration comes before the region of interest; skip it\&.
+611       return None;
+612 
+613     case RangeAfter:
+614       // This declaration comes after the region of interest; we're done\&.
+615       return false;
+616 
+617     case RangeOverlap:
+618       // This declaration overlaps the region of interest; visit it\&.
+619       break;
+620     }
+621   }
+622   return true;
+623 }
+.fi
+.SS "bool clang::cxcursor::CursorVisitor::shouldVisitIncludedEntities () const\fC [inline]\fP"
+
+.PP
+Definition at line 189 of file CursorVisitor\&.h\&.
+.PP
+.nf
+189 { return VisitIncludedEntities; }
+.fi
+.SS "bool CursorVisitor::Visit (const Stmt * S)"
+
+.PP
+Definition at line 3368 of file CIndex\&.cpp\&.
+.PP
+.nf
+3368                                        {
+3369   VisitorWorkList *WL = nullptr;
+3370   if (!WorkListFreeList\&.empty()) {
+3371     WL = WorkListFreeList\&.back();
+3372     WL->clear();
+3373     WorkListFreeList\&.pop_back();
+3374   } else {
+3375     WL = new VisitorWorkList();
+3376     WorkListCache\&.push_back(WL);
+3377   }
+3378   EnqueueWorkList(*WL, S);
+3379   bool result = RunVisitorWorkList(*WL);
+3380   WorkListFreeList\&.push_back(WL);
+3381   return result;
+3382 }
+.fi
+.SS "bool CursorVisitor::Visit (CXCursor Cursor, bool CheckedRegionOfInterest = \fCfalse\fP)"
+Visit the given cursor and, if requested by the visitor, its children\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fICursor\fP the cursor to visit\&.
+.br
+\fICheckedRegionOfInterest\fP if true, then the caller already checked that this cursor is within the region of interest\&.
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+true if the visitation should be aborted, false if it should continue\&. 
+.RE
+.PP
+
+.PP
+Definition at line 194 of file CIndex\&.cpp\&.
+.PP
+.nf
+194                                                                        {
+195   if (clang_isInvalid(Cursor\&.kind))
+196     return false;
+197 
+198   if (clang_isDeclaration(Cursor\&.kind)) {
+199     const Decl *D = getCursorDecl(Cursor);
+200     if (!D) {
+201       assert(0 && "Invalid declaration cursor");
+202       return true; // abort\&.
+203     }
+204 
+205     // Ignore implicit declarations, unless it's an objc method because
+206     // currently we should report implicit methods for properties when indexing\&.
+207     if (D->isImplicit() && !isa<ObjCMethodDecl>(D))
+208       return false;
+209   }
+210 
+211   // If we have a range of interest, and this cursor doesn't intersect with it,
+212   // we're done\&.
+213   if (RegionOfInterest\&.isValid() && !CheckedRegionOfInterest) {
+214     SourceRange Range = getRawCursorExtent(Cursor);
+215     if (Range\&.isInvalid() || CompareRegionOfInterest(Range))
+216       return false;
+217   }
+218 
+219   switch (Visitor(Cursor, Parent, ClientData)) {
+220   case CXChildVisit_Break:
+221     return true;
+222 
+223   case CXChildVisit_Continue:
+224     return false;
+225 
+226   case CXChildVisit_Recurse: {
+227     bool ret = VisitChildren(Cursor);
+228     if (PostChildrenVisitor)
+229       if (PostChildrenVisitor(Cursor, ClientData))
+230         return true;
+231     return ret;
+232   }
+233   }
+234 
+235   llvm_unreachable("Invalid CXChildVisitResult!");
+236 }
+.fi
+.SS "bool CursorVisitor::VisitArrayTypeLoc (ArrayTypeLoc TL)"
+
+.PP
+Definition at line 1685 of file CIndex\&.cpp\&.
+.PP
+.nf
+1685                                                      {
+1686   if (Visit(TL\&.getElementLoc()))
+1687     return true;
+1688 
+1689   if (Expr *Size = TL\&.getSizeExpr())
+1690     return Visit(MakeCXCursor(Size, StmtParent, TU, RegionOfInterest));
+1691 
+1692   return false;
+1693 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitAttributes (Decl * D)"
+
+.PP
+Definition at line 1836 of file CIndex\&.cpp\&.
+.PP
+.nf
+1836                                            {
+1837   for (const auto *I : D->attrs())
+1838     if ((TU->ParsingOptions & CXTranslationUnit_VisitImplicitAttributes ||
+1839          !I->isImplicit()) &&
+1840         Visit(MakeCXCursor(I, D, TU)))
+1841       return true;
+1842 
+1843   return false;
+1844 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitBlockDecl (BlockDecl * B)"
+
+.PP
+Definition at line 591 of file CIndex\&.cpp\&.
+.PP
+.nf
+591                                                {
+592   if (TypeSourceInfo *TSInfo = B->getSignatureAsWritten())
+593     if (Visit(TSInfo->getTypeLoc()))
+594       return true;
+595 
+596   if (Stmt *Body = B->getBody())
+597     return Visit(MakeCXCursor(Body, StmtParent, TU, RegionOfInterest));
+598 
+599   return false;
+600 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitChildren (CXCursor Cursor)"
+Visit the children of the given cursor\&.
+.PP
+\fBReturns\fP
+.RS 4
+true if the visitation should be aborted, false if it should continue\&. 
+.RE
+.PP
+
+.PP
+Definition at line 492 of file CIndex\&.cpp\&.
+.PP
+.nf
+492                                                  {
+493   if (clang_isReference(Cursor\&.kind) &&
+494       Cursor\&.kind != CXCursor_CXXBaseSpecifier) {
+495     // By definition, references have no children\&.
+496     return false;
+497   }
+498 
+499   // Set the Parent field to Cursor, then back to its old value once we're
+500   // done\&.
+501   SetParentRAII SetParent(Parent, StmtParent, Cursor);
+502 
+503   if (clang_isDeclaration(Cursor\&.kind)) {
+504     Decl *D = const_cast<Decl *>(getCursorDecl(Cursor));
+505     if (!D)
+506       return false;
+507 
+508     return VisitAttributes(D) || Visit(D);
+509   }
+510 
+511   if (clang_isStatement(Cursor\&.kind)) {
+512     if (const Stmt *S = getCursorStmt(Cursor))
+513       return Visit(S);
+514 
+515     return false;
+516   }
+517 
+518   if (clang_isExpression(Cursor\&.kind)) {
+519     if (const Expr *E = getCursorExpr(Cursor))
+520       return Visit(E);
+521 
+522     return false;
+523   }
+524 
+525   if (clang_isTranslationUnit(Cursor\&.kind)) {
+526     CXTranslationUnit TU = getCursorTU(Cursor);
+527     ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+528 
+529     int VisitOrder[2] = {VisitPreprocessorLast, !VisitPreprocessorLast};
+530     for (unsigned I = 0; I != 2; ++I) {
+531       if (VisitOrder[I]) {
+532         if (!CXXUnit->isMainFileAST() && CXXUnit->getOnlyLocalDecls() &&
+533             RegionOfInterest\&.isInvalid()) {
+534           for (ASTUnit::top_level_iterator TL = CXXUnit->top_level_begin(),
+535                                            TLEnd = CXXUnit->top_level_end();
+536                TL != TLEnd; ++TL) {
+537             const Optional<bool> V = handleDeclForVisitation(*TL);
+538             if (!V\&.hasValue())
+539               continue;
+540             return V\&.getValue();
+541           }
+542         } else if (VisitDeclContext(
+543                        CXXUnit->getASTContext()\&.getTranslationUnitDecl()))
+544           return true;
+545         continue;
+546       }
+547 
+548       // Walk the preprocessing record\&.
+549       if (CXXUnit->getPreprocessor()\&.getPreprocessingRecord())
+550         visitPreprocessedEntitiesInRegion();
+551     }
+552 
+553     return false;
+554   }
+555 
+556   if (Cursor\&.kind == CXCursor_CXXBaseSpecifier) {
+557     if (const CXXBaseSpecifier *Base = getCursorCXXBaseSpecifier(Cursor)) {
+558       if (TypeSourceInfo *BaseTSInfo = Base->getTypeSourceInfo()) {
+559         return Visit(BaseTSInfo->getTypeLoc());
+560       }
+561     }
+562   }
+563 
+564   if (Cursor\&.kind == CXCursor_IBOutletCollectionAttr) {
+565     const IBOutletCollectionAttr *A =
+566         cast<IBOutletCollectionAttr>(cxcursor::getCursorAttr(Cursor));
+567     if (const ObjCObjectType *ObjT = A->getInterface()->getAs<ObjCObjectType>())
+568       return Visit(cxcursor::MakeCursorObjCClassRef(
+569           ObjT->getInterface(),
+570           A->getInterfaceLoc()->getTypeLoc()\&.getBeginLoc(), TU));
+571   }
+572 
+573   // If pointing inside a macro definition, check if the token is an identifier
+574   // that was ever defined as a macro\&. In such a case, create a "pseudo" macro
+575   // expansion cursor for that token\&.
+576   SourceLocation BeginLoc = RegionOfInterest\&.getBegin();
+577   if (Cursor\&.kind == CXCursor_MacroDefinition &&
+578       BeginLoc == RegionOfInterest\&.getEnd()) {
+579     SourceLocation Loc = AU->mapLocationToPreamble(BeginLoc);
+580     const MacroInfo *MI =
+581         getMacroInfo(cxcursor::getCursorMacroDefinition(Cursor), TU);
+582     if (MacroDefinitionRecord *MacroDef =
+583             checkForMacroInMacroDefinition(MI, Loc, TU))
+584       return Visit(cxcursor::MakeMacroExpansionCursor(MacroDef, BeginLoc, TU));
+585   }
+586 
+587   // Nothing to visit at the moment\&.
+588   return false;
+589 }
+.fi
+.PP
+Referenced by clang_visitChildren()\&.
+.SS "bool CursorVisitor::VisitClassTemplateDecl (ClassTemplateDecl * D)"
+
+.PP
+Definition at line 950 of file CIndex\&.cpp\&.
+.PP
+.nf
+950                                                                {
+951   // FIXME: Visit the "outer" template parameter lists on the TagDecl
+952   // before visiting these template parameters\&.
+953   if (VisitTemplateParameters(D->getTemplateParameters()))
+954     return true;
+955 
+956   auto *CD = D->getTemplatedDecl();
+957   return VisitAttributes(CD) || VisitCXXRecordDecl(CD);
+958 }
+.fi
+.SS "bool CursorVisitor::VisitClassTemplatePartialSpecializationDecl (ClassTemplatePartialSpecializationDecl * D)"
+
+.PP
+Definition at line 745 of file CIndex\&.cpp\&.
+.PP
+.nf
+746                                                {
+747   // FIXME: Visit the "outer" template parameter lists on the TagDecl
+748   // before visiting these template parameters\&.
+749   if (VisitTemplateParameters(D->getTemplateParameters()))
+750     return true;
+751 
+752   // Visit the partial specialization arguments\&.
+753   const ASTTemplateArgumentListInfo *Info = D->getTemplateArgsAsWritten();
+754   const TemplateArgumentLoc *TemplateArgs = Info->getTemplateArgs();
+755   for (unsigned I = 0, N = Info->NumTemplateArgs; I != N; ++I)
+756     if (VisitTemplateArgumentLoc(TemplateArgs[I]))
+757       return true;
+758 
+759   return VisitCXXRecordDecl(D);
+760 }
+.fi
+.SS "bool CursorVisitor::VisitClassTemplateSpecializationDecl (ClassTemplateSpecializationDecl * D)"
+
+.PP
+Definition at line 713 of file CIndex\&.cpp\&.
+.PP
+.nf
+714                                         {
+715   bool ShouldVisitBody = false;
+716   switch (D->getSpecializationKind()) {
+717   case TSK_Undeclared:
+718   case TSK_ImplicitInstantiation:
+719     // Nothing to visit
+720     return false;
+721 
+722   case TSK_ExplicitInstantiationDeclaration:
+723   case TSK_ExplicitInstantiationDefinition:
+724     break;
+725 
+726   case TSK_ExplicitSpecialization:
+727     ShouldVisitBody = true;
+728     break;
+729   }
+730 
+731   // Visit the template arguments used in the specialization\&.
+732   if (TypeSourceInfo *SpecType = D->getTypeAsWritten()) {
+733     TypeLoc TL = SpecType->getTypeLoc();
+734     if (TemplateSpecializationTypeLoc TSTLoc =
+735             TL\&.getAs<TemplateSpecializationTypeLoc>()) {
+736       for (unsigned I = 0, N = TSTLoc\&.getNumArgs(); I != N; ++I)
+737         if (VisitTemplateArgumentLoc(TSTLoc\&.getArgLoc(I)))
+738           return true;
+739     }
+740   }
+741 
+742   return ShouldVisitBody && VisitCXXRecordDecl(D);
+743 }
+.fi
+.SS "bool CursorVisitor::VisitCXXRecordDecl (CXXRecordDecl * D)"
+
+.PP
+Definition at line 1820 of file CIndex\&.cpp\&.
+.PP
+.nf
+1820                                                        {
+1821   // Visit the nested-name-specifier, if present\&.
+1822   if (NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc())
+1823     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+1824       return true;
+1825 
+1826   if (D->isCompleteDefinition()) {
+1827     for (const auto &I : D->bases()) {
+1828       if (Visit(cxcursor::MakeCursorCXXBaseSpecifier(&I, TU)))
+1829         return true;
+1830     }
+1831   }
+1832 
+1833   return VisitTagDecl(D);
+1834 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorCXXBaseSpecifier()\&.
+.SS "bool CursorVisitor::VisitDeclarationNameInfo (DeclarationNameInfo Name)"
+
+.PP
+Definition at line 1312 of file CIndex\&.cpp\&.
+.PP
+.nf
+1312                                                                      {
+1313   switch (Name\&.getName()\&.getNameKind()) {
+1314   case clang::DeclarationName::Identifier:
+1315   case clang::DeclarationName::CXXLiteralOperatorName:
+1316   case clang::DeclarationName::CXXDeductionGuideName:
+1317   case clang::DeclarationName::CXXOperatorName:
+1318   case clang::DeclarationName::CXXUsingDirective:
+1319     return false;
+1320 
+1321   case clang::DeclarationName::CXXConstructorName:
+1322   case clang::DeclarationName::CXXDestructorName:
+1323   case clang::DeclarationName::CXXConversionFunctionName:
+1324     if (TypeSourceInfo *TSInfo = Name\&.getNamedTypeInfo())
+1325       return Visit(TSInfo->getTypeLoc());
+1326     return false;
+1327 
+1328   case clang::DeclarationName::ObjCZeroArgSelector:
+1329   case clang::DeclarationName::ObjCOneArgSelector:
+1330   case clang::DeclarationName::ObjCMultiArgSelector:
+1331     // FIXME: Per-identifier location info?
+1332     return false;
+1333   }
+1334 
+1335   llvm_unreachable("Invalid DeclarationName::Kind!");
+1336 }
+.fi
+.SS "bool CursorVisitor::VisitDeclaratorDecl (DeclaratorDecl * DD)"
+
+.PP
+Definition at line 783 of file CIndex\&.cpp\&.
+.PP
+.nf
+783                                                           {
+784   unsigned NumParamList = DD->getNumTemplateParameterLists();
+785   for (unsigned i = 0; i < NumParamList; i++) {
+786     TemplateParameterList *Params = DD->getTemplateParameterList(i);
+787     if (VisitTemplateParameters(Params))
+788       return true;
+789   }
+790 
+791   if (TypeSourceInfo *TSInfo = DD->getTypeSourceInfo())
+792     if (Visit(TSInfo->getTypeLoc()))
+793       return true;
+794 
+795   // Visit the nested-name-specifier, if present\&.
+796   if (NestedNameSpecifierLoc QualifierLoc = DD->getQualifierLoc())
+797     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+798       return true;
+799 
+800   return false;
+801 }
+.fi
+.SS "bool CursorVisitor::VisitDeclContext (DeclContext * DC)"
+
+.PP
+Definition at line 625 of file CIndex\&.cpp\&.
+.PP
+.nf
+625                                                     {
+626   DeclContext::decl_iterator I = DC->decls_begin(), E = DC->decls_end();
+627 
+628   // FIXME: Eventually remove\&.  This part of a hack to support proper
+629   // iteration over all Decls contained lexically within an ObjC container\&.
+630   SaveAndRestore<DeclContext::decl_iterator *> DI_saved(DI_current, &I);
+631   SaveAndRestore<DeclContext::decl_iterator> DE_saved(DE_current, E);
+632 
+633   for (; I != E; ++I) {
+634     Decl *D = *I;
+635     if (D->getLexicalDeclContext() != DC)
+636       continue;
+637     // Filter out synthesized property accessor redeclarations\&.
+638     if (isa<ObjCImplDecl>(DC))
+639       if (auto *OMD = dyn_cast<ObjCMethodDecl>(D))
+640         if (OMD->isSynthesizedAccessorStub())
+641           continue;
+642     const Optional<bool> V = handleDeclForVisitation(D);
+643     if (!V\&.hasValue())
+644       continue;
+645     return V\&.getValue();
+646   }
+647   return false;
+648 }
+.fi
+.SS "bool CursorVisitor::VisitDecompositionDecl (DecompositionDecl * D)"
+
+.PP
+Definition at line 1304 of file CIndex\&.cpp\&.
+.PP
+.nf
+1304                                                                {
+1305   for (auto *B : D->bindings()) {
+1306     if (Visit(MakeCXCursor(B, TU, RegionOfInterest)))
+1307       return true;
+1308   }
+1309   return VisitVarDecl(D);
+1310 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitEnumConstantDecl (EnumConstantDecl * D)"
+
+.PP
+Definition at line 777 of file CIndex\&.cpp\&.
+.PP
+.nf
+777                                                              {
+778   if (Expr *Init = D->getInitExpr())
+779     return Visit(MakeCXCursor(Init, StmtParent, TU, RegionOfInterest));
+780   return false;
+781 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitFieldDecl (FieldDecl * D)"
+
+.PP
+Definition at line 906 of file CIndex\&.cpp\&.
+.PP
+.nf
+906                                                {
+907   if (VisitDeclaratorDecl(D))
+908     return true;
+909 
+910   if (Expr *BitWidth = D->getBitWidth())
+911     return Visit(MakeCXCursor(BitWidth, StmtParent, TU, RegionOfInterest));
+912 
+913   if (Expr *Init = D->getInClassInitializer())
+914     return Visit(MakeCXCursor(Init, StmtParent, TU, RegionOfInterest));
+915 
+916   return false;
+917 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::visitFileRegion ()"
+Visit declarations and preprocessed entities for the file region designated by 
+.PP
+\fBSee also\fP
+.RS 4
+RegionOfInterest\&. 
+.RE
+.PP
+
+.PP
+Definition at line 258 of file CIndex\&.cpp\&.
+.PP
+.nf
+258                                     {
+259   if (RegionOfInterest\&.isInvalid())
+260     return false;
+261 
+262   ASTUnit *Unit = cxtu::getASTUnit(TU);
+263   SourceManager &SM = Unit->getSourceManager();
+264 
+265   std::pair<FileID, unsigned> Begin = SM\&.getDecomposedLoc(
+266                                   SM\&.getFileLoc(RegionOfInterest\&.getBegin())),
+267                               End = SM\&.getDecomposedLoc(
+268                                   SM\&.getFileLoc(RegionOfInterest\&.getEnd()));
+269 
+270   if (End\&.first != Begin\&.first) {
+271     // If the end does not reside in the same file, try to recover by
+272     // picking the end of the file of begin location\&.
+273     End\&.first = Begin\&.first;
+274     End\&.second = SM\&.getFileIDSize(Begin\&.first);
+275   }
+276 
+277   assert(Begin\&.first == End\&.first);
+278   if (Begin\&.second > End\&.second)
+279     return false;
+280 
+281   FileID File = Begin\&.first;
+282   unsigned Offset = Begin\&.second;
+283   unsigned Length = End\&.second - Begin\&.second;
+284 
+285   if (!VisitDeclsOnly && !VisitPreprocessorLast)
+286     if (visitPreprocessedEntitiesInRegion())
+287       return true; // visitation break\&.
+288 
+289   if (visitDeclsFromFileRegion(File, Offset, Length))
+290     return true; // visitation break\&.
+291 
+292   if (!VisitDeclsOnly && VisitPreprocessorLast)
+293     return visitPreprocessedEntitiesInRegion();
+294 
+295   return false;
+296 }
+.fi
+.SS "bool CursorVisitor::VisitFriendDecl (FriendDecl * D)"
+
+.PP
+Definition at line 1293 of file CIndex\&.cpp\&.
+.PP
+.nf
+1293                                                  {
+1294   if (NamedDecl *FriendD = D->getFriendDecl()) {
+1295     if (Visit(MakeCXCursor(FriendD, TU, RegionOfInterest)))
+1296       return true;
+1297   } else if (TypeSourceInfo *TI = D->getFriendType()) {
+1298     if (Visit(TI->getTypeLoc()))
+1299       return true;
+1300   }
+1301   return false;
+1302 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitFunctionDecl (FunctionDecl * ND)"
+
+.PP
+Definition at line 819 of file CIndex\&.cpp\&.
+.PP
+.nf
+819                                                       {
+820   unsigned NumParamList = ND->getNumTemplateParameterLists();
+821   for (unsigned i = 0; i < NumParamList; i++) {
+822     TemplateParameterList *Params = ND->getTemplateParameterList(i);
+823     if (VisitTemplateParameters(Params))
+824       return true;
+825   }
+826 
+827   if (TypeSourceInfo *TSInfo = ND->getTypeSourceInfo()) {
+828     // Visit the function declaration's syntactic components in the order
+829     // written\&. This requires a bit of work\&.
+830     TypeLoc TL = TSInfo->getTypeLoc()\&.IgnoreParens();
+831     FunctionTypeLoc FTL = TL\&.getAs<FunctionTypeLoc>();
+832     const bool HasTrailingRT = HasTrailingReturnType(ND);
+833 
+834     // If we have a function declared directly (without the use of a typedef),
+835     // visit just the return type\&. Otherwise, just visit the function's type
+836     // now\&.
+837     if ((FTL && !isa<CXXConversionDecl>(ND) && !HasTrailingRT &&
+838          Visit(FTL\&.getReturnLoc())) ||
+839         (!FTL && Visit(TL)))
+840       return true;
+841 
+842     // Visit the nested-name-specifier, if present\&.
+843     if (NestedNameSpecifierLoc QualifierLoc = ND->getQualifierLoc())
+844       if (VisitNestedNameSpecifierLoc(QualifierLoc))
+845         return true;
+846 
+847     // Visit the declaration name\&.
+848     if (!isa<CXXDestructorDecl>(ND))
+849       if (VisitDeclarationNameInfo(ND->getNameInfo()))
+850         return true;
+851 
+852     // FIXME: Visit explicitly-specified template arguments!
+853 
+854     // Visit the function parameters, if we have a function type\&.
+855     if (FTL && VisitFunctionTypeLoc(FTL, true))
+856       return true;
+857 
+858     // Visit the function's trailing return type\&.
+859     if (FTL && HasTrailingRT && Visit(FTL\&.getReturnLoc()))
+860       return true;
+861 
+862     // FIXME: Attributes?
+863   }
+864 
+865   if (ND->doesThisDeclarationHaveABody() && !ND->isLateTemplateParsed()) {
+866     if (CXXConstructorDecl *Constructor = dyn_cast<CXXConstructorDecl>(ND)) {
+867       // Find the initializers that were written in the source\&.
+868       SmallVector<CXXCtorInitializer *, 4> WrittenInits;
+869       for (auto *I : Constructor->inits()) {
+870         if (!I->isWritten())
+871           continue;
+872 
+873         WrittenInits\&.push_back(I);
+874       }
+875 
+876       // Sort the initializers in source order
+877       llvm::array_pod_sort(WrittenInits\&.begin(), WrittenInits\&.end(),
+878                            &CompareCXXCtorInitializers);
+879 
+880       // Visit the initializers in source order
+881       for (unsigned I = 0, N = WrittenInits\&.size(); I != N; ++I) {
+882         CXXCtorInitializer *Init = WrittenInits[I];
+883         if (Init->isAnyMemberInitializer()) {
+884           if (Visit(MakeCursorMemberRef(Init->getAnyMember(),
+885                                         Init->getMemberLocation(), TU)))
+886             return true;
+887         } else if (TypeSourceInfo *TInfo = Init->getTypeSourceInfo()) {
+888           if (Visit(TInfo->getTypeLoc()))
+889             return true;
+890         }
+891 
+892         // Visit the initializer value\&.
+893         if (Expr *Initializer = Init->getInit())
+894           if (Visit(MakeCXCursor(Initializer, ND, TU, RegionOfInterest)))
+895             return true;
+896       }
+897     }
+898 
+899     if (Visit(MakeCXCursor(ND->getBody(), StmtParent, TU, RegionOfInterest)))
+900       return true;
+901   }
+902 
+903   return false;
+904 }
+.fi
+.SS "bool CursorVisitor::VisitFunctionTemplateDecl (FunctionTemplateDecl * D)"
+
+.PP
+Definition at line 940 of file CIndex\&.cpp\&.
+.PP
+.nf
+940                                                                      {
+941   // FIXME: Visit the "outer" template parameter lists on the FunctionDecl
+942   // before visiting these template parameters\&.
+943   if (VisitTemplateParameters(D->getTemplateParameters()))
+944     return true;
+945 
+946   auto *FD = D->getTemplatedDecl();
+947   return VisitAttributes(FD) || VisitFunctionDecl(FD);
+948 }
+.fi
+.SS "bool CursorVisitor::VisitFunctionTypeLoc (FunctionTypeLoc TL, bool SkipResultType = \fCfalse\fP)"
+
+.PP
+Definition at line 1672 of file CIndex\&.cpp\&.
+.PP
+.nf
+1673                                                               {
+1674   if (!SkipResultType && Visit(TL\&.getReturnLoc()))
+1675     return true;
+1676 
+1677   for (unsigned I = 0, N = TL\&.getNumParams(); I != N; ++I)
+1678     if (Decl *D = TL\&.getParam(I))
+1679       if (Visit(MakeCXCursor(D, TU, RegionOfInterest)))
+1680         return true;
+1681 
+1682   return false;
+1683 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitLinkageSpecDecl (LinkageSpecDecl * D)"
+
+.PP
+Definition at line 1518 of file CIndex\&.cpp\&.
+.PP
+.nf
+1518                                                            {
+1519   return VisitDeclContext(D);
+1520 }
+.fi
+.SS "bool CursorVisitor::VisitNamespaceAliasDecl (NamespaceAliasDecl * D)"
+
+.PP
+Definition at line 1231 of file CIndex\&.cpp\&.
+.PP
+.nf
+1231                                                                  {
+1232   // Visit nested-name-specifier\&.
+1233   if (NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc())
+1234     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+1235       return true;
+1236 
+1237   return Visit(MakeCursorNamespaceRef(D->getAliasedNamespace(),
+1238                                       D->getTargetNameLoc(), TU));
+1239 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorNamespaceRef()\&.
+.SS "bool CursorVisitor::VisitNamespaceDecl (NamespaceDecl * D)"
+
+.PP
+Definition at line 1227 of file CIndex\&.cpp\&.
+.PP
+.nf
+1227                                                        {
+1228   return VisitDeclContext(D);
+1229 }
+.fi
+.SS "bool CursorVisitor::VisitNestedNameSpecifier (NestedNameSpecifier * NNS, SourceRange Range)"
+
+.PP
+Definition at line 1338 of file CIndex\&.cpp\&.
+.PP
+.nf
+1339                                                                 {
+1340   // FIXME: This whole routine is a hack to work around the lack of proper
+1341   // source information in nested-name-specifiers (PR5791)\&. Since we do have
+1342   // a beginning source location, we can visit the first component of the
+1343   // nested-name-specifier, if it's a single-token component\&.
+1344   if (!NNS)
+1345     return false;
+1346 
+1347   // Get the first component in the nested-name-specifier\&.
+1348   while (NestedNameSpecifier *Prefix = NNS->getPrefix())
+1349     NNS = Prefix;
+1350 
+1351   switch (NNS->getKind()) {
+1352   case NestedNameSpecifier::Namespace:
+1353     return Visit(
+1354         MakeCursorNamespaceRef(NNS->getAsNamespace(), Range\&.getBegin(), TU));
+1355 
+1356   case NestedNameSpecifier::NamespaceAlias:
+1357     return Visit(MakeCursorNamespaceRef(NNS->getAsNamespaceAlias(),
+1358                                         Range\&.getBegin(), TU));
+1359 
+1360   case NestedNameSpecifier::TypeSpec: {
+1361     // If the type has a form where we know that the beginning of the source
+1362     // range matches up with a reference cursor\&. Visit the appropriate reference
+1363     // cursor\&.
+1364     const Type *T = NNS->getAsType();
+1365     if (const TypedefType *Typedef = dyn_cast<TypedefType>(T))
+1366       return Visit(MakeCursorTypeRef(Typedef->getDecl(), Range\&.getBegin(), TU));
+1367     if (const TagType *Tag = dyn_cast<TagType>(T))
+1368       return Visit(MakeCursorTypeRef(Tag->getDecl(), Range\&.getBegin(), TU));
+1369     if (const TemplateSpecializationType *TST =
+1370             dyn_cast<TemplateSpecializationType>(T))
+1371       return VisitTemplateName(TST->getTemplateName(), Range\&.getBegin());
+1372     break;
+1373   }
+1374 
+1375   case NestedNameSpecifier::TypeSpecWithTemplate:
+1376   case NestedNameSpecifier::Global:
+1377   case NestedNameSpecifier::Identifier:
+1378   case NestedNameSpecifier::Super:
+1379     break;
+1380   }
+1381 
+1382   return false;
+1383 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorNamespaceRef(), and clang::cxcursor::MakeCursorTypeRef()\&.
+.SS "bool CursorVisitor::VisitNestedNameSpecifierLoc (NestedNameSpecifierLoc NNS)"
+
+.PP
+Definition at line 1385 of file CIndex\&.cpp\&.
+.PP
+.nf
+1386                                       {
+1387   SmallVector<NestedNameSpecifierLoc, 4> Qualifiers;
+1388   for (; Qualifier; Qualifier = Qualifier\&.getPrefix())
+1389     Qualifiers\&.push_back(Qualifier);
+1390 
+1391   while (!Qualifiers\&.empty()) {
+1392     NestedNameSpecifierLoc Q = Qualifiers\&.pop_back_val();
+1393     NestedNameSpecifier *NNS = Q\&.getNestedNameSpecifier();
+1394     switch (NNS->getKind()) {
+1395     case NestedNameSpecifier::Namespace:
+1396       if (Visit(MakeCursorNamespaceRef(NNS->getAsNamespace(),
+1397                                        Q\&.getLocalBeginLoc(), TU)))
+1398         return true;
+1399 
+1400       break;
+1401 
+1402     case NestedNameSpecifier::NamespaceAlias:
+1403       if (Visit(MakeCursorNamespaceRef(NNS->getAsNamespaceAlias(),
+1404                                        Q\&.getLocalBeginLoc(), TU)))
+1405         return true;
+1406 
+1407       break;
+1408 
+1409     case NestedNameSpecifier::TypeSpec:
+1410     case NestedNameSpecifier::TypeSpecWithTemplate:
+1411       if (Visit(Q\&.getTypeLoc()))
+1412         return true;
+1413 
+1414       break;
+1415 
+1416     case NestedNameSpecifier::Global:
+1417     case NestedNameSpecifier::Identifier:
+1418     case NestedNameSpecifier::Super:
+1419       break;
+1420     }
+1421   }
+1422 
+1423   return false;
+1424 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorNamespaceRef()\&.
+.SS "bool CursorVisitor::VisitNonTypeTemplateParmDecl (NonTypeTemplateParmDecl * D)"
+
+.PP
+Definition at line 929 of file CIndex\&.cpp\&.
+.PP
+.nf
+929                                                                            {
+930   if (VisitDeclaratorDecl(D))
+931     return true;
+932 
+933   if (D->hasDefaultArgument() && !D->defaultArgumentWasInherited())
+934     if (Expr *DefArg = D->getDefaultArgument())
+935       return Visit(MakeCXCursor(DefArg, StmtParent, TU, RegionOfInterest));
+936 
+937   return false;
+938 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitObjCCategoryDecl (ObjCCategoryDecl * ND)"
+
+.PP
+Definition at line 1081 of file CIndex\&.cpp\&.
+.PP
+.nf
+1081                                                               {
+1082   if (Visit(MakeCursorObjCClassRef(ND->getClassInterface(), ND->getLocation(),
+1083                                    TU)))
+1084     return true;
+1085 
+1086   if (VisitObjCTypeParamList(ND->getTypeParamList()))
+1087     return true;
+1088 
+1089   ObjCCategoryDecl::protocol_loc_iterator PL = ND->protocol_loc_begin();
+1090   for (ObjCCategoryDecl::protocol_iterator I = ND->protocol_begin(),
+1091                                            E = ND->protocol_end();
+1092        I != E; ++I, ++PL)
+1093     if (Visit(MakeCursorObjCProtocolRef(*I, *PL, TU)))
+1094       return true;
+1095 
+1096   return VisitObjCContainerDecl(ND);
+1097 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorObjCClassRef(), and clang::cxcursor::MakeCursorObjCProtocolRef()\&.
+.SS "bool CursorVisitor::VisitObjCCategoryImplDecl (ObjCCategoryImplDecl * D)"
+
+.PP
+Definition at line 1196 of file CIndex\&.cpp\&.
+.PP
+.nf
+1196                                                                      {
+1197   // 'ID' could be null when dealing with invalid code\&.
+1198   if (ObjCInterfaceDecl *ID = D->getClassInterface())
+1199     if (Visit(MakeCursorObjCClassRef(ID, D->getLocation(), TU)))
+1200       return true;
+1201 
+1202   return VisitObjCImplDecl(D);
+1203 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorObjCClassRef()\&.
+.SS "bool CursorVisitor::VisitObjCContainerDecl (ObjCContainerDecl * D)"
+
+.PP
+Definition at line 1018 of file CIndex\&.cpp\&.
+.PP
+.nf
+1018                                                                {
+1019   // FIXME: Eventually convert back to just 'VisitDeclContext()'\&.  Essentially
+1020   // an @implementation can lexically contain Decls that are not properly
+1021   // nested in the AST\&.  When we identify such cases, we need to retrofit
+1022   // this nesting here\&.
+1023   if (!DI_current && !FileDI_current)
+1024     return VisitDeclContext(D);
+1025 
+1026   // Scan the Decls that immediately come after the container
+1027   // in the current DeclContext\&.  If any fall within the
+1028   // container's lexical region, stash them into a vector
+1029   // for later processing\&.
+1030   SmallVector<Decl *, 24> DeclsInContainer;
+1031   SourceLocation EndLoc = D->getSourceRange()\&.getEnd();
+1032   SourceManager &SM = AU->getSourceManager();
+1033   if (EndLoc\&.isValid()) {
+1034     if (DI_current) {
+1035       addRangedDeclsInContainer(DI_current, DE_current, SM, EndLoc,
+1036                                 DeclsInContainer);
+1037     } else {
+1038       addRangedDeclsInContainer(FileDI_current, FileDE_current, SM, EndLoc,
+1039                                 DeclsInContainer);
+1040     }
+1041   }
+1042 
+1043   // The common case\&.
+1044   if (DeclsInContainer\&.empty())
+1045     return VisitDeclContext(D);
+1046 
+1047   // Get all the Decls in the DeclContext, and sort them with the
+1048   // additional ones we've collected\&.  Then visit them\&.
+1049   for (auto *SubDecl : D->decls()) {
+1050     if (!SubDecl || SubDecl->getLexicalDeclContext() != D ||
+1051         SubDecl->getBeginLoc()\&.isInvalid())
+1052       continue;
+1053     DeclsInContainer\&.push_back(SubDecl);
+1054   }
+1055 
+1056   // Now sort the Decls so that they appear in lexical order\&.
+1057   llvm::sort(DeclsInContainer, [&SM](Decl *A, Decl *B) {
+1058     SourceLocation L_A = A->getBeginLoc();
+1059     SourceLocation L_B = B->getBeginLoc();
+1060     return L_A != L_B
+1061                ? SM\&.isBeforeInTranslationUnit(L_A, L_B)
+1062                : SM\&.isBeforeInTranslationUnit(A->getEndLoc(), B->getEndLoc());
+1063   });
+1064 
+1065   // Now visit the decls\&.
+1066   for (SmallVectorImpl<Decl *>::iterator I = DeclsInContainer\&.begin(),
+1067                                          E = DeclsInContainer\&.end();
+1068        I != E; ++I) {
+1069     CXCursor Cursor = MakeCXCursor(*I, TU, RegionOfInterest);
+1070     const Optional<bool> &V = shouldVisitCursor(Cursor);
+1071     if (!V\&.hasValue())
+1072       continue;
+1073     if (!V\&.getValue())
+1074       return false;
+1075     if (Visit(Cursor, true))
+1076       return true;
+1077   }
+1078   return false;
+1079 }
+.fi
+.SS "bool CursorVisitor::VisitObjCImplDecl (ObjCImplDecl * D)"
+
+.PP
+Definition at line 1192 of file CIndex\&.cpp\&.
+.PP
+.nf
+1192                                                      {
+1193   return VisitObjCContainerDecl(D);
+1194 }
+.fi
+.SS "bool CursorVisitor::VisitObjCImplementationDecl (ObjCImplementationDecl * D)"
+
+.PP
+Definition at line 1205 of file CIndex\&.cpp\&.
+.PP
+.nf
+1205                                                                          {
+1206 #if 0
+1207   // Issue callbacks for super class\&.
+1208   // FIXME: No source location information!
+1209   if (D->getSuperClass() &&
+1210       Visit(MakeCursorObjCSuperClassRef(D->getSuperClass(),
+1211                                         D->getSuperClassLoc(),
+1212                                         TU)))
+1213     return true;
+1214 #endif
+1215 
+1216   return VisitObjCImplDecl(D);
+1217 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorObjCSuperClassRef()\&.
+.SS "bool CursorVisitor::VisitObjCInterfaceDecl (ObjCInterfaceDecl * D)"
+
+.PP
+Definition at line 1163 of file CIndex\&.cpp\&.
+.PP
+.nf
+1163                                                                {
+1164   if (!D->isThisDeclarationADefinition()) {
+1165     // Forward declaration is treated like a reference\&.
+1166     return Visit(MakeCursorObjCClassRef(D, D->getLocation(), TU));
+1167   }
+1168 
+1169   // Objective-C type parameters\&.
+1170   if (VisitObjCTypeParamList(D->getTypeParamListAsWritten()))
+1171     return true;
+1172 
+1173   // Issue callbacks for super class\&.
+1174   if (D->getSuperClass() && Visit(MakeCursorObjCSuperClassRef(
+1175                                 D->getSuperClass(), D->getSuperClassLoc(), TU)))
+1176     return true;
+1177 
+1178   if (TypeSourceInfo *SuperClassTInfo = D->getSuperClassTInfo())
+1179     if (Visit(SuperClassTInfo->getTypeLoc()))
+1180       return true;
+1181 
+1182   ObjCInterfaceDecl::protocol_loc_iterator PL = D->protocol_loc_begin();
+1183   for (ObjCInterfaceDecl::protocol_iterator I = D->protocol_begin(),
+1184                                             E = D->protocol_end();
+1185        I != E; ++I, ++PL)
+1186     if (Visit(MakeCursorObjCProtocolRef(*I, *PL, TU)))
+1187       return true;
+1188 
+1189   return VisitObjCContainerDecl(D);
+1190 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorObjCClassRef(), clang::cxcursor::MakeCursorObjCProtocolRef(), and clang::cxcursor::MakeCursorObjCSuperClassRef()\&.
+.SS "bool CursorVisitor::VisitObjCMethodDecl (ObjCMethodDecl * ND)"
+
+.PP
+Definition at line 983 of file CIndex\&.cpp\&.
+.PP
+.nf
+983                                                           {
+984   if (TypeSourceInfo *TSInfo = ND->getReturnTypeSourceInfo())
+985     if (Visit(TSInfo->getTypeLoc()))
+986       return true;
+987 
+988   for (const auto *P : ND->parameters()) {
+989     if (Visit(MakeCXCursor(P, TU, RegionOfInterest)))
+990       return true;
+991   }
+992 
+993   return ND->isThisDeclarationADefinition() &&
+994          Visit(MakeCXCursor(ND->getBody(), StmtParent, TU, RegionOfInterest));
+995 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitObjCPropertyDecl (ObjCPropertyDecl * PD)"
+
+.PP
+Definition at line 1113 of file CIndex\&.cpp\&.
+.PP
+.nf
+1113                                                               {
+1114   if (PD->getTypeSourceInfo() && Visit(PD->getTypeSourceInfo()->getTypeLoc()))
+1115     return true;
+1116 
+1117   // FIXME: This implements a workaround with @property declarations also being
+1118   // installed in the DeclContext for the @interface\&.  Eventually this code
+1119   // should be removed\&.
+1120   ObjCCategoryDecl *CDecl = dyn_cast<ObjCCategoryDecl>(PD->getDeclContext());
+1121   if (!CDecl || !CDecl->IsClassExtension())
+1122     return false;
+1123 
+1124   ObjCInterfaceDecl *ID = CDecl->getClassInterface();
+1125   if (!ID)
+1126     return false;
+1127 
+1128   IdentifierInfo *PropertyId = PD->getIdentifier();
+1129   ObjCPropertyDecl *prevDecl = ObjCPropertyDecl::findPropertyDecl(
+1130       cast<DeclContext>(ID), PropertyId, PD->getQueryKind());
+1131 
+1132   if (!prevDecl)
+1133     return false;
+1134 
+1135   // Visit synthesized methods since they will be skipped when visiting
+1136   // the @interface\&.
+1137   if (ObjCMethodDecl *MD = prevDecl->getGetterMethodDecl())
+1138     if (MD->isPropertyAccessor() && MD->getLexicalDeclContext() == CDecl)
+1139       if (Visit(MakeCXCursor(MD, TU, RegionOfInterest)))
+1140         return true;
+1141 
+1142   if (ObjCMethodDecl *MD = prevDecl->getSetterMethodDecl())
+1143     if (MD->isPropertyAccessor() && MD->getLexicalDeclContext() == CDecl)
+1144       if (Visit(MakeCXCursor(MD, TU, RegionOfInterest)))
+1145         return true;
+1146 
+1147   return false;
+1148 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitObjCPropertyImplDecl (ObjCPropertyImplDecl * PD)"
+
+.PP
+Definition at line 1219 of file CIndex\&.cpp\&.
+.PP
+.nf
+1219                                                                       {
+1220   if (ObjCIvarDecl *Ivar = PD->getPropertyIvarDecl())
+1221     if (PD->isIvarNameSpecified())
+1222       return Visit(MakeCursorMemberRef(Ivar, PD->getPropertyIvarDeclLoc(), TU));
+1223 
+1224   return false;
+1225 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorMemberRef()\&.
+.SS "bool CursorVisitor::VisitObjCProtocolDecl (ObjCProtocolDecl * PID)"
+
+.PP
+Definition at line 1099 of file CIndex\&.cpp\&.
+.PP
+.nf
+1099                                                                {
+1100   if (!PID->isThisDeclarationADefinition())
+1101     return Visit(MakeCursorObjCProtocolRef(PID, PID->getLocation(), TU));
+1102 
+1103   ObjCProtocolDecl::protocol_loc_iterator PL = PID->protocol_loc_begin();
+1104   for (ObjCProtocolDecl::protocol_iterator I = PID->protocol_begin(),
+1105                                            E = PID->protocol_end();
+1106        I != E; ++I, ++PL)
+1107     if (Visit(MakeCursorObjCProtocolRef(*I, *PL, TU)))
+1108       return true;
+1109 
+1110   return VisitObjCContainerDecl(PID);
+1111 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorObjCProtocolRef()\&.
+.SS "bool CursorVisitor::VisitObjCTypeParamDecl (ObjCTypeParamDecl * D)"
+
+.PP
+Definition at line 971 of file CIndex\&.cpp\&.
+.PP
+.nf
+971                                                                {
+972   // Visit the bound, if it's explicit\&.
+973   if (D->hasExplicitBound()) {
+974     if (auto TInfo = D->getTypeSourceInfo()) {
+975       if (Visit(TInfo->getTypeLoc()))
+976         return true;
+977     }
+978   }
+979 
+980   return false;
+981 }
+.fi
+.SS "bool CursorVisitor::VisitObjCTypeParamList (ObjCTypeParamList * typeParamList)"
+
+.PP
+Definition at line 1150 of file CIndex\&.cpp\&.
+.PP
+.nf
+1150                                                                            {
+1151   if (!typeParamList)
+1152     return false;
+1153 
+1154   for (auto *typeParam : *typeParamList) {
+1155     // Visit the type parameter\&.
+1156     if (Visit(MakeCXCursor(typeParam, TU, RegionOfInterest)))
+1157       return true;
+1158   }
+1159 
+1160   return false;
+1161 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "template<typename InputIterator > bool CursorVisitor::visitPreprocessedEntities (InputIterator First, InputIterator Last, PreprocessingRecord & PPRec, FileID FID = \fCFileID()\fP)"
+
+.PP
+Definition at line 451 of file CIndex\&.cpp\&.
+.PP
+.nf
+454                                                           {
+455   for (; First != Last; ++First) {
+456     if (!FID\&.isInvalid() && !PPRec\&.isEntityInFileID(First, FID))
+457       continue;
+458 
+459     PreprocessedEntity *PPE = *First;
+460     if (!PPE)
+461       continue;
+462 
+463     if (MacroExpansion *ME = dyn_cast<MacroExpansion>(PPE)) {
+464       if (Visit(MakeMacroExpansionCursor(ME, TU)))
+465         return true;
+466 
+467       continue;
+468     }
+469 
+470     if (MacroDefinitionRecord *MD = dyn_cast<MacroDefinitionRecord>(PPE)) {
+471       if (Visit(MakeMacroDefinitionCursor(MD, TU)))
+472         return true;
+473 
+474       continue;
+475     }
+476 
+477     if (InclusionDirective *ID = dyn_cast<InclusionDirective>(PPE)) {
+478       if (Visit(MakeInclusionDirectiveCursor(ID, TU)))
+479         return true;
+480 
+481       continue;
+482     }
+483   }
+484 
+485   return false;
+486 }
+.fi
+.PP
+References clang::cxcursor::MakeInclusionDirectiveCursor(), clang::cxcursor::MakeMacroDefinitionCursor(), and clang::cxcursor::MakeMacroExpansionCursor()\&.
+.SS "bool CursorVisitor::visitPreprocessedEntitiesInRegion ()"
+
+.PP
+Definition at line 407 of file CIndex\&.cpp\&.
+.PP
+.nf
+407                                                       {
+408   if (!AU->getPreprocessor()\&.getPreprocessingRecord())
+409     return false;
+410 
+411   PreprocessingRecord &PPRec = *AU->getPreprocessor()\&.getPreprocessingRecord();
+412   SourceManager &SM = AU->getSourceManager();
+413 
+414   if (RegionOfInterest\&.isValid()) {
+415     SourceRange MappedRange = AU->mapRangeToPreamble(RegionOfInterest);
+416     SourceLocation B = MappedRange\&.getBegin();
+417     SourceLocation E = MappedRange\&.getEnd();
+418 
+419     if (AU->isInPreambleFileID(B)) {
+420       if (SM\&.isLoadedSourceLocation(E))
+421         return visitPreprocessedEntitiesInRange(SourceRange(B, E), PPRec,
+422                                                 *this);
+423 
+424       // Beginning of range lies in the preamble but it also extends beyond
+425       // it into the main file\&. Split the range into 2 parts, one covering
+426       // the preamble and another covering the main file\&. This allows subsequent
+427       // calls to visitPreprocessedEntitiesInRange to accept a source range that
+428       // lies in the same FileID, allowing it to skip preprocessed entities that
+429       // do not come from the same FileID\&.
+430       bool breaked = visitPreprocessedEntitiesInRange(
+431           SourceRange(B, AU->getEndOfPreambleFileID()), PPRec, *this);
+432       if (breaked)
+433         return true;
+434       return visitPreprocessedEntitiesInRange(
+435           SourceRange(AU->getStartOfMainFileID(), E), PPRec, *this);
+436     }
+437 
+438     return visitPreprocessedEntitiesInRange(SourceRange(B, E), PPRec, *this);
+439   }
+440 
+441   bool OnlyLocalDecls = !AU->isMainFileAST() && AU->getOnlyLocalDecls();
+442 
+443   if (OnlyLocalDecls)
+444     return visitPreprocessedEntities(PPRec\&.local_begin(), PPRec\&.local_end(),
+445                                      PPRec);
+446 
+447   return visitPreprocessedEntities(PPRec\&.begin(), PPRec\&.end(), PPRec);
+448 }
+.fi
+.SS "bool CursorVisitor::VisitStaticAssertDecl (StaticAssertDecl * D)"
+
+.PP
+Definition at line 1284 of file CIndex\&.cpp\&.
+.PP
+.nf
+1284                                                              {
+1285   if (Visit(MakeCXCursor(D->getAssertExpr(), StmtParent, TU, RegionOfInterest)))
+1286     return true;
+1287   if (StringLiteral *Message = D->getMessage())
+1288     if (Visit(MakeCXCursor(Message, StmtParent, TU, RegionOfInterest)))
+1289       return true;
+1290   return false;
+1291 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitTagDecl (TagDecl * D)"
+
+.PP
+Definition at line 711 of file CIndex\&.cpp\&.
+.PP
+.nf
+711 { return VisitDeclContext(D); }
+.fi
+.SS "bool CursorVisitor::VisitTagTypeLoc (TagTypeLoc TL)"
+
+.PP
+Definition at line 1591 of file CIndex\&.cpp\&.
+.PP
+.nf
+1591                                                  {
+1592   if (TL\&.isDefinition())
+1593     return Visit(MakeCXCursor(TL\&.getDecl(), TU, RegionOfInterest));
+1594 
+1595   return Visit(MakeCursorTypeRef(TL\&.getDecl(), TL\&.getNameLoc(), TU));
+1596 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorTypeRef(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitTemplateArgumentLoc (const TemplateArgumentLoc & TAL)"
+
+.PP
+Definition at line 1479 of file CIndex\&.cpp\&.
+.PP
+.nf
+1479                                                                            {
+1480   switch (TAL\&.getArgument()\&.getKind()) {
+1481   case TemplateArgument::Null:
+1482   case TemplateArgument::Integral:
+1483   case TemplateArgument::Pack:
+1484     return false;
+1485 
+1486   case TemplateArgument::Type:
+1487     if (TypeSourceInfo *TSInfo = TAL\&.getTypeSourceInfo())
+1488       return Visit(TSInfo->getTypeLoc());
+1489     return false;
+1490 
+1491   case TemplateArgument::Declaration:
+1492     if (Expr *E = TAL\&.getSourceDeclExpression())
+1493       return Visit(MakeCXCursor(E, StmtParent, TU, RegionOfInterest));
+1494     return false;
+1495 
+1496   case TemplateArgument::NullPtr:
+1497     if (Expr *E = TAL\&.getSourceNullPtrExpression())
+1498       return Visit(MakeCXCursor(E, StmtParent, TU, RegionOfInterest));
+1499     return false;
+1500 
+1501   case TemplateArgument::Expression:
+1502     if (Expr *E = TAL\&.getSourceExpression())
+1503       return Visit(MakeCXCursor(E, StmtParent, TU, RegionOfInterest));
+1504     return false;
+1505 
+1506   case TemplateArgument::Template:
+1507   case TemplateArgument::TemplateExpansion:
+1508     if (VisitNestedNameSpecifierLoc(TAL\&.getTemplateQualifierLoc()))
+1509       return true;
+1510 
+1511     return VisitTemplateName(TAL\&.getArgument()\&.getAsTemplateOrTemplatePattern(),
+1512                              TAL\&.getTemplateNameLoc());
+1513   }
+1514 
+1515   llvm_unreachable("Invalid TemplateArgument::Kind!");
+1516 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitTemplateName (TemplateName Name, SourceLocation Loc)"
+
+.PP
+Definition at line 1441 of file CIndex\&.cpp\&.
+.PP
+.nf
+1441                                                                            {
+1442   switch (Name\&.getKind()) {
+1443   case TemplateName::Template:
+1444     return Visit(MakeCursorTemplateRef(Name\&.getAsTemplateDecl(), Loc, TU));
+1445 
+1446   case TemplateName::OverloadedTemplate:
+1447     // Visit the overloaded template set\&.
+1448     if (Visit(MakeCursorOverloadedDeclRef(Name, Loc, TU)))
+1449       return true;
+1450 
+1451     return false;
+1452 
+1453   case TemplateName::AssumedTemplate:
+1454     // FIXME: Visit DeclarationName?
+1455     return false;
+1456 
+1457   case TemplateName::DependentTemplate:
+1458     // FIXME: Visit nested-name-specifier\&.
+1459     return false;
+1460 
+1461   case TemplateName::QualifiedTemplate:
+1462     // FIXME: Visit nested-name-specifier\&.
+1463     return Visit(MakeCursorTemplateRef(
+1464         Name\&.getAsQualifiedTemplateName()->getDecl(), Loc, TU));
+1465 
+1466   case TemplateName::SubstTemplateTemplateParm:
+1467     return Visit(MakeCursorTemplateRef(
+1468         Name\&.getAsSubstTemplateTemplateParm()->getParameter(), Loc, TU));
+1469 
+1470   case TemplateName::SubstTemplateTemplateParmPack:
+1471     return Visit(MakeCursorTemplateRef(
+1472         Name\&.getAsSubstTemplateTemplateParmPack()->getParameterPack(), Loc,
+1473         TU));
+1474   }
+1475 
+1476   llvm_unreachable("Invalid TemplateName::Kind!");
+1477 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorOverloadedDeclRef(), and clang::cxcursor::MakeCursorTemplateRef()\&.
+.SS "bool CursorVisitor::VisitTemplateParameters (const TemplateParameterList * Params)"
+
+.PP
+Definition at line 1426 of file CIndex\&.cpp\&.
+.PP
+.nf
+1427                                          {
+1428   if (!Params)
+1429     return false;
+1430 
+1431   for (TemplateParameterList::const_iterator P = Params->begin(),
+1432                                              PEnd = Params->end();
+1433        P != PEnd; ++P) {
+1434     if (Visit(MakeCXCursor(*P, TU, RegionOfInterest)))
+1435       return true;
+1436   }
+1437 
+1438   return false;
+1439 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitTemplateTemplateParmDecl (TemplateTemplateParmDecl * D)"
+
+.PP
+Definition at line 960 of file CIndex\&.cpp\&.
+.PP
+.nf
+960                                                                              {
+961   if (VisitTemplateParameters(D->getTemplateParameters()))
+962     return true;
+963 
+964   if (D->hasDefaultArgument() && !D->defaultArgumentWasInherited() &&
+965       VisitTemplateArgumentLoc(D->getDefaultArgument()))
+966     return true;
+967 
+968   return false;
+969 }
+.fi
+.SS "bool CursorVisitor::VisitTemplateTypeParmDecl (TemplateTypeParmDecl * D)"
+
+.PP
+Definition at line 762 of file CIndex\&.cpp\&.
+.PP
+.nf
+762                                                                      {
+763   if (const auto *TC = D->getTypeConstraint())
+764     if (Visit(MakeCXCursor(TC->getImmediatelyDeclaredConstraint(), StmtParent,
+765                            TU, RegionOfInterest)))
+766       return true;
+767 
+768   // Visit the default argument\&.
+769   if (D->hasDefaultArgument() && !D->defaultArgumentWasInherited())
+770     if (TypeSourceInfo *DefArg = D->getDefaultArgumentInfo())
+771       if (Visit(DefArg->getTypeLoc()))
+772         return true;
+773 
+774   return false;
+775 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitTranslationUnitDecl (TranslationUnitDecl * D)"
+
+.PP
+Definition at line 686 of file CIndex\&.cpp\&.
+.PP
+.nf
+686                                                                    {
+687   llvm_unreachable("Translation units are visited directly by Visit()");
+688 }
+.fi
+.SS "bool CursorVisitor::VisitTypeAliasDecl (TypeAliasDecl * D)"
+
+.PP
+Definition at line 697 of file CIndex\&.cpp\&.
+.PP
+.nf
+697                                                        {
+698   if (TypeSourceInfo *TSInfo = D->getTypeSourceInfo())
+699     return Visit(TSInfo->getTypeLoc());
+700 
+701   return false;
+702 }
+.fi
+.SS "bool CursorVisitor::VisitTypeAliasTemplateDecl (TypeAliasTemplateDecl * D)"
+
+.PP
+Definition at line 690 of file CIndex\&.cpp\&.
+.PP
+.nf
+690                                                                        {
+691   if (VisitTemplateParameters(D->getTemplateParameters()))
+692     return true;
+693 
+694   return Visit(MakeCXCursor(D->getTemplatedDecl(), TU, RegionOfInterest));
+695 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+.SS "bool CursorVisitor::VisitTypedefDecl (TypedefDecl * D)"
+
+.PP
+Definition at line 704 of file CIndex\&.cpp\&.
+.PP
+.nf
+704                                                    {
+705   if (TypeSourceInfo *TSInfo = D->getTypeSourceInfo())
+706     return Visit(TSInfo->getTypeLoc());
+707 
+708   return false;
+709 }
+.fi
+.SS "bool CursorVisitor::VisitUnresolvedUsingTypenameDecl (UnresolvedUsingTypenameDecl * D)"
+
+.PP
+Definition at line 1274 of file CIndex\&.cpp\&.
+.PP
+.nf
+1275                                     {
+1276   // Visit nested-name-specifier\&.
+1277   if (NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc())
+1278     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+1279       return true;
+1280 
+1281   return false;
+1282 }
+.fi
+.SS "bool CursorVisitor::VisitUnresolvedUsingValueDecl (UnresolvedUsingValueDecl * D)"
+
+.PP
+Definition at line 1264 of file CIndex\&.cpp\&.
+.PP
+.nf
+1264                                                                              {
+1265   // Visit nested-name-specifier\&.
+1266   if (NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc()) {
+1267     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+1268       return true;
+1269   }
+1270 
+1271   return VisitDeclarationNameInfo(D->getNameInfo());
+1272 }
+.fi
+.SS "bool CursorVisitor::VisitUsingDecl (UsingDecl * D)"
+
+.PP
+Definition at line 1241 of file CIndex\&.cpp\&.
+.PP
+.nf
+1241                                                {
+1242   // Visit nested-name-specifier\&.
+1243   if (NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc()) {
+1244     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+1245       return true;
+1246   }
+1247 
+1248   if (Visit(MakeCursorOverloadedDeclRef(D, D->getLocation(), TU)))
+1249     return true;
+1250 
+1251   return VisitDeclarationNameInfo(D->getNameInfo());
+1252 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorOverloadedDeclRef()\&.
+.SS "bool CursorVisitor::VisitUsingDirectiveDecl (UsingDirectiveDecl * D)"
+
+.PP
+Definition at line 1254 of file CIndex\&.cpp\&.
+.PP
+.nf
+1254                                                                  {
+1255   // Visit nested-name-specifier\&.
+1256   if (NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc())
+1257     if (VisitNestedNameSpecifierLoc(QualifierLoc))
+1258       return true;
+1259 
+1260   return Visit(MakeCursorNamespaceRef(D->getNominatedNamespaceAsWritten(),
+1261                                       D->getIdentLocation(), TU));
+1262 }
+.fi
+.PP
+References clang::cxcursor::MakeCursorNamespaceRef()\&.
+.SS "bool CursorVisitor::VisitVarDecl (VarDecl * D)"
+
+.PP
+Definition at line 919 of file CIndex\&.cpp\&.
+.PP
+.nf
+919                                            {
+920   if (VisitDeclaratorDecl(D))
+921     return true;
+922 
+923   if (Expr *Init = D->getInit())
+924     return Visit(MakeCXCursor(Init, StmtParent, TU, RegionOfInterest));
+925 
+926   return false;
+927 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursor()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

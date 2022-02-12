@@ -1,0 +1,64 @@
+.TH "clang-rename" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang-rename
+.SH SYNOPSIS
+.br
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBmain\fP ()"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def clang\-rename\&.main (void)"
+
+.PP
+Definition at line 30 of file clang\-rename\&.py\&.
+.PP
+.nf
+30 def main():
+31     binary = 'clang-rename'
+32     if vim\&.eval('exists("g:clang_rename_path")') == "1":
+33         binary = vim\&.eval('g:clang_rename_path')
+34 
+35     # Get arguments for clang-rename binary\&.
+36     offset = int(vim\&.eval('line2byte(line("\&."))+col("\&.")')) - 2
+37     if offset < 0:
+38         print('Couldn\'t determine cursor position\&. Is your file empty?',
+39               file=sys\&.stderr)
+40         return
+41     filename = vim\&.current\&.buffer\&.name
+42 
+43     new_name_request_message = 'type new name:'
+44     new_name = vim\&.eval("input('{}\n')"\&.format(new_name_request_message))
+45 
+46     # Call clang-rename\&.
+47     command = [binary,
+48                filename,
+49                '-i',
+50                '-offset', str(offset),
+51                '-new-name', str(new_name)]
+52     # FIXME: make it possible to run the tool on unsaved file\&.
+53     p = subprocess\&.Popen(command,
+54                          stdout=subprocess\&.PIPE,
+55                          stderr=subprocess\&.PIPE)
+56     stdout, stderr = p\&.communicate()
+57 
+58     if stderr:
+59         print(stderr)
+60 
+61     # Reload all buffers in Vim\&.
+62     vim\&.command("checktime")
+63 
+64 
+.fi
+.PP
+References print()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

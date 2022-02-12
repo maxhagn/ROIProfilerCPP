@@ -1,0 +1,83 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-extdef-mapping/ClangExtDefMapGen.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-extdef-mapping/ClangExtDefMapGen.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/AST/ASTConsumer\&.h'\fP
+.br
+\fC#include 'clang/AST/ASTContext\&.h'\fP
+.br
+\fC#include 'clang/Basic/SourceManager\&.h'\fP
+.br
+\fC#include 'clang/CrossTU/CrossTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Frontend/FrontendActions\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CommonOptionsParser\&.h'\fP
+.br
+\fC#include 'clang/Tooling/Tooling\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include <sstream>\fP
+.br
+\fC#include <string>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBMapExtDefNamesConsumer\fP"
+.br
+.ti -1c
+.RI "class \fBMapExtDefNamesAction\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 114 of file ClangExtDefMapGen\&.cpp\&.
+.PP
+.nf
+114                                       {
+115   // Print a stack trace if we signal out\&.
+116   sys::PrintStackTraceOnErrorSignal(argv[0], false);
+117   PrettyStackTraceProgram X(argc, argv);
+118 
+119   const char *Overview = "\nThis tool collects the USR name and location "
+120                          "of external definitions in the source files "
+121                          "(excluding headers)\&.\n";
+122   auto ExpectedParser = CommonOptionsParser::create(
+123       argc, argv, ClangExtDefMapGenCategory, cl::ZeroOrMore, Overview);
+124   if (!ExpectedParser) {
+125     llvm::errs() << ExpectedParser\&.takeError();
+126     return 1;
+127   }
+128   CommonOptionsParser &OptionsParser = ExpectedParser\&.get();
+129 
+130   ClangTool Tool(OptionsParser\&.getCompilations(),
+131                  OptionsParser\&.getSourcePathList());
+132 
+133   return Tool\&.run(newFrontendActionFactory<MapExtDefNamesAction>()\&.get());
+134 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

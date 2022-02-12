@@ -1,0 +1,95 @@
+.TH "tests.unit.test_analyze.ReportFailureTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_analyze.ReportFailureTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBassertUnderFailures\fP (self, path)"
+.br
+.ti -1c
+.RI "def \fBtest_report_failure_create_files\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 185 of file test_analyze\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_analyze\&.ReportFailureTest\&.assertUnderFailures ( self,  path)"
+
+.PP
+Definition at line 187 of file test_analyze\&.py\&.
+.PP
+.nf
+187     def assertUnderFailures(self, path):
+188         self\&.assertEqual('failures', os\&.path\&.basename(os\&.path\&.dirname(path)))
+189 
+.fi
+.PP
+Referenced by tests\&.unit\&.test_analyze\&.ReportFailureTest\&.test_report_failure_create_files()\&.
+.SS "def tests\&.unit\&.test_analyze\&.ReportFailureTest\&.test_report_failure_create_files ( self)"
+
+.PP
+Definition at line 190 of file test_analyze\&.py\&.
+.PP
+.nf
+190     def test_report_failure_create_files(self):
+191         with libear\&.TemporaryDirectory() as tmpdir:
+192             # create input file
+193             filename = os\&.path\&.join(tmpdir, 'test\&.c')
+194             with open(filename, 'w') as handle:
+195                 handle\&.write('int main() { return 0')
+196             uname_msg = ' '\&.join(os\&.uname()) + os\&.linesep
+197             error_msg = 'this is my error output'
+198             # execute test
+199             opts = {
+200                 'clang': 'clang',
+201                 'directory': os\&.getcwd(),
+202                 'flags': [],
+203                 'file': filename,
+204                 'output_dir': tmpdir,
+205                 'language': 'c',
+206                 'error_type': 'other_error',
+207                 'error_output': error_msg,
+208                 'exit_code': 13
+209             }
+210             sut\&.report_failure(opts)
+211             # verify the result
+212             result = dict()
+213             pp_file = None
+214             for root, _, files in os\&.walk(tmpdir):
+215                 keys = [os\&.path\&.join(root, name) for name in files]
+216                 for key in keys:
+217                     with open(key, 'r') as handle:
+218                         result[key] = handle\&.readlines()
+219                     if re\&.match(r'^(\&.*/)+clang(\&.*)\\&.i$', key):
+220                         pp_file = key
+221 
+222             # prepocessor file generated
+223             self\&.assertUnderFailures(pp_file)
+224             # info file generated and content dumped
+225             info_file = pp_file + '\&.info\&.txt'
+226             self\&.assertTrue(info_file in result)
+227             self\&.assertEqual('Other Error\n', result[info_file][1])
+228             self\&.assertEqual(uname_msg, result[info_file][3])
+229             # error file generated and content dumped
+230             error_file = pp_file + '\&.stderr\&.txt'
+231             self\&.assertTrue(error_file in result)
+232             self\&.assertEqual([error_msg], result[error_file])
+233 
+234 
+.fi
+.PP
+References tests\&.unit\&.test_analyze\&.ReportFailureTest\&.assertUnderFailures(), startfile\&.open(), and libear\&.TemporaryDirectory()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

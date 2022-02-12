@@ -1,0 +1,360 @@
+.TH "BinaryFileHandler" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+BinaryFileHandler
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBFileHandler\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBBinaryFileHandler\fP ()"
+.br
+.ti -1c
+.RI "\fB~BinaryFileHandler\fP () final"
+.br
+.ti -1c
+.RI "Error \fBReadHeader\fP (MemoryBuffer &Input) final"
+.br
+.ti -1c
+.RI "Expected< Optional< StringRef > > \fBReadBundleStart\fP (MemoryBuffer &Input) final"
+.br
+.ti -1c
+.RI "Error \fBReadBundleEnd\fP (MemoryBuffer &Input) final"
+.br
+.RI "Read the marker that closes the current bundle\&. "
+.ti -1c
+.RI "Error \fBReadBundle\fP (raw_ostream &OS, MemoryBuffer &Input) final"
+.br
+.RI "Read the current bundle and write the result into the stream \fIOS\fP\&. "
+.ti -1c
+.RI "Error \fBWriteHeader\fP (raw_fd_ostream &OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundleStart\fP (raw_fd_ostream &OS, StringRef TargetTriple) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundleEnd\fP (raw_fd_ostream &OS, StringRef TargetTriple) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundle\fP (raw_fd_ostream &OS, MemoryBuffer &Input) final"
+.br
+.RI "Write the bundle from \fIInput\fP into \fIOS\fP\&. "
+.ti -1c
+.RI "virtual Error \fBlistBundleIDs\fP (MemoryBuffer &Input)"
+.br
+.RI "List bundle IDs in \fIInput\fP\&. "
+.ti -1c
+.RI "Error \fBforEachBundle\fP (MemoryBuffer &Input, std::function< Error(const \fBBundleInfo\fP &)> Func)"
+.br
+.RI "For each bundle in \fIInput\fP, do \fIFunc\fP\&. "
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "virtual Error \fBlistBundleIDsCallback\fP (MemoryBuffer &Input, const \fBBundleInfo\fP &Info)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 307 of file ClangOffloadBundler\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "BinaryFileHandler::BinaryFileHandler ()\fC [inline]\fP"
+
+.PP
+Definition at line 331 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+331 : FileHandler() {}
+.fi
+.SS "BinaryFileHandler::~BinaryFileHandler ()\fC [inline]\fP, \fC [final]\fP"
+
+.PP
+Definition at line 333 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+333 {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "Error FileHandler::forEachBundle (MemoryBuffer & Input, std::function< Error(const \fBBundleInfo\fP &)> Func)\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+For each bundle in \fIInput\fP, do \fIFunc\fP\&. 
+.PP
+Definition at line 234 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+235                                                                    {
+236     while (true) {
+237       Expected<Optional<StringRef>> CurTripleOrErr = ReadBundleStart(Input);
+238       if (!CurTripleOrErr)
+239         return CurTripleOrErr\&.takeError();
+240 
+241       // No more bundles\&.
+242       if (!*CurTripleOrErr)
+243         break;
+244 
+245       StringRef CurTriple = **CurTripleOrErr;
+246       assert(!CurTriple\&.empty());
+247 
+248       BundleInfo Info{CurTriple};
+249       if (Error Err = Func(Info))
+250         return Err;
+251     }
+252     return Error::success();
+253   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDs (MemoryBuffer & Input)\fC [inline]\fP, \fC [virtual]\fP, \fC [inherited]\fP"
+
+.PP
+List bundle IDs in \fIInput\fP\&. 
+.PP
+Definition at line 220 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+220                                                    {
+221     if (Error Err = ReadHeader(Input))
+222       return Err;
+223 
+224     return forEachBundle(Input, [&](const BundleInfo &Info) -> Error {
+225       llvm::outs() << Info\&.BundleID << '\n';
+226       Error Err = listBundleIDsCallback(Input, Info);
+227       if (Err)
+228         return Err;
+229       return Error::success();
+230     });
+231   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDsCallback (MemoryBuffer & Input, const \fBBundleInfo\fP & Info)\fC [inline]\fP, \fC [protected]\fP, \fC [virtual]\fP, \fC [inherited]\fP"
+
+.PP
+Reimplemented in \fBTextFileHandler\fP\&.
+.PP
+Definition at line 256 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+257                                                               {
+258     return Error::success();
+259   }
+.fi
+.SS "Error BinaryFileHandler::ReadBundle (raw_ostream & OS, MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Read the current bundle and write the result into the stream \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 415 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+415                                                                {
+416     assert(CurBundleInfo != BundlesInfo\&.end() && "Invalid reader info!");
+417     StringRef FC = Input\&.getBuffer();
+418     OS\&.write(FC\&.data() + CurBundleInfo->second\&.Offset,
+419              CurBundleInfo->second\&.Size);
+420     return Error::success();
+421   }
+.fi
+.SS "Error BinaryFileHandler::ReadBundleEnd (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Read the marker that closes the current bundle\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 410 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+410                                                  {
+411     assert(CurBundleInfo != BundlesInfo\&.end() && "Invalid reader info!");
+412     return Error::success();
+413   }
+.fi
+.SS "Expected<Optional<StringRef> > BinaryFileHandler::ReadBundleStart (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Read the marker of the next bundled to be read in the file\&. The bundle name is returned if there is one in the file, or \fCNone\fP if there are no more bundles to be read\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 403 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+403                                                                            {
+404     if (NextBundleInfo == BundlesInfo\&.end())
+405       return None;
+406     CurBundleInfo = NextBundleInfo++;
+407     return CurBundleInfo->first();
+408   }
+.fi
+.SS "Error BinaryFileHandler::ReadHeader (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Update the file handler with information from the header of the bundled file\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 335 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+335                                               {
+336     StringRef FC = Input\&.getBuffer();
+337 
+338     // Initialize the current bundle with the end of the container\&.
+339     CurBundleInfo = BundlesInfo\&.end();
+340 
+341     // Check if buffer is smaller than magic string\&.
+342     size_t ReadChars = sizeof(OFFLOAD_BUNDLER_MAGIC_STR) - 1;
+343     if (ReadChars > FC\&.size())
+344       return Error::success();
+345 
+346     // Check if no magic was found\&.
+347     StringRef Magic(FC\&.data(), sizeof(OFFLOAD_BUNDLER_MAGIC_STR) - 1);
+348     if (!Magic\&.equals(OFFLOAD_BUNDLER_MAGIC_STR))
+349       return Error::success();
+350 
+351     // Read number of bundles\&.
+352     if (ReadChars + 8 > FC\&.size())
+353       return Error::success();
+354 
+355     uint64_t NumberOfBundles = Read8byteIntegerFromBuffer(FC, ReadChars);
+356     ReadChars += 8;
+357 
+358     // Read bundle offsets, sizes and triples\&.
+359     for (uint64_t i = 0; i < NumberOfBundles; ++i) {
+360 
+361       // Read offset\&.
+362       if (ReadChars + 8 > FC\&.size())
+363         return Error::success();
+364 
+365       uint64_t Offset = Read8byteIntegerFromBuffer(FC, ReadChars);
+366       ReadChars += 8;
+367 
+368       // Read size\&.
+369       if (ReadChars + 8 > FC\&.size())
+370         return Error::success();
+371 
+372       uint64_t Size = Read8byteIntegerFromBuffer(FC, ReadChars);
+373       ReadChars += 8;
+374 
+375       // Read triple size\&.
+376       if (ReadChars + 8 > FC\&.size())
+377         return Error::success();
+378 
+379       uint64_t TripleSize = Read8byteIntegerFromBuffer(FC, ReadChars);
+380       ReadChars += 8;
+381 
+382       // Read triple\&.
+383       if (ReadChars + TripleSize > FC\&.size())
+384         return Error::success();
+385 
+386       StringRef Triple(&FC\&.data()[ReadChars], TripleSize);
+387       ReadChars += TripleSize;
+388 
+389       // Check if the offset and size make sense\&.
+390       if (!Offset || Offset + Size > FC\&.size())
+391         return Error::success();
+392 
+393       assert(BundlesInfo\&.find(Triple) == BundlesInfo\&.end() &&
+394              "Triple is duplicated??");
+395       BundlesInfo[Triple] = BinaryBundleInfo(Size, Offset);
+396     }
+397     // Set the iterator to where we will start to read\&.
+398     CurBundleInfo = BundlesInfo\&.end();
+399     NextBundleInfo = BundlesInfo\&.begin();
+400     return Error::success();
+401   }
+.fi
+.SS "Error BinaryFileHandler::WriteBundle (raw_fd_ostream & OS, MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Write the bundle from \fIInput\fP into \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 468 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+468                                                                    {
+469     auto BI = BundlesInfo[CurWriteBundleTarget];
+470     OS\&.seek(BI\&.Offset);
+471     OS\&.write(Input\&.getBufferStart(), Input\&.getBufferSize());
+472     return Error::success();
+473   }
+.fi
+.SS "Error BinaryFileHandler::WriteBundleEnd (raw_fd_ostream & OS, StringRef TargetTriple)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Write the marker that closes a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 464 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+464                                                                          {
+465     return Error::success();
+466   }
+.fi
+.SS "Error BinaryFileHandler::WriteBundleStart (raw_fd_ostream & OS, StringRef TargetTriple)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Write the marker that initiates a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 459 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+459                                                                            {
+460     CurWriteBundleTarget = TargetTriple\&.str();
+461     return Error::success();
+462   }
+.fi
+.SS "Error BinaryFileHandler::WriteHeader (raw_fd_ostream & OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Write the header of the bundled file to \fIOS\fP based on the information gathered from \fIInputs\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 423 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+424                                                                         {
+425     // Compute size of the header\&.
+426     uint64_t HeaderSize = 0;
+427 
+428     HeaderSize += sizeof(OFFLOAD_BUNDLER_MAGIC_STR) - 1;
+429     HeaderSize += 8; // Number of Bundles
+430 
+431     for (auto &T : TargetNames) {
+432       HeaderSize += 3 * 8; // Bundle offset, Size of bundle and size of triple\&.
+433       HeaderSize += T\&.size(); // The triple\&.
+434     }
+435 
+436     // Write to the buffer the header\&.
+437     OS << OFFLOAD_BUNDLER_MAGIC_STR;
+438 
+439     Write8byteIntegerToBuffer(OS, TargetNames\&.size());
+440 
+441     unsigned Idx = 0;
+442     for (auto &T : TargetNames) {
+443       MemoryBuffer &MB = *Inputs[Idx++];
+444       HeaderSize = alignTo(HeaderSize, BundleAlignment);
+445       // Bundle offset\&.
+446       Write8byteIntegerToBuffer(OS, HeaderSize);
+447       // Size of the bundle (adds to the next bundle's offset)
+448       Write8byteIntegerToBuffer(OS, MB\&.getBufferSize());
+449       BundlesInfo[T] = BinaryBundleInfo(MB\&.getBufferSize(), HeaderSize);
+450       HeaderSize += MB\&.getBufferSize();
+451       // Size of the triple
+452       Write8byteIntegerToBuffer(OS, T\&.size());
+453       // Triple
+454       OS << T;
+455     }
+456     return Error::success();
+457   }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

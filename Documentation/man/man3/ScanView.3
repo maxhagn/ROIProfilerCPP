@@ -1,0 +1,142 @@
+.TH "ScanView" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ScanView
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBReporterThread\fP"
+.br
+.ti -1c
+.RI "class \fBScanViewServer\fP"
+.br
+.ti -1c
+.RI "class \fBScanViewRequestHandler\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBparse_query\fP (qs, fields=None)"
+.br
+.ti -1c
+.RI "def \fBcreate_server\fP (address, options, root)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBkReportFileRE\fP = re\&.compile('(\&.*/)?report\-(\&.*)\\\\\&.html')"
+.br
+.RI "Various patterns matched or replaced by server\&. "
+.ti -1c
+.RI "\fBkBugKeyValueRE\fP = re\&.compile('<!\-\- BUG([^ ]*) (\&.*) \-\->')"
+.br
+.ti -1c
+.RI "\fBkReportCrashEntryRE\fP = re\&.compile('<!\-\- REPORTPROBLEM (\&.*?)\-\->')"
+.br
+.ti -1c
+.RI "\fBkReportCrashEntryKeyValueRE\fP = re\&.compile(' ?([^=]+)='(\&.*?)'')"
+.br
+.ti -1c
+.RI "list \fBkReportReplacements\fP = []"
+.br
+.ti -1c
+.RI "\fBkShare\fP = posixpath\&.join(\fBposixpath\&.dirname\fP(__file__), '\&.\&./share/scan\-view')"
+.br
+.RI "Other simple parameters\&. "
+.ti -1c
+.RI "\fBkConfigPath\fP = os\&.path\&.expanduser('~/\&.scanview\&.cfg')"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def ScanView\&.create_server ( address,  options,  root)"
+
+.PP
+Definition at line 777 of file ScanView\&.py\&.
+.PP
+.nf
+777 def create_server(address, options, root):
+778     import Reporter
+779 
+780     reporters = Reporter\&.getReporters()
+781 
+782     return ScanViewServer(address, ScanViewRequestHandler,
+783                           root,
+784                           reporters,
+785                           options)
+.fi
+.PP
+References Reporter\&.getReporters()\&.
+.SS "def ScanView\&.parse_query ( qs,  fields = \fCNone\fP)"
+
+.PP
+Definition at line 202 of file ScanView\&.py\&.
+.PP
+.nf
+202 def parse_query(qs, fields=None):
+203     if fields is None:
+204         fields = {}
+205     for chunk in (_f for _f in qs\&.split('&') if _f):
+206         if '=' not in chunk:
+207             name = chunk
+208             value = ''
+209         else:
+210             name, value = chunk\&.split('=', 1)
+211         name = unquote(name\&.replace('+', ' '))
+212         value = unquote(value\&.replace('+', ' '))
+213         item = fields\&.get(name)
+214         if item is None:
+215             fields[name] = [value]
+216         else:
+217             item\&.append(value)
+218     return fields
+219 
+.fi
+.PP
+Referenced by ScanView\&.ScanViewRequestHandler\&.do_POST()\&.
+.SH "Variable Documentation"
+.PP 
+.SS "ScanView\&.kBugKeyValueRE = re\&.compile('<!\-\- BUG([^ ]*) (\&.*) \-\->')"
+
+.PP
+Definition at line 40 of file ScanView\&.py\&.
+.SS "ScanView\&.kConfigPath = os\&.path\&.expanduser('~/\&.scanview\&.cfg')"
+
+.PP
+Definition at line 94 of file ScanView\&.py\&.
+.SS "ScanView\&.kReportCrashEntryKeyValueRE = re\&.compile(' ?([^=]+)='(\&.*?)'')"
+
+.PP
+Definition at line 45 of file ScanView\&.py\&.
+.SS "ScanView\&.kReportCrashEntryRE = re\&.compile('<!\-\- REPORTPROBLEM (\&.*?)\-\->')"
+
+.PP
+Definition at line 44 of file ScanView\&.py\&.
+.SS "ScanView\&.kReportFileRE = re\&.compile('(\&.*/)?report\-(\&.*)\\\\\&.html')"
+
+.PP
+Various patterns matched or replaced by server\&. 
+.PP
+Definition at line 38 of file ScanView\&.py\&.
+.SS "list ScanView\&.kReportReplacements = []"
+
+.PP
+Definition at line 47 of file ScanView\&.py\&.
+.SS "ScanView\&.kShare = posixpath\&.join(\fBposixpath\&.dirname\fP(__file__), '\&.\&./share/scan\-view')"
+
+.PP
+Other simple parameters\&. 
+.PP
+Definition at line 93 of file ScanView\&.py\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

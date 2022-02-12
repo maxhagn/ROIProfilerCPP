@@ -1,0 +1,145 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_compilation_8py_source" xml:lang="en-US">
+<title>compilation.py</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libscanbuild/compilation.py</primary></indexterm>
+<programlisting><anchor xml:id="_compilation_8py_source_1l00001"/><link linkend="_namespacelibscanbuild_1_1compilation">00001</link> <emphasis role="comment">#&#32;-*-&#32;coding:&#32;utf-8&#32;-*-</emphasis>
+00002 <emphasis role="comment">#&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00003 <emphasis role="comment">#&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00004 <emphasis role="comment">#&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00005 <emphasis role="stringliteral">&quot;&quot;&quot;&#32;This&#32;module&#32;is&#32;responsible&#32;for&#32;to&#32;parse&#32;a&#32;compiler&#32;invocation.&#32;&quot;&quot;&quot;</emphasis>
+00006 
+00007 <emphasis role="keyword">import</emphasis>&#32;re
+00008 <emphasis role="keyword">import</emphasis>&#32;os
+00009 <emphasis role="keyword">import</emphasis>&#32;collections
+00010 
+00011 __all__&#32;=&#32;[<emphasis role="stringliteral">&apos;split_command&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;classify_source&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;compiler_language&apos;</emphasis>]
+00012 
+00013 <emphasis role="comment">#&#32;Ignored&#32;compiler&#32;options&#32;map&#32;for&#32;compilation&#32;database&#32;creation.</emphasis>
+00014 <emphasis role="comment">#&#32;The&#32;map&#32;is&#32;used&#32;in&#32;`split_command`&#32;method.&#32;(Which&#32;does&#32;ignore&#32;and&#32;classify</emphasis>
+00015 <emphasis role="comment">#&#32;parameters.)&#32;Please&#32;note,&#32;that&#32;these&#32;are&#32;not&#32;the&#32;only&#32;parameters&#32;which</emphasis>
+00016 <emphasis role="comment">#&#32;might&#32;be&#32;ignored.</emphasis>
+00017 <emphasis role="comment">#</emphasis>
+00018 <emphasis role="comment">#&#32;Keys&#32;are&#32;the&#32;option&#32;name,&#32;value&#32;number&#32;of&#32;options&#32;to&#32;skip</emphasis>
+<anchor xml:id="_compilation_8py_source_1l00019"/><link linkend="_namespacelibscanbuild_1_1compilation_1a69b7030a86c612d8cabfe08cc5149c9f">00019</link> IGNORED_FLAGS&#32;=&#32;{
+00020 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;compiling&#32;only&#32;flag,&#32;ignored&#32;because&#32;the&#32;creator&#32;of&#32;compilation</emphasis>
+00021 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;database&#32;will&#32;explicitly&#32;set&#32;it.</emphasis>
+00022 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-c&apos;</emphasis>:&#32;0,
+00023 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;preprocessor&#32;macros,&#32;ignored&#32;because&#32;would&#32;cause&#32;duplicate&#32;entries&#32;in</emphasis>
+00024 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;the&#32;output&#32;(the&#32;only&#32;difference&#32;would&#32;be&#32;these&#32;flags).&#32;this&#32;is&#32;actual</emphasis>
+00025 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;finding&#32;from&#32;users,&#32;who&#32;suffered&#32;longer&#32;execution&#32;time&#32;caused&#32;by&#32;the</emphasis>
+00026 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;duplicates.</emphasis>
+00027 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MD&apos;</emphasis>:&#32;0,
+00028 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MMD&apos;</emphasis>:&#32;0,
+00029 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MG&apos;</emphasis>:&#32;0,
+00030 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MP&apos;</emphasis>:&#32;0,
+00031 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MF&apos;</emphasis>:&#32;1,
+00032 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MT&apos;</emphasis>:&#32;1,
+00033 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-MQ&apos;</emphasis>:&#32;1,
+00034 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;linker&#32;options,&#32;ignored&#32;because&#32;for&#32;compilation&#32;database&#32;will&#32;contain</emphasis>
+00035 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;compilation&#32;commands&#32;only.&#32;so,&#32;the&#32;compiler&#32;would&#32;ignore&#32;these&#32;flags</emphasis>
+00036 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;anyway.&#32;the&#32;benefit&#32;to&#32;get&#32;rid&#32;of&#32;them&#32;is&#32;to&#32;make&#32;the&#32;output&#32;more</emphasis>
+00037 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;readable.</emphasis>
+00038 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-static&apos;</emphasis>:&#32;0,
+00039 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-shared&apos;</emphasis>:&#32;0,
+00040 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-s&apos;</emphasis>:&#32;0,
+00041 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-rdynamic&apos;</emphasis>:&#32;0,
+00042 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-l&apos;</emphasis>:&#32;1,
+00043 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-L&apos;</emphasis>:&#32;1,
+00044 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-u&apos;</emphasis>:&#32;1,
+00045 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-z&apos;</emphasis>:&#32;1,
+00046 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-T&apos;</emphasis>:&#32;1,
+00047 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;-Xlinker&apos;</emphasis>:&#32;1
+00048 }
+00049 
+00050 <emphasis role="comment">#&#32;Known&#32;C/C++&#32;compiler&#32;executable&#32;name&#32;patterns</emphasis>
+<anchor xml:id="_compilation_8py_source_1l00051"/><link linkend="_namespacelibscanbuild_1_1compilation_1a584c2b412eb55c0afaf8dec59bab45d0">00051</link> COMPILER_PATTERNS&#32;=&#32;frozenset([
+00052 &#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;^(intercept-|analyze-|)c(c|\+\+)$&apos;</emphasis>),
+00053 &#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;^([^-]*-)*[mg](cc|\+\+)(-\d+(\.\d+){0,2})?$&apos;</emphasis>),
+00054 &#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;^([^-]*-)*clang(\+\+)?(-\d+(\.\d+){0,2})?$&apos;</emphasis>),
+00055 &#32;&#32;&#32;&#32;re.compile(<emphasis role="stringliteral">r&apos;^llvm-g(cc|\+\+)$&apos;</emphasis>),
+00056 ])
+00057 
+00058 
+<anchor xml:id="_compilation_8py_source_1l00059"/><link linkend="_namespacelibscanbuild_1_1compilation_1ae846942ed0e175486de0bbe3a258852c">00059</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1compilation_1ae846942ed0e175486de0bbe3a258852c">split_command</link>(command):
+00060 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Returns&#32;a&#32;value&#32;when&#32;the&#32;command&#32;is&#32;a&#32;compilation,&#32;None&#32;otherwise.</emphasis>
+00061 <emphasis role="stringliteral"></emphasis>
+00062 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;The&#32;value&#32;on&#32;success&#32;is&#32;a&#32;named&#32;tuple&#32;with&#32;the&#32;following&#32;attributes:</emphasis>
+00063 <emphasis role="stringliteral"></emphasis>
+00064 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;files:&#32;&#32;&#32;&#32;list&#32;of&#32;source&#32;files</emphasis>
+00065 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;flags:&#32;&#32;&#32;&#32;list&#32;of&#32;compile&#32;options</emphasis>
+00066 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;compiler:&#32;string&#32;value&#32;of&#32;&apos;c&apos;&#32;or&#32;&apos;c++&apos;&#32;&quot;&quot;&quot;</emphasis>
+00067 
+00068 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;the&#32;result&#32;of&#32;this&#32;method</emphasis>
+00069 &#32;&#32;&#32;&#32;result&#32;=&#32;collections.namedtuple(<emphasis role="stringliteral">&apos;Compilation&apos;</emphasis>,
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[<emphasis role="stringliteral">&apos;compiler&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;flags&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;files&apos;</emphasis>])
+00071 &#32;&#32;&#32;&#32;result.compiler&#32;=&#32;<link linkend="_namespacelibscanbuild_1_1compilation_1aaf9b4f3ae02989aece8394338bfe1cc8">compiler_language</link>(command)
+00072 &#32;&#32;&#32;&#32;result.flags&#32;=&#32;[]
+00073 &#32;&#32;&#32;&#32;result.files&#32;=&#32;[]
+00074 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;quit&#32;right&#32;now,&#32;if&#32;the&#32;program&#32;was&#32;not&#32;a&#32;C/C++&#32;compiler</emphasis>
+00075 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;result.compiler:
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00077 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;iterate&#32;on&#32;the&#32;compile&#32;options</emphasis>
+00078 &#32;&#32;&#32;&#32;args&#32;=&#32;iter(command[1:])
+00079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;args:
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;quit&#32;when&#32;compilation&#32;pass&#32;is&#32;not&#32;involved</emphasis>
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;-E&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-S&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-cc1&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-M&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-MM&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-###&apos;</emphasis>}:
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;ignore&#32;some&#32;flags</emphasis>
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;IGNORED_FLAGS:
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;count&#32;=&#32;IGNORED_FLAGS[arg]
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;_&#32;<emphasis role="keywordflow">in</emphasis>&#32;range(count):
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;next(args)
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;re.match(<emphasis role="stringliteral">r&apos;^-(l|L|Wl,).+&apos;</emphasis>,&#32;arg):
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;some&#32;parameters&#32;could&#32;look&#32;like&#32;filename,&#32;take&#32;as&#32;compile&#32;option</emphasis>
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;arg&#32;<emphasis role="keywordflow">in</emphasis>&#32;{<emphasis role="stringliteral">&apos;-D&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;-I&apos;</emphasis>}:
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result.flags.extend([arg,&#32;next(args)])
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;parameter&#32;which&#32;looks&#32;source&#32;file&#32;is&#32;taken...</emphasis>
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">elif</emphasis>&#32;re.match(<emphasis role="stringliteral">r&apos;^[^-].+&apos;</emphasis>,&#32;arg)&#32;<emphasis role="keywordflow">and</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1compilation_1af89617a2af7528cbc172d5a911af9e07">classify_source</link>(arg):
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result.files.append(arg)
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;and&#32;consider&#32;everything&#32;else&#32;as&#32;compile&#32;option.</emphasis>
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;result.flags.append(arg)
+00099 &#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;do&#32;extra&#32;check&#32;on&#32;number&#32;of&#32;source&#32;files</emphasis>
+00100 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result&#32;<emphasis role="keywordflow">if</emphasis>&#32;result.files&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+00101 
+00102 
+<anchor xml:id="_compilation_8py_source_1l00103"/><link linkend="_namespacelibscanbuild_1_1compilation_1af89617a2af7528cbc172d5a911af9e07">00103</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1compilation_1af89617a2af7528cbc172d5a911af9e07">classify_source</link>(filename,&#32;c_compiler=True):
+00104 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;Return&#32;the&#32;language&#32;from&#32;file&#32;name&#32;extension.&#32;&quot;&quot;&quot;</emphasis>
+00105 
+00106 &#32;&#32;&#32;&#32;mapping&#32;=&#32;{
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.c&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;c_compiler&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.i&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c-cpp-output&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;c_compiler&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;c++-cpp-output&apos;</emphasis>,
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.ii&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++-cpp-output&apos;</emphasis>,
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.m&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;objective-c&apos;</emphasis>,
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.mi&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;objective-c-cpp-output&apos;</emphasis>,
+00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.mm&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;objective-c++&apos;</emphasis>,
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.mii&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;objective-c++-cpp-output&apos;</emphasis>,
+00114 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.C&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.cc&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.CC&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.cp&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00118 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.cpp&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00119 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.cxx&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.c++&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.C++&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>,
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&apos;.txx&apos;</emphasis>:&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>
+00123 &#32;&#32;&#32;&#32;}
+00124 
+00125 &#32;&#32;&#32;&#32;__,&#32;extension&#32;=&#32;os.path.splitext(os.path.basename(filename))
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;mapping.get(extension)
+00127 
+00128 
+<anchor xml:id="_compilation_8py_source_1l00129"/><link linkend="_namespacelibscanbuild_1_1compilation_1aaf9b4f3ae02989aece8394338bfe1cc8">00129</link> <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacelibscanbuild_1_1compilation_1aaf9b4f3ae02989aece8394338bfe1cc8">compiler_language</link>(command):
+00130 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&quot;&quot;&#32;A&#32;predicate&#32;to&#32;decide&#32;the&#32;command&#32;is&#32;a&#32;compiler&#32;call&#32;or&#32;not.</emphasis>
+00131 <emphasis role="stringliteral"></emphasis>
+00132 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;Returns&#32;&apos;c&apos;&#32;or&#32;&apos;c++&apos;&#32;when&#32;it&#32;match.&#32;None&#32;otherwise.&#32;&quot;&quot;&quot;</emphasis>
+00133 
+00134 &#32;&#32;&#32;&#32;cplusplus&#32;=&#32;re.compile(<emphasis role="stringliteral">r&apos;^(.+)(\+\+)(-.+|)$&apos;</emphasis>)
+00135 
+00136 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;command:
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;executable&#32;=&#32;os.path.basename(command[0])
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;any(pattern.match(executable)&#32;<emphasis role="keywordflow">for</emphasis>&#32;pattern&#32;<emphasis role="keywordflow">in</emphasis>&#32;COMPILER_PATTERNS):
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;c++&apos;</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;cplusplus.match(executable)&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="stringliteral">&apos;c&apos;</emphasis>
+00140 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>
+</programlisting></section>

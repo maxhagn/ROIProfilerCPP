@@ -1,0 +1,116 @@
+.TH "tests.unit.test_clang.ClangGetCheckersTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_clang.ClangGetCheckersTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_get_checkers\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_get_active_checkers\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_is_active\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_parse_checkers\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 45 of file test_clang\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_clang\&.ClangGetCheckersTest\&.test_get_active_checkers ( self)"
+
+.PP
+Definition at line 57 of file test_clang\&.py\&.
+.PP
+.nf
+57     def test_get_active_checkers(self):
+58         # this test is only to see is not crashing
+59         result = sut\&.get_active_checkers('clang', [])
+60         self\&.assertTrue(len(result))
+61         # do check result types
+62         for value in result:
+63             self\&.assertEqual(str, type(value))
+64 
+.fi
+.SS "def tests\&.unit\&.test_clang\&.ClangGetCheckersTest\&.test_get_checkers ( self)"
+
+.PP
+Definition at line 46 of file test_clang\&.py\&.
+.PP
+.nf
+46     def test_get_checkers(self):
+47         # this test is only to see is not crashing
+48         result = sut\&.get_checkers('clang', [])
+49         self\&.assertTrue(len(result))
+50         # do check result types
+51         string_type = unicode if sys\&.version_info < (3,) else str
+52         for key, value in result\&.items():
+53             self\&.assertEqual(string_type, type(key))
+54             self\&.assertEqual(string_type, type(value[0]))
+55             self\&.assertEqual(bool, type(value[1]))
+56 
+.fi
+.SS "def tests\&.unit\&.test_clang\&.ClangGetCheckersTest\&.test_is_active ( self)"
+
+.PP
+Definition at line 65 of file test_clang\&.py\&.
+.PP
+.nf
+65     def test_is_active(self):
+66         test = sut\&.is_active(['a', 'b\&.b', 'c\&.c\&.c'])
+67 
+68         self\&.assertTrue(test('a'))
+69         self\&.assertTrue(test('a\&.b'))
+70         self\&.assertTrue(test('b\&.b'))
+71         self\&.assertTrue(test('b\&.b\&.c'))
+72         self\&.assertTrue(test('c\&.c\&.c\&.p'))
+73 
+74         self\&.assertFalse(test('ab'))
+75         self\&.assertFalse(test('ba'))
+76         self\&.assertFalse(test('bb'))
+77         self\&.assertFalse(test('c\&.c'))
+78         self\&.assertFalse(test('b'))
+79         self\&.assertFalse(test('d'))
+80 
+.fi
+.PP
+References test()\&.
+.SS "def tests\&.unit\&.test_clang\&.ClangGetCheckersTest\&.test_parse_checkers ( self)"
+
+.PP
+Definition at line 81 of file test_clang\&.py\&.
+.PP
+.nf
+81     def test_parse_checkers(self):
+82         lines = [
+83             'OVERVIEW: Clang Static Analyzer Checkers List',
+84             '',
+85             'CHECKERS:',
+86             '  checker\&.one       Checker One description',
+87             '  checker\&.two',
+88             '                    Checker Two description']
+89         result = dict(sut\&.parse_checkers(lines))
+90         self\&.assertTrue('checker\&.one' in result)
+91         self\&.assertEqual('Checker One description', result\&.get('checker\&.one'))
+92         self\&.assertTrue('checker\&.two' in result)
+93         self\&.assertEqual('Checker Two description', result\&.get('checker\&.two'))
+94 
+95 
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,124 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_class_full_deps" xml:lang="en-US">
+<title>FullDeps Class Reference</title>
+<indexterm><primary>FullDeps</primary></indexterm>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>void <link linkend="_class_full_deps_1a90a35d77f844e3f4c93e1d7c27c503d1">mergeDeps</link> (StringRef Input, FullDependenciesResult FDR, size_t InputIndex)</para>
+</listitem>
+            <listitem><para>void <link linkend="_class_full_deps_1a3a42a88ad1367c97148feb477792e39d">printFullOutput</link> (raw_ostream &amp;OS)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+<para>
+Definition at line <link linkend="__clang_scan_deps_8cpp_source_1l00266">266</link> of file <link linkend="__clang_scan_deps_8cpp_source">ClangScanDeps.cpp</link>.</para>
+</section>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_class_full_deps_1a90a35d77f844e3f4c93e1d7c27c503d1"/>    <section>
+    <title>mergeDeps()</title>
+<indexterm><primary>mergeDeps</primary><secondary>FullDeps</secondary></indexterm>
+<indexterm><primary>FullDeps</primary><secondary>mergeDeps</secondary></indexterm>
+<para><computeroutput>void FullDeps::mergeDeps (StringRef Input, FullDependenciesResult FDR, size_t InputIndex)<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_scan_deps_8cpp_source_1l00268">268</link> of file <link linkend="__clang_scan_deps_8cpp_source">ClangScanDeps.cpp</link>.</para>
+<programlisting>00269 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00270 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FullDependencies&#32;&amp;FD&#32;=&#32;FDR.FullDeps;
+00271 
+00272 &#32;&#32;&#32;&#32;InputDeps&#32;ID;
+00273 &#32;&#32;&#32;&#32;ID.FileName&#32;=&#32;std::string(Input);
+00274 &#32;&#32;&#32;&#32;ID.ContextHash&#32;=&#32;std::move(FD.ID.ContextHash);
+00275 &#32;&#32;&#32;&#32;ID.FileDeps&#32;=&#32;std::move(FD.FileDeps);
+00276 &#32;&#32;&#32;&#32;ID.ModuleDeps&#32;=&#32;std::move(FD.ClangModuleDeps);
+00277 
+00278 &#32;&#32;&#32;&#32;std::unique_lock&lt;std::mutex&gt;&#32;ul(Lock);
+00279 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ModuleDeps&#32;&amp;MD&#32;:&#32;FDR.DiscoveredModules)&#32;{
+00280 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;I&#32;=&#32;Modules.find({MD.ID,&#32;0});
+00281 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;!=&#32;Modules.end())&#32;{
+00282 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I-&gt;first.InputIndex&#32;=&#32;std::min(I-&gt;first.InputIndex,&#32;InputIndex);
+00283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00284 &#32;&#32;&#32;&#32;&#32;&#32;}
+00285 &#32;&#32;&#32;&#32;&#32;&#32;Modules.insert(I,&#32;{{MD.ID,&#32;InputIndex},&#32;std::move(MD)});
+00286 &#32;&#32;&#32;&#32;}
+00287 
+00288 &#32;&#32;&#32;&#32;ID.AdditionalCommandLine&#32;=
+00289 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GenerateModulesPathArgs
+00290 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;FD.getAdditionalArgs(
+00291 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](ModuleID&#32;MID)&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;lookupPCMPath(MID);&#32;},
+00292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](ModuleID&#32;MID)&#32;-&gt;&#32;<emphasis role="keyword">const</emphasis>&#32;ModuleDeps&#32;&amp;&#32;{
+00293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;lookupModuleDeps(MID);
+00294 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;})
+00295 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;FD.getAdditionalArgsWithoutModulePaths();
+00296 
+00297 &#32;&#32;&#32;&#32;Inputs.push_back(std::move(ID));
+00298 &#32;&#32;}
+</programlisting>    </section><anchor xml:id="_class_full_deps_1a3a42a88ad1367c97148feb477792e39d"/>    <section>
+    <title>printFullOutput()</title>
+<indexterm><primary>printFullOutput</primary><secondary>FullDeps</secondary></indexterm>
+<indexterm><primary>FullDeps</primary><secondary>printFullOutput</secondary></indexterm>
+<para><computeroutput>void FullDeps::printFullOutput (raw_ostream &amp; OS)<computeroutput>[inline]</computeroutput></computeroutput></para><para>
+Definition at line <link linkend="__clang_scan_deps_8cpp_source_1l00300">300</link> of file <link linkend="__clang_scan_deps_8cpp_source">ClangScanDeps.cpp</link>.</para>
+<programlisting>00300 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00301 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Sort&#32;the&#32;modules&#32;by&#32;name&#32;to&#32;get&#32;a&#32;deterministic&#32;order.</emphasis>
+00302 &#32;&#32;&#32;&#32;std::vector&lt;IndexedModuleID&gt;&#32;ModuleIDs;
+00303 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;&amp;M&#32;:&#32;Modules)
+00304 &#32;&#32;&#32;&#32;&#32;&#32;ModuleIDs.push_back(M.first);
+00305 &#32;&#32;&#32;&#32;llvm::sort(ModuleIDs,
+00306 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[](<emphasis role="keyword">const</emphasis>&#32;IndexedModuleID&#32;&amp;A,&#32;<emphasis role="keyword">const</emphasis>&#32;IndexedModuleID&#32;&amp;B)&#32;{
+00307 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::tie(A.ID.ModuleName,&#32;A.InputIndex)&#32;&lt;
+00308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::tie(B.ID.ModuleName,&#32;B.InputIndex);
+00309 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;});
+00310 
+00311 &#32;&#32;&#32;&#32;llvm::sort(Inputs,&#32;[](<emphasis role="keyword">const</emphasis>&#32;InputDeps&#32;&amp;A,&#32;<emphasis role="keyword">const</emphasis>&#32;InputDeps&#32;&amp;B)&#32;{
+00312 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;A.FileName&#32;&lt;&#32;B.FileName;
+00313 &#32;&#32;&#32;&#32;});
+00314 
+00315 &#32;&#32;&#32;&#32;<emphasis role="keyword">using&#32;namespace&#32;</emphasis>llvm::json;
+00316 
+00317 &#32;&#32;&#32;&#32;Array&#32;OutModules;
+00318 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;&amp;ModID&#32;:&#32;ModuleIDs)&#32;{
+00319 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;MD&#32;=&#32;Modules[ModID];
+00320 &#32;&#32;&#32;&#32;&#32;&#32;Object&#32;O{
+00321 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;name&quot;</emphasis>,&#32;MD.ID.ModuleName},
+00322 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;context-hash&quot;</emphasis>,&#32;MD.ID.ContextHash},
+00323 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;file-deps&quot;</emphasis>,&#32;toJSONSorted(MD.FileDeps)},
+00324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;clang-module-deps&quot;</emphasis>,&#32;toJSONSorted(MD.ClangModuleDeps)},
+00325 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;clang-modulemap-file&quot;</emphasis>,&#32;MD.ClangModuleMapFile},
+00326 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;command-line&quot;</emphasis>,
+00327 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GenerateModulesPathArgs
+00328 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;MD.getCanonicalCommandLine(
+00329 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](ModuleID&#32;MID)&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;lookupPCMPath(MID);&#32;},
+00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;[&amp;](ModuleID&#32;MID)&#32;-&gt;&#32;<emphasis role="keyword">const</emphasis>&#32;ModuleDeps&#32;&amp;&#32;{
+00331 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;lookupModuleDeps(MID);
+00332 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;})
+00333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;MD.getCanonicalCommandLineWithoutModulePaths()},
+00334 &#32;&#32;&#32;&#32;&#32;&#32;};
+00335 &#32;&#32;&#32;&#32;&#32;&#32;OutModules.push_back(std::move(O));
+00336 &#32;&#32;&#32;&#32;}
+00337 
+00338 &#32;&#32;&#32;&#32;Array&#32;TUs;
+00339 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;&amp;&amp;I&#32;:&#32;Inputs)&#32;{
+00340 &#32;&#32;&#32;&#32;&#32;&#32;Object&#32;O{
+00341 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;input-file&quot;</emphasis>,&#32;I.FileName},
+00342 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;clang-context-hash&quot;</emphasis>,&#32;I.ContextHash},
+00343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;file-deps&quot;</emphasis>,&#32;I.FileDeps},
+00344 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;clang-module-deps&quot;</emphasis>,&#32;toJSONSorted(I.ModuleDeps)},
+00345 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;command-line&quot;</emphasis>,&#32;I.AdditionalCommandLine},
+00346 &#32;&#32;&#32;&#32;&#32;&#32;};
+00347 &#32;&#32;&#32;&#32;&#32;&#32;TUs.push_back(std::move(O));
+00348 &#32;&#32;&#32;&#32;}
+00349 
+00350 &#32;&#32;&#32;&#32;Object&#32;Output{
+00351 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;modules&quot;</emphasis>,&#32;std::move(OutModules)},
+00352 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{<emphasis role="stringliteral">&quot;translation-units&quot;</emphasis>,&#32;std::move(TUs)},
+00353 &#32;&#32;&#32;&#32;};
+00354 
+00355 &#32;&#32;&#32;&#32;OS&#32;&lt;&lt;&#32;llvm::formatv(<emphasis role="stringliteral">&quot;{0:2}\n&quot;</emphasis>,&#32;Value(std::move(Output)));
+00356 &#32;&#32;}
+</programlisting></section>
+<para>
+The documentation for this class was generated from the following file:</para>
+/Users/maximilian/clang-llvm/clang/tools/clang-scan-deps/<link linkend="__clang_scan_deps_8cpp">ClangScanDeps.cpp</link></section>
+</section>

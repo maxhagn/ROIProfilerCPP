@@ -1,0 +1,237 @@
+.TH "TreePrinter" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+TreePrinter
+.SH SYNOPSIS
+.br
+.PP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTreePrinter\fP (llvm::raw_ostream &\fBout\fP)"
+.br
+.ti -1c
+.RI "void \fBprintGroup\fP (const \fBGroupRecord\fP &Group, unsigned Indent=0)"
+.br
+.ti -1c
+.RI "int \fBshowGroup\fP (StringRef RootGroup)"
+.br
+.ti -1c
+.RI "int \fBshowAll\fP ()"
+.br
+.ti -1c
+.RI "void \fBshowKey\fP ()"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static bool \fBisIgnored\fP (unsigned DiagID)"
+.br
+.ti -1c
+.RI "static bool \fBunimplemented\fP (const \fBGroupRecord\fP &Group)"
+.br
+.ti -1c
+.RI "static bool \fBenabledByDefault\fP (const \fBGroupRecord\fP &Group)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "llvm::raw_ostream & \fBout\fP"
+.br
+.ti -1c
+.RI "bool \fBInternal\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 23 of file TreeView\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "TreePrinter::TreePrinter (llvm::raw_ostream & out)\fC [inline]\fP"
+
+.PP
+Definition at line 30 of file TreeView\&.cpp\&.
+.PP
+.nf
+30 : out(out), Internal(false) {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "static bool TreePrinter::enabledByDefault (const \fBGroupRecord\fP & Group)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 50 of file TreeView\&.cpp\&.
+.PP
+.nf
+50                                                          {
+51     for (const DiagnosticRecord &DR : Group\&.diagnostics()) {
+52       if (isIgnored(DR\&.DiagID))
+53         return false;
+54     }
+55 
+56     for (const GroupRecord &GR : Group\&.subgroups()) {
+57       if (!enabledByDefault(GR))
+58         return false;
+59     }
+60 
+61     return true;
+62   }
+.fi
+.PP
+References diagtool::GroupRecord::diagnostics(), and diagtool::GroupRecord::subgroups()\&.
+.SS "static bool TreePrinter::isIgnored (unsigned DiagID)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 32 of file TreeView\&.cpp\&.
+.PP
+.nf
+32                                          {
+33     // FIXME: This feels like a hack\&.
+34     static clang::DiagnosticsEngine Diags(new DiagnosticIDs,
+35                                           new DiagnosticOptions);
+36     return Diags\&.isIgnored(DiagID, SourceLocation());
+37   }
+.fi
+.SS "void TreePrinter::printGroup (const \fBGroupRecord\fP & Group, unsigned Indent = \fC0\fP)\fC [inline]\fP"
+
+.PP
+Definition at line 64 of file TreeView\&.cpp\&.
+.PP
+.nf
+64                                                                  {
+65     out\&.indent(Indent * 2);
+66 
+67     if (unimplemented(Group))
+68       out << Colors::RED;
+69     else if (enabledByDefault(Group))
+70       out << Colors::GREEN;
+71     else
+72       out << Colors::YELLOW;
+73 
+74     out << "-W" << Group\&.getName() << "\n" << Colors::RESET;
+75 
+76     ++Indent;
+77     for (const GroupRecord &GR : Group\&.subgroups()) {
+78       printGroup(GR, Indent);
+79     }
+80 
+81     if (Internal) {
+82       for (const DiagnosticRecord &DR : Group\&.diagnostics()) {
+83         if (!isIgnored(DR\&.DiagID))
+84           out << Colors::GREEN;
+85         out\&.indent(Indent * 2);
+86         out << DR\&.getName() << Colors::RESET << "\n";
+87       }
+88     }
+89   }
+.fi
+.PP
+References diagtool::GroupRecord::diagnostics(), diagtool::GroupRecord::getName(), and diagtool::GroupRecord::subgroups()\&.
+.SS "int TreePrinter::showAll ()\fC [inline]\fP"
+
+.PP
+Definition at line 110 of file TreeView\&.cpp\&.
+.PP
+.nf
+110                 {
+111     ArrayRef<GroupRecord> AllGroups = getDiagnosticGroups();
+112     llvm::DenseSet<unsigned> NonRootGroupIDs;
+113 
+114     for (const GroupRecord &GR : AllGroups) {
+115       for (auto SI = GR\&.subgroup_begin(), SE = GR\&.subgroup_end(); SI != SE;
+116            ++SI) {
+117         NonRootGroupIDs\&.insert((unsigned)SI\&.getID());
+118       }
+119     }
+120 
+121     assert(NonRootGroupIDs\&.size() < AllGroups\&.size());
+122 
+123     for (unsigned i = 0, e = AllGroups\&.size(); i != e; ++i) {
+124       if (!NonRootGroupIDs\&.count(i))
+125         printGroup(AllGroups[i]);
+126     }
+127 
+128     return 0;
+129   }
+.fi
+.PP
+References diagtool::getDiagnosticGroups()\&.
+.SS "int TreePrinter::showGroup (StringRef RootGroup)\fC [inline]\fP"
+
+.PP
+Definition at line 91 of file TreeView\&.cpp\&.
+.PP
+.nf
+91                                      {
+92     ArrayRef<GroupRecord> AllGroups = getDiagnosticGroups();
+93 
+94     if (RootGroup\&.size() > UINT16_MAX) {
+95       llvm::errs() << "No such diagnostic group exists\n";
+96       return 1;
+97     }
+98 
+99     const GroupRecord *Found = llvm::lower_bound(AllGroups, RootGroup);
+100     if (Found == AllGroups\&.end() || Found->getName() != RootGroup) {
+101       llvm::errs() << "No such diagnostic group exists\n";
+102       return 1;
+103     }
+104 
+105     printGroup(*Found);
+106 
+107     return 0;
+108   }
+.fi
+.PP
+References diagtool::getDiagnosticGroups(), and diagtool::GroupRecord::getName()\&.
+.SS "void TreePrinter::showKey ()\fC [inline]\fP"
+
+.PP
+Definition at line 131 of file TreeView\&.cpp\&.
+.PP
+.nf
+131                  {
+132     out << '\n' << Colors::GREEN << "GREEN" << Colors::RESET
+133         << " = enabled by default";
+134     out << '\n' << Colors::RED << "RED" << Colors::RESET
+135         << " = unimplemented (accepted for GCC compatibility)\n\n";
+136   }
+.fi
+.SS "static bool TreePrinter::unimplemented (const \fBGroupRecord\fP & Group)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 39 of file TreeView\&.cpp\&.
+.PP
+.nf
+39                                                       {
+40     if (!Group\&.diagnostics()\&.empty())
+41       return false;
+42 
+43     for (const GroupRecord &GR : Group\&.subgroups())
+44       if (!unimplemented(GR))
+45         return false;
+46 
+47     return true;
+48   }
+.fi
+.PP
+References diagtool::GroupRecord::diagnostics(), and diagtool::GroupRecord::subgroups()\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "bool TreePrinter::Internal"
+
+.PP
+Definition at line 28 of file TreeView\&.cpp\&.
+.SS "llvm::raw_ostream& TreePrinter::out"
+
+.PP
+Definition at line 27 of file TreeView\&.cpp\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

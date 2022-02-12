@@ -1,0 +1,178 @@
+.TH "tests.functional.cases.test_create_cdb.ResultFormatingTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_create_cdb.ResultFormatingTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBassert_creates_number_of_entries\fP (self, command, count)"
+.br
+.ti -1c
+.RI "def \fBtest_filter_preprocessor_only_calls\fP (self)"
+.br
+.ti -1c
+.RI "def \fBassert_command_creates_entry\fP (self, command, expected)"
+.br
+.ti -1c
+.RI "def \fBtest_filter_preprocessor_flags\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_pass_language_flag\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_pass_arch_flags\fP (self)"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun_intercept\fP (tmpdir, command)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 128 of file test_create_cdb\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry ( self,  command,  expected)"
+
+.PP
+Definition at line 154 of file test_create_cdb\&.py\&.
+.PP
+.nf
+154     def assert_command_creates_entry(self, command, expected):
+155         with libear\&.TemporaryDirectory() as tmpdir:
+156             filename = os\&.path\&.join(tmpdir, command[-1])
+157             create_empty_file(filename)
+158             cmd = ['sh', '-c', ' '\&.join(command)]
+159             cdb = self\&.run_intercept(tmpdir, cmd)
+160             self\&.assertEqual(' '\&.join(expected), cdb[0]['command'])
+161 
+.fi
+.PP
+References tests\&.functional\&.cases\&.create_empty_file(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_filter_preprocessor_flags(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_pass_arch_flags(), and tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_pass_language_flag()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries ( self,  command,  count)"
+
+.PP
+Definition at line 139 of file test_create_cdb\&.py\&.
+.PP
+.nf
+139     def assert_creates_number_of_entries(self, command, count):
+140         with libear\&.TemporaryDirectory() as tmpdir:
+141             filename = os\&.path\&.join(tmpdir, 'test\&.c')
+142             create_empty_file(filename)
+143             command\&.append(filename)
+144             cmd = ['sh', '-c', ' '\&.join(command)]
+145             cdb = self\&.run_intercept(tmpdir, cmd)
+146             self\&.assertEqual(count, len(cdb))
+147 
+.fi
+.PP
+References tests\&.functional\&.cases\&.create_empty_file(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), and libear\&.TemporaryDirectory()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_filter_preprocessor_only_calls()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept ( tmpdir,  command)\fC [static]\fP"
+
+.PP
+Definition at line 130 of file test_create_cdb\&.py\&.
+.PP
+.nf
+130     def run_intercept(tmpdir, command):
+131         result = os\&.path\&.join(tmpdir, 'cdb\&.json')
+132         silent_check_call(
+133             ['intercept-build', '--cdb', result] + command,
+134             cwd=tmpdir)
+135         with open(result, 'r') as handler:
+136             content = json\&.load(handler)
+137             return content
+138 
+.fi
+.PP
+References startfile\&.open(), and tests\&.functional\&.cases\&.silent_check_call()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_append_to_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_not_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.test_overwrite_existing_cdb(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.test_successful_build(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_all_in_one(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_parallel()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_filter_preprocessor_flags ( self)"
+
+.PP
+Definition at line 162 of file test_create_cdb\&.py\&.
+.PP
+.nf
+162     def test_filter_preprocessor_flags(self):
+163         self\&.assert_command_creates_entry(
+164             ['cc', '-c', '-MD', 'test\&.c'],
+165             ['cc', '-c', 'test\&.c'])
+166         self\&.assert_command_creates_entry(
+167             ['cc', '-c', '-MMD', 'test\&.c'],
+168             ['cc', '-c', 'test\&.c'])
+169         self\&.assert_command_creates_entry(
+170             ['cc', '-c', '-MD', '-MF', 'test\&.d', 'test\&.c'],
+171             ['cc', '-c', 'test\&.c'])
+172 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_filter_preprocessor_only_calls ( self)"
+
+.PP
+Definition at line 148 of file test_create_cdb\&.py\&.
+.PP
+.nf
+148     def test_filter_preprocessor_only_calls(self):
+149         self\&.assert_creates_number_of_entries(['cc', '-c'], 1)
+150         self\&.assert_creates_number_of_entries(['cc', '-c', '-E'], 0)
+151         self\&.assert_creates_number_of_entries(['cc', '-c', '-M'], 0)
+152         self\&.assert_creates_number_of_entries(['cc', '-c', '-MM'], 0)
+153 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_pass_arch_flags ( self)"
+
+.PP
+Definition at line 181 of file test_create_cdb\&.py\&.
+.PP
+.nf
+181     def test_pass_arch_flags(self):
+182         self\&.assert_command_creates_entry(
+183             ['clang', '-c', 'test\&.c'],
+184             ['cc', '-c', 'test\&.c'])
+185         self\&.assert_command_creates_entry(
+186             ['clang', '-c', '-arch', 'i386', 'test\&.c'],
+187             ['cc', '-c', '-arch', 'i386', 'test\&.c'])
+188         self\&.assert_command_creates_entry(
+189             ['clang', '-c', '-arch', 'i386', '-arch', 'armv7l', 'test\&.c'],
+190             ['cc', '-c', '-arch', 'i386', '-arch', 'armv7l', 'test\&.c'])
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry()\&.
+.SS "def tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.test_pass_language_flag ( self)"
+
+.PP
+Definition at line 173 of file test_create_cdb\&.py\&.
+.PP
+.nf
+173     def test_pass_language_flag(self):
+174         self\&.assert_command_creates_entry(
+175             ['cc', '-c', '-x', 'c', 'test\&.c'],
+176             ['cc', '-c', '-x', 'c', 'test\&.c'])
+177         self\&.assert_command_creates_entry(
+178             ['cc', '-c', 'test\&.c'],
+179             ['cc', '-c', 'test\&.c'])
+180 
+.fi
+.PP
+References tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

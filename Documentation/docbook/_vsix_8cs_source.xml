@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__vsix_8cs_source" xml:lang="en-US">
+<title>Vsix.cs</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-format-vs/ClangFormat/Vsix.cs</primary></indexterm>
+<programlisting>00001 <emphasis role="keyword">using</emphasis>&#32;EnvDTE;
+00002 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Editor;
+00003 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Shell;
+00004 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Shell.Interop;
+00005 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Text;
+00006 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.Text.Editor;
+00007 <emphasis role="keyword">using</emphasis>&#32;Microsoft.VisualStudio.TextManager.Interop;
+00008 <emphasis role="keyword">using</emphasis>&#32;System;
+00009 <emphasis role="keyword">using</emphasis>&#32;System.IO;
+00010 
+00011 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespace_l_l_v_m_1_1_clang_format">LLVM.ClangFormat</link>
+00012 {
+00013 &#32;&#32;&#32;&#32;<emphasis role="keyword">internal</emphasis>&#32;sealed&#32;<emphasis role="keyword">class&#32;</emphasis>Vsix
+00014 &#32;&#32;&#32;&#32;{
+00018 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;IWpfTextView&#32;GetCurrentView()
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;The&#32;SVsTextManager&#32;is&#32;a&#32;service&#32;through&#32;which&#32;we&#32;can&#32;get&#32;the&#32;active&#32;view.</emphasis>
+00021 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;textManager&#32;=&#32;(IVsTextManager)Package.GetGlobalService(typeof(SVsTextManager));
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IVsTextView&#32;textView;
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;textManager.GetActiveView(1,&#32;<emphasis role="keyword">null</emphasis>,&#32;out&#32;textView);
+00024 
+00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Now&#32;we&#32;have&#32;the&#32;active&#32;view&#32;as&#32;IVsTextView,&#32;but&#32;the&#32;text&#32;interfaces&#32;we&#32;need</emphasis>
+00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;are&#32;in&#32;the&#32;IWpfTextView.</emphasis>
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VsToWpfTextView(textView);
+00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00029 
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IsDocumentDirty(Document&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>)
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;textView&#32;=&#32;GetDocumentView(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>);
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;textDocument&#32;=&#32;GetTextDocument(textView);
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;textDocument?.IsDirty&#32;==&#32;<emphasis role="keyword">true</emphasis>;
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00036 
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;IWpfTextView&#32;GetDocumentView(Document&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>)
+00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;textView&#32;=&#32;GetVsTextViewFrompPath(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>.FullName);
+00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VsToWpfTextView(textView);
+00041 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00042 
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;IWpfTextView&#32;VsToWpfTextView(IVsTextView&#32;textView)
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;userData&#32;=&#32;(IVsUserData)textView;
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(userData&#32;==&#32;<emphasis role="keyword">null</emphasis>)
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">null</emphasis>;
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Guid&#32;guidWpfViewHost&#32;=&#32;DefGuidList.guidIWpfTextViewHost;
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">object</emphasis>&#32;host;
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;userData.GetData(ref&#32;guidWpfViewHost,&#32;out&#32;host);
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;((IWpfTextViewHost)host).TextView;
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00053 
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;IVsTextView&#32;GetVsTextViewFrompPath(<emphasis role="keywordtype">string</emphasis>&#32;filePath)
+00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;From&#32;http://stackoverflow.com/a/2427368/4039972</emphasis>
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;dte2&#32;=&#32;(EnvDTE80.DTE2)Package.GetGlobalService(typeof(SDTE));
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;sp&#32;=&#32;(Microsoft.VisualStudio.OLE.Interop.IServiceProvider)dte2;
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;var&#32;serviceProvider&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;Microsoft.VisualStudio.Shell.ServiceProvider(sp);
+00060 
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IVsUIHierarchy&#32;uiHierarchy;
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;uint&#32;itemID;
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IVsWindowFrame&#32;windowFrame;
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(VsShellUtilities.IsDocumentOpen(serviceProvider,&#32;filePath,&#32;Guid.Empty,
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;out&#32;uiHierarchy,&#32;out&#32;itemID,&#32;out&#32;windowFrame))
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;IVsTextView&#32;from&#32;the&#32;windowFrame.</emphasis>
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;VsShellUtilities.GetTextView(windowFrame);
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">null</emphasis>;
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00072 
+00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;ITextDocument&#32;GetTextDocument(IWpfTextView&#32;view)
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ITextDocument&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>;
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(view&#32;!=&#32;<emphasis role="keyword">null</emphasis>&#32;&amp;&amp;&#32;view.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument),&#32;out&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>))
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>;
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">null</emphasis>;
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00080 
+00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;GetDocumentParent(IWpfTextView&#32;view)
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ITextDocument&#32;<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>&#32;=&#32;GetTextDocument(view);
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>&#32;!=&#32;<emphasis role="keyword">null</emphasis>)
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Directory.GetParent(<link linkend="_namespacelibscanbuild_1_1report_1aa904f76cf35a4ed932c596460fbcbbc8">document</link>.FilePath).ToString();
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">null</emphasis>;
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00090 
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>&#32;<emphasis role="keyword">static</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>&#32;GetDocumentPath(IWpfTextView&#32;view)
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;GetTextDocument(view)?.FilePath;
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00095 &#32;&#32;&#32;&#32;}
+00096 }
+</programlisting></section>

@@ -1,0 +1,229 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_check_8cpp_source" xml:lang="en-US">
+<title>ClangCheck.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-check/ClangCheck.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===---&#32;tools/clang-check/ClangCheck.cpp&#32;-&#32;Clang&#32;check&#32;tool&#32;--------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;&#32;This&#32;file&#32;implements&#32;a&#32;clang-check&#32;tool&#32;that&#32;runs&#32;clang&#32;based&#32;on&#32;the&#32;info</emphasis>
+00010 <emphasis role="comment">//&#32;&#32;stored&#32;in&#32;a&#32;compilation&#32;database.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//&#32;&#32;This&#32;tool&#32;uses&#32;the&#32;Clang&#32;Tooling&#32;infrastructure,&#32;see</emphasis>
+00013 <emphasis role="comment">//&#32;&#32;&#32;&#32;http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html</emphasis>
+00014 <emphasis role="comment">//&#32;&#32;for&#32;details&#32;on&#32;setting&#32;it&#32;up&#32;with&#32;LLVM&#32;source&#32;tree.</emphasis>
+00015 <emphasis role="comment">//</emphasis>
+00016 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00017 
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/ASTConsumer.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&quot;clang/CodeGen/ObjectFilePCHContainerOperations.h&quot;</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;clang/Driver/Options.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTConsumers.h&quot;</emphasis>
+00022 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/CompilerInstance.h&quot;</emphasis>
+00023 <emphasis role="preprocessor">#include&#32;&quot;clang/Rewrite/Frontend/FixItRewriter.h&quot;</emphasis>
+00024 <emphasis role="preprocessor">#include&#32;&quot;clang/Rewrite/Frontend/FrontendActions.h&quot;</emphasis>
+00025 <emphasis role="preprocessor">#include&#32;&quot;clang/StaticAnalyzer/Frontend/FrontendActions.h&quot;</emphasis>
+00026 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/CommonOptionsParser.h&quot;</emphasis>
+00027 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Syntax/BuildTree.h&quot;</emphasis>
+00028 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Syntax/Tokens.h&quot;</emphasis>
+00029 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Syntax/Tree.h&quot;</emphasis>
+00030 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/Tooling.h&quot;</emphasis>
+00031 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/STLExtras.h&quot;</emphasis>
+00032 <emphasis role="preprocessor">#include&#32;&quot;llvm/Option/OptTable.h&quot;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Path.h&quot;</emphasis>
+00034 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/Signals.h&quot;</emphasis>
+00035 <emphasis role="preprocessor">#include&#32;&quot;llvm/Support/TargetSelect.h&quot;</emphasis>
+00036 
+00037 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::driver;
+00038 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::tooling;
+00039 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespacellvm">llvm</link>;
+00040 
+00041 <emphasis role="keyword">static</emphasis>&#32;cl::extrahelp&#32;CommonHelp(CommonOptionsParser::HelpMessage);
+00042 <emphasis role="keyword">static</emphasis>&#32;cl::extrahelp&#32;MoreHelp(
+00043 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\tFor&#32;example,&#32;to&#32;run&#32;clang-check&#32;on&#32;all&#32;files&#32;in&#32;a&#32;subtree&#32;of&#32;the\n&quot;</emphasis>
+00044 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\tsource&#32;tree,&#32;use:\n&quot;</emphasis>
+00045 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>
+00046 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\t&#32;&#32;find&#32;path/in/subtree&#32;-name&#32;&apos;*.cpp&apos;|xargs&#32;clang-check\n&quot;</emphasis>
+00047 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>
+00048 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\tor&#32;using&#32;a&#32;specific&#32;build&#32;path:\n&quot;</emphasis>
+00049 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>
+00050 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\t&#32;&#32;find&#32;path/in/subtree&#32;-name&#32;&apos;*.cpp&apos;|xargs&#32;clang-check&#32;-p&#32;build/path\n&quot;</emphasis>
+00051 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>
+00052 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\tNote,&#32;that&#32;path/in/subtree&#32;and&#32;current&#32;directory&#32;should&#32;follow&#32;the\n&quot;</emphasis>
+00053 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\trules&#32;described&#32;above.\n&quot;</emphasis>
+00054 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>
+00055 );
+00056 
+00057 <emphasis role="keyword">static</emphasis>&#32;cl::OptionCategory&#32;ClangCheckCategory(<emphasis role="stringliteral">&quot;clang-check&#32;options&quot;</emphasis>);
+00058 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">const</emphasis>&#32;opt::OptTable&#32;&amp;Options&#32;=&#32;getDriverOptTable();
+00059 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00060 &#32;&#32;&#32;&#32;ASTDump(<emphasis role="stringliteral">&quot;ast-dump&quot;</emphasis>,
+00061 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(Options.getOptionHelpText(options::OPT_ast_dump)),
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00063 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00064 &#32;&#32;&#32;&#32;ASTList(<emphasis role="stringliteral">&quot;ast-list&quot;</emphasis>,
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(Options.getOptionHelpText(options::OPT_ast_list)),
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00067 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00068 &#32;&#32;&#32;&#32;ASTPrint(<emphasis role="stringliteral">&quot;ast-print&quot;</emphasis>,
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(Options.getOptionHelpText(options::OPT_ast_print)),
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00071 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;std::string&gt;&#32;ASTDumpFilter(
+00072 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;ast-dump-filter&quot;</emphasis>,
+00073 &#32;&#32;&#32;&#32;cl::desc(Options.getOptionHelpText(options::OPT_ast_dump_filter)),
+00074 &#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00075 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00076 &#32;&#32;&#32;&#32;Analyze(<emphasis role="stringliteral">&quot;analyze&quot;</emphasis>,
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(Options.getOptionHelpText(options::OPT_analyze)),
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00079 
+00080 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;
+00081 &#32;&#32;&#32;&#32;Fixit(<emphasis role="stringliteral">&quot;fixit&quot;</emphasis>,&#32;cl::desc(Options.getOptionHelpText(options::OPT_fixit)),
+00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00083 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;FixWhatYouCan(
+00084 &#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;fix-what-you-can&quot;</emphasis>,
+00085 &#32;&#32;&#32;&#32;cl::desc(Options.getOptionHelpText(options::OPT_fix_what_you_can)),
+00086 &#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00087 
+00088 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;SyntaxTreeDump(<emphasis role="stringliteral">&quot;syntax-tree-dump&quot;</emphasis>,
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;dump&#32;the&#32;syntax&#32;tree&quot;</emphasis>),
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00091 <emphasis role="keyword">static</emphasis>&#32;cl::opt&lt;bool&gt;&#32;TokensDump(<emphasis role="stringliteral">&quot;tokens-dump&quot;</emphasis>,
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::desc(<emphasis role="stringliteral">&quot;dump&#32;the&#32;preprocessed&#32;tokens&quot;</emphasis>),
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cl::cat(ClangCheckCategory));
+00094 
+00095 <emphasis role="keyword">namespace&#32;</emphasis>{
+00096 
+00097 <emphasis role="comment">//&#32;FIXME:&#32;Move&#32;FixItRewriteInPlace&#32;from&#32;lib/Rewrite/Frontend/FrontendActions.cpp</emphasis>
+00098 <emphasis role="comment">//&#32;into&#32;a&#32;header&#32;file&#32;and&#32;reuse&#32;that.</emphasis>
+00099 <emphasis role="keyword">class&#32;</emphasis>FixItOptions&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;clang::FixItOptions&#32;{
+00100 <emphasis role="keyword">public</emphasis>:
+00101 &#32;&#32;FixItOptions()&#32;{
+00102 &#32;&#32;&#32;&#32;FixWhatYouCan&#32;=&#32;::FixWhatYouCan;
+00103 &#32;&#32;}
+00104 
+00105 &#32;&#32;std::string&#32;RewriteFilename(<emphasis role="keyword">const</emphasis>&#32;std::string&amp;&#32;filename,&#32;<emphasis role="keywordtype">int</emphasis>&#32;&amp;fd)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00106 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;We&#32;don&apos;t&#32;need&#32;to&#32;do&#32;permission&#32;checking&#32;here&#32;since&#32;clang&#32;will&#32;diagnose</emphasis>
+00107 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;any&#32;I/O&#32;errors&#32;itself.</emphasis>
+00108 
+00109 &#32;&#32;&#32;&#32;fd&#32;=&#32;-1;&#32;&#32;<emphasis role="comment">//&#32;No&#32;file&#32;descriptor&#32;for&#32;file.</emphasis>
+00110 
+00111 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;filename;
+00112 &#32;&#32;}
+00113 };
+00114 
+00120 <emphasis role="keyword">class&#32;</emphasis>FixItRewriter&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;clang::FixItRewriter&#32;{
+00121 <emphasis role="keyword">public</emphasis>:
+00122 &#32;&#32;FixItRewriter(clang::DiagnosticsEngine&amp;&#32;Diags,
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::SourceManager&amp;&#32;SourceMgr,
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;clang::LangOptions&amp;&#32;LangOpts,
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::FixItOptions*&#32;FixItOpts)
+00126 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;<link linkend="_namespaceclang">clang</link>::FixItRewriter(Diags,&#32;SourceMgr,&#32;LangOpts,&#32;FixItOpts)&#32;{
+00127 &#32;&#32;}
+00128 
+00129 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;IncludeInDiagnosticCounts()<emphasis role="keyword">&#32;const&#32;override&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;&#32;}
+00130 };
+00131 
+00134 <emphasis role="keyword">class&#32;</emphasis>ClangCheckFixItAction&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;clang::FixItAction&#32;{
+00135 <emphasis role="keyword">public</emphasis>:
+00136 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;BeginSourceFileAction(clang::CompilerInstance&amp;&#32;CI)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00137 &#32;&#32;&#32;&#32;FixItOpts.reset(<emphasis role="keyword">new</emphasis>&#32;FixItOptions);
+00138 &#32;&#32;&#32;&#32;Rewriter.reset(<emphasis role="keyword">new</emphasis>&#32;FixItRewriter(CI.getDiagnostics(),&#32;CI.getSourceManager(),
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CI.getLangOpts(),&#32;FixItOpts.get()));
+00140 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00141 &#32;&#32;}
+00142 };
+00143 
+00144 <emphasis role="keyword">class&#32;</emphasis>DumpSyntaxTree&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;clang::ASTFrontendAction&#32;{
+00145 <emphasis role="keyword">public</emphasis>:
+00146 &#32;&#32;std::unique_ptr&lt;clang::ASTConsumer&gt;
+00147 &#32;&#32;CreateASTConsumer(clang::CompilerInstance&#32;&amp;CI,&#32;StringRef&#32;InFile)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00148 &#32;&#32;&#32;&#32;<emphasis role="keyword">class&#32;</emphasis><link linkend="_class_consumer">Consumer</link>&#32;:&#32;<emphasis role="keyword">public</emphasis>&#32;clang::ASTConsumer&#32;{
+00149 &#32;&#32;&#32;&#32;<emphasis role="keyword">public</emphasis>:
+00150 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_class_consumer">Consumer</link>(clang::CompilerInstance&#32;&amp;CI)&#32;:&#32;Collector(CI.getPreprocessor())&#32;{}
+00151 
+00152 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;HandleTranslationUnit(clang::ASTContext&#32;&amp;AST)<emphasis role="keyword">&#32;override&#32;</emphasis>{
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::syntax::TokenBuffer&#32;TB&#32;=&#32;std::move(Collector).consume();
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TokensDump)
+00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;TB.dumpForTests();
+00156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::syntax::Arena&#32;A(AST.getSourceManager(),&#32;AST.getLangOpts(),&#32;TB);
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;clang::syntax::buildSyntaxTree(A,&#32;AST)-&gt;dump(
+00158 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;AST.getSourceManager());
+00159 &#32;&#32;&#32;&#32;&#32;&#32;}
+00160 
+00161 &#32;&#32;&#32;&#32;<emphasis role="keyword">private</emphasis>:
+00162 &#32;&#32;&#32;&#32;&#32;&#32;clang::syntax::TokenCollector&#32;Collector;
+00163 &#32;&#32;&#32;&#32;};
+00164 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;Consumer&gt;(CI);
+00165 &#32;&#32;}
+00166 };
+00167 
+00168 <emphasis role="keyword">class&#32;</emphasis>ClangCheckActionFactory&#32;{
+00169 <emphasis role="keyword">public</emphasis>:
+00170 &#32;&#32;std::unique_ptr&lt;clang::ASTConsumer&gt;&#32;newASTConsumer()&#32;{
+00171 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTList)
+00172 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;clang::CreateASTDeclNodeLister();
+00173 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTDump)
+00174 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;clang::CreateASTDumper(<emphasis role="keyword">nullptr</emphasis>&#32;<emphasis role="comment">/*Dump&#32;to&#32;stdout.*/</emphasis>,&#32;ASTDumpFilter,
+00175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*DumpDecls=*/</emphasis><emphasis role="keyword">true</emphasis>,
+00176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*Deserialize=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*DumpLookups=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00178 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*DumpDeclTypes=*/</emphasis><emphasis role="keyword">false</emphasis>,
+00179 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clang::ADOF_Default);
+00180 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTPrint)
+00181 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;clang::CreateASTPrinter(<emphasis role="keyword">nullptr</emphasis>,&#32;ASTDumpFilter);
+00182 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;std::make_unique&lt;clang::ASTConsumer&gt;();
+00183 &#32;&#32;}
+00184 };
+00185 
+00186 }&#32;<emphasis role="comment">//&#32;namespace</emphasis>
+00187 
+<anchor xml:id="__clang_check_8cpp_source_1l00188"/><link linkend="__clang_check_8cpp_1a217dbf8b442f20279ea00b898af96f52">00188</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__clang_check_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link>(<emphasis role="keywordtype">int</emphasis>&#32;argc,&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**argv)&#32;{
+00189 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+00190 
+00191 &#32;&#32;<emphasis role="comment">//&#32;Initialize&#32;targets&#32;for&#32;clang&#32;module&#32;support.</emphasis>
+00192 &#32;&#32;llvm::InitializeAllTargets();
+00193 &#32;&#32;llvm::InitializeAllTargetMCs();
+00194 &#32;&#32;llvm::InitializeAllAsmPrinters();
+00195 &#32;&#32;llvm::InitializeAllAsmParsers();
+00196 
+00197 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;ExpectedParser&#32;=
+00198 &#32;&#32;&#32;&#32;&#32;&#32;CommonOptionsParser::create(argc,&#32;argv,&#32;ClangCheckCategory);
+00199 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!ExpectedParser)&#32;{
+00200 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ExpectedParser.takeError();
+00201 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00202 &#32;&#32;}
+00203 &#32;&#32;CommonOptionsParser&#32;&amp;OptionsParser&#32;=&#32;ExpectedParser.get();
+00204 &#32;&#32;ClangTool&#32;Tool(OptionsParser.getCompilations(),
+00205 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OptionsParser.getSourcePathList());
+00206 
+00207 &#32;&#32;<emphasis role="comment">//&#32;Clear&#32;adjusters&#32;because&#32;-fsyntax-only&#32;is&#32;inserted&#32;by&#32;the&#32;default&#32;chain.</emphasis>
+00208 &#32;&#32;Tool.clearArgumentsAdjusters();
+00209 &#32;&#32;Tool.appendArgumentsAdjuster(getClangStripOutputAdjuster());
+00210 &#32;&#32;Tool.appendArgumentsAdjuster(getClangStripDependencyFileAdjuster());
+00211 
+00212 &#32;&#32;<emphasis role="comment">//&#32;Running&#32;the&#32;analyzer&#32;requires&#32;--analyze.&#32;Other&#32;modes&#32;can&#32;work&#32;with&#32;the</emphasis>
+00213 &#32;&#32;<emphasis role="comment">//&#32;-fsyntax-only&#32;option.</emphasis>
+00214 &#32;&#32;Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+00215 &#32;&#32;&#32;&#32;&#32;&#32;Analyze&#32;?&#32;<emphasis role="stringliteral">&quot;--analyze&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;-fsyntax-only&quot;</emphasis>,&#32;ArgumentInsertPosition::BEGIN));
+00216 
+00217 &#32;&#32;ClangCheckActionFactory&#32;CheckFactory;
+00218 &#32;&#32;std::unique_ptr&lt;FrontendActionFactory&gt;&#32;FrontendFactory;
+00219 
+00220 &#32;&#32;<emphasis role="comment">//&#32;Choose&#32;the&#32;correct&#32;factory&#32;based&#32;on&#32;the&#32;selected&#32;mode.</emphasis>
+00221 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Analyze)
+00222 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory&lt;clang::ento::AnalysisAction&gt;();
+00223 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Fixit)
+00224 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory&lt;ClangCheckFixItAction&gt;();
+00225 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(SyntaxTreeDump&#32;||&#32;TokensDump)
+00226 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory&lt;DumpSyntaxTree&gt;();
+00227 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+00228 &#32;&#32;&#32;&#32;FrontendFactory&#32;=&#32;newFrontendActionFactory(&amp;CheckFactory);
+00229 
+00230 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Tool.run(FrontendFactory.get());
+00231 }
+</programlisting></section>

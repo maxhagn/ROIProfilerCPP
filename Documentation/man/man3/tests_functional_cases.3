@@ -1,0 +1,179 @@
+.TH "tests.functional.cases" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases
+.SH SYNOPSIS
+.br
+.PP
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBtest_create_cdb\fP"
+.br
+.ti -1c
+.RI " \fBtest_exec_anatomy\fP"
+.br
+.ti -1c
+.RI " \fBtest_from_cdb\fP"
+.br
+.ti -1c
+.RI " \fBtest_from_cmd\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBload_tests\fP (loader, \fBsuite\fP, pattern)"
+.br
+.ti -1c
+.RI "def \fBmake_args\fP (target)"
+.br
+.ti -1c
+.RI "def \fBsilent_call\fP (cmd, *args, **kwargs)"
+.br
+.ti -1c
+.RI "def \fBsilent_check_call\fP (cmd, *args, **kwargs)"
+.br
+.ti -1c
+.RI "def \fBcall_and_report\fP (analyzer_cmd, build_cmd)"
+.br
+.ti -1c
+.RI "def \fBcheck_call_and_report\fP (analyzer_cmd, build_cmd)"
+.br
+.ti -1c
+.RI "def \fBcreate_empty_file\fP (filename)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.call_and_report ( analyzer_cmd,  build_cmd)"
+
+.PP
+Definition at line 40 of file __init__\&.py\&.
+.PP
+.nf
+40 def call_and_report(analyzer_cmd, build_cmd):
+41     child = subprocess\&.Popen(analyzer_cmd + ['-v'] + build_cmd,
+42                              universal_newlines=True,
+43                              stdout=subprocess\&.PIPE,
+44                              stderr=subprocess\&.STDOUT)
+45 
+46     pattern = re\&.compile('Report directory created: (\&.+)')
+47     directory = None
+48     for line in child\&.stdout\&.readlines():
+49         match = pattern\&.search(line)
+50         if match and match\&.lastindex == 1:
+51             directory = match\&.group(1)
+52             break
+53     child\&.stdout\&.close()
+54     child\&.wait()
+55 
+56     return (child\&.returncode, directory)
+57 
+58 
+.fi
+.PP
+Referenced by tests\&.functional\&.cases\&.check_call_and_report(), and tests\&.functional\&.cases\&.test_from_cdb\&.run_analyzer()\&.
+.SS "def tests\&.functional\&.cases\&.check_call_and_report ( analyzer_cmd,  build_cmd)"
+
+.PP
+Definition at line 59 of file __init__\&.py\&.
+.PP
+.nf
+59 def check_call_and_report(analyzer_cmd, build_cmd):
+60     exit_code, result = call_and_report(analyzer_cmd, build_cmd)
+61     if exit_code != 0:
+62         raise subprocess\&.CalledProcessError(
+63             exit_code, analyzer_cmd + build_cmd, None)
+64     else:
+65         return result
+66 
+67 
+.fi
+.PP
+References tests\&.functional\&.cases\&.call_and_report()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.run_analyzer(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_cxx_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_library_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_wrapper_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cc_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_cxx_works(), and tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_works()\&.
+.SS "def tests\&.functional\&.cases\&.create_empty_file ( filename)"
+
+.PP
+Definition at line 68 of file __init__\&.py\&.
+.PP
+.nf
+68 def create_empty_file(filename):
+69     with open(filename, 'a') as handle:
+70         pass
+.fi
+.PP
+References startfile\&.open()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_command_creates_entry(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.assert_creates_number_of_entries(), and tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.compile_empty_source_file()\&.
+.SS "def tests\&.functional\&.cases\&.load_tests ( loader,  suite,  pattern)"
+
+.PP
+Definition at line 11 of file __init__\&.py\&.
+.PP
+.nf
+11 def load_tests(loader, suite, pattern):
+12     from \&. import test_from_cdb
+13     suite\&.addTests(loader\&.loadTestsFromModule(test_from_cdb))
+14     from \&. import test_from_cmd
+15     suite\&.addTests(loader\&.loadTestsFromModule(test_from_cmd))
+16     from \&. import test_create_cdb
+17     suite\&.addTests(loader\&.loadTestsFromModule(test_create_cdb))
+18     from \&. import test_exec_anatomy
+19     suite\&.addTests(loader\&.loadTestsFromModule(test_exec_anatomy))
+20     return suite
+21 
+22 
+.fi
+.SS "def tests\&.functional\&.cases\&.make_args ( target)"
+
+.PP
+Definition at line 23 of file __init__\&.py\&.
+.PP
+.nf
+23 def make_args(target):
+24     this_dir, _ = os\&.path\&.split(__file__)
+25     path = os\&.path\&.abspath(os\&.path\&.join(this_dir, '\&.\&.', 'src'))
+26     return ['make', 'SRCDIR={}'\&.format(path), 'OBJDIR={}'\&.format(target), '-f',
+27             os\&.path\&.join(path, 'build', 'Makefile')]
+28 
+29 
+.fi
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_deletes_report_dir(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_clear_keeps_report_dir_when_asked(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_library_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_intercept_wrapper_works(), tests\&.functional\&.cases\&.test_from_cmd\&.RunAnalyzerTest\&.test_interposition_works(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_not_successful_build(), tests\&.functional\&.cases\&.test_from_cmd\&.OutputDirectoryTest\&.test_regular_keeps_report_dir(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_on_empty_env(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_with_wrapper()\&.
+.SS "def tests\&.functional\&.cases\&.silent_call ( cmd, * args, ** kwargs)"
+
+.PP
+Definition at line 30 of file __init__\&.py\&.
+.PP
+.nf
+30 def silent_call(cmd, *args, **kwargs):
+31     kwargs\&.update({'stdout': subprocess\&.PIPE, 'stderr': subprocess\&.STDOUT})
+32     return subprocess\&.call(cmd, *args, **kwargs)
+33 
+34 
+.fi
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.ExitCodeTest\&.run_intercept(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_not_successful_build()\&.
+.SS "def tests\&.functional\&.cases\&.silent_check_call ( cmd, * args, ** kwargs)"
+
+.PP
+Definition at line 35 of file __init__\&.py\&.
+.PP
+.nf
+35 def silent_check_call(cmd, *args, **kwargs):
+36     kwargs\&.update({'stdout': subprocess\&.PIPE, 'stderr': subprocess\&.STDOUT})
+37     return subprocess\&.check_call(cmd, *args, **kwargs)
+38 
+39 
+.fi
+.PP
+Referenced by tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResultFormatingTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.ResumeFeatureTest\&.run_intercept(), tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_on_empty_env(), and tests\&.functional\&.cases\&.test_create_cdb\&.CompilationDatabaseTest\&.test_successful_build_with_wrapper()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

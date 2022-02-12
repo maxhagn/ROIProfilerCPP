@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__a_p_i_notes_test_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/apinotes-test/APINotesTest.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/apinotes-test/APINotesTest.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/APINotes/APINotesYAMLCompiler.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+#include &quot;llvm/Support/FileSystem.h&quot;
+#include &quot;llvm/Support/MemoryBuffer.h&quot;
+#include &quot;llvm/Support/Signals.h&quot;
+#include &quot;llvm/Support/ToolOutputFile.h&quot;
+#include &quot;llvm/Support/WithColor.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__a_p_i_notes_test_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__a_p_i_notes_test_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>APINotesTest.cpp</secondary></indexterm>
+<indexterm><primary>APINotesTest.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__a_p_i_notes_test_8cpp_source_1l00025">25</link> of file <link linkend="__a_p_i_notes_test_8cpp_source">APINotesTest.cpp</link>.</para>
+<programlisting>00025 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00026 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;DisableCrashReporting&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00027 &#32;&#32;llvm::sys::PrintStackTraceOnErrorSignal(argv[0],&#32;DisableCrashReporting);
+00028 &#32;&#32;llvm::cl::ParseCommandLineOptions(argc,&#32;argv);
+00029 
+00030 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Error&#32;=&#32;[](<emphasis role="keyword">const</emphasis>&#32;llvm::Twine&#32;&amp;Msg)&#32;{
+00031 &#32;&#32;&#32;&#32;llvm::WithColor::error(llvm::errs(),&#32;<emphasis role="stringliteral">&quot;apinotes-test&quot;</emphasis>)&#32;&lt;&lt;&#32;Msg&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00032 &#32;&#32;};
+00033 
+00034 &#32;&#32;std::error_code&#32;EC;
+00035 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Out&#32;=&#32;std::make_unique&lt;llvm::ToolOutputFile&gt;(OutputFileName,&#32;EC,
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::sys::fs::OF_None);
+00037 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(EC)&#32;{
+00038 &#32;&#32;&#32;&#32;Error(<emphasis role="stringliteral">&quot;failed&#32;to&#32;open&#32;&apos;&quot;</emphasis>&#32;+&#32;OutputFileName&#32;+&#32;<emphasis role="stringliteral">&quot;&apos;:&#32;&quot;</emphasis>&#32;+&#32;EC.message());
+00039 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_FAILURE;
+00040 &#32;&#32;}
+00041 
+00042 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;std::string&#32;&amp;Notes&#32;:&#32;APINotes)&#32;{
+00043 &#32;&#32;&#32;&#32;llvm::ErrorOr&lt;std::unique_ptr&lt;llvm::MemoryBuffer&gt;&gt;&#32;NotesOrError&#32;=
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::MemoryBuffer::getFileOrSTDIN(Notes);
+00045 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;EC&#32;=&#32;NotesOrError.getError())&#32;{
+00046 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;EC.message()&#32;&lt;&lt;&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>;
+00047 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_FAILURE;
+00048 &#32;&#32;&#32;&#32;}
+00049 
+00050 &#32;&#32;&#32;&#32;clang::api_notes::parseAndDumpAPINotes((*NotesOrError)-&gt;getBuffer(),
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Out-&gt;os());
+00052 &#32;&#32;}
+00053 
+00054 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;EXIT_SUCCESS;
+00055 }
+</programlisting></section>
+</section>
+</section>

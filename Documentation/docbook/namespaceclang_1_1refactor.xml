@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespaceclang_1_1refactor" xml:lang="en-US">
+<title>clang::refactor Namespace Reference</title>
+<indexterm><primary>clang::refactor</primary></indexterm>
+<simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>struct <link linkend="_structclang_1_1refactor_1_1_test_selection_range">TestSelectionRange</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link></para>
+
+<para>A set of test selection ranges specified in one file. </para>
+</listitem>
+            <listitem><para>class <link linkend="_classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface">ClangRefactorToolConsumerInterface</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>Optional&lt; <link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link> &gt; <link linkend="_namespaceclang_1_1refactor_1ad9b16108537eeb4a03f8b06f785bdb0f">findTestSelectionRanges</link> (StringRef Filename)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespaceclang_1_1refactor_1ad9b16108537eeb4a03f8b06f785bdb0f"/>    <section>
+    <title>findTestSelectionRanges()</title>
+<indexterm><primary>findTestSelectionRanges</primary><secondary>clang::refactor</secondary></indexterm>
+<indexterm><primary>clang::refactor</primary><secondary>findTestSelectionRanges</secondary></indexterm>
+<para><computeroutput>Optional&lt; <link linkend="_structclang_1_1refactor_1_1_test_selection_ranges_in_file">TestSelectionRangesInFile</link> &gt; clang::refactor::findTestSelectionRanges (StringRef Filename)</computeroutput></para>
+<para>Extracts the grouped selection ranges from the file that&apos;s specified in the -selection=test:&lt;filename&gt; option.</para>
+
+<para>The grouped ranges are specified in comments using the following syntax: &quot;range&quot; [ group-name ] &quot;=&quot; [ &quot;+&quot; starting-column-offset ] [ &quot;-&gt;&quot; &quot;+&quot; ending-line-offset &quot;:&quot; ending-column-position ]</para>
+
+<para>The selection range is then computed from this command by taking the ending location of the comment, and adding &apos;starting-column-offset&apos; to the column for that location. That location in turns becomes the whole selection range, unless &apos;ending-line-offset&apos; and &apos;ending-column-position&apos; are specified. If they are specified, then the ending location of the selection range is the starting location&apos;s line + &apos;ending-line-offset&apos; and the &apos;ending-column-position&apos; column.</para>
+
+<para>All selection ranges in one group are expected to produce the same refactoring result.</para>
+
+<para>When testing, zero is returned from clang-refactor even when a group produces an initiation error, which is different from normal invocation that returns a non-zero value. This is done on purpose, to ensure that group consistency checks can return non-zero, but still print the output of the group. So even if a test matches the output of group, it will still fail because clang-refactor should return zero on exit when the group results are consistent.</para>
+
+<para><formalpara><title>Returns</title>
+
+<para>None on failure (errors are emitted to stderr), or a set of grouped source ranges in the given file otherwise. </para>
+</formalpara>
+</para>
+<para>
+Definition at line <link linkend="__test_support_8cpp_source_1l00295">295</link> of file <link linkend="__test_support_8cpp_source">TestSupport.cpp</link>.</para>
+<para>
+References <link linkend="_report_8py_source_1l00570">libscanbuild.report::comment()</link>.</para>
+</section>
+</section>
+</section>

@@ -1,0 +1,223 @@
+\hypertarget{namespacetests_1_1functional_1_1cases}{}\doxysection{tests.\+functional.\+cases Namespace Reference}
+\label{namespacetests_1_1functional_1_1cases}\index{tests.functional.cases@{tests.functional.cases}}
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_1_1test__create__cdb}{test\+\_\+create\+\_\+cdb}}
+\item 
+ \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_1_1test__exec__anatomy}{test\+\_\+exec\+\_\+anatomy}}
+\item 
+ \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_1_1test__from__cdb}{test\+\_\+from\+\_\+cdb}}
+\item 
+ \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_1_1test__from__cmd}{test\+\_\+from\+\_\+cmd}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_ad2cfe420361c73119db59ae7fa4033fa}{load\+\_\+tests}} (loader, \mbox{\hyperlink{namespacetests_a1f30378533d9e21fd60c83fe74648ee3}{suite}}, pattern)
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_afdf479d8f581ada915c125fd94e837c9}{make\+\_\+args}} (target)
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a7938ec1ad248e0480730d43397d6f3cd}{silent\+\_\+call}} (cmd, $\ast$args, $\ast$$\ast$kwargs)
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_adc1114de8d38e60438160311d84c8d43}{silent\+\_\+check\+\_\+call}} (cmd, $\ast$args, $\ast$$\ast$kwargs)
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a024c367354bf63e4c7f8d4bccec8e2f9}{call\+\_\+and\+\_\+report}} (analyzer\+\_\+cmd, build\+\_\+cmd)
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a8d11835cf833f6de4ac834c961dcb01e}{check\+\_\+call\+\_\+and\+\_\+report}} (analyzer\+\_\+cmd, build\+\_\+cmd)
+\item 
+def \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a329bfe4766e9dade55f5b4e0ece589e1}{create\+\_\+empty\+\_\+file}} (filename)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_a024c367354bf63e4c7f8d4bccec8e2f9}\label{namespacetests_1_1functional_1_1cases_a024c367354bf63e4c7f8d4bccec8e2f9}} 
+\index{tests.functional.cases@{tests.functional.cases}!call\_and\_report@{call\_and\_report}}
+\index{call\_and\_report@{call\_and\_report}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{call\_and\_report()}{call\_and\_report()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+call\+\_\+and\+\_\+report (\begin{DoxyParamCaption}\item[{}]{analyzer\+\_\+cmd,  }\item[{}]{build\+\_\+cmd }\end{DoxyParamCaption})}
+
+
+
+Definition at line 40 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{40 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a024c367354bf63e4c7f8d4bccec8e2f9}{call\_and\_report}}(analyzer\_cmd, build\_cmd):}
+\DoxyCodeLine{41     child = subprocess.Popen(analyzer\_cmd + [\textcolor{stringliteral}{'-\/v'}] + build\_cmd,}
+\DoxyCodeLine{42                              universal\_newlines=\textcolor{keyword}{True},}
+\DoxyCodeLine{43                              stdout=subprocess.PIPE,}
+\DoxyCodeLine{44                              stderr=subprocess.STDOUT)}
+\DoxyCodeLine{45 }
+\DoxyCodeLine{46     pattern = re.compile(\textcolor{stringliteral}{'Report directory created: (.+)'})}
+\DoxyCodeLine{47     directory = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{48     \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} child.stdout.readlines():}
+\DoxyCodeLine{49         match = pattern.search(line)}
+\DoxyCodeLine{50         \textcolor{keywordflow}{if} match \textcolor{keywordflow}{and} match.lastindex == 1:}
+\DoxyCodeLine{51             directory = match.group(1)}
+\DoxyCodeLine{52             \textcolor{keywordflow}{break}}
+\DoxyCodeLine{53     child.stdout.close()}
+\DoxyCodeLine{54     child.wait()}
+\DoxyCodeLine{55 }
+\DoxyCodeLine{56     \textcolor{keywordflow}{return} (child.returncode, directory)}
+\DoxyCodeLine{57 }
+\DoxyCodeLine{58 }
+
+\end{DoxyCode}
+
+
+Referenced by tests.\+functional.\+cases.\+check\+\_\+call\+\_\+and\+\_\+report(), and tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cdb.\+run\+\_\+analyzer().
+
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_a8d11835cf833f6de4ac834c961dcb01e}\label{namespacetests_1_1functional_1_1cases_a8d11835cf833f6de4ac834c961dcb01e}} 
+\index{tests.functional.cases@{tests.functional.cases}!check\_call\_and\_report@{check\_call\_and\_report}}
+\index{check\_call\_and\_report@{check\_call\_and\_report}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{check\_call\_and\_report()}{check\_call\_and\_report()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+check\+\_\+call\+\_\+and\+\_\+report (\begin{DoxyParamCaption}\item[{}]{analyzer\+\_\+cmd,  }\item[{}]{build\+\_\+cmd }\end{DoxyParamCaption})}
+
+
+
+Definition at line 59 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{59 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a8d11835cf833f6de4ac834c961dcb01e}{check\_call\_and\_report}}(analyzer\_cmd, build\_cmd):}
+\DoxyCodeLine{60     exit\_code, result = \mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a024c367354bf63e4c7f8d4bccec8e2f9}{call\_and\_report}}(analyzer\_cmd, build\_cmd)}
+\DoxyCodeLine{61     \textcolor{keywordflow}{if} exit\_code != 0:}
+\DoxyCodeLine{62         \textcolor{keywordflow}{raise} subprocess.CalledProcessError(}
+\DoxyCodeLine{63             exit\_code, analyzer\_cmd + build\_cmd, \textcolor{keywordtype}{None})}
+\DoxyCodeLine{64     \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{65         \textcolor{keywordflow}{return} result}
+\DoxyCodeLine{66 }
+\DoxyCodeLine{67 }
+
+\end{DoxyCode}
+
+
+References tests.\+functional.\+cases.\+call\+\_\+and\+\_\+report().
+
+
+
+Referenced by tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+run\+\_\+analyzer(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+intercept\+\_\+cc\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+intercept\+\_\+cxx\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+intercept\+\_\+library\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+intercept\+\_\+wrapper\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+interposition\+\_\+cc\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+interposition\+\_\+cxx\+\_\+works(), and tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+interposition\+\_\+works().
+
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_a329bfe4766e9dade55f5b4e0ece589e1}\label{namespacetests_1_1functional_1_1cases_a329bfe4766e9dade55f5b4e0ece589e1}} 
+\index{tests.functional.cases@{tests.functional.cases}!create\_empty\_file@{create\_empty\_file}}
+\index{create\_empty\_file@{create\_empty\_file}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{create\_empty\_file()}{create\_empty\_file()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+create\+\_\+empty\+\_\+file (\begin{DoxyParamCaption}\item[{}]{filename }\end{DoxyParamCaption})}
+
+
+
+Definition at line 68 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{68 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a329bfe4766e9dade55f5b4e0ece589e1}{create\_empty\_file}}(filename):}
+\DoxyCodeLine{69     \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(filename, \textcolor{stringliteral}{'a'}) \textcolor{keyword}{as} handle:}
+\DoxyCodeLine{70         \textcolor{keywordflow}{pass}}
+
+\end{DoxyCode}
+
+
+References startfile.\+open().
+
+
+
+Referenced by tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Result\+Formating\+Test.\+assert\+\_\+command\+\_\+creates\+\_\+entry(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Result\+Formating\+Test.\+assert\+\_\+creates\+\_\+number\+\_\+of\+\_\+entries(), and tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+compile\+\_\+empty\+\_\+source\+\_\+file().
+
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_ad2cfe420361c73119db59ae7fa4033fa}\label{namespacetests_1_1functional_1_1cases_ad2cfe420361c73119db59ae7fa4033fa}} 
+\index{tests.functional.cases@{tests.functional.cases}!load\_tests@{load\_tests}}
+\index{load\_tests@{load\_tests}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{load\_tests()}{load\_tests()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+load\+\_\+tests (\begin{DoxyParamCaption}\item[{}]{loader,  }\item[{}]{suite,  }\item[{}]{pattern }\end{DoxyParamCaption})}
+
+
+
+Definition at line 11 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{11 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1unit_a83f1125d0c7d46b4a1c5b8c938dd4d9c}{load\_tests}}(loader, suite, pattern):}
+\DoxyCodeLine{12     \textcolor{keyword}{from} . \textcolor{keyword}{import} test\_from\_cdb}
+\DoxyCodeLine{13     suite.addTests(loader.loadTestsFromModule(test\_from\_cdb))}
+\DoxyCodeLine{14     \textcolor{keyword}{from} . \textcolor{keyword}{import} test\_from\_cmd}
+\DoxyCodeLine{15     suite.addTests(loader.loadTestsFromModule(test\_from\_cmd))}
+\DoxyCodeLine{16     \textcolor{keyword}{from} . \textcolor{keyword}{import} test\_create\_cdb}
+\DoxyCodeLine{17     suite.addTests(loader.loadTestsFromModule(test\_create\_cdb))}
+\DoxyCodeLine{18     \textcolor{keyword}{from} . \textcolor{keyword}{import} test\_exec\_anatomy}
+\DoxyCodeLine{19     suite.addTests(loader.loadTestsFromModule(test\_exec\_anatomy))}
+\DoxyCodeLine{20     \textcolor{keywordflow}{return} suite}
+\DoxyCodeLine{21 }
+\DoxyCodeLine{22 }
+
+\end{DoxyCode}
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_afdf479d8f581ada915c125fd94e837c9}\label{namespacetests_1_1functional_1_1cases_afdf479d8f581ada915c125fd94e837c9}} 
+\index{tests.functional.cases@{tests.functional.cases}!make\_args@{make\_args}}
+\index{make\_args@{make\_args}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{make\_args()}{make\_args()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+make\+\_\+args (\begin{DoxyParamCaption}\item[{}]{target }\end{DoxyParamCaption})}
+
+
+
+Definition at line 23 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{23 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1functional_1_1cases_afdf479d8f581ada915c125fd94e837c9}{make\_args}}(target):}
+\DoxyCodeLine{24     this\_dir, \_ = os.path.split(\_\_file\_\_)}
+\DoxyCodeLine{25     path = os.path.abspath(os.path.join(this\_dir, \textcolor{stringliteral}{'..'}, \textcolor{stringliteral}{'src'}))}
+\DoxyCodeLine{26     \textcolor{keywordflow}{return} [\textcolor{stringliteral}{'make'}, \textcolor{stringliteral}{'SRCDIR=\{\}'}.format(path), \textcolor{stringliteral}{'OBJDIR=\{\}'}.format(target), \textcolor{stringliteral}{'-\/f'},}
+\DoxyCodeLine{27             os.path.join(path, \textcolor{stringliteral}{'build'}, \textcolor{stringliteral}{'Makefile'})]}
+\DoxyCodeLine{28 }
+\DoxyCodeLine{29 }
+
+\end{DoxyCode}
+
+
+Referenced by tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+run\+\_\+intercept(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Exit\+Code\+Test.\+run\+\_\+intercept(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Resume\+Feature\+Test.\+run\+\_\+intercept(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+test\+\_\+clear\+\_\+deletes\+\_\+report\+\_\+dir(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+test\+\_\+clear\+\_\+keeps\+\_\+report\+\_\+dir\+\_\+when\+\_\+asked(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+intercept\+\_\+library\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+intercept\+\_\+wrapper\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Run\+Analyzer\+Test.\+test\+\_\+interposition\+\_\+works(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+test\+\_\+not\+\_\+successful\+\_\+build(), tests.\+functional.\+cases.\+test\+\_\+from\+\_\+cmd.\+Output\+Directory\+Test.\+test\+\_\+regular\+\_\+keeps\+\_\+report\+\_\+dir(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+test\+\_\+successful\+\_\+build\+\_\+on\+\_\+empty\+\_\+env(), and tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+test\+\_\+successful\+\_\+build\+\_\+with\+\_\+wrapper().
+
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_a7938ec1ad248e0480730d43397d6f3cd}\label{namespacetests_1_1functional_1_1cases_a7938ec1ad248e0480730d43397d6f3cd}} 
+\index{tests.functional.cases@{tests.functional.cases}!silent\_call@{silent\_call}}
+\index{silent\_call@{silent\_call}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{silent\_call()}{silent\_call()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+silent\+\_\+call (\begin{DoxyParamCaption}\item[{}]{cmd,  }\item[{$\ast$}]{args,  }\item[{$\ast$$\ast$}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+Definition at line 30 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{30 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1functional_1_1cases_a7938ec1ad248e0480730d43397d6f3cd}{silent\_call}}(cmd, *args, **kwargs):}
+\DoxyCodeLine{31     kwargs.update(\{\textcolor{stringliteral}{'stdout'}: subprocess.PIPE, \textcolor{stringliteral}{'stderr'}: subprocess.STDOUT\})}
+\DoxyCodeLine{32     \textcolor{keywordflow}{return} subprocess.call(cmd, *args, **kwargs)}
+\DoxyCodeLine{33 }
+\DoxyCodeLine{34 }
+
+\end{DoxyCode}
+
+
+Referenced by tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Exit\+Code\+Test.\+run\+\_\+intercept(), and tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+test\+\_\+not\+\_\+successful\+\_\+build().
+
+\mbox{\Hypertarget{namespacetests_1_1functional_1_1cases_adc1114de8d38e60438160311d84c8d43}\label{namespacetests_1_1functional_1_1cases_adc1114de8d38e60438160311d84c8d43}} 
+\index{tests.functional.cases@{tests.functional.cases}!silent\_check\_call@{silent\_check\_call}}
+\index{silent\_check\_call@{silent\_check\_call}!tests.functional.cases@{tests.functional.cases}}
+\doxysubsubsection{\texorpdfstring{silent\_check\_call()}{silent\_check\_call()}}
+{\footnotesize\ttfamily def tests.\+functional.\+cases.\+silent\+\_\+check\+\_\+call (\begin{DoxyParamCaption}\item[{}]{cmd,  }\item[{$\ast$}]{args,  }\item[{$\ast$$\ast$}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+Definition at line 35 of file \+\_\+\+\_\+init\+\_\+\+\_\+.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{35 \textcolor{keyword}{def }\mbox{\hyperlink{namespacetests_1_1functional_1_1cases_adc1114de8d38e60438160311d84c8d43}{silent\_check\_call}}(cmd, *args, **kwargs):}
+\DoxyCodeLine{36     kwargs.update(\{\textcolor{stringliteral}{'stdout'}: subprocess.PIPE, \textcolor{stringliteral}{'stderr'}: subprocess.STDOUT\})}
+\DoxyCodeLine{37     \textcolor{keywordflow}{return} subprocess.check\_call(cmd, *args, **kwargs)}
+\DoxyCodeLine{38 }
+\DoxyCodeLine{39 }
+
+\end{DoxyCode}
+
+
+Referenced by tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+run\+\_\+intercept(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Result\+Formating\+Test.\+run\+\_\+intercept(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Resume\+Feature\+Test.\+run\+\_\+intercept(), tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+test\+\_\+successful\+\_\+build\+\_\+on\+\_\+empty\+\_\+env(), and tests.\+functional.\+cases.\+test\+\_\+create\+\_\+cdb.\+Compilation\+Database\+Test.\+test\+\_\+successful\+\_\+build\+\_\+with\+\_\+wrapper().
+

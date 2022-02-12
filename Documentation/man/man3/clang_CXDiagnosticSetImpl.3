@@ -1,0 +1,122 @@
+.TH "clang::CXDiagnosticSetImpl" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::CXDiagnosticSetImpl
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CIndexDiagnostic\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP (bool isManaged=false)"
+.br
+.ti -1c
+.RI "virtual \fB~CXDiagnosticSetImpl\fP ()"
+.br
+.ti -1c
+.RI "size_t \fBgetNumDiagnostics\fP () const"
+.br
+.ti -1c
+.RI "\fBCXDiagnosticImpl\fP * \fBgetDiagnostic\fP (unsigned i) const"
+.br
+.ti -1c
+.RI "void \fBappendDiagnostic\fP (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)"
+.br
+.ti -1c
+.RI "bool \fBempty\fP () const"
+.br
+.ti -1c
+.RI "bool \fBisExternallyManaged\fP () const"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 27 of file CIndexDiagnostic\&.h\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::CXDiagnosticSetImpl::CXDiagnosticSetImpl (bool isManaged = \fCfalse\fP)\fC [inline]\fP"
+
+.PP
+Definition at line 31 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+32     : IsExternallyManaged(isManaged) {}
+.fi
+.SS "CXDiagnosticSetImpl::~CXDiagnosticSetImpl ()\fC [virtual]\fP"
+
+.PP
+Definition at line 30 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+30 {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "void CXDiagnosticSetImpl::appendDiagnostic (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)"
+
+.PP
+Definition at line 33 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+33                                                                        {
+34   Diagnostics\&.push_back(std::move(D));
+35 }
+.fi
+.PP
+Referenced by clang::CXDiagnosticImpl::append()\&.
+.SS "bool clang::CXDiagnosticSetImpl::empty () const\fC [inline]\fP"
+
+.PP
+Definition at line 47 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+47                      {
+48     return Diagnostics\&.empty();
+49   }
+.fi
+.PP
+Referenced by clang_getChildDiagnostics()\&.
+.SS "\fBCXDiagnosticImpl\fP* clang::CXDiagnosticSetImpl::getDiagnostic (unsigned i) const\fC [inline]\fP"
+
+.PP
+Definition at line 40 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+40                                                     {
+41     assert(i < getNumDiagnostics());
+42     return Diagnostics[i]\&.get();
+43   }
+.fi
+.PP
+References getNumDiagnostics()\&.
+.PP
+Referenced by clang_getDiagnostic()\&.
+.SS "size_t clang::CXDiagnosticSetImpl::getNumDiagnostics () const\fC [inline]\fP"
+
+.PP
+Definition at line 36 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+36                                    {
+37     return Diagnostics\&.size();
+38   }
+.fi
+.PP
+Referenced by clang_getDiagnostic(), clang_getNumDiagnostics(), getDiagnostic(), and clang::cxdiag::lazyCreateDiags()\&.
+.SS "bool clang::CXDiagnosticSetImpl::isExternallyManaged () const\fC [inline]\fP"
+
+.PP
+Definition at line 51 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+51 { return IsExternallyManaged; }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

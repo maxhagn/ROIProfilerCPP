@@ -1,0 +1,234 @@
+.TH "ScanView.ScanViewServer" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ScanView.ScanViewServer
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits HTTPServer\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self, address, handler, \fBroot\fP, \fBreporters\fP, \fBoptions\fP)"
+.br
+.ti -1c
+.RI "def \fBload_config\fP (self)"
+.br
+.ti -1c
+.RI "def \fBsave_config\fP (self)"
+.br
+.ti -1c
+.RI "def \fBhalt\fP (self)"
+.br
+.ti -1c
+.RI "def \fBserve_forever\fP (self)"
+.br
+.ti -1c
+.RI "def \fBfinish_request\fP (self, request, client_address)"
+.br
+.ti -1c
+.RI "def \fBhandle_error\fP (self, request, client_address)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBroot\fP"
+.br
+.ti -1c
+.RI "\fBreporters\fP"
+.br
+.ti -1c
+.RI "\fBoptions\fP"
+.br
+.ti -1c
+.RI "\fBhalted\fP"
+.br
+.ti -1c
+.RI "\fBconfig\fP"
+.br
+.ti -1c
+.RI "\fBRequestHandlerClass\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 132 of file ScanView\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def ScanView\&.ScanViewServer\&.__init__ ( self,  address,  handler,  root,  reporters,  options)"
+
+.PP
+Definition at line 133 of file ScanView\&.py\&.
+.PP
+.nf
+133     def __init__(self, address, handler, root, reporters, options):
+134         HTTPServer\&.__init__(self, address, handler)
+135         self\&.root = root
+136         self\&.reporters = reporters
+137         self\&.options = options        
+138         self\&.halted = False
+139         self\&.config = None
+140         self\&.load_config()
+141 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def ScanView\&.ScanViewServer\&.finish_request ( self,  request,  client_address)"
+
+.PP
+Definition at line 186 of file ScanView\&.py\&.
+.PP
+.nf
+186     def finish_request(self, request, client_address):
+187         if self\&.options\&.autoReload:
+188             import ScanView
+189             self\&.RequestHandlerClass = reload(ScanView)\&.ScanViewRequestHandler
+190         HTTPServer\&.finish_request(self, request, client_address)
+191 
+.fi
+.PP
+References ScanView\&.ScanViewServer\&.options\&.
+.SS "def ScanView\&.ScanViewServer\&.halt ( self)"
+
+.PP
+Definition at line 172 of file ScanView\&.py\&.
+.PP
+.nf
+172     def halt(self):
+173         self\&.halted = True
+174         if self\&.options\&.debug:
+175             print("%s: SERVER: halting\&." % (sys\&.argv[0],), file=sys\&.stderr)
+176 
+.fi
+.PP
+References ScanView\&.ScanViewServer\&.halted, ScanView\&.ScanViewServer\&.options, and print()\&.
+.SS "def ScanView\&.ScanViewServer\&.handle_error ( self,  request,  client_address)"
+
+.PP
+Definition at line 192 of file ScanView\&.py\&.
+.PP
+.nf
+192     def handle_error(self, request, client_address):
+193         # Ignore socket errors
+194         info = sys\&.exc_info()
+195         if info and isinstance(info[1], socket\&.error):
+196             if self\&.options\&.debug > 1:
+197                 print("%s: SERVER: ignored socket error\&." % (sys\&.argv[0],), file=sys\&.stderr)
+198             return
+199         HTTPServer\&.handle_error(self, request, client_address)
+200 
+201 # Borrowed from Quixote, with simplifications\&.
+.fi
+.PP
+References ScanView\&.ScanViewServer\&.options, and print()\&.
+.SS "def ScanView\&.ScanViewServer\&.load_config ( self)"
+
+.PP
+Definition at line 142 of file ScanView\&.py\&.
+.PP
+.nf
+142     def load_config(self):
+143         self\&.config = configparser\&.RawConfigParser()
+144 
+145         # Add defaults
+146         self\&.config\&.add_section('ScanView')
+147         for r in self\&.reporters:
+148             self\&.config\&.add_section(r\&.getName())
+149             for p in r\&.getParameters():
+150               if p\&.saveConfigValue():
+151                 self\&.config\&.set(r\&.getName(), p\&.getName(), '')
+152 
+153         # Ignore parse errors
+154         try:
+155             self\&.config\&.read([kConfigPath])
+156         except:
+157             pass
+158 
+159         # Save on exit
+160         import atexit
+161         atexit\&.register(lambda: self\&.save_config())
+162         
+.fi
+.PP
+References ScanView\&.ScanViewServer\&.config, ScanView\&.ScanViewServer\&.reporters, and ScanView\&.ScanViewServer\&.save_config()\&.
+.SS "def ScanView\&.ScanViewServer\&.save_config ( self)"
+
+.PP
+Definition at line 163 of file ScanView\&.py\&.
+.PP
+.nf
+163     def save_config(self):
+164         # Ignore errors (only called on exit)\&.
+165         try:
+166             f = open(kConfigPath,'w')
+167             self\&.config\&.write(f)
+168             f\&.close()
+169         except:
+170             pass
+171         
+.fi
+.PP
+References ScanView\&.ScanViewServer\&.config, and startfile\&.open()\&.
+.PP
+Referenced by ScanView\&.ScanViewServer\&.load_config()\&.
+.SS "def ScanView\&.ScanViewServer\&.serve_forever ( self)"
+
+.PP
+Definition at line 177 of file ScanView\&.py\&.
+.PP
+.nf
+177     def serve_forever(self):
+178         while not self\&.halted:
+179             if self\&.options\&.debug > 1:
+180                 print("%s: SERVER: waiting\&.\&.\&." % (sys\&.argv[0],), file=sys\&.stderr)
+181             try:
+182                 self\&.handle_request()
+183             except OSError as e:
+184                 print('OSError',e\&.errno)
+185 
+.fi
+.PP
+References ScanView\&.ScanViewServer\&.halted, ScanView\&.ScanViewServer\&.options, and print()\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "ScanView\&.ScanViewServer\&.config"
+
+.PP
+Definition at line 139 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewServer\&.load_config(), and ScanView\&.ScanViewServer\&.save_config()\&.
+.SS "ScanView\&.ScanViewServer\&.halted"
+
+.PP
+Definition at line 138 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewServer\&.halt(), and ScanView\&.ScanViewServer\&.serve_forever()\&.
+.SS "ScanView\&.ScanViewServer\&.options"
+
+.PP
+Definition at line 137 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewServer\&.finish_request(), ScanView\&.ScanViewServer\&.halt(), ScanView\&.ScanViewServer\&.handle_error(), and ScanView\&.ScanViewServer\&.serve_forever()\&.
+.SS "ScanView\&.ScanViewServer\&.reporters"
+
+.PP
+Definition at line 136 of file ScanView\&.py\&.
+.PP
+Referenced by ScanView\&.ScanViewServer\&.load_config()\&.
+.SS "ScanView\&.ScanViewServer\&.RequestHandlerClass"
+
+.PP
+Definition at line 189 of file ScanView\&.py\&.
+.SS "ScanView\&.ScanViewServer\&.root"
+
+.PP
+Definition at line 135 of file ScanView\&.py\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

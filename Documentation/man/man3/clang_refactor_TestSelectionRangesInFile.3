@@ -1,0 +1,118 @@
+.TH "clang::refactor::TestSelectionRangesInFile" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::refactor::TestSelectionRangesInFile \- A set of test selection ranges specified in one file\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <TestSupport\&.h>\fP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBRangeGroup\fP"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBforeachRange\fP (const SourceManager &SM, llvm::function_ref< void(SourceRange)> Callback) const"
+.br
+.ti -1c
+.RI "std::unique_ptr< \fBClangRefactorToolConsumerInterface\fP > \fBcreateConsumer\fP () const"
+.br
+.ti -1c
+.RI "void \fBdump\fP (llvm::raw_ostream &OS) const"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "std::string \fBFilename\fP"
+.br
+.ti -1c
+.RI "std::vector< \fBRangeGroup\fP > \fBGroupedRanges\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+A set of test selection ranges specified in one file\&. 
+.PP
+Definition at line 53 of file TestSupport\&.h\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "std::unique_ptr< \fBClangRefactorToolConsumerInterface\fP > clang::refactor::TestSelectionRangesInFile::createConsumer () const"
+
+.PP
+Definition at line 259 of file TestSupport\&.cpp\&.
+.PP
+.nf
+259                                                 {
+260   return std::make_unique<TestRefactoringResultConsumer>(*this);
+261 }
+.fi
+.SS "void clang::refactor::TestSelectionRangesInFile::dump (llvm::raw_ostream & OS) const"
+
+.PP
+Definition at line 33 of file TestSupport\&.cpp\&.
+.PP
+.nf
+33                                                           {
+34   for (const auto &Group : GroupedRanges) {
+35     OS << "Test selection group '" << Group\&.Name << "':\n";
+36     for (const auto &Range : Group\&.Ranges) {
+37       OS << "  " << Range\&.Begin << "-" << Range\&.End << "\n";
+38     }
+39   }
+40 }
+.fi
+.SS "bool clang::refactor::TestSelectionRangesInFile::foreachRange (const SourceManager & SM, llvm::function_ref< void(SourceRange)> Callback) const"
+
+.PP
+Definition at line 42 of file TestSupport\&.cpp\&.
+.PP
+.nf
+44                                                         {
+45   auto FE = SM\&.getFileManager()\&.getFile(Filename);
+46   FileID FID = FE ? SM\&.translateFile(*FE) : FileID();
+47   if (!FE || FID\&.isInvalid()) {
+48     llvm::errs() << "error: -selection=test:" << Filename
+49                  << " : given file is not in the target TU";
+50     return true;
+51   }
+52   SourceLocation FileLoc = SM\&.getLocForStartOfFile(FID);
+53   for (const auto &Group : GroupedRanges) {
+54     for (const TestSelectionRange &Range : Group\&.Ranges) {
+55       // Translate the offset pair to a true source range\&.
+56       SourceLocation Start =
+57           SM\&.getMacroArgExpandedLocation(FileLoc\&.getLocWithOffset(Range\&.Begin));
+58       SourceLocation End =
+59           SM\&.getMacroArgExpandedLocation(FileLoc\&.getLocWithOffset(Range\&.End));
+60       assert(Start\&.isValid() && End\&.isValid() && "unexpected invalid range");
+61       Callback(SourceRange(Start, End));
+62     }
+63   }
+64   return false;
+65 }
+.fi
+.PP
+References clang::refactor::TestSelectionRange::Begin, and clang::refactor::TestSelectionRange::End\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "std::string clang::refactor::TestSelectionRangesInFile::Filename"
+
+.PP
+Definition at line 54 of file TestSupport\&.h\&.
+.SS "std::vector<\fBRangeGroup\fP> clang::refactor::TestSelectionRangesInFile::GroupedRanges"
+
+.PP
+Definition at line 59 of file TestSupport\&.h\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

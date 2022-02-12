@@ -1,0 +1,172 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_compilation_database_8cpp_source" xml:lang="en-US">
+<title>CXCompilationDatabase.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXCompilationDatabase.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="preprocessor">#include&#32;&quot;clang-c/CXCompilationDatabase.h&quot;</emphasis>
+00002 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_string_8h">CXString.h</link>&quot;</emphasis>
+00003 <emphasis role="preprocessor">#include&#32;&quot;clang/Tooling/CompilationDatabase.h&quot;</emphasis>
+00004 <emphasis role="preprocessor">#include&#32;&lt;cstdio&gt;</emphasis>
+00005 
+00006 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00007 <emphasis role="keyword">using&#32;namespace&#32;</emphasis>clang::tooling;
+00008 
+00009 <emphasis role="comment">//&#32;FIXME:&#32;do&#32;something&#32;more&#32;useful&#32;with&#32;the&#32;error&#32;message</emphasis>
+00010 CXCompilationDatabase
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00011"/><link linkend="__c_x_compilation_database_8cpp_1aaa087437718d774d839daedb979b61af">00011</link> <link linkend="__c_x_compilation_database_8cpp_1aaa087437718d774d839daedb979b61af">clang_CompilationDatabase_fromDirectory</link>(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*BuildDir,
+00012 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXCompilationDatabase_Error&#32;*ErrorCode)
+00013 {
+00014 &#32;&#32;std::string&#32;ErrorMsg;
+00015 &#32;&#32;CXCompilationDatabase_Error&#32;Err&#32;=&#32;CXCompilationDatabase_NoError;
+00016 
+00017 &#32;&#32;std::unique_ptr&lt;CompilationDatabase&gt;&#32;db&#32;=
+00018 &#32;&#32;&#32;&#32;&#32;&#32;CompilationDatabase::loadFromDirectory(BuildDir,&#32;ErrorMsg);
+00019 
+00020 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!db)&#32;{
+00021 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;LIBCLANG&#32;TOOLING&#32;ERROR:&#32;%s\n&quot;</emphasis>,&#32;ErrorMsg.c_str());
+00022 &#32;&#32;&#32;&#32;Err&#32;=&#32;CXCompilationDatabase_CanNotLoadDatabase;
+00023 &#32;&#32;}
+00024 
+00025 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ErrorCode)
+00026 &#32;&#32;&#32;&#32;*ErrorCode&#32;=&#32;Err;
+00027 
+00028 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;db.release();
+00029 }
+00030 
+00031 <emphasis role="keywordtype">void</emphasis>
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00032"/><link linkend="__c_x_compilation_database_8cpp_1a4a2e4021f4eaafc4896d76e8227139b0">00032</link> <link linkend="__c_x_compilation_database_8cpp_1a4a2e4021f4eaafc4896d76e8227139b0">clang_CompilationDatabase_dispose</link>(CXCompilationDatabase&#32;CDb)
+00033 {
+00034 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompilationDatabase&#32;*<emphasis role="keyword">&gt;</emphasis>(CDb);
+00035 }
+00036 
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00037"/><link linkend="_struct_allocated_c_x_compile_commands">00037</link> <emphasis role="keyword">struct&#32;</emphasis><link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>
+00038 {
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00039"/><link linkend="_struct_allocated_c_x_compile_commands_1aff3a84fed1f4b27ac0174197477a5bf4">00039</link> &#32;&#32;std::vector&lt;CompileCommand&gt;&#32;<link linkend="_struct_allocated_c_x_compile_commands_1aff3a84fed1f4b27ac0174197477a5bf4">CCmd</link>;
+00040 
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00041"/><link linkend="_struct_allocated_c_x_compile_commands_1af037f7dba381bf79bbbcee7e516f1135">00041</link> &#32;&#32;<link linkend="_struct_allocated_c_x_compile_commands_1af037f7dba381bf79bbbcee7e516f1135">AllocatedCXCompileCommands</link>(std::vector&lt;CompileCommand&gt;&#32;Cmd)
+00042 &#32;&#32;&#32;&#32;&#32;&#32;:&#32;CCmd(std::move(Cmd))&#32;{}
+00043 };
+00044 
+00045 CXCompileCommands
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00046"/><link linkend="__c_x_compilation_database_8cpp_1a3a23e53ea98bc08768215c09f5156bee">00046</link> <link linkend="__c_x_compilation_database_8cpp_1a3a23e53ea98bc08768215c09f5156bee">clang_CompilationDatabase_getCompileCommands</link>(CXCompilationDatabase&#32;CDb,
+00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*CompleteFileName)
+00048 {
+00049 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CompilationDatabase&#32;*db&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompilationDatabase&#32;*<emphasis role="keyword">&gt;</emphasis>(CDb))&#32;{
+00050 &#32;&#32;&#32;&#32;std::vector&lt;CompileCommand&gt;&#32;CCmd(db-&gt;getCompileCommands(CompleteFileName));
+00051 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCmd.empty())
+00052 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>(std::move(CCmd));
+00053 &#32;&#32;}
+00054 
+00055 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00056 }
+00057 
+00058 CXCompileCommands
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00059"/><link linkend="__c_x_compilation_database_8cpp_1acedca4a5cd8d0d952e018c3567b83f86">00059</link> <link linkend="__c_x_compilation_database_8cpp_1acedca4a5cd8d0d952e018c3567b83f86">clang_CompilationDatabase_getAllCompileCommands</link>(CXCompilationDatabase&#32;CDb)&#32;{
+00060 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CompilationDatabase&#32;*db&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompilationDatabase&#32;*<emphasis role="keyword">&gt;</emphasis>(CDb))&#32;{
+00061 &#32;&#32;&#32;&#32;std::vector&lt;CompileCommand&gt;&#32;CCmd(db-&gt;getAllCompileCommands());
+00062 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCmd.empty())
+00063 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>(std::move(CCmd));
+00064 &#32;&#32;}
+00065 
+00066 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00067 }
+00068 
+00069 <emphasis role="keywordtype">void</emphasis>
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00070"/><link linkend="__c_x_compilation_database_8cpp_1a294a73031045578c5df99e9a557a8d0c">00070</link> <link linkend="__c_x_compilation_database_8cpp_1a294a73031045578c5df99e9a557a8d0c">clang_CompileCommands_dispose</link>(CXCompileCommands&#32;Cmds)
+00071 {
+00072 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Cmds);
+00073 }
+00074 
+00075 <emphasis role="keywordtype">unsigned</emphasis>
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00076"/><link linkend="__c_x_compilation_database_8cpp_1a2239d1a8e88dc966670e9f4b2b321fde">00076</link> <link linkend="__c_x_compilation_database_8cpp_1a2239d1a8e88dc966670e9f4b2b321fde">clang_CompileCommands_getSize</link>(CXCompileCommands&#32;Cmds)
+00077 {
+00078 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Cmds)
+00079 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00080 
+00081 &#32;&#32;<link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>&#32;*ACC&#32;=
+00082 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Cmds);
+00083 
+00084 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ACC-&gt;<link linkend="_struct_allocated_c_x_compile_commands_1aff3a84fed1f4b27ac0174197477a5bf4">CCmd</link>.size();
+00085 }
+00086 
+00087 CXCompileCommand
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00088"/><link linkend="__c_x_compilation_database_8cpp_1a11742a91b47662bc3a2624af8fb309c4">00088</link> <link linkend="__c_x_compilation_database_8cpp_1a11742a91b47662bc3a2624af8fb309c4">clang_CompileCommands_getCommand</link>(CXCompileCommands&#32;Cmds,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)
+00089 {
+00090 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Cmds)
+00091 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00092 
+00093 &#32;&#32;<link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>&#32;*ACC&#32;=
+00094 &#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_struct_allocated_c_x_compile_commands">AllocatedCXCompileCommands</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(Cmds);
+00095 
+00096 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;&gt;=&#32;ACC-&gt;<link linkend="_struct_allocated_c_x_compile_commands_1aff3a84fed1f4b27ac0174197477a5bf4">CCmd</link>.size())
+00097 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00098 
+00099 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ACC-&gt;<link linkend="_struct_allocated_c_x_compile_commands_1aff3a84fed1f4b27ac0174197477a5bf4">CCmd</link>[I];
+00100 }
+00101 
+00102 CXString
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00103"/><link linkend="__c_x_compilation_database_8cpp_1af72bcba83c2478cb262e1bc837cc0621">00103</link> <link linkend="__c_x_compilation_database_8cpp_1af72bcba83c2478cb262e1bc837cc0621">clang_CompileCommand_getDirectory</link>(CXCompileCommand&#32;CCmd)
+00104 {
+00105 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCmd)
+00106 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00107 
+00108 &#32;&#32;CompileCommand&#32;*cmd&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompileCommand&#32;*<emphasis role="keyword">&gt;</emphasis>(CCmd);
+00109 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(cmd-&gt;Directory.c_str());
+00110 }
+00111 
+00112 CXString
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00113"/><link linkend="__c_x_compilation_database_8cpp_1a6908c5b30441ae18503639733946c966">00113</link> <link linkend="__c_x_compilation_database_8cpp_1a6908c5b30441ae18503639733946c966">clang_CompileCommand_getFilename</link>(CXCompileCommand&#32;CCmd)
+00114 {
+00115 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCmd)
+00116 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00117 
+00118 &#32;&#32;CompileCommand&#32;*cmd&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompileCommand&#32;*<emphasis role="keyword">&gt;</emphasis>(CCmd);
+00119 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(cmd-&gt;Filename.c_str());
+00120 }
+00121 
+00122 <emphasis role="keywordtype">unsigned</emphasis>
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00123"/><link linkend="__c_x_compilation_database_8cpp_1a6eda59a086ae6df97bbc71d24daf1958">00123</link> <link linkend="__c_x_compilation_database_8cpp_1a6eda59a086ae6df97bbc71d24daf1958">clang_CompileCommand_getNumArgs</link>(CXCompileCommand&#32;CCmd)
+00124 {
+00125 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCmd)
+00126 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00127 
+00128 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompileCommand&#32;*<emphasis role="keyword">&gt;</emphasis>(CCmd)-&gt;CommandLine.size();
+00129 }
+00130 
+00131 CXString
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00132"/><link linkend="__c_x_compilation_database_8cpp_1a946bd47adc84a94067ff95060fdd1e17">00132</link> <link linkend="__c_x_compilation_database_8cpp_1a946bd47adc84a94067ff95060fdd1e17">clang_CompileCommand_getArg</link>(CXCompileCommand&#32;CCmd,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Arg)
+00133 {
+00134 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CCmd)
+00135 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00136 
+00137 &#32;&#32;CompileCommand&#32;*Cmd&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis>CompileCommand&#32;*<emphasis role="keyword">&gt;</emphasis>(CCmd);
+00138 
+00139 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Arg&#32;&gt;=&#32;Cmd-&gt;CommandLine.size())
+00140 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00141 
+00142 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1abc91e0841937d19cfc9e1801ac00b3c4">cxstring::createRef</link>(Cmd-&gt;CommandLine[Arg].c_str());
+00143 }
+00144 
+00145 <emphasis role="keywordtype">unsigned</emphasis>
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00146"/><link linkend="__c_x_compilation_database_8cpp_1a120523de6060d784cf8ab49a7074313a">00146</link> <link linkend="__c_x_compilation_database_8cpp_1a120523de6060d784cf8ab49a7074313a">clang_CompileCommand_getNumMappedSources</link>(CXCompileCommand&#32;CCmd)
+00147 {
+00148 &#32;&#32;<emphasis role="comment">//&#32;Left&#32;here&#32;for&#32;backward&#32;compatibility.&#32;No&#32;mapped&#32;sources&#32;exists&#32;in&#32;the&#32;C++</emphasis>
+00149 &#32;&#32;<emphasis role="comment">//&#32;backend&#32;anymore.</emphasis>
+00150 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00151 }
+00152 
+00153 CXString
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00154"/><link linkend="__c_x_compilation_database_8cpp_1a61c674aa4ef558bc5d53b1a5087fbca7">00154</link> <link linkend="__c_x_compilation_database_8cpp_1a61c674aa4ef558bc5d53b1a5087fbca7">clang_CompileCommand_getMappedSourcePath</link>(CXCompileCommand&#32;CCmd,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)
+00155 {
+00156 &#32;&#32;<emphasis role="comment">//&#32;Left&#32;here&#32;for&#32;backward&#32;compatibility.&#32;No&#32;mapped&#32;sources&#32;exists&#32;in&#32;the&#32;C++</emphasis>
+00157 &#32;&#32;<emphasis role="comment">//&#32;backend&#32;anymore.</emphasis>
+00158 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00159 }
+00160 
+00161 CXString
+<anchor xml:id="__c_x_compilation_database_8cpp_source_1l00162"/><link linkend="__c_x_compilation_database_8cpp_1acff735fb70da8367c4dfac7c7e1e9c6c">00162</link> <link linkend="__c_x_compilation_database_8cpp_1acff735fb70da8367c4dfac7c7e1e9c6c">clang_CompileCommand_getMappedSourceContent</link>(CXCompileCommand&#32;CCmd,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I)
+00163 {
+00164 &#32;&#32;<emphasis role="comment">//&#32;Left&#32;here&#32;for&#32;backward&#32;compatibility.&#32;No&#32;mapped&#32;sources&#32;exists&#32;in&#32;the&#32;C++</emphasis>
+00165 &#32;&#32;<emphasis role="comment">//&#32;backend&#32;anymore.</emphasis>
+00166 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxstring_1a8684a35d52ccb8c623144db89a0205e1">cxstring::createNull</link>();
+00167 }
+</programlisting></section>

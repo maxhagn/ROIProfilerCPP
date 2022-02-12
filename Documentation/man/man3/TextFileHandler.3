@@ -1,0 +1,298 @@
+.TH "TextFileHandler" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+TextFileHandler
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBFileHandler\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTextFileHandler\fP (StringRef Comment)"
+.br
+.ti -1c
+.RI "Error \fBlistBundleIDsCallback\fP (MemoryBuffer &Input, const \fBBundleInfo\fP &Info) final"
+.br
+.ti -1c
+.RI "virtual Error \fBlistBundleIDs\fP (MemoryBuffer &Input)"
+.br
+.RI "List bundle IDs in \fIInput\fP\&. "
+.ti -1c
+.RI "Error \fBforEachBundle\fP (MemoryBuffer &Input, std::function< Error(const \fBBundleInfo\fP &)> Func)"
+.br
+.RI "For each bundle in \fIInput\fP, do \fIFunc\fP\&. "
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "Error \fBReadHeader\fP (MemoryBuffer &Input) final"
+.br
+.ti -1c
+.RI "Expected< Optional< StringRef > > \fBReadBundleStart\fP (MemoryBuffer &Input) final"
+.br
+.ti -1c
+.RI "Error \fBReadBundleEnd\fP (MemoryBuffer &Input) final"
+.br
+.RI "Read the marker that closes the current bundle\&. "
+.ti -1c
+.RI "Error \fBReadBundle\fP (raw_ostream &OS, MemoryBuffer &Input) final"
+.br
+.RI "Read the current bundle and write the result into the stream \fIOS\fP\&. "
+.ti -1c
+.RI "Error \fBWriteHeader\fP (raw_fd_ostream &OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundleStart\fP (raw_fd_ostream &OS, StringRef TargetTriple) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundleEnd\fP (raw_fd_ostream &OS, StringRef TargetTriple) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundle\fP (raw_fd_ostream &OS, MemoryBuffer &Input) final"
+.br
+.RI "Write the bundle from \fIInput\fP into \fIOS\fP\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+Handler for text files\&. The bundled file will have the following format\&.
+.PP
+'Comment OFFLOAD_BUNDLER_MAGIC_STR__START__ triple' Bundle 1 'Comment OFFLOAD_BUNDLER_MAGIC_STR__END__ triple' \&.\&.\&. 'Comment OFFLOAD_BUNDLER_MAGIC_STR__START__ triple' Bundle N 'Comment OFFLOAD_BUNDLER_MAGIC_STR__END__ triple' 
+.PP
+Definition at line 702 of file ClangOffloadBundler\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "TextFileHandler::TextFileHandler (StringRef Comment)\fC [inline]\fP"
+
+.PP
+Definition at line 788 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+789       : FileHandler(), Comment(Comment), ReadChars(0) {
+790     BundleStartString =
+791         "\n" + Comment\&.str() + " " OFFLOAD_BUNDLER_MAGIC_STR "__START__ ";
+792     BundleEndString =
+793         "\n" + Comment\&.str() + " " OFFLOAD_BUNDLER_MAGIC_STR "__END__ ";
+794   }
+.fi
+.PP
+References OFFLOAD_BUNDLER_MAGIC_STR\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "Error FileHandler::forEachBundle (MemoryBuffer & Input, std::function< Error(const \fBBundleInfo\fP &)> Func)\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+For each bundle in \fIInput\fP, do \fIFunc\fP\&. 
+.PP
+Definition at line 234 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+235                                                                    {
+236     while (true) {
+237       Expected<Optional<StringRef>> CurTripleOrErr = ReadBundleStart(Input);
+238       if (!CurTripleOrErr)
+239         return CurTripleOrErr\&.takeError();
+240 
+241       // No more bundles\&.
+242       if (!*CurTripleOrErr)
+243         break;
+244 
+245       StringRef CurTriple = **CurTripleOrErr;
+246       assert(!CurTriple\&.empty());
+247 
+248       BundleInfo Info{CurTriple};
+249       if (Error Err = Func(Info))
+250         return Err;
+251     }
+252     return Error::success();
+253   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDs (MemoryBuffer & Input)\fC [inline]\fP, \fC [virtual]\fP, \fC [inherited]\fP"
+
+.PP
+List bundle IDs in \fIInput\fP\&. 
+.PP
+Definition at line 220 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+220                                                    {
+221     if (Error Err = ReadHeader(Input))
+222       return Err;
+223 
+224     return forEachBundle(Input, [&](const BundleInfo &Info) -> Error {
+225       llvm::outs() << Info\&.BundleID << '\n';
+226       Error Err = listBundleIDsCallback(Input, Info);
+227       if (Err)
+228         return Err;
+229       return Error::success();
+230     });
+231   }
+.fi
+.SS "Error TextFileHandler::listBundleIDsCallback (MemoryBuffer & Input, const \fBBundleInfo\fP & Info)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Reimplemented from \fBFileHandler\fP\&.
+.PP
+Definition at line 796 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+797                                                             {
+798     // TODO: To list bundle IDs in a bundled text file we need to go through
+799     // all bundles\&. The format of bundled text file may need to include a
+800     // header if the performance of listing bundle IDs of bundled text file is
+801     // important\&.
+802     ReadChars = Input\&.getBuffer()\&.find(BundleEndString, ReadChars);
+803     if (Error Err = ReadBundleEnd(Input))
+804       return Err;
+805     return Error::success();
+806   }
+.fi
+.SS "Error TextFileHandler::ReadBundle (raw_ostream & OS, MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+
+.PP
+Read the current bundle and write the result into the stream \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 754 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+754                                                                {
+755     StringRef FC = Input\&.getBuffer();
+756     size_t BundleStart = ReadChars;
+757 
+758     // Find end of the bundle\&.
+759     size_t BundleEnd = ReadChars = FC\&.find(BundleEndString, ReadChars);
+760 
+761     StringRef Bundle(&FC\&.data()[BundleStart], BundleEnd - BundleStart);
+762     OS << Bundle;
+763 
+764     return Error::success();
+765   }
+.fi
+.SS "Error TextFileHandler::ReadBundleEnd (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+
+.PP
+Read the marker that closes the current bundle\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 740 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+740                                                  {
+741     StringRef FC = Input\&.getBuffer();
+742 
+743     // Read up to the next new line\&.
+744     assert(FC[ReadChars] == '\n' && "The bundle should end with a new line\&.");
+745 
+746     size_t TripleEnd = ReadChars = FC\&.find("\n", ReadChars + 1);
+747     if (TripleEnd != FC\&.npos)
+748       // Next time we read after the new line\&.
+749       ++ReadChars;
+750 
+751     return Error::success();
+752   }
+.fi
+.SS "Expected<Optional<StringRef> > TextFileHandler::ReadBundleStart (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+Read the marker of the next bundled to be read in the file\&. The bundle name is returned if there is one in the file, or \fCNone\fP if there are no more bundles to be read\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 718 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+718                                                                            {
+719     StringRef FC = Input\&.getBuffer();
+720 
+721     // Find start of the bundle\&.
+722     ReadChars = FC\&.find(BundleStartString, ReadChars);
+723     if (ReadChars == FC\&.npos)
+724       return None;
+725 
+726     // Get position of the triple\&.
+727     size_t TripleStart = ReadChars = ReadChars + BundleStartString\&.size();
+728 
+729     // Get position that closes the triple\&.
+730     size_t TripleEnd = ReadChars = FC\&.find("\n", ReadChars);
+731     if (TripleEnd == FC\&.npos)
+732       return None;
+733 
+734     // Next time we read after the new line\&.
+735     ++ReadChars;
+736 
+737     return StringRef(&FC\&.data()[TripleStart], TripleEnd - TripleStart);
+738   }
+.fi
+.SS "Error TextFileHandler::ReadHeader (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+Update the file handler with information from the header of the bundled file\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 716 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+716 { return Error::success(); }
+.fi
+.SS "Error TextFileHandler::WriteBundle (raw_fd_ostream & OS, MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+
+.PP
+Write the bundle from \fIInput\fP into \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 782 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+782                                                                    {
+783     OS << Input\&.getBuffer();
+784     return Error::success();
+785   }
+.fi
+.SS "Error TextFileHandler::WriteBundleEnd (raw_fd_ostream & OS, StringRef TargetTriple)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+Write the marker that closes a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 777 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+777                                                                          {
+778     OS << BundleEndString << TargetTriple << "\n";
+779     return Error::success();
+780   }
+.fi
+.SS "Error TextFileHandler::WriteBundleStart (raw_fd_ostream & OS, StringRef TargetTriple)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+Write the marker that initiates a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 772 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+772                                                                            {
+773     OS << BundleStartString << TargetTriple << "\n";
+774     return Error::success();
+775   }
+.fi
+.SS "Error TextFileHandler::WriteHeader (raw_fd_ostream & OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs)\fC [inline]\fP, \fC [final]\fP, \fC [protected]\fP, \fC [virtual]\fP"
+Write the header of the bundled file to \fIOS\fP based on the information gathered from \fIInputs\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 767 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+768                                                                         {
+769     return Error::success();
+770   }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

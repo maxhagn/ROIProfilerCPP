@@ -1,0 +1,189 @@
+.TH "diagtool::GroupRecord" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+diagtool::GroupRecord
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <DiagnosticNames\&.h>\fP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBgroup_iterator\fP"
+.br
+.in -1c
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "typedef \fBgroup_iterator\fP< \fBGroupRecord\fP > \fBsubgroup_iterator\fP"
+.br
+.ti -1c
+.RI "typedef \fBgroup_iterator\fP< \fBDiagnosticRecord\fP > \fBdiagnostics_iterator\fP"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "llvm::StringRef \fBgetName\fP () const"
+.br
+.ti -1c
+.RI "\fBsubgroup_iterator\fP \fBsubgroup_begin\fP () const"
+.br
+.ti -1c
+.RI "\fBsubgroup_iterator\fP \fBsubgroup_end\fP () const"
+.br
+.ti -1c
+.RI "llvm::iterator_range< \fBsubgroup_iterator\fP > \fBsubgroups\fP () const"
+.br
+.ti -1c
+.RI "\fBdiagnostics_iterator\fP \fBdiagnostics_begin\fP () const"
+.br
+.ti -1c
+.RI "\fBdiagnostics_iterator\fP \fBdiagnostics_end\fP () const"
+.br
+.ti -1c
+.RI "llvm::iterator_range< \fBdiagnostics_iterator\fP > \fBdiagnostics\fP () const"
+.br
+.ti -1c
+.RI "bool \fBoperator<\fP (llvm::StringRef Other) const"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "uint16_t \fBNameOffset\fP"
+.br
+.ti -1c
+.RI "uint16_t \fBMembers\fP"
+.br
+.ti -1c
+.RI "uint16_t \fBSubGroups\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 39 of file DiagnosticNames\&.h\&.
+.SH "Member Typedef Documentation"
+.PP 
+.SS "typedef \fBgroup_iterator\fP<\fBDiagnosticRecord\fP> \fBdiagtool::GroupRecord::diagnostics_iterator\fP"
+
+.PP
+Definition at line 93 of file DiagnosticNames\&.h\&.
+.SS "typedef \fBgroup_iterator\fP<\fBGroupRecord\fP> \fBdiagtool::GroupRecord::subgroup_iterator\fP"
+
+.PP
+Definition at line 88 of file DiagnosticNames\&.h\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "llvm::iterator_range< \fBdiagtool::GroupRecord::diagnostics_iterator\fP > GroupRecord::diagnostics () const"
+
+.PP
+Definition at line 100 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+100                                {
+101   return llvm::make_range(diagnostics_begin(), diagnostics_end());
+102 }
+.fi
+.PP
+Referenced by TreePrinter::enabledByDefault(), TreePrinter::printGroup(), and TreePrinter::unimplemented()\&.
+.SS "\fBGroupRecord::diagnostics_iterator\fP GroupRecord::diagnostics_begin () const"
+
+.PP
+Definition at line 91 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+91                                                                      {
+92   return DiagArrays + Members;
+93 }
+.fi
+.SS "\fBGroupRecord::diagnostics_iterator\fP GroupRecord::diagnostics_end () const"
+
+.PP
+Definition at line 95 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+95                                                                    {
+96   return nullptr;
+97 }
+.fi
+.SS "llvm::StringRef GroupRecord::getName () const"
+
+.PP
+Definition at line 74 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+74                                          {
+75   return StringRef(DiagGroupNames + NameOffset + 1, DiagGroupNames[NameOffset]);
+76 }
+.fi
+.PP
+Referenced by Reporter\&.TextParameter::getHTML(), Reporter\&.SelectionParameter::getHTML(), Reporter\&.ReporterParameter::getValue(), operator<(), TreePrinter::printGroup(), and TreePrinter::showGroup()\&.
+.SS "bool diagtool::GroupRecord::operator< (llvm::StringRef Other) const\fC [inline]\fP"
+
+.PP
+Definition at line 98 of file DiagnosticNames\&.h\&.
+.PP
+.nf
+98                                               {
+99       return getName() < Other;
+100     }
+.fi
+.PP
+References getName()\&.
+.SS "\fBGroupRecord::subgroup_iterator\fP GroupRecord::subgroup_begin () const"
+
+.PP
+Definition at line 78 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+78                                                                {
+79   return DiagSubGroups + SubGroups;
+80 }
+.fi
+.SS "\fBGroupRecord::subgroup_iterator\fP GroupRecord::subgroup_end () const"
+
+.PP
+Definition at line 82 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+82                                                              {
+83   return nullptr;
+84 }
+.fi
+.SS "llvm::iterator_range< \fBdiagtool::GroupRecord::subgroup_iterator\fP > GroupRecord::subgroups () const"
+
+.PP
+Definition at line 87 of file DiagnosticNames\&.cpp\&.
+.PP
+.nf
+87                              {
+88   return llvm::make_range(subgroup_begin(), subgroup_end());
+89 }
+.fi
+.PP
+Referenced by TreePrinter::enabledByDefault(), TreePrinter::printGroup(), and TreePrinter::unimplemented()\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "uint16_t diagtool::GroupRecord::Members"
+
+.PP
+Definition at line 41 of file DiagnosticNames\&.h\&.
+.SS "uint16_t diagtool::GroupRecord::NameOffset"
+
+.PP
+Definition at line 40 of file DiagnosticNames\&.h\&.
+.SS "uint16_t diagtool::GroupRecord::SubGroups"
+
+.PP
+Definition at line 42 of file DiagnosticNames\&.h\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

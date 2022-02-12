@@ -1,0 +1,166 @@
+.TH "libear.SharedLibrary" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libear.SharedLibrary
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits object\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self, \fBname\fP, toolset)"
+.br
+.ti -1c
+.RI "def \fBadd_include\fP (self, directory)"
+.br
+.ti -1c
+.RI "def \fBadd_sources\fP (self, source)"
+.br
+.ti -1c
+.RI "def \fBlink_against\fP (self, libraries)"
+.br
+.ti -1c
+.RI "def \fBbuild_release\fP (self, directory)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBname\fP"
+.br
+.ti -1c
+.RI "\fBctx\fP"
+.br
+.ti -1c
+.RI "\fBinc\fP"
+.br
+.ti -1c
+.RI "\fBsrc\fP"
+.br
+.ti -1c
+.RI "\fBlib\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 225 of file __init__\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def libear\&.SharedLibrary\&.__init__ ( self,  name,  toolset)"
+
+.PP
+Definition at line 226 of file __init__\&.py\&.
+.PP
+.nf
+226     def __init__(self, name, toolset):
+227         self\&.name = toolset\&.shared_library_name(name)
+228         self\&.ctx = toolset
+229         self\&.inc = []
+230         self\&.src = []
+231         self\&.lib = []
+232 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def libear\&.SharedLibrary\&.add_include ( self,  directory)"
+
+.PP
+Definition at line 233 of file __init__\&.py\&.
+.PP
+.nf
+233     def add_include(self, directory):
+234         self\&.inc\&.extend(['-I', directory])
+235 
+.fi
+.PP
+References libear\&.SharedLibrary\&.inc\&.
+.SS "def libear\&.SharedLibrary\&.add_sources ( self,  source)"
+
+.PP
+Definition at line 236 of file __init__\&.py\&.
+.PP
+.nf
+236     def add_sources(self, source):
+237         self\&.src\&.append(source)
+238 
+.fi
+.PP
+References libear\&.SharedLibrary\&.src\&.
+.SS "def libear\&.SharedLibrary\&.build_release ( self,  directory)"
+
+.PP
+Definition at line 242 of file __init__\&.py\&.
+.PP
+.nf
+242     def build_release(self, directory):
+243         for src in self\&.src:
+244             logging\&.debug('Compiling %s', src)
+245             execute(
+246                 [self\&.ctx\&.compiler, '-c', os\&.path\&.join(self\&.ctx\&.src_dir, src),
+247                  '-o', src + '\&.o'] + self\&.inc +
+248                 self\&.ctx\&.shared_library_c_flags(True),
+249                 cwd=directory)
+250         logging\&.debug('Linking %s', self\&.name)
+251         execute(
+252             [self\&.ctx\&.compiler] + [src + '\&.o' for src in self\&.src] +
+253             ['-o', self\&.name] + self\&.lib +
+254             self\&.ctx\&.shared_library_ld_flags(True, self\&.name),
+255             cwd=directory)
+256 
+257 
+.fi
+.PP
+References libear\&.Configure\&.ctx, libear\&.SharedLibrary\&.ctx, libear\&.execute(), libear\&.SharedLibrary\&.inc, libear\&.SharedLibrary\&.lib, libear\&.SharedLibrary\&.name, Reporter\&.ReporterParameter\&.name, startfile\&.BaseController\&.name, and libear\&.SharedLibrary\&.src\&.
+.SS "def libear\&.SharedLibrary\&.link_against ( self,  libraries)"
+
+.PP
+Definition at line 239 of file __init__\&.py\&.
+.PP
+.nf
+239     def link_against(self, libraries):
+240         self\&.lib\&.extend(['-l' + lib for lib in libraries])
+241 
+.fi
+.PP
+References libear\&.SharedLibrary\&.lib\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "libear\&.SharedLibrary\&.ctx"
+
+.PP
+Definition at line 228 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release()\&.
+.SS "libear\&.SharedLibrary\&.inc"
+
+.PP
+Definition at line 229 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.add_include(), and libear\&.SharedLibrary\&.build_release()\&.
+.SS "libear\&.SharedLibrary\&.lib"
+
+.PP
+Definition at line 231 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release(), and libear\&.SharedLibrary\&.link_against()\&.
+.SS "libear\&.SharedLibrary\&.name"
+
+.PP
+Definition at line 227 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release(), and Reporter\&.ReporterParameter\&.getName()\&.
+.SS "libear\&.SharedLibrary\&.src"
+
+.PP
+Definition at line 230 of file __init__\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.add_sources(), and libear\&.SharedLibrary\&.build_release()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,360 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-offload-bundler/ClangOffloadBundler.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-offload-bundler/ClangOffloadBundler.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Version\&.h'\fP
+.br
+\fC#include 'llvm/ADT/ArrayRef\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallString\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallVector\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringMap\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringRef\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringSwitch\&.h'\fP
+.br
+\fC#include 'llvm/ADT/Triple\&.h'\fP
+.br
+\fC#include 'llvm/Object/Archive\&.h'\fP
+.br
+\fC#include 'llvm/Object/ArchiveWriter\&.h'\fP
+.br
+\fC#include 'llvm/Object/Binary\&.h'\fP
+.br
+\fC#include 'llvm/Object/ObjectFile\&.h'\fP
+.br
+\fC#include 'llvm/Support/Casting\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/Debug\&.h'\fP
+.br
+\fC#include 'llvm/Support/Errc\&.h'\fP
+.br
+\fC#include 'llvm/Support/Error\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorOr\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/Host\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Path\&.h'\fP
+.br
+\fC#include 'llvm/Support/Program\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/StringSaver\&.h'\fP
+.br
+\fC#include 'llvm/Support/WithColor\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <algorithm>\fP
+.br
+\fC#include <cassert>\fP
+.br
+\fC#include <cstddef>\fP
+.br
+\fC#include <cstdint>\fP
+.br
+\fC#include <forward_list>\fP
+.br
+\fC#include <memory>\fP
+.br
+\fC#include <set>\fP
+.br
+\fC#include <string>\fP
+.br
+\fC#include <system_error>\fP
+.br
+\fC#include <utility>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBOffloadTargetInfo\fP"
+.br
+.ti -1c
+.RI "class \fBFileHandler\fP"
+.br
+.RI "Generic file handler interface\&. "
+.ti -1c
+.RI "struct \fBFileHandler::BundleInfo\fP"
+.br
+.ti -1c
+.RI "class \fBBinaryFileHandler\fP"
+.br
+.ti -1c
+.RI "class \fBObjectFileHandler\fP"
+.br
+.ti -1c
+.RI "class \fBTextFileHandler\fP"
+.br
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBOFFLOAD_BUNDLER_MAGIC_STR\fP   '__CLANG_OFFLOAD_BUNDLE__'"
+.br
+.RI "Magic string that marks the existence of offloading data\&. "
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBisCodeObjectCompatible\fP (\fBOffloadTargetInfo\fP &CodeObjectInfo, \fBOffloadTargetInfo\fP &TargetInfo)"
+.br
+.RI "Checks if a code object \fCCodeObjectInfo\fP is compatible with a given target \fCTargetInfo\fP\&. \fBhttps://clang\&.llvm\&.org/docs/ClangOffloadBundler\&.html#bundle-entry-id\&.\fP"
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This file implements a clang-offload-bundler that bundles different files that relate with the same source code but different targets into a single one\&. Also the implements the opposite functionality, i\&.e\&. unbundle files previous created by this tool\&. 
+.PP
+Definition in file \fBClangOffloadBundler\&.cpp\fP\&.
+.SH "Macro Definition Documentation"
+.PP 
+.SS "#define OFFLOAD_BUNDLER_MAGIC_STR   '__CLANG_OFFLOAD_BUNDLE__'"
+
+.PP
+Magic string that marks the existence of offloading data\&. 
+.PP
+Definition at line 120 of file ClangOffloadBundler\&.cpp\&.
+.SH "Function Documentation"
+.PP 
+.SS "bool isCodeObjectCompatible (\fBOffloadTargetInfo\fP & CodeObjectInfo, \fBOffloadTargetInfo\fP & TargetInfo)"
+
+.PP
+Checks if a code object \fCCodeObjectInfo\fP is compatible with a given target \fCTargetInfo\fP\&. \fBhttps://clang\&.llvm\&.org/docs/ClangOffloadBundler\&.html#bundle-entry-id\&.\fP
+.PP
+Definition at line 1061 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+1062                                                            {
+1063 
+1064   // Compatible in case of exact match\&.
+1065   if (CodeObjectInfo == TargetInfo) {
+1066     DEBUG_WITH_TYPE(
+1067         "CodeObjectCompatibility",
+1068         dbgs() << "Compatible: Exact match: " << CodeObjectInfo\&.str() << "\n");
+1069     return true;
+1070   }
+1071 
+1072   // Incompatible if Kinds or Triples mismatch\&.
+1073   if (CodeObjectInfo\&.OffloadKind != TargetInfo\&.OffloadKind ||
+1074       !CodeObjectInfo\&.Triple\&.isCompatibleWith(TargetInfo\&.Triple)) {
+1075     DEBUG_WITH_TYPE(
+1076         "CodeObjectCompatibility",
+1077         dbgs() << "Incompatible: Kind/Triple mismatch \t[CodeObject: "
+1078                << CodeObjectInfo\&.str() << "]\t:\t[Target: " << TargetInfo\&.str()
+1079                << "]\n");
+1080     return false;
+1081   }
+1082 
+1083   // Incompatible if GPUArch mismatch\&.
+1084   if (CodeObjectInfo\&.GPUArch != TargetInfo\&.GPUArch) {
+1085     DEBUG_WITH_TYPE("CodeObjectCompatibility",
+1086                     dbgs() << "Incompatible: GPU Arch mismatch \t[CodeObject: "
+1087                            << CodeObjectInfo\&.str()
+1088                            << "]\t:\t[Target: " << TargetInfo\&.str() << "]\n");
+1089     return false;
+1090   }
+1091 
+1092   DEBUG_WITH_TYPE(
+1093       "CodeObjectCompatibility",
+1094       dbgs() << "Compatible: Code Objects are compatible \t[CodeObject: "
+1095              << CodeObjectInfo\&.str() << "]\t:\t[Target: " << TargetInfo\&.str()
+1096              << "]\n");
+1097   return true;
+1098 }
+.fi
+.PP
+References OffloadTargetInfo::GPUArch, OffloadTargetInfo::OffloadKind, OffloadTargetInfo::str(), and OffloadTargetInfo::Triple\&.
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 1292 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+1292                                       {
+1293   sys::PrintStackTraceOnErrorSignal(argv[0]);
+1294 
+1295   cl::HideUnrelatedOptions(ClangOffloadBundlerCategory);
+1296   cl::SetVersionPrinter(PrintVersion);
+1297   cl::ParseCommandLineOptions(
+1298       argc, argv,
+1299       "A tool to bundle several input files of the specified type <type> \n"
+1300       "referring to the same source file but different targets into a single \n"
+1301       "one\&. The resulting file can also be unbundled into different files by \n"
+1302       "this tool if -unbundle is provided\&.\n");
+1303 
+1304   if (Help) {
+1305     cl::PrintHelpMessage();
+1306     return 0;
+1307   }
+1308 
+1309   auto reportError = [argv](Error E) {
+1310     logAllUnhandledErrors(std::move(E), WithColor::error(errs(), argv[0]));
+1311     exit(1);
+1312   };
+1313 
+1314   auto doWork = [&](std::function<llvm::Error()> Work) {
+1315     // Save the current executable directory as it will be useful to find other
+1316     // tools\&.
+1317     BundlerExecutable = argv[0];
+1318     if (!llvm::sys::fs::exists(BundlerExecutable))
+1319       BundlerExecutable =
+1320           sys::fs::getMainExecutable(argv[0], &BundlerExecutable);
+1321 
+1322     if (llvm::Error Err = Work()) {
+1323       reportError(std::move(Err));
+1324     }
+1325   };
+1326 
+1327   if (ListBundleIDs) {
+1328     if (Unbundle) {
+1329       reportError(
+1330           createStringError(errc::invalid_argument,
+1331                             "-unbundle and -list cannot be used together"));
+1332     }
+1333     if (InputFileNames\&.size() != 1) {
+1334       reportError(createStringError(errc::invalid_argument,
+1335                                     "only one input file supported for -list"));
+1336     }
+1337     if (OutputFileNames\&.size()) {
+1338       reportError(createStringError(errc::invalid_argument,
+1339                                     "-outputs option is invalid for -list"));
+1340     }
+1341     if (TargetNames\&.size()) {
+1342       reportError(createStringError(errc::invalid_argument,
+1343                                     "-targets option is invalid for -list"));
+1344     }
+1345 
+1346     doWork([]() { return ListBundleIDsInFile(InputFileNames\&.front()); });
+1347     return 0;
+1348   }
+1349 
+1350   if (OutputFileNames\&.getNumOccurrences() == 0) {
+1351     reportError(createStringError(
+1352         errc::invalid_argument,
+1353         "for the --outputs option: must be specified at least once!"));
+1354   }
+1355   if (TargetNames\&.getNumOccurrences() == 0) {
+1356     reportError(createStringError(
+1357         errc::invalid_argument,
+1358         "for the --targets option: must be specified at least once!"));
+1359   }
+1360   if (Unbundle) {
+1361     if (InputFileNames\&.size() != 1) {
+1362       reportError(createStringError(
+1363           errc::invalid_argument,
+1364           "only one input file supported in unbundling mode"));
+1365     }
+1366     if (OutputFileNames\&.size() != TargetNames\&.size()) {
+1367       reportError(createStringError(errc::invalid_argument,
+1368                                     "number of output files and targets should "
+1369                                     "match in unbundling mode"));
+1370     }
+1371   } else {
+1372     if (FilesType == "a") {
+1373       reportError(createStringError(errc::invalid_argument,
+1374                                     "Archive files are only supported "
+1375                                     "for unbundling"));
+1376     }
+1377     if (OutputFileNames\&.size() != 1) {
+1378       reportError(createStringError(
+1379           errc::invalid_argument,
+1380           "only one output file supported in bundling mode"));
+1381     }
+1382     if (InputFileNames\&.size() != TargetNames\&.size()) {
+1383       reportError(createStringError(
+1384           errc::invalid_argument,
+1385           "number of input files and targets should match in bundling mode"));
+1386     }
+1387   }
+1388 
+1389   // Verify that the offload kinds and triples are known\&. We also check that we
+1390   // have exactly one host target\&.
+1391   unsigned Index = 0u;
+1392   unsigned HostTargetNum = 0u;
+1393   bool HIPOnly = true;
+1394   llvm::DenseSet<StringRef> ParsedTargets;
+1395   for (StringRef Target : TargetNames) {
+1396     if (ParsedTargets\&.contains(Target)) {
+1397       reportError(createStringError(errc::invalid_argument,
+1398                                     "Duplicate targets are not allowed"));
+1399     }
+1400     ParsedTargets\&.insert(Target);
+1401 
+1402     auto OffloadInfo = OffloadTargetInfo(Target);
+1403     bool KindIsValid = OffloadInfo\&.isOffloadKindValid();
+1404     bool TripleIsValid = OffloadInfo\&.isTripleValid();
+1405 
+1406     if (!KindIsValid || !TripleIsValid) {
+1407       SmallVector<char, 128u> Buf;
+1408       raw_svector_ostream Msg(Buf);
+1409       Msg << "invalid target '" << Target << "'";
+1410       if (!KindIsValid)
+1411         Msg << ", unknown offloading kind '" << OffloadInfo\&.OffloadKind << "'";
+1412       if (!TripleIsValid)
+1413         Msg << ", unknown target triple '" << OffloadInfo\&.Triple\&.str() << "'";
+1414       reportError(createStringError(errc::invalid_argument, Msg\&.str()));
+1415     }
+1416 
+1417     if (KindIsValid && OffloadInfo\&.hasHostKind()) {
+1418       ++HostTargetNum;
+1419       // Save the index of the input that refers to the host\&.
+1420       HostInputIndex = Index;
+1421     }
+1422 
+1423     if (OffloadInfo\&.OffloadKind != "hip" && OffloadInfo\&.OffloadKind != "hipv4")
+1424       HIPOnly = false;
+1425 
+1426     ++Index;
+1427   }
+1428 
+1429   // HIP uses clang-offload-bundler to bundle device-only compilation results
+1430   // for multiple GPU archs, therefore allow no host target if all entries
+1431   // are for HIP\&.
+1432   AllowNoHost = HIPOnly;
+1433 
+1434   // Host triple is not really needed for unbundling operation, so do not
+1435   // treat missing host triple as error if we do unbundling\&.
+1436   if ((Unbundle && HostTargetNum > 1) ||
+1437       (!Unbundle && HostTargetNum != 1 && !AllowNoHost)) {
+1438     reportError(createStringError(errc::invalid_argument,
+1439                                   "expecting exactly one host target but got " +
+1440                                       Twine(HostTargetNum)));
+1441   }
+1442 
+1443   doWork([]() {
+1444     if (Unbundle) {
+1445       if (FilesType == "a")
+1446         return UnbundleArchive();
+1447       else
+1448         return UnbundleFiles();
+1449     } else
+1450       return BundleFiles();
+1451   });
+1452   return 0;
+1453 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

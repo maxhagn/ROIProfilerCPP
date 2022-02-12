@@ -1,0 +1,122 @@
+\hypertarget{_clang_diff_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/diff/\+Clang\+Diff.cpp File Reference}
+\label{_clang_diff_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/diff/ClangDiff.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/diff/ClangDiff.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+ASTDiff/\+ASTDiff.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Common\+Options\+Parser.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Tooling.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_diff_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_diff_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_diff_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangDiff.cpp@{ClangDiff.cpp}!main@{main}}
+\index{main@{main}!ClangDiff.cpp@{ClangDiff.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 443 of file Clang\+Diff.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{443                                       \{}
+\DoxyCodeLine{444   std::string ErrorMessage;}
+\DoxyCodeLine{445   std::unique\_ptr<CompilationDatabase> CommonCompilations =}
+\DoxyCodeLine{446       FixedCompilationDatabase::loadFromCommandLine(argc, argv, ErrorMessage);}
+\DoxyCodeLine{447   \textcolor{keywordflow}{if} (!CommonCompilations \&\& !ErrorMessage.empty())}
+\DoxyCodeLine{448     llvm::errs() << ErrorMessage;}
+\DoxyCodeLine{449   cl::HideUnrelatedOptions(ClangDiffCategory);}
+\DoxyCodeLine{450   \textcolor{keywordflow}{if} (!cl::ParseCommandLineOptions(argc, argv)) \{}
+\DoxyCodeLine{451     cl::PrintOptionValues();}
+\DoxyCodeLine{452     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{453   \}}
+\DoxyCodeLine{454 }
+\DoxyCodeLine{455   addExtraArgs(CommonCompilations);}
+\DoxyCodeLine{456 }
+\DoxyCodeLine{457   \textcolor{keywordflow}{if} (ASTDump || ASTDumpJson) \{}
+\DoxyCodeLine{458     \textcolor{keywordflow}{if} (!DestinationPath.empty()) \{}
+\DoxyCodeLine{459       llvm::errs() << \textcolor{stringliteral}{"{}Error: Please specify exactly one filename.\(\backslash\)n"{}};}
+\DoxyCodeLine{460       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{461     \}}
+\DoxyCodeLine{462     std::unique\_ptr<ASTUnit> AST = getAST(CommonCompilations, SourcePath);}
+\DoxyCodeLine{463     \textcolor{keywordflow}{if} (!AST)}
+\DoxyCodeLine{464       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{465     diff::SyntaxTree Tree(AST-\/>getASTContext());}
+\DoxyCodeLine{466     \textcolor{keywordflow}{if} (ASTDump) \{}
+\DoxyCodeLine{467       printTree(llvm::outs(), Tree);}
+\DoxyCodeLine{468       \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{469     \}}
+\DoxyCodeLine{470     llvm::outs() << R\textcolor{stringliteral}{"{}(\{"{}filename"{}:"{})"{};}}
+\DoxyCodeLine{471 \textcolor{stringliteral}{    printJsonString(llvm::outs(), SourcePath);}}
+\DoxyCodeLine{472 \textcolor{stringliteral}{    llvm::outs() << R}\textcolor{stringliteral}{"{}("{},"{}root"{}:)"{};}}
+\DoxyCodeLine{473 \textcolor{stringliteral}{    printNodeAsJson(llvm::outs(), Tree, Tree.getRootId());}}
+\DoxyCodeLine{474 \textcolor{stringliteral}{    llvm::outs() << }\textcolor{stringliteral}{"{}\}\(\backslash\)n"{}};}
+\DoxyCodeLine{475     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{476   \}}
+\DoxyCodeLine{477 }
+\DoxyCodeLine{478   \textcolor{keywordflow}{if} (DestinationPath.empty()) \{}
+\DoxyCodeLine{479     llvm::errs() << \textcolor{stringliteral}{"{}Error: Exactly two paths are required.\(\backslash\)n"{}};}
+\DoxyCodeLine{480     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{481   \}}
+\DoxyCodeLine{482 }
+\DoxyCodeLine{483   std::unique\_ptr<ASTUnit> Src = getAST(CommonCompilations, SourcePath);}
+\DoxyCodeLine{484   std::unique\_ptr<ASTUnit> Dst = getAST(CommonCompilations, DestinationPath);}
+\DoxyCodeLine{485   \textcolor{keywordflow}{if} (!Src || !Dst)}
+\DoxyCodeLine{486     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{487 }
+\DoxyCodeLine{488   diff::ComparisonOptions Options;}
+\DoxyCodeLine{489   \textcolor{keywordflow}{if} (MaxSize != -\/1)}
+\DoxyCodeLine{490     Options.MaxSize = MaxSize;}
+\DoxyCodeLine{491   \textcolor{keywordflow}{if} (!StopAfter.empty()) \{}
+\DoxyCodeLine{492     \textcolor{keywordflow}{if} (StopAfter == \textcolor{stringliteral}{"{}topdown"{}})}
+\DoxyCodeLine{493       Options.StopAfterTopDown = \textcolor{keyword}{true};}
+\DoxyCodeLine{494     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (StopAfter != \textcolor{stringliteral}{"{}bottomup"{}}) \{}
+\DoxyCodeLine{495       llvm::errs() << \textcolor{stringliteral}{"{}Error: Invalid argument for -\/stop-\/after\(\backslash\)n"{}};}
+\DoxyCodeLine{496       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{497     \}}
+\DoxyCodeLine{498   \}}
+\DoxyCodeLine{499   diff::SyntaxTree SrcTree(Src-\/>getASTContext());}
+\DoxyCodeLine{500   diff::SyntaxTree DstTree(Dst-\/>getASTContext());}
+\DoxyCodeLine{501   diff::ASTDiff Diff(SrcTree, DstTree, Options);}
+\DoxyCodeLine{502 }
+\DoxyCodeLine{503   \textcolor{keywordflow}{if} (HtmlDiff) \{}
+\DoxyCodeLine{504     llvm::outs() << HtmlDiffHeader << \textcolor{stringliteral}{"{}<pre>"{}};}
+\DoxyCodeLine{505     llvm::outs() << \textcolor{stringliteral}{"{}<div id='L' class='code'>"{}};}
+\DoxyCodeLine{506     printHtmlForNode(llvm::outs(), Diff, SrcTree, \textcolor{keyword}{true}, SrcTree.getRootId(), 0);}
+\DoxyCodeLine{507     llvm::outs() << \textcolor{stringliteral}{"{}</div>"{}};}
+\DoxyCodeLine{508     llvm::outs() << \textcolor{stringliteral}{"{}<div id='R' class='code'>"{}};}
+\DoxyCodeLine{509     printHtmlForNode(llvm::outs(), Diff, DstTree, \textcolor{keyword}{false}, DstTree.getRootId(),}
+\DoxyCodeLine{510                      0);}
+\DoxyCodeLine{511     llvm::outs() << \textcolor{stringliteral}{"{}</div>"{}};}
+\DoxyCodeLine{512     llvm::outs() << \textcolor{stringliteral}{"{}</pre></div></body></html>\(\backslash\)n"{}};}
+\DoxyCodeLine{513     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{514   \}}
+\DoxyCodeLine{515 }
+\DoxyCodeLine{516   \textcolor{keywordflow}{for} (diff::NodeId Dst : DstTree) \{}
+\DoxyCodeLine{517     diff::NodeId Src = Diff.getMapped(DstTree, Dst);}
+\DoxyCodeLine{518     \textcolor{keywordflow}{if} (PrintMatches \&\& Src.isValid()) \{}
+\DoxyCodeLine{519       llvm::outs() << \textcolor{stringliteral}{"{}Match "{}};}
+\DoxyCodeLine{520       printNode(llvm::outs(), SrcTree, Src);}
+\DoxyCodeLine{521       llvm::outs() << \textcolor{stringliteral}{"{} to "{}};}
+\DoxyCodeLine{522       printNode(llvm::outs(), DstTree, Dst);}
+\DoxyCodeLine{523       llvm::outs() << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{524     \}}
+\DoxyCodeLine{525     printDstChange(llvm::outs(), Diff, SrcTree, DstTree, Dst);}
+\DoxyCodeLine{526   \}}
+\DoxyCodeLine{527   \textcolor{keywordflow}{for} (diff::NodeId Src : SrcTree) \{}
+\DoxyCodeLine{528     \textcolor{keywordflow}{if} (Diff.getMapped(SrcTree, Src).isInvalid()) \{}
+\DoxyCodeLine{529       llvm::outs() << \textcolor{stringliteral}{"{}Delete "{}};}
+\DoxyCodeLine{530       printNode(llvm::outs(), SrcTree, Src);}
+\DoxyCodeLine{531       llvm::outs() << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{532     \}}
+\DoxyCodeLine{533   \}}
+\DoxyCodeLine{534 }
+\DoxyCodeLine{535   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{536 \}}
+
+\end{DoxyCode}

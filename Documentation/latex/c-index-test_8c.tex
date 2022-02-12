@@ -1,0 +1,1876 @@
+\hypertarget{c-index-test_8c}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/c-\/index-\/test/c-\/index-\/test.c File Reference}
+\label{c-index-test_8c}\index{/Users/maximilian/clang-\/llvm/clang/tools/c-\/index-\/test/c-\/index-\/test.c@{/Users/maximilian/clang-\/llvm/clang/tools/c-\/index-\/test/c-\/index-\/test.c}}
+{\ttfamily \#include \char`\"{}clang/\+Config/config.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang-\/c/\+Index.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang-\/c/\+CXCompilation\+Database.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang-\/c/\+Build\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang-\/c/\+Documentation.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$ctype.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include $<$assert.\+h$>$}\newline
+{\ttfamily \#include $<$unistd.\+h$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{struct_comment_a_s_t_dumping_context}{Comment\+ASTDumping\+Context}}
+\item 
+struct \mbox{\hyperlink{struct_line_col}{Line\+Col}}
+\item 
+struct \mbox{\hyperlink{struct_visitor_data}{Visitor\+Data}}
+\item 
+struct \mbox{\hyperlink{struct_cursor_source_location}{Cursor\+Source\+Location}}
+\item 
+struct \mbox{\hyperlink{struct_imported_a_s_t_files_data}{Imported\+ASTFiles\+Data}}
+\item 
+struct \mbox{\hyperlink{struct_index_data_string_list__}{Index\+Data\+String\+List\+\_\+}}
+\item 
+struct \mbox{\hyperlink{struct_index_data}{Index\+Data}}
+\item 
+struct \mbox{\hyperlink{structthread__info}{thread\+\_\+info}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{c-index-test_8c_a37b2be89ffcac55a11a29368f7d4765b}{PRINT\+\_\+\+PROP\+\_\+\+ATTR}}(A)~          if (Prop\+Attrs \& CXObj\+CProperty\+Attr\+\_\+\#\#A) printf(\#A \char`\"{},\char`\"{})
+\item 
+\#define \mbox{\hyperlink{c-index-test_8c_a4a9849afcef2f49ffddd89cc8ec05e31}{PRINT\+\_\+\+OBJC\+\_\+\+QUAL}}(A)~          if (QT \& CXObj\+CDecl\+Qualifier\+\_\+\#\#A) printf(\#A \char`\"{},\char`\"{})
+\item 
+\#define \mbox{\hyperlink{c-index-test_8c_ad4351eaabb7b57e21fdd4a4cca2c1a1f}{MAX\+\_\+\+IMPORTED\+\_\+\+ASTFILES}}~200
+\item 
+\#define \mbox{\hyperlink{c-index-test_8c_a5e91649440af4abff47f1915d471b2b3}{MAX\+\_\+\+COMPILE\+\_\+\+ARGS}}~512
+\end{DoxyCompactItemize}
+\doxysubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef void($\ast$ \mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}}) (CXTranslation\+Unit)
+\item 
+typedef void($\ast$ \mbox{\hyperlink{c-index-test_8c_ab782a8229793b5f9556f76a9e94200bb}{cursor\+\_\+handler\+\_\+t}}) (CXCursor cursor)
+\item 
+typedef struct \mbox{\hyperlink{struct_index_data_string_list__}{Index\+Data\+String\+List\+\_\+}} \mbox{\hyperlink{c-index-test_8c_a002cdb688da1d4e1d6c9d7b9fb053e23}{Index\+Data\+String\+List}}
+\item 
+typedef struct \mbox{\hyperlink{structthread__info}{thread\+\_\+info}} \mbox{\hyperlink{c-index-test_8c_a6b1e111eeb327ab917852dfcd8ba3f72}{thread\+\_\+info}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50}{Display\+Type}} \{ \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e}{Display\+Type\+\_\+\+Spelling}}
+, \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc}{Display\+Type\+\_\+\+Display\+Name}}
+, \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f}{Display\+Type\+\_\+\+Pretty}}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a246a1675ed106163b7d4f141406d3005}{indextest\+\_\+core\+\_\+main}} (int argc, const char $\ast$$\ast$argv)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_abf8b8cca4d3659c057fd2ab49afb69be}{indextest\+\_\+perform\+\_\+shell\+\_\+execution}} (const char $\ast$command\+\_\+line)
+\item 
+char $\ast$ \mbox{\hyperlink{c-index-test_8c_a8c42f4a0046f13eff609604e4e6dd88a}{basename}} (const char $\ast$)
+\item 
+char $\ast$ \mbox{\hyperlink{c-index-test_8c_abdf3701655fccfd6ebb29a597d66f371}{dirname}} (char $\ast$)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\+\_\+remapped\+\_\+files}} (struct CXUnsaved\+File $\ast$unsaved\+\_\+files, int num\+\_\+unsaved\+\_\+files)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_a6163717d21d3db3edb29824ce554d190}{Print\+Diagnostic}} (CXDiagnostic Diagnostic)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_a1edb92a2047f535a1f1407b9557cd10d}{Print\+Diagnostic\+Set}} (CXDiagnostic\+Set Set)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_a40fceb7e4c2e16f5bce47bae394b973a}{Print\+Diagnostics}} (CXTranslation\+Unit TU)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_ad807e8418e9685a5284b2bbb776ade49}{Print\+Memory\+Usage}} (CXTranslation\+Unit TU)
+\item 
+enum CXChild\+Visit\+Result \mbox{\hyperlink{c-index-test_8c_a592066faf85d73bd5a13ca28d5aca47d}{Filtered\+Printing\+Visitor}} (CXCursor Cursor, CXCursor Parent, CXClient\+Data Client\+Data)
+\item 
+enum CXChild\+Visit\+Result \mbox{\hyperlink{c-index-test_8c_a0511093879dc5155579f47448dc7f35a}{USRVisitor}} (CXCursor C, CXCursor parent, CXClient\+Data Client\+Data)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_aeec77843d6ef3e3e453289ec2018c83d}{Inclusion\+Visitor}} (CXFile included\+File, CXSource\+Location $\ast$include\+Stack, unsigned include\+Stack\+Len, CXClient\+Data data)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_a271f309ab673d301e539e00164b71483}{Print\+Inclusion\+Stack}} (CXTranslation\+Unit TU)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}{perform\+\_\+test\+\_\+load\+\_\+tu}} (const char $\ast$file, const char $\ast$filter, const char $\ast$prefix, CXCursor\+Visitor Visitor, \mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}} PV)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\+\_\+test\+\_\+load\+\_\+source}} (int argc, const char $\ast$$\ast$argv, const char $\ast$filter, CXCursor\+Visitor Visitor, \mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}} PV)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_aea3df772c772b8ca80d93c100b3de16f}{perform\+\_\+test\+\_\+reparse\+\_\+source}} (int argc, const char $\ast$$\ast$argv, int trials, const char $\ast$filter, CXCursor\+Visitor Visitor, \mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}} PV)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a86d7b0a04b2271451b84a97a62081480}{parse\+\_\+file\+\_\+line\+\_\+column}} (const char $\ast$input, char $\ast$$\ast$filename, unsigned $\ast$line, unsigned $\ast$column, unsigned $\ast$second\+\_\+line, unsigned $\ast$second\+\_\+column)
+\item 
+const char $\ast$ \mbox{\hyperlink{c-index-test_8c_a5f98074f0f9c94d14afc634481d9e037}{clang\+\_\+get\+Completion\+Chunk\+Kind\+Spelling}} (enum CXCompletion\+Chunk\+Kind Kind)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_ae302b130b55b146b76be601a70212b8a}{print\+\_\+completion\+\_\+contexts}} (unsigned long long contexts, FILE $\ast$file)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a6cfa2a8406fea0e71a2700d8f58b8553}{perform\+\_\+code\+\_\+completion}} (int argc, const char $\ast$$\ast$argv, int timing\+\_\+only)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a8c63bc40ab1b76f5abf55eb8aad9a6d2}{perform\+\_\+token\+\_\+annotation}} (int argc, const char $\ast$$\ast$argv)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a846a90dd895ad8ab4948dfd8b42e88c1}{print\+\_\+usrs}} (const char $\ast$$\ast$I, const char $\ast$$\ast$E)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a0847878e5ec5c011f566e2571cba418e}{print\+\_\+usrs\+\_\+file}} (const char $\ast$file\+\_\+name)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_ab187a790df1b433ed87b4e13209297d6}{write\+\_\+pch\+\_\+file}} (const char $\ast$filename, int argc, const char $\ast$argv\mbox{[}$\,$\mbox{]})
+\item 
+int \mbox{\hyperlink{c-index-test_8c_ae86978c3ec30e6ca2db06880dd4bfc26}{cindextest\+\_\+main}} (int argc, const char $\ast$$\ast$argv)
+\item 
+void \mbox{\hyperlink{c-index-test_8c_a91e96908610b154b9dfe897de0e12b79}{thread\+\_\+runner}} (void $\ast$client\+\_\+data\+\_\+v)
+\item 
+int \mbox{\hyperlink{c-index-test_8c_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Macro Definition Documentation}
+\mbox{\Hypertarget{c-index-test_8c_a5e91649440af4abff47f1915d471b2b3}\label{c-index-test_8c_a5e91649440af4abff47f1915d471b2b3}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!MAX\_COMPILE\_ARGS@{MAX\_COMPILE\_ARGS}}
+\index{MAX\_COMPILE\_ARGS@{MAX\_COMPILE\_ARGS}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{MAX\_COMPILE\_ARGS}{MAX\_COMPILE\_ARGS}}
+{\footnotesize\ttfamily \#define MAX\+\_\+\+COMPILE\+\_\+\+ARGS~512}
+
+\mbox{\Hypertarget{c-index-test_8c_ad4351eaabb7b57e21fdd4a4cca2c1a1f}\label{c-index-test_8c_ad4351eaabb7b57e21fdd4a4cca2c1a1f}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!MAX\_IMPORTED\_ASTFILES@{MAX\_IMPORTED\_ASTFILES}}
+\index{MAX\_IMPORTED\_ASTFILES@{MAX\_IMPORTED\_ASTFILES}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{MAX\_IMPORTED\_ASTFILES}{MAX\_IMPORTED\_ASTFILES}}
+{\footnotesize\ttfamily \#define MAX\+\_\+\+IMPORTED\+\_\+\+ASTFILES~200}
+
+
+
+Definition at line 3312 of file c-\/index-\/test.\+c.
+
+\mbox{\Hypertarget{c-index-test_8c_a4a9849afcef2f49ffddd89cc8ec05e31}\label{c-index-test_8c_a4a9849afcef2f49ffddd89cc8ec05e31}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PRINT\_OBJC\_QUAL@{PRINT\_OBJC\_QUAL}}
+\index{PRINT\_OBJC\_QUAL@{PRINT\_OBJC\_QUAL}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PRINT\_OBJC\_QUAL}{PRINT\_OBJC\_QUAL}}
+{\footnotesize\ttfamily \#define PRINT\+\_\+\+OBJC\+\_\+\+QUAL(\begin{DoxyParamCaption}\item[{}]{A }\end{DoxyParamCaption})~          if (QT \& CXObj\+CDecl\+Qualifier\+\_\+\#\#A) printf(\#A \char`\"{},\char`\"{})}
+
+\mbox{\Hypertarget{c-index-test_8c_a37b2be89ffcac55a11a29368f7d4765b}\label{c-index-test_8c_a37b2be89ffcac55a11a29368f7d4765b}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PRINT\_PROP\_ATTR@{PRINT\_PROP\_ATTR}}
+\index{PRINT\_PROP\_ATTR@{PRINT\_PROP\_ATTR}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PRINT\_PROP\_ATTR}{PRINT\_PROP\_ATTR}}
+{\footnotesize\ttfamily \#define PRINT\+\_\+\+PROP\+\_\+\+ATTR(\begin{DoxyParamCaption}\item[{}]{A }\end{DoxyParamCaption})~          if (Prop\+Attrs \& CXObj\+CProperty\+Attr\+\_\+\#\#A) printf(\#A \char`\"{},\char`\"{})}
+
+
+
+\doxysubsection{Typedef Documentation}
+\mbox{\Hypertarget{c-index-test_8c_ab782a8229793b5f9556f76a9e94200bb}\label{c-index-test_8c_ab782a8229793b5f9556f76a9e94200bb}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!cursor\_handler\_t@{cursor\_handler\_t}}
+\index{cursor\_handler\_t@{cursor\_handler\_t}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{cursor\_handler\_t}{cursor\_handler\_t}}
+{\footnotesize\ttfamily typedef void($\ast$ cursor\+\_\+handler\+\_\+t) (CXCursor cursor)}
+
+
+
+Definition at line 2811 of file c-\/index-\/test.\+c.
+
+\mbox{\Hypertarget{c-index-test_8c_a002cdb688da1d4e1d6c9d7b9fb053e23}\label{c-index-test_8c_a002cdb688da1d4e1d6c9d7b9fb053e23}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!IndexDataStringList@{IndexDataStringList}}
+\index{IndexDataStringList@{IndexDataStringList}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{IndexDataStringList}{IndexDataStringList}}
+{\footnotesize\ttfamily typedef struct \mbox{\hyperlink{struct_index_data_string_list__}{Index\+Data\+String\+List\+\_\+}} \mbox{\hyperlink{c-index-test_8c_a002cdb688da1d4e1d6c9d7b9fb053e23}{Index\+Data\+String\+List}}}
+
+\mbox{\Hypertarget{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}\label{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PostVisitTU@{PostVisitTU}}
+\index{PostVisitTU@{PostVisitTU}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PostVisitTU}{PostVisitTU}}
+{\footnotesize\ttfamily typedef void($\ast$ Post\+Visit\+TU) (CXTranslation\+Unit)}
+
+
+
+Definition at line 1187 of file c-\/index-\/test.\+c.
+
+\mbox{\Hypertarget{c-index-test_8c_a6b1e111eeb327ab917852dfcd8ba3f72}\label{c-index-test_8c_a6b1e111eeb327ab917852dfcd8ba3f72}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!thread\_info@{thread\_info}}
+\index{thread\_info@{thread\_info}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{thread\_info}{thread\_info}}
+{\footnotesize\ttfamily typedef struct \mbox{\hyperlink{structthread__info}{thread\+\_\+info}} \mbox{\hyperlink{structthread__info}{thread\+\_\+info}}}
+
+
+
+\doxysubsection{Enumeration Type Documentation}
+\mbox{\Hypertarget{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50}\label{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!DisplayType@{DisplayType}}
+\index{DisplayType@{DisplayType}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{DisplayType}{DisplayType}}
+{\footnotesize\ttfamily enum \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50}{Display\+Type}}}
+
+\begin{DoxyEnumFields}{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{DisplayType\_Spelling@{DisplayType\_Spelling}!c-\/index-\/test.c@{c-\/index-\/test.c}}\index{c-\/index-\/test.c@{c-\/index-\/test.c}!DisplayType\_Spelling@{DisplayType\_Spelling}}}\mbox{\Hypertarget{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e}\label{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e}} 
+Display\+Type\+\_\+\+Spelling&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{DisplayType\_DisplayName@{DisplayType\_DisplayName}!c-\/index-\/test.c@{c-\/index-\/test.c}}\index{c-\/index-\/test.c@{c-\/index-\/test.c}!DisplayType\_DisplayName@{DisplayType\_DisplayName}}}\mbox{\Hypertarget{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc}\label{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc}} 
+Display\+Type\+\_\+\+Display\+Name&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{DisplayType\_Pretty@{DisplayType\_Pretty}!c-\/index-\/test.c@{c-\/index-\/test.c}}\index{c-\/index-\/test.c@{c-\/index-\/test.c}!DisplayType\_Pretty@{DisplayType\_Pretty}}}\mbox{\Hypertarget{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f}\label{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f}} 
+Display\+Type\+\_\+\+Pretty&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+Definition at line 435 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{435                         \{}
+\DoxyCodeLine{436     \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e}{DisplayType\_Spelling}},}
+\DoxyCodeLine{437     \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc}{DisplayType\_DisplayName}},}
+\DoxyCodeLine{438     \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f}{DisplayType\_Pretty}}}
+\DoxyCodeLine{439 \} wanted\_display\_type = \mbox{\hyperlink{c-index-test_8c_a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e}{DisplayType\_Spelling}};}
+
+\end{DoxyCode}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{c-index-test_8c_a8c42f4a0046f13eff609604e4e6dd88a}\label{c-index-test_8c_a8c42f4a0046f13eff609604e4e6dd88a}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!basename@{basename}}
+\index{basename@{basename}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{basename()}{basename()}}
+{\footnotesize\ttfamily char$\ast$ basename (\begin{DoxyParamCaption}\item[{const char $\ast$}]{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{c-index-test_8c_ae86978c3ec30e6ca2db06880dd4bfc26}\label{c-index-test_8c_ae86978c3ec30e6ca2db06880dd4bfc26}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!cindextest\_main@{cindextest\_main}}
+\index{cindextest\_main@{cindextest\_main}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{cindextest\_main()}{cindextest\_main()}}
+{\footnotesize\ttfamily int cindextest\+\_\+main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 4861 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{4861                                                  \{}
+\DoxyCodeLine{4862   \mbox{\hyperlink{_c_index_8cpp_a459c002cff4b09901ca37e1ad44d3df3}{clang\_enableStackTraces}}();}
+\DoxyCodeLine{4863   \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/read-\/diagnostics"{}}) == 0)}
+\DoxyCodeLine{4864       \textcolor{keywordflow}{return} read\_diagnostics(argv[2]);}
+\DoxyCodeLine{4865   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/code-\/completion-\/at="{}}) == argv[1])}
+\DoxyCodeLine{4866     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a6cfa2a8406fea0e71a2700d8f58b8553}{perform\_code\_completion}}(argc, argv, 0);}
+\DoxyCodeLine{4867   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/code-\/completion-\/timing="{}}) == argv[1])}
+\DoxyCodeLine{4868     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a6cfa2a8406fea0e71a2700d8f58b8553}{perform\_code\_completion}}(argc, argv, 1);}
+\DoxyCodeLine{4869   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/cursor-\/at="{}}) == argv[1])}
+\DoxyCodeLine{4870     \textcolor{keywordflow}{return} inspect\_cursor\_at(argc, argv, \textcolor{stringliteral}{"{}-\/cursor-\/at="{}}, inspect\_print\_cursor);}
+\DoxyCodeLine{4871   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/evaluate-\/cursor-\/at="{}}) == argv[1])}
+\DoxyCodeLine{4872     \textcolor{keywordflow}{return} inspect\_cursor\_at(argc, argv, \textcolor{stringliteral}{"{}-\/evaluate-\/cursor-\/at="{}},}
+\DoxyCodeLine{4873                              inspect\_evaluate\_cursor);}
+\DoxyCodeLine{4874   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/get-\/macro-\/info-\/cursor-\/at="{}}) == argv[1])}
+\DoxyCodeLine{4875     \textcolor{keywordflow}{return} inspect\_cursor\_at(argc, argv, \textcolor{stringliteral}{"{}-\/get-\/macro-\/info-\/cursor-\/at="{}},}
+\DoxyCodeLine{4876                              inspect\_macroinfo\_cursor);}
+\DoxyCodeLine{4877   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/file-\/refs-\/at="{}}) == argv[1])}
+\DoxyCodeLine{4878     \textcolor{keywordflow}{return} find\_file\_refs\_at(argc, argv);}
+\DoxyCodeLine{4879   \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/file-\/includes-\/in="{}}) == argv[1])}
+\DoxyCodeLine{4880     \textcolor{keywordflow}{return} find\_file\_includes\_in(argc, argv);}
+\DoxyCodeLine{4881   \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/index-\/file"{}}) == 0)}
+\DoxyCodeLine{4882     \textcolor{keywordflow}{return} index\_file(argc -\/ 2, argv + 2, \textcolor{comment}{/*full=*/}0);}
+\DoxyCodeLine{4883   \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/index-\/file-\/full"{}}) == 0)}
+\DoxyCodeLine{4884     \textcolor{keywordflow}{return} index\_file(argc -\/ 2, argv + 2, \textcolor{comment}{/*full=*/}1);}
+\DoxyCodeLine{4885   \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/index-\/tu"{}}) == 0)}
+\DoxyCodeLine{4886     \textcolor{keywordflow}{return} index\_tu(argc -\/ 2, argv + 2);}
+\DoxyCodeLine{4887   \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/index-\/compile-\/db"{}}) == 0)}
+\DoxyCodeLine{4888     \textcolor{keywordflow}{return} index\_compile\_db(argc -\/ 2, argv + 2);}
+\DoxyCodeLine{4889   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc >= 4 \&\& strncmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/load-\/tu"{}}, 13) == 0) \{}
+\DoxyCodeLine{4890     CXCursorVisitor I = GetVisitor(argv[1] + 13);}
+\DoxyCodeLine{4891     \textcolor{keywordflow}{if} (I)}
+\DoxyCodeLine{4892       \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}{perform\_test\_load\_tu}}(argv[2], argv[3], argc >= 5 ? argv[4] : 0, I,}
+\DoxyCodeLine{4893                                   NULL);}
+\DoxyCodeLine{4894   \}}
+\DoxyCodeLine{4895   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc >= 5 \&\& strncmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/load-\/source-\/reparse"{}}, 25) == 0)\{}
+\DoxyCodeLine{4896     CXCursorVisitor I = GetVisitor(argv[1] + 25);}
+\DoxyCodeLine{4897     \textcolor{keywordflow}{if} (I) \{}
+\DoxyCodeLine{4898       \textcolor{keywordtype}{int} trials = atoi(argv[2]);}
+\DoxyCodeLine{4899       \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_aea3df772c772b8ca80d93c100b3de16f}{perform\_test\_reparse\_source}}(argc -\/ 4, argv + 4, trials, argv[3], I, }
+\DoxyCodeLine{4900                                          NULL);}
+\DoxyCodeLine{4901     \}}
+\DoxyCodeLine{4902   \}}
+\DoxyCodeLine{4903   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc >= 4 \&\& strncmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/load-\/source"{}}, 17) == 0) \{}
+\DoxyCodeLine{4904     CXCursorVisitor I = GetVisitor(argv[1] + 17);}
+\DoxyCodeLine{4905     }
+\DoxyCodeLine{4906     \mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{PostVisitTU}} postVisit = 0;}
+\DoxyCodeLine{4907     \textcolor{keywordflow}{if} (strstr(argv[1], \textcolor{stringliteral}{"{}-\/memory-\/usage"{}}))}
+\DoxyCodeLine{4908       postVisit = \mbox{\hyperlink{c-index-test_8c_ad807e8418e9685a5284b2bbb776ade49}{PrintMemoryUsage}};}
+\DoxyCodeLine{4909     }
+\DoxyCodeLine{4910     \textcolor{keywordflow}{if} (I)}
+\DoxyCodeLine{4911       \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 3, argv + 3, argv[2], I,}
+\DoxyCodeLine{4912                                       postVisit);}
+\DoxyCodeLine{4913   \}}
+\DoxyCodeLine{4914   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc >= 3 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/single-\/file-\/parse"{}}) == 0)}
+\DoxyCodeLine{4915     \textcolor{keywordflow}{return} perform\_single\_file\_parse(argv[2]);}
+\DoxyCodeLine{4916   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc >= 3 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/retain-\/excluded-\/conditional-\/blocks"{}}) == 0)}
+\DoxyCodeLine{4917     \textcolor{keywordflow}{return} perform\_file\_retain\_excluded\_cb(argv[2]);}
+\DoxyCodeLine{4918   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc >= 4 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/file-\/scan"{}}) == 0)}
+\DoxyCodeLine{4919     \textcolor{keywordflow}{return} perform\_file\_scan(argv[2], argv[3],}
+\DoxyCodeLine{4920                              argc >= 5 ? argv[4] : 0);}
+\DoxyCodeLine{4921   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strstr(argv[1], \textcolor{stringliteral}{"{}-\/test-\/annotate-\/tokens="{}}) == argv[1])}
+\DoxyCodeLine{4922     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a8c63bc40ab1b76f5abf55eb8aad9a6d2}{perform\_token\_annotation}}(argc, argv);}
+\DoxyCodeLine{4923   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/inclusion-\/stack-\/source"{}}) == 0)}
+\DoxyCodeLine{4924     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}}, NULL,}
+\DoxyCodeLine{4925                                     \mbox{\hyperlink{c-index-test_8c_a271f309ab673d301e539e00164b71483}{PrintInclusionStack}});}
+\DoxyCodeLine{4926   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/inclusion-\/stack-\/tu"{}}) == 0)}
+\DoxyCodeLine{4927     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}{perform\_test\_load\_tu}}(argv[2], \textcolor{stringliteral}{"{}all"{}}, NULL, NULL,}
+\DoxyCodeLine{4928                                 \mbox{\hyperlink{c-index-test_8c_a271f309ab673d301e539e00164b71483}{PrintInclusionStack}});}
+\DoxyCodeLine{4929   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/linkage-\/source"{}}) == 0)}
+\DoxyCodeLine{4930     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}}, PrintLinkage,}
+\DoxyCodeLine{4931                                     NULL);}
+\DoxyCodeLine{4932   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/visibility"{}}) == 0)}
+\DoxyCodeLine{4933     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}}, PrintVisibility,}
+\DoxyCodeLine{4934                                     NULL);}
+\DoxyCodeLine{4935   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/type"{}}) == 0)}
+\DoxyCodeLine{4936     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}},}
+\DoxyCodeLine{4937                                     PrintType, 0);}
+\DoxyCodeLine{4938   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/type-\/size"{}}) == 0)}
+\DoxyCodeLine{4939     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}},}
+\DoxyCodeLine{4940                                     PrintTypeSize, 0);}
+\DoxyCodeLine{4941   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/type-\/declaration"{}}) == 0)}
+\DoxyCodeLine{4942     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}},}
+\DoxyCodeLine{4943                                     PrintTypeDeclaration, 0);}
+\DoxyCodeLine{4944   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/decl-\/attributes"{}}) == 0)}
+\DoxyCodeLine{4945     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}},}
+\DoxyCodeLine{4946                                     PrintDeclAttributes, 0);}
+\DoxyCodeLine{4947   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/bitwidth"{}}) == 0)}
+\DoxyCodeLine{4948     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_adae363afaf561553359800991169ce1c}{perform\_test\_load\_source}}(argc -\/ 2, argv + 2, \textcolor{stringliteral}{"{}all"{}},}
+\DoxyCodeLine{4949                                     PrintBitWidth, 0);}
+\DoxyCodeLine{4950   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/mangle"{}}) == 0)}
+\DoxyCodeLine{4951     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}{perform\_test\_load\_tu}}(argv[2], \textcolor{stringliteral}{"{}all"{}}, NULL, PrintMangledName, NULL);}
+\DoxyCodeLine{4952   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/manglings"{}}) == 0)}
+\DoxyCodeLine{4953     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}{perform\_test\_load\_tu}}(argv[2], \textcolor{stringliteral}{"{}all"{}}, NULL, PrintManglings, NULL);}
+\DoxyCodeLine{4954   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/test-\/print-\/target-\/info"{}}) == 0)}
+\DoxyCodeLine{4955     \textcolor{keywordflow}{return} print\_target\_info(argc -\/ 2, argv + 2);}
+\DoxyCodeLine{4956   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 1 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/print-\/usr"{}}) == 0) \{}
+\DoxyCodeLine{4957     \textcolor{keywordflow}{if} (argc > 2)}
+\DoxyCodeLine{4958       \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a846a90dd895ad8ab4948dfd8b42e88c1}{print\_usrs}}(argv + 2, argv + argc);}
+\DoxyCodeLine{4959     \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{4960       display\_usrs();}
+\DoxyCodeLine{4961       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{4962     \}}
+\DoxyCodeLine{4963   \}}
+\DoxyCodeLine{4964   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/print-\/usr-\/file"{}}) == 0)}
+\DoxyCodeLine{4965     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a0847878e5ec5c011f566e2571cba418e}{print\_usrs\_file}}(argv[2]);}
+\DoxyCodeLine{4966   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/write-\/pch"{}}) == 0)}
+\DoxyCodeLine{4967     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_ab187a790df1b433ed87b4e13209297d6}{write\_pch\_file}}(argv[2], argc -\/ 3, argv + 3);}
+\DoxyCodeLine{4968   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc > 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/compilation-\/db"{}}) == 0)}
+\DoxyCodeLine{4969     \textcolor{keywordflow}{return} perform\_test\_compilation\_db(argv[argc-\/1], argc -\/ 3, argv + 2);}
+\DoxyCodeLine{4970   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc == 2 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}-\/print-\/build-\/session-\/timestamp"{}}) == 0)}
+\DoxyCodeLine{4971     \textcolor{keywordflow}{return} perform\_print\_build\_session\_timestamp();}
+\DoxyCodeLine{4972 }
+\DoxyCodeLine{4973   print\_usage();}
+\DoxyCodeLine{4974   \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{4975 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+enable\+Stack\+Traces().
+
+\mbox{\Hypertarget{c-index-test_8c_a5f98074f0f9c94d14afc634481d9e037}\label{c-index-test_8c_a5f98074f0f9c94d14afc634481d9e037}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!clang\_getCompletionChunkKindSpelling@{clang\_getCompletionChunkKindSpelling}}
+\index{clang\_getCompletionChunkKindSpelling@{clang\_getCompletionChunkKindSpelling}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{clang\_getCompletionChunkKindSpelling()}{clang\_getCompletionChunkKindSpelling()}}
+{\footnotesize\ttfamily const char$\ast$ clang\+\_\+get\+Completion\+Chunk\+Kind\+Spelling (\begin{DoxyParamCaption}\item[{enum CXCompletion\+Chunk\+Kind}]{Kind }\end{DoxyParamCaption})}
+
+
+
+Definition at line 2393 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{2393                                                                       \{}
+\DoxyCodeLine{2394   \textcolor{keywordflow}{switch} (Kind) \{}
+\DoxyCodeLine{2395   \textcolor{keywordflow}{case} CXCompletionChunk\_Optional: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Optional"{}};}
+\DoxyCodeLine{2396   \textcolor{keywordflow}{case} CXCompletionChunk\_TypedText: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}TypedText"{}};}
+\DoxyCodeLine{2397   \textcolor{keywordflow}{case} CXCompletionChunk\_Text: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Text"{}};}
+\DoxyCodeLine{2398   \textcolor{keywordflow}{case} CXCompletionChunk\_Placeholder: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Placeholder"{}};}
+\DoxyCodeLine{2399   \textcolor{keywordflow}{case} CXCompletionChunk\_Informative: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Informative"{}};}
+\DoxyCodeLine{2400   \textcolor{keywordflow}{case} CXCompletionChunk\_CurrentParameter: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}CurrentParameter"{}};}
+\DoxyCodeLine{2401   \textcolor{keywordflow}{case} CXCompletionChunk\_LeftParen: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}LeftParen"{}};}
+\DoxyCodeLine{2402   \textcolor{keywordflow}{case} CXCompletionChunk\_RightParen: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}RightParen"{}};}
+\DoxyCodeLine{2403   \textcolor{keywordflow}{case} CXCompletionChunk\_LeftBracket: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}LeftBracket"{}};}
+\DoxyCodeLine{2404   \textcolor{keywordflow}{case} CXCompletionChunk\_RightBracket: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}RightBracket"{}};}
+\DoxyCodeLine{2405   \textcolor{keywordflow}{case} CXCompletionChunk\_LeftBrace: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}LeftBrace"{}};}
+\DoxyCodeLine{2406   \textcolor{keywordflow}{case} CXCompletionChunk\_RightBrace: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}RightBrace"{}};}
+\DoxyCodeLine{2407   \textcolor{keywordflow}{case} CXCompletionChunk\_LeftAngle: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}LeftAngle"{}};}
+\DoxyCodeLine{2408   \textcolor{keywordflow}{case} CXCompletionChunk\_RightAngle: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}RightAngle"{}};}
+\DoxyCodeLine{2409   \textcolor{keywordflow}{case} CXCompletionChunk\_Comma: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Comma"{}};}
+\DoxyCodeLine{2410   \textcolor{keywordflow}{case} CXCompletionChunk\_ResultType: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}ResultType"{}};}
+\DoxyCodeLine{2411   \textcolor{keywordflow}{case} CXCompletionChunk\_Colon: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Colon"{}};}
+\DoxyCodeLine{2412   \textcolor{keywordflow}{case} CXCompletionChunk\_SemiColon: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}SemiColon"{}};}
+\DoxyCodeLine{2413   \textcolor{keywordflow}{case} CXCompletionChunk\_Equal: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Equal"{}};}
+\DoxyCodeLine{2414   \textcolor{keywordflow}{case} CXCompletionChunk\_HorizontalSpace: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}HorizontalSpace"{}};}
+\DoxyCodeLine{2415   \textcolor{keywordflow}{case} CXCompletionChunk\_VerticalSpace: \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}VerticalSpace"{}};}
+\DoxyCodeLine{2416   \}}
+\DoxyCodeLine{2417 }
+\DoxyCodeLine{2418   \textcolor{keywordflow}{return} \textcolor{stringliteral}{"{}Unknown"{}};}
+\DoxyCodeLine{2419 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_abdf3701655fccfd6ebb29a597d66f371}\label{c-index-test_8c_abdf3701655fccfd6ebb29a597d66f371}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!dirname@{dirname}}
+\index{dirname@{dirname}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{dirname()}{dirname()}}
+{\footnotesize\ttfamily char$\ast$ dirname (\begin{DoxyParamCaption}\item[{char $\ast$}]{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{c-index-test_8c_a592066faf85d73bd5a13ca28d5aca47d}\label{c-index-test_8c_a592066faf85d73bd5a13ca28d5aca47d}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!FilteredPrintingVisitor@{FilteredPrintingVisitor}}
+\index{FilteredPrintingVisitor@{FilteredPrintingVisitor}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{FilteredPrintingVisitor()}{FilteredPrintingVisitor()}}
+{\footnotesize\ttfamily enum CXChild\+Visit\+Result Filtered\+Printing\+Visitor (\begin{DoxyParamCaption}\item[{CXCursor}]{Cursor,  }\item[{CXCursor}]{Parent,  }\item[{CXClient\+Data}]{Client\+Data }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1284 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1299                                                                          \{}
+\DoxyCodeLine{1300   \mbox{\hyperlink{struct_visitor_data}{VisitorData}} *Data = (\mbox{\hyperlink{struct_visitor_data}{VisitorData}} *)ClientData;}
+\DoxyCodeLine{1301   \textcolor{keywordflow}{if} (!Data-\/>\mbox{\hyperlink{struct_visitor_data_a2adae660b33ba2270dd98ecffbec5fb7}{Filter}} || (Cursor.kind == *(\textcolor{keyword}{enum} CXCursorKind *)Data-\/>\mbox{\hyperlink{struct_visitor_data_a2adae660b33ba2270dd98ecffbec5fb7}{Filter}})) \{}
+\DoxyCodeLine{1302     CXSourceLocation Loc = \mbox{\hyperlink{_c_index_8cpp_a98001a3f8eb3a76d9c12821c45ef3708}{clang\_getCursorLocation}}(Cursor);}
+\DoxyCodeLine{1303     \textcolor{keywordtype}{unsigned} line, column;}
+\DoxyCodeLine{1304     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(Loc, 0, \&line, \&column, 0);}
+\DoxyCodeLine{1305     printf(\textcolor{stringliteral}{"{}// \%s: \%s:\%d:\%d: "{}}, FileCheckPrefix,}
+\DoxyCodeLine{1306            GetCursorSource(Cursor), line, column);}
+\DoxyCodeLine{1307     PrintCursor(Cursor, Data-\/>\mbox{\hyperlink{struct_visitor_data_a6a459e19a9daaa88b22a8fcdbe6041db}{CommentSchemaFile}});}
+\DoxyCodeLine{1308     PrintCursorExtent(Cursor);}
+\DoxyCodeLine{1309     \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(Cursor.kind)) \{}
+\DoxyCodeLine{1310       \textcolor{keyword}{enum} CX\_CXXAccessSpecifier access = \mbox{\hyperlink{_c_index_c_x_x_8cpp_aaf7993362c5af9475b57fa2e577c2112}{clang\_getCXXAccessSpecifier}}(Cursor);}
+\DoxyCodeLine{1311       \textcolor{keyword}{const} \textcolor{keywordtype}{char} *accessStr = 0;}
+\DoxyCodeLine{1312 }
+\DoxyCodeLine{1313       \textcolor{keywordflow}{switch} (access) \{}
+\DoxyCodeLine{1314         \textcolor{keywordflow}{case} CX\_CXXInvalidAccessSpecifier: \textcolor{keywordflow}{break};}
+\DoxyCodeLine{1315         \textcolor{keywordflow}{case} CX\_CXXPublic:}
+\DoxyCodeLine{1316           accessStr = \textcolor{stringliteral}{"{}public"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{1317         \textcolor{keywordflow}{case} CX\_CXXProtected:}
+\DoxyCodeLine{1318           accessStr = \textcolor{stringliteral}{"{}protected"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{1319         \textcolor{keywordflow}{case} CX\_CXXPrivate:}
+\DoxyCodeLine{1320           accessStr = \textcolor{stringliteral}{"{}private"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{1321       \}}
+\DoxyCodeLine{1322 }
+\DoxyCodeLine{1323       \textcolor{keywordflow}{if} (accessStr)}
+\DoxyCodeLine{1324         printf(\textcolor{stringliteral}{"{} [access=\%s]"{}}, accessStr);}
+\DoxyCodeLine{1325     \}}
+\DoxyCodeLine{1326     printf(\textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{1327     \textcolor{keywordflow}{return} CXChildVisit\_Recurse;}
+\DoxyCodeLine{1328   \}}
+\DoxyCodeLine{1329 }
+\DoxyCodeLine{1330   \textcolor{keywordflow}{return} CXChildVisit\_Continue;}
+\DoxyCodeLine{1331 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}\label{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!free\_remapped\_files@{free\_remapped\_files}}
+\index{free\_remapped\_files@{free\_remapped\_files}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{free\_remapped\_files()}{free\_remapped\_files()}}
+{\footnotesize\ttfamily void free\+\_\+remapped\+\_\+files (\begin{DoxyParamCaption}\item[{struct CXUnsaved\+File $\ast$}]{unsaved\+\_\+files,  }\item[{int}]{num\+\_\+unsaved\+\_\+files }\end{DoxyParamCaption})}
+
+
+
+Definition at line 206 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{207                                                 \{}
+\DoxyCodeLine{208   \textcolor{keywordtype}{int} i;}
+\DoxyCodeLine{209   \textcolor{keywordflow}{for} (i = 0; i != num\_unsaved\_files; ++i) \{}
+\DoxyCodeLine{210     free((\textcolor{keywordtype}{char} *)unsaved\_files[i].Filename);}
+\DoxyCodeLine{211     free((\textcolor{keywordtype}{char} *)unsaved\_files[i].Contents);}
+\DoxyCodeLine{212   \}}
+\DoxyCodeLine{213   free(unsaved\_files);}
+\DoxyCodeLine{214 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_aeec77843d6ef3e3e453289ec2018c83d}\label{c-index-test_8c_aeec77843d6ef3e3e453289ec2018c83d}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!InclusionVisitor@{InclusionVisitor}}
+\index{InclusionVisitor@{InclusionVisitor}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{InclusionVisitor()}{InclusionVisitor()}}
+{\footnotesize\ttfamily void Inclusion\+Visitor (\begin{DoxyParamCaption}\item[{CXFile}]{included\+File,  }\item[{CXSource\+Location $\ast$}]{include\+Stack,  }\item[{unsigned}]{include\+Stack\+Len,  }\item[{CXClient\+Data}]{data }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1418 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1419                                                                    \{}
+\DoxyCodeLine{1420 }
+\DoxyCodeLine{1421   \textcolor{keywordtype}{unsigned} i;}
+\DoxyCodeLine{1422   CXString fname;}
+\DoxyCodeLine{1423 }
+\DoxyCodeLine{1424   fname = \mbox{\hyperlink{_c_index_8cpp_a263c34f5782353186990b2c990d648fc}{clang\_getFileName}}(includedFile);}
+\DoxyCodeLine{1425   printf(\textcolor{stringliteral}{"{}file: \%s\(\backslash\)nincluded by:\(\backslash\)n"{}}, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(fname));}
+\DoxyCodeLine{1426   \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(fname);}
+\DoxyCodeLine{1427 }
+\DoxyCodeLine{1428   \textcolor{keywordflow}{for} (i = 0; i < includeStackLen; ++i) \{}
+\DoxyCodeLine{1429     CXFile includingFile;}
+\DoxyCodeLine{1430     \textcolor{keywordtype}{unsigned} line, column;}
+\DoxyCodeLine{1431     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(includeStack[i], \&includingFile, \&line,}
+\DoxyCodeLine{1432                               \&column, 0);}
+\DoxyCodeLine{1433     fname = \mbox{\hyperlink{_c_index_8cpp_a263c34f5782353186990b2c990d648fc}{clang\_getFileName}}(includingFile);}
+\DoxyCodeLine{1434     printf(\textcolor{stringliteral}{"{}  \%s:\%d:\%d\(\backslash\)n"{}}, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(fname), line, column);}
+\DoxyCodeLine{1435     \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(fname);}
+\DoxyCodeLine{1436   \}}
+\DoxyCodeLine{1437   printf(\textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{1438 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+dispose\+String(), clang\+\_\+get\+CString(), clang\+\_\+get\+File\+Name(), and clang\+\_\+get\+Spelling\+Location().
+
+
+
+Referenced by Print\+Inclusion\+Stack().
+
+\mbox{\Hypertarget{c-index-test_8c_a246a1675ed106163b7d4f141406d3005}\label{c-index-test_8c_a246a1675ed106163b7d4f141406d3005}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!indextest\_core\_main@{indextest\_core\_main}}
+\index{indextest\_core\_main@{indextest\_core\_main}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{indextest\_core\_main()}{indextest\_core\_main()}}
+{\footnotesize\ttfamily int indextest\+\_\+core\+\_\+main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 330 of file core\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{330                                                      \{}
+\DoxyCodeLine{331   sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{332   PrettyStackTraceProgram X(argc, argv);}
+\DoxyCodeLine{333   \textcolor{keywordtype}{void} *MainAddr = (\textcolor{keywordtype}{void}*) (intptr\_t) \mbox{\hyperlink{core__main_8cpp_a246a1675ed106163b7d4f141406d3005}{indextest\_core\_main}};}
+\DoxyCodeLine{334   std::string Executable = llvm::sys::fs::getMainExecutable(argv[0], MainAddr);}
+\DoxyCodeLine{335 }
+\DoxyCodeLine{336   assert(argv[1] == StringRef(\textcolor{stringliteral}{"{}core"{}}));}
+\DoxyCodeLine{337   ++argv;}
+\DoxyCodeLine{338   -\/-\/argc;}
+\DoxyCodeLine{339 }
+\DoxyCodeLine{340   std::vector<const char *> CompArgs;}
+\DoxyCodeLine{341   \textcolor{keyword}{const} \textcolor{keywordtype}{char} **DoubleDash = std::find(argv, argv + argc, StringRef(\textcolor{stringliteral}{"{}-\/-\/"{}}));}
+\DoxyCodeLine{342   \textcolor{keywordflow}{if} (DoubleDash != argv + argc) \{}
+\DoxyCodeLine{343     CompArgs = std::vector<const char *>(DoubleDash + 1, argv + argc);}
+\DoxyCodeLine{344     argc = DoubleDash -\/ argv;}
+\DoxyCodeLine{345   \}}
+\DoxyCodeLine{346 }
+\DoxyCodeLine{347   cl::HideUnrelatedOptions(options::IndexTestCoreCategory);}
+\DoxyCodeLine{348   cl::ParseCommandLineOptions(argc, argv, \textcolor{stringliteral}{"{}index-\/test-\/core"{}});}
+\DoxyCodeLine{349 }
+\DoxyCodeLine{350   \textcolor{keywordflow}{if} (options::Action == ActionType::None) \{}
+\DoxyCodeLine{351     errs() << \textcolor{stringliteral}{"{}error: action required; pass '-\/help' for options\(\backslash\)n"{}};}
+\DoxyCodeLine{352     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{353   \}}
+\DoxyCodeLine{354 }
+\DoxyCodeLine{355   \textcolor{keywordflow}{if} (options::Action == ActionType::PrintSourceSymbols) \{}
+\DoxyCodeLine{356     \textcolor{keywordflow}{if} (!options::ModuleFilePath.empty()) \{}
+\DoxyCodeLine{357       \textcolor{keywordflow}{return} printSourceSymbolsFromModule(options::ModuleFilePath,}
+\DoxyCodeLine{358                                           options::ModuleFormat);}
+\DoxyCodeLine{359     \}}
+\DoxyCodeLine{360     \textcolor{keywordflow}{if} (CompArgs.empty()) \{}
+\DoxyCodeLine{361       errs() << \textcolor{stringliteral}{"{}error: missing compiler args; pass '-\/-\/ <compiler arguments>'\(\backslash\)n"{}};}
+\DoxyCodeLine{362       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{363     \}}
+\DoxyCodeLine{364     \textcolor{keywordflow}{return} printSourceSymbols(Executable.c\_str(), CompArgs,}
+\DoxyCodeLine{365                               options::DumpModuleImports,}
+\DoxyCodeLine{366                               options::IncludeLocals, options::IgnoreMacros);}
+\DoxyCodeLine{367   \}}
+\DoxyCodeLine{368 }
+\DoxyCodeLine{369   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{370 \}}
+
+\end{DoxyCode}
+
+
+References indextest\+\_\+core\+\_\+main().
+
+
+
+Referenced by indextest\+\_\+core\+\_\+main().
+
+\mbox{\Hypertarget{c-index-test_8c_abf8b8cca4d3659c057fd2ab49afb69be}\label{c-index-test_8c_abf8b8cca4d3659c057fd2ab49afb69be}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!indextest\_perform\_shell\_execution@{indextest\_perform\_shell\_execution}}
+\index{indextest\_perform\_shell\_execution@{indextest\_perform\_shell\_execution}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{indextest\_perform\_shell\_execution()}{indextest\_perform\_shell\_execution()}}
+{\footnotesize\ttfamily int indextest\+\_\+perform\+\_\+shell\+\_\+execution (\begin{DoxyParamCaption}\item[{const char $\ast$}]{command\+\_\+line }\end{DoxyParamCaption})}
+
+
+
+Definition at line 376 of file core\+\_\+main.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{376                                                                 \{}
+\DoxyCodeLine{377   BumpPtrAllocator Alloc;}
+\DoxyCodeLine{378   llvm::StringSaver Saver(Alloc);}
+\DoxyCodeLine{379   SmallVector<const char *, 4> Args;}
+\DoxyCodeLine{380   llvm::cl::TokenizeGNUCommandLine(command\_line, Saver, Args);}
+\DoxyCodeLine{381   \textcolor{keyword}{auto} Program = llvm::sys::findProgramByName(Args[0]);}
+\DoxyCodeLine{382   \textcolor{keywordflow}{if} (std::error\_code ec = Program.getError()) \{}
+\DoxyCodeLine{383     llvm::errs() << \textcolor{stringliteral}{"{}command not found: "{}} << Args[0] << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{384     \textcolor{keywordflow}{return} ec.value();}
+\DoxyCodeLine{385   \}}
+\DoxyCodeLine{386   SmallVector<StringRef, 8> execArgs(Args.begin(), Args.end());}
+\DoxyCodeLine{387   \textcolor{keywordflow}{return} llvm::sys::ExecuteAndWait(*Program, execArgs);}
+\DoxyCodeLine{388 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_a217dbf8b442f20279ea00b898af96f52}\label{c-index-test_8c_a217dbf8b442f20279ea00b898af96f52}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!main@{main}}
+\index{main@{main}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 5002 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{5002                                       \{}
+\DoxyCodeLine{5003   \mbox{\hyperlink{structthread__info}{thread\_info}} client\_data;}
+\DoxyCodeLine{5004 }
+\DoxyCodeLine{5005   atexit(flush\_atexit);}
+\DoxyCodeLine{5006 }
+\DoxyCodeLine{5007 \textcolor{preprocessor}{\#ifdef CLANG\_HAVE\_LIBXML}}
+\DoxyCodeLine{5008   LIBXML\_TEST\_VERSION}
+\DoxyCodeLine{5009 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{5010 }
+\DoxyCodeLine{5011   \textcolor{keywordflow}{if} (argc > 1 \&\& strcmp(argv[1], \textcolor{stringliteral}{"{}core"{}}) == 0)}
+\DoxyCodeLine{5012     \textcolor{keywordflow}{return} \mbox{\hyperlink{c-index-test_8c_a246a1675ed106163b7d4f141406d3005}{indextest\_core\_main}}(argc, argv);}
+\DoxyCodeLine{5013 }
+\DoxyCodeLine{5014   client\_data.\mbox{\hyperlink{structthread__info_adc28060776617282f0c5a76431aec532}{main\_func}} = \mbox{\hyperlink{c-index-test_8c_ae86978c3ec30e6ca2db06880dd4bfc26}{cindextest\_main}};}
+\DoxyCodeLine{5015   client\_data.\mbox{\hyperlink{structthread__info_a78ff8f016b665b19193b194f8a659f96}{argc}} = argc;}
+\DoxyCodeLine{5016   client\_data.\mbox{\hyperlink{structthread__info_a734b6a1187acc993b18983573234e93f}{argv}} = argv;}
+\DoxyCodeLine{5017 }
+\DoxyCodeLine{5018   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_NOTHREADS"{}}))}
+\DoxyCodeLine{5019     \textcolor{keywordflow}{return} client\_data.\mbox{\hyperlink{structthread__info_adc28060776617282f0c5a76431aec532}{main\_func}}(client\_data.\mbox{\hyperlink{structthread__info_a78ff8f016b665b19193b194f8a659f96}{argc}}, client\_data.\mbox{\hyperlink{structthread__info_a734b6a1187acc993b18983573234e93f}{argv}});}
+\DoxyCodeLine{5020 }
+\DoxyCodeLine{5021   \mbox{\hyperlink{_c_index_8cpp_aeb6cae453fe08d2720436c24d4629e8e}{clang\_executeOnThread}}(\mbox{\hyperlink{c-index-test_8c_a91e96908610b154b9dfe897de0e12b79}{thread\_runner}}, \&client\_data, 0);}
+\DoxyCodeLine{5022   \textcolor{keywordflow}{return} client\_data.\mbox{\hyperlink{structthread__info_ad2caaa988d61b6beba0b6d681a6589ae}{result}};}
+\DoxyCodeLine{5023 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_a86d7b0a04b2271451b84a97a62081480}\label{c-index-test_8c_a86d7b0a04b2271451b84a97a62081480}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!parse\_file\_line\_column@{parse\_file\_line\_column}}
+\index{parse\_file\_line\_column@{parse\_file\_line\_column}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{parse\_file\_line\_column()}{parse\_file\_line\_column()}}
+{\footnotesize\ttfamily int parse\+\_\+file\+\_\+line\+\_\+column (\begin{DoxyParamCaption}\item[{const char $\ast$}]{input,  }\item[{char $\ast$$\ast$}]{filename,  }\item[{unsigned $\ast$}]{line,  }\item[{unsigned $\ast$}]{column,  }\item[{unsigned $\ast$}]{second\+\_\+line,  }\item[{unsigned $\ast$}]{second\+\_\+column }\end{DoxyParamCaption})}
+
+
+
+Definition at line 2331 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{2333                                                     \{}
+\DoxyCodeLine{2334   \textcolor{comment}{/* Find the second colon. */}}
+\DoxyCodeLine{2335   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *last\_colon = strrchr(input, \textcolor{charliteral}{':'});}
+\DoxyCodeLine{2336   \textcolor{keywordtype}{unsigned} values[4], i;}
+\DoxyCodeLine{2337   \textcolor{keywordtype}{unsigned} num\_values = (second\_line \&\& second\_column)? 4 : 2;}
+\DoxyCodeLine{2338 }
+\DoxyCodeLine{2339   \textcolor{keywordtype}{char} *endptr = 0;}
+\DoxyCodeLine{2340   \textcolor{keywordflow}{if} (!last\_colon || last\_colon == input) \{}
+\DoxyCodeLine{2341     \textcolor{keywordflow}{if} (num\_values == 4)}
+\DoxyCodeLine{2342       fprintf(stderr, \textcolor{stringliteral}{"{}could not parse filename:line:column:line:column in "{}}}
+\DoxyCodeLine{2343               \textcolor{stringliteral}{"{}'\%s'\(\backslash\)n"{}}, input);}
+\DoxyCodeLine{2344     \textcolor{keywordflow}{else}}
+\DoxyCodeLine{2345       fprintf(stderr, \textcolor{stringliteral}{"{}could not parse filename:line:column in '\%s'\(\backslash\)n"{}}, input);}
+\DoxyCodeLine{2346     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2347   \}}
+\DoxyCodeLine{2348 }
+\DoxyCodeLine{2349   \textcolor{keywordflow}{for} (i = 0; i != num\_values; ++i) \{}
+\DoxyCodeLine{2350     \textcolor{keyword}{const} \textcolor{keywordtype}{char} *prev\_colon;}
+\DoxyCodeLine{2351 }
+\DoxyCodeLine{2352     \textcolor{comment}{/* Parse the next line or column. */}}
+\DoxyCodeLine{2353     values[num\_values -\/ i -\/ 1] = strtol(last\_colon + 1, \&endptr, 10);}
+\DoxyCodeLine{2354     \textcolor{keywordflow}{if} (*endptr != 0 \&\& *endptr != \textcolor{charliteral}{':'}) \{}
+\DoxyCodeLine{2355       fprintf(stderr, \textcolor{stringliteral}{"{}could not parse \%s in '\%s'\(\backslash\)n"{}},}
+\DoxyCodeLine{2356               (i \% 2 ? \textcolor{stringliteral}{"{}column"{}} : \textcolor{stringliteral}{"{}line"{}}), input);}
+\DoxyCodeLine{2357       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2358     \}}
+\DoxyCodeLine{2359 }
+\DoxyCodeLine{2360     \textcolor{keywordflow}{if} (i + 1 == num\_values)}
+\DoxyCodeLine{2361       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{2362 }
+\DoxyCodeLine{2363     \textcolor{comment}{/* Find the previous colon. */}}
+\DoxyCodeLine{2364     prev\_colon = last\_colon -\/ 1;}
+\DoxyCodeLine{2365     \textcolor{keywordflow}{while} (prev\_colon != input \&\& *prev\_colon != \textcolor{charliteral}{':'})}
+\DoxyCodeLine{2366       -\/-\/prev\_colon;}
+\DoxyCodeLine{2367     \textcolor{keywordflow}{if} (prev\_colon == input) \{}
+\DoxyCodeLine{2368       fprintf(stderr, \textcolor{stringliteral}{"{}could not parse \%s in '\%s'\(\backslash\)n"{}},}
+\DoxyCodeLine{2369               (i \% 2 == 0? \textcolor{stringliteral}{"{}column"{}} : \textcolor{stringliteral}{"{}line"{}}), input);}
+\DoxyCodeLine{2370       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2371     \}}
+\DoxyCodeLine{2372 }
+\DoxyCodeLine{2373     last\_colon = prev\_colon;}
+\DoxyCodeLine{2374   \}}
+\DoxyCodeLine{2375 }
+\DoxyCodeLine{2376   *line = values[0];}
+\DoxyCodeLine{2377   *column = values[1];}
+\DoxyCodeLine{2378 }
+\DoxyCodeLine{2379   \textcolor{keywordflow}{if} (second\_line \&\& second\_column) \{}
+\DoxyCodeLine{2380     *second\_line = values[2];}
+\DoxyCodeLine{2381     *second\_column = values[3];}
+\DoxyCodeLine{2382   \}}
+\DoxyCodeLine{2383 }
+\DoxyCodeLine{2384   \textcolor{comment}{/* Copy the file name. */}}
+\DoxyCodeLine{2385   *filename = (\textcolor{keywordtype}{char}*)malloc(last\_colon -\/ input + 1);}
+\DoxyCodeLine{2386   assert(*filename);}
+\DoxyCodeLine{2387   memcpy(*filename, input, last\_colon -\/ input);}
+\DoxyCodeLine{2388   (*filename)[last\_colon -\/ input] = 0;}
+\DoxyCodeLine{2389   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{2390 \}}
+
+\end{DoxyCode}
+
+
+Referenced by perform\+\_\+code\+\_\+completion(), and perform\+\_\+token\+\_\+annotation().
+
+\mbox{\Hypertarget{c-index-test_8c_a6cfa2a8406fea0e71a2700d8f58b8553}\label{c-index-test_8c_a6cfa2a8406fea0e71a2700d8f58b8553}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!perform\_code\_completion@{perform\_code\_completion}}
+\index{perform\_code\_completion@{perform\_code\_completion}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{perform\_code\_completion()}{perform\_code\_completion()}}
+{\footnotesize\ttfamily int perform\+\_\+code\+\_\+completion (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv,  }\item[{int}]{timing\+\_\+only }\end{DoxyParamCaption})}
+
+
+
+Definition at line 2665 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{2665                                                                           \{}
+\DoxyCodeLine{2666   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *input = argv[1];}
+\DoxyCodeLine{2667   \textcolor{keywordtype}{char} *filename = 0;}
+\DoxyCodeLine{2668   \textcolor{keywordtype}{unsigned} line;}
+\DoxyCodeLine{2669   \textcolor{keywordtype}{unsigned} column;}
+\DoxyCodeLine{2670   CXIndex CIdx;}
+\DoxyCodeLine{2671   \textcolor{keywordtype}{int} errorCode;}
+\DoxyCodeLine{2672   \textcolor{keyword}{struct }CXUnsavedFile *unsaved\_files = 0;}
+\DoxyCodeLine{2673   \textcolor{keywordtype}{int} num\_unsaved\_files = 0;}
+\DoxyCodeLine{2674   CXCodeCompleteResults *results = 0;}
+\DoxyCodeLine{2675   \textcolor{keyword}{enum} CXErrorCode Err;}
+\DoxyCodeLine{2676   CXTranslationUnit TU;}
+\DoxyCodeLine{2677   \textcolor{keywordtype}{unsigned} I, Repeats = 1;}
+\DoxyCodeLine{2678   \textcolor{keywordtype}{unsigned} completionOptions = \mbox{\hyperlink{_c_index_code_completion_8cpp_a6cf74c52d33527eeee0b2bd27ef69044}{clang\_defaultCodeCompleteOptions}}();}
+\DoxyCodeLine{2679   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *InvocationPath;}
+\DoxyCodeLine{2680 }
+\DoxyCodeLine{2681   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_CODE\_COMPLETE\_PATTERNS"{}}))}
+\DoxyCodeLine{2682     completionOptions |= CXCodeComplete\_IncludeCodePatterns;}
+\DoxyCodeLine{2683   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_COMPLETION\_BRIEF\_COMMENTS"{}}))}
+\DoxyCodeLine{2684     completionOptions |= CXCodeComplete\_IncludeBriefComments;}
+\DoxyCodeLine{2685   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_COMPLETION\_SKIP\_PREAMBLE"{}}))}
+\DoxyCodeLine{2686     completionOptions |= CXCodeComplete\_SkipPreamble;}
+\DoxyCodeLine{2687   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_COMPLETION\_INCLUDE\_FIXITS"{}}))}
+\DoxyCodeLine{2688     completionOptions |= CXCodeComplete\_IncludeCompletionsWithFixIts;}
+\DoxyCodeLine{2689   }
+\DoxyCodeLine{2690   \textcolor{keywordflow}{if} (timing\_only)}
+\DoxyCodeLine{2691     input += strlen(\textcolor{stringliteral}{"{}-\/code-\/completion-\/timing="{}});}
+\DoxyCodeLine{2692   \textcolor{keywordflow}{else}}
+\DoxyCodeLine{2693     input += strlen(\textcolor{stringliteral}{"{}-\/code-\/completion-\/at="{}});}
+\DoxyCodeLine{2694 }
+\DoxyCodeLine{2695   \textcolor{keywordflow}{if} ((errorCode = \mbox{\hyperlink{c-index-test_8c_a86d7b0a04b2271451b84a97a62081480}{parse\_file\_line\_column}}(input, \&filename, \&line, \&column,}
+\DoxyCodeLine{2696                                           0, 0)))}
+\DoxyCodeLine{2697     \textcolor{keywordflow}{return} errorCode;}
+\DoxyCodeLine{2698 }
+\DoxyCodeLine{2699   \textcolor{keywordflow}{if} (parse\_remapped\_files(argc, argv, 2, \&unsaved\_files, \&num\_unsaved\_files))}
+\DoxyCodeLine{2700     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2701 }
+\DoxyCodeLine{2702   CIdx = \mbox{\hyperlink{_c_index_8cpp_a3420c8e7e10a7ff7906130b207cbb763}{clang\_createIndex}}(0, 0);}
+\DoxyCodeLine{2703   InvocationPath = getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_INVOCATION\_EMISSION\_PATH"{}});}
+\DoxyCodeLine{2704   \textcolor{keywordflow}{if} (InvocationPath)}
+\DoxyCodeLine{2705     \mbox{\hyperlink{_c_index_8cpp_a97a15ecfe8f0c017cbcc5c45f558123c}{clang\_CXIndex\_setInvocationEmissionPathOption}}(CIdx, InvocationPath);}
+\DoxyCodeLine{2706 }
+\DoxyCodeLine{2707   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EDITING"{}}))}
+\DoxyCodeLine{2708     Repeats = 5;}
+\DoxyCodeLine{2709 }
+\DoxyCodeLine{2710   Err = \mbox{\hyperlink{_c_index_8cpp_a3ddd508cc891d95a82b747955738249a}{clang\_parseTranslationUnit2}}(CIdx, 0,}
+\DoxyCodeLine{2711                                     argv + num\_unsaved\_files + 2,}
+\DoxyCodeLine{2712                                     argc -\/ num\_unsaved\_files -\/ 2,}
+\DoxyCodeLine{2713                                     0, 0, getDefaultParsingOptions(), \&TU);}
+\DoxyCodeLine{2714   \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{2715     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to load translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{2716     describeLibclangFailure(Err);}
+\DoxyCodeLine{2717     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2718   \}}
+\DoxyCodeLine{2719 }
+\DoxyCodeLine{2720   Err = \mbox{\hyperlink{_c_index_8cpp_a2befc445c3dde1e89f6900c67892ceaa}{clang\_reparseTranslationUnit}}(TU, 0, 0,}
+\DoxyCodeLine{2721                                      \mbox{\hyperlink{_c_index_8cpp_a2f79bdd29d8f799a3943c6a5254eb789}{clang\_defaultReparseOptions}}(TU));}
+\DoxyCodeLine{2722 }
+\DoxyCodeLine{2723   \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{2724     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to reparse translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{2725     describeLibclangFailure(Err);}
+\DoxyCodeLine{2726     \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{2727     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2728   \}}
+\DoxyCodeLine{2729 }
+\DoxyCodeLine{2730   \textcolor{keywordflow}{for} (I = 0; I != Repeats; ++I) \{}
+\DoxyCodeLine{2731     results = \mbox{\hyperlink{_c_index_code_completion_8cpp_aa00452b93a381eacef696b538f19ca6e}{clang\_codeCompleteAt}}(TU, filename, line, column,}
+\DoxyCodeLine{2732                                    unsaved\_files, num\_unsaved\_files,}
+\DoxyCodeLine{2733                                    completionOptions);}
+\DoxyCodeLine{2734     \textcolor{keywordflow}{if} (!results) \{}
+\DoxyCodeLine{2735       fprintf(stderr, \textcolor{stringliteral}{"{}Unable to perform code completion!\(\backslash\)n"{}});}
+\DoxyCodeLine{2736       \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2737     \}}
+\DoxyCodeLine{2738     \textcolor{keywordflow}{if} (I != Repeats-\/1)}
+\DoxyCodeLine{2739       \mbox{\hyperlink{_c_index_code_completion_8cpp_ab33453b1d11a0d7c68ccf5c2f3f55bb3}{clang\_disposeCodeCompleteResults}}(results);}
+\DoxyCodeLine{2740   \}}
+\DoxyCodeLine{2741 }
+\DoxyCodeLine{2742   \textcolor{keywordflow}{if} (results) \{}
+\DoxyCodeLine{2743     \textcolor{keywordtype}{unsigned} i, n = results-\/>NumResults, containerIsIncomplete = 0;}
+\DoxyCodeLine{2744     \textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{long} \textcolor{keywordtype}{long} contexts;}
+\DoxyCodeLine{2745     \textcolor{keyword}{enum} CXCursorKind containerKind;}
+\DoxyCodeLine{2746     CXString objCSelector;}
+\DoxyCodeLine{2747     \textcolor{keyword}{const} \textcolor{keywordtype}{char} *selectorString;}
+\DoxyCodeLine{2748     \textcolor{keywordflow}{if} (!timing\_only) \{      }
+\DoxyCodeLine{2749       \textcolor{comment}{/* Sort the code-\/completion results based on the typed text. */}}
+\DoxyCodeLine{2750       \mbox{\hyperlink{_c_index_code_completion_8cpp_a15ff3b3f6b97479e2516f3e4993a9baa}{clang\_sortCodeCompletionResults}}(results-\/>Results, results-\/>NumResults);}
+\DoxyCodeLine{2751 }
+\DoxyCodeLine{2752       \textcolor{keywordflow}{for} (i = 0; i != n; ++i)}
+\DoxyCodeLine{2753         print\_completion\_result(TU, results, i, stdout);}
+\DoxyCodeLine{2754     \}}
+\DoxyCodeLine{2755     n = \mbox{\hyperlink{_c_index_code_completion_8cpp_aaa0ec260d3ad875615930d0c009e5dba}{clang\_codeCompleteGetNumDiagnostics}}(results);}
+\DoxyCodeLine{2756     \textcolor{keywordflow}{for} (i = 0; i != n; ++i) \{}
+\DoxyCodeLine{2757       CXDiagnostic diag = \mbox{\hyperlink{_c_index_code_completion_8cpp_a2889b7f63ecab662d464c9c64921f4de}{clang\_codeCompleteGetDiagnostic}}(results, i);}
+\DoxyCodeLine{2758       \mbox{\hyperlink{c-index-test_8c_a6163717d21d3db3edb29824ce554d190}{PrintDiagnostic}}(diag);}
+\DoxyCodeLine{2759       \mbox{\hyperlink{_c_index_diagnostic_8cpp_a11aa4e77bf15f80d846a2216afbe8726}{clang\_disposeDiagnostic}}(diag);}
+\DoxyCodeLine{2760     \}}
+\DoxyCodeLine{2761     }
+\DoxyCodeLine{2762     contexts = \mbox{\hyperlink{_c_index_code_completion_8cpp_afc1d7645383b816cb5e62253b85f9b7c}{clang\_codeCompleteGetContexts}}(results);}
+\DoxyCodeLine{2763     \mbox{\hyperlink{c-index-test_8c_ae302b130b55b146b76be601a70212b8a}{print\_completion\_contexts}}(contexts, stdout);}
+\DoxyCodeLine{2764     }
+\DoxyCodeLine{2765     containerKind = \mbox{\hyperlink{_c_index_code_completion_8cpp_a6d5d24395b436aaedf13984af8f19afa}{clang\_codeCompleteGetContainerKind}}(results,}
+\DoxyCodeLine{2766                                                        \&containerIsIncomplete);}
+\DoxyCodeLine{2767     }
+\DoxyCodeLine{2768     \textcolor{keywordflow}{if} (containerKind != CXCursor\_InvalidCode) \{}
+\DoxyCodeLine{2769       \textcolor{comment}{/* We have found a container */}}
+\DoxyCodeLine{2770       CXString containerUSR, containerKindSpelling;}
+\DoxyCodeLine{2771       containerKindSpelling = \mbox{\hyperlink{_c_index_8cpp_a667cf97e111be828ff2c36e23d583fce}{clang\_getCursorKindSpelling}}(containerKind);}
+\DoxyCodeLine{2772       printf(\textcolor{stringliteral}{"{}Container Kind: \%s\(\backslash\)n"{}}, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(containerKindSpelling));}
+\DoxyCodeLine{2773       \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(containerKindSpelling);}
+\DoxyCodeLine{2774       }
+\DoxyCodeLine{2775       \textcolor{keywordflow}{if} (containerIsIncomplete) \{}
+\DoxyCodeLine{2776         printf(\textcolor{stringliteral}{"{}Container is incomplete\(\backslash\)n"{}});}
+\DoxyCodeLine{2777       \}}
+\DoxyCodeLine{2778       \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{2779         printf(\textcolor{stringliteral}{"{}Container is complete\(\backslash\)n"{}});}
+\DoxyCodeLine{2780       \}}
+\DoxyCodeLine{2781       }
+\DoxyCodeLine{2782       containerUSR = \mbox{\hyperlink{_c_index_code_completion_8cpp_aa7fdf1ceb18aed68b458ebd05f5aa6c5}{clang\_codeCompleteGetContainerUSR}}(results);}
+\DoxyCodeLine{2783       printf(\textcolor{stringliteral}{"{}Container USR: \%s\(\backslash\)n"{}}, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(containerUSR));}
+\DoxyCodeLine{2784       \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(containerUSR);}
+\DoxyCodeLine{2785     \}}
+\DoxyCodeLine{2786     }
+\DoxyCodeLine{2787     objCSelector = \mbox{\hyperlink{_c_index_code_completion_8cpp_a1cee18661b755d3b0b6ee3b44630033f}{clang\_codeCompleteGetObjCSelector}}(results);}
+\DoxyCodeLine{2788     selectorString = \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(objCSelector);}
+\DoxyCodeLine{2789     \textcolor{keywordflow}{if} (selectorString \&\& strlen(selectorString) > 0) \{}
+\DoxyCodeLine{2790       printf(\textcolor{stringliteral}{"{}Objective-\/C selector: \%s\(\backslash\)n"{}}, selectorString);}
+\DoxyCodeLine{2791     \}}
+\DoxyCodeLine{2792     \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(objCSelector);}
+\DoxyCodeLine{2793     }
+\DoxyCodeLine{2794     \mbox{\hyperlink{_c_index_code_completion_8cpp_ab33453b1d11a0d7c68ccf5c2f3f55bb3}{clang\_disposeCodeCompleteResults}}(results);}
+\DoxyCodeLine{2795   \}}
+\DoxyCodeLine{2796   \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{2797   \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(CIdx);}
+\DoxyCodeLine{2798   free(filename);}
+\DoxyCodeLine{2799 }
+\DoxyCodeLine{2800   \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2801 }
+\DoxyCodeLine{2802   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{2803 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+default\+Code\+Complete\+Options(), and parse\+\_\+file\+\_\+line\+\_\+column().
+
+\mbox{\Hypertarget{c-index-test_8c_adae363afaf561553359800991169ce1c}\label{c-index-test_8c_adae363afaf561553359800991169ce1c}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!perform\_test\_load\_source@{perform\_test\_load\_source}}
+\index{perform\_test\_load\_source@{perform\_test\_load\_source}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{perform\_test\_load\_source()}{perform\_test\_load\_source()}}
+{\footnotesize\ttfamily int perform\+\_\+test\+\_\+load\+\_\+source (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv,  }\item[{const char $\ast$}]{filter,  }\item[{CXCursor\+Visitor}]{Visitor,  }\item[{\mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}}}]{PV }\end{DoxyParamCaption})}
+
+
+
+Definition at line 2012 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{2014                                              \{}
+\DoxyCodeLine{2015   CXIndex Idx;}
+\DoxyCodeLine{2016   CXTranslationUnit TU;}
+\DoxyCodeLine{2017   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *CommentSchemaFile;}
+\DoxyCodeLine{2018   \textcolor{keyword}{struct }CXUnsavedFile *unsaved\_files = 0;}
+\DoxyCodeLine{2019   \textcolor{keywordtype}{int} num\_unsaved\_files = 0;}
+\DoxyCodeLine{2020   \textcolor{keyword}{enum} CXErrorCode Err;}
+\DoxyCodeLine{2021   \textcolor{keywordtype}{int} result;}
+\DoxyCodeLine{2022   \textcolor{keywordtype}{unsigned} Repeats = 0;}
+\DoxyCodeLine{2023   \textcolor{keywordtype}{unsigned} I;}
+\DoxyCodeLine{2024   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *InvocationPath;}
+\DoxyCodeLine{2025 }
+\DoxyCodeLine{2026   Idx = \mbox{\hyperlink{_c_index_8cpp_a3420c8e7e10a7ff7906130b207cbb763}{clang\_createIndex}}(\textcolor{comment}{/* excludeDeclsFromPCH */}}
+\DoxyCodeLine{2027                           (!strcmp(filter, \textcolor{stringliteral}{"{}local"{}}) ||}
+\DoxyCodeLine{2028                            !strcmp(filter, \textcolor{stringliteral}{"{}local-\/display"{}}) ||}
+\DoxyCodeLine{2029                            !strcmp(filter, \textcolor{stringliteral}{"{}local-\/pretty"{}}))}
+\DoxyCodeLine{2030                               ? 1}
+\DoxyCodeLine{2031                               : 0,}
+\DoxyCodeLine{2032                           \textcolor{comment}{/* displayDiagnostics=*/}1);}
+\DoxyCodeLine{2033   InvocationPath = getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_INVOCATION\_EMISSION\_PATH"{}});}
+\DoxyCodeLine{2034   \textcolor{keywordflow}{if} (InvocationPath)}
+\DoxyCodeLine{2035     \mbox{\hyperlink{_c_index_8cpp_a97a15ecfe8f0c017cbcc5c45f558123c}{clang\_CXIndex\_setInvocationEmissionPathOption}}(Idx, InvocationPath);}
+\DoxyCodeLine{2036 }
+\DoxyCodeLine{2037   \textcolor{keywordflow}{if} ((CommentSchemaFile = parse\_comments\_schema(argc, argv))) \{}
+\DoxyCodeLine{2038     argc-\/-\/;}
+\DoxyCodeLine{2039     argv++;}
+\DoxyCodeLine{2040   \}}
+\DoxyCodeLine{2041 }
+\DoxyCodeLine{2042   \textcolor{keywordflow}{if} (parse\_remapped\_files(argc, argv, 0, \&unsaved\_files, \&num\_unsaved\_files)) \{}
+\DoxyCodeLine{2043     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2044     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2045   \}}
+\DoxyCodeLine{2046 }
+\DoxyCodeLine{2047   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EDITING"{}}))}
+\DoxyCodeLine{2048     Repeats = 5;}
+\DoxyCodeLine{2049 }
+\DoxyCodeLine{2050   Err = \mbox{\hyperlink{_c_index_8cpp_a3ddd508cc891d95a82b747955738249a}{clang\_parseTranslationUnit2}}(Idx, 0,}
+\DoxyCodeLine{2051                                     argv + num\_unsaved\_files,}
+\DoxyCodeLine{2052                                     argc -\/ num\_unsaved\_files,}
+\DoxyCodeLine{2053                                     unsaved\_files, num\_unsaved\_files,}
+\DoxyCodeLine{2054                                     getDefaultParsingOptions(), \&TU);}
+\DoxyCodeLine{2055   \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{2056     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to load translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{2057     describeLibclangFailure(Err);}
+\DoxyCodeLine{2058     \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2059     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2060     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2061   \}}
+\DoxyCodeLine{2062 }
+\DoxyCodeLine{2063   \textcolor{keywordflow}{for} (I = 0; I != Repeats; ++I) \{}
+\DoxyCodeLine{2064     \textcolor{keywordflow}{if} (checkForErrors(TU) != 0)}
+\DoxyCodeLine{2065       \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2066 }
+\DoxyCodeLine{2067     \textcolor{keywordflow}{if} (Repeats > 1) \{}
+\DoxyCodeLine{2068       \mbox{\hyperlink{_c_index_8cpp_a496961baac6bdcc6be5e7ceac9b2273d}{clang\_suspendTranslationUnit}}(TU);}
+\DoxyCodeLine{2069 }
+\DoxyCodeLine{2070       Err = \mbox{\hyperlink{_c_index_8cpp_a2befc445c3dde1e89f6900c67892ceaa}{clang\_reparseTranslationUnit}}(TU, num\_unsaved\_files, unsaved\_files,}
+\DoxyCodeLine{2071                                          \mbox{\hyperlink{_c_index_8cpp_a2f79bdd29d8f799a3943c6a5254eb789}{clang\_defaultReparseOptions}}(TU));}
+\DoxyCodeLine{2072       \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{2073         describeLibclangFailure(Err);}
+\DoxyCodeLine{2074         \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2075         \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2076         \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2077       \}}
+\DoxyCodeLine{2078     \}}
+\DoxyCodeLine{2079   \}}
+\DoxyCodeLine{2080 }
+\DoxyCodeLine{2081   result = perform\_test\_load(Idx, TU, filter, NULL, Visitor, PV,}
+\DoxyCodeLine{2082                              CommentSchemaFile);}
+\DoxyCodeLine{2083   \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2084   \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2085   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{2086 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+create\+Index(), and clang\+\_\+\+CXIndex\+\_\+set\+Invocation\+Emission\+Path\+Option().
+
+\mbox{\Hypertarget{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}\label{c-index-test_8c_a8f72d274bbe0d8215085af669b08c72d}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!perform\_test\_load\_tu@{perform\_test\_load\_tu}}
+\index{perform\_test\_load\_tu@{perform\_test\_load\_tu}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{perform\_test\_load\_tu()}{perform\_test\_load\_tu()}}
+{\footnotesize\ttfamily int perform\+\_\+test\+\_\+load\+\_\+tu (\begin{DoxyParamCaption}\item[{const char $\ast$}]{file,  }\item[{const char $\ast$}]{filter,  }\item[{const char $\ast$}]{prefix,  }\item[{CXCursor\+Visitor}]{Visitor,  }\item[{\mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}}}]{PV }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1992 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1994                                          \{}
+\DoxyCodeLine{1995   CXIndex Idx;}
+\DoxyCodeLine{1996   CXTranslationUnit TU;}
+\DoxyCodeLine{1997   \textcolor{keywordtype}{int} result;}
+\DoxyCodeLine{1998   Idx = \mbox{\hyperlink{_c_index_8cpp_a3420c8e7e10a7ff7906130b207cbb763}{clang\_createIndex}}(\textcolor{comment}{/* excludeDeclsFromPCH */}}
+\DoxyCodeLine{1999                           !strcmp(filter, \textcolor{stringliteral}{"{}local"{}}) ? 1 : 0,}
+\DoxyCodeLine{2000                           \textcolor{comment}{/* displayDiagnostics=*/}1);}
+\DoxyCodeLine{2001 }
+\DoxyCodeLine{2002   \textcolor{keywordflow}{if} (!CreateTranslationUnit(Idx, file, \&TU)) \{}
+\DoxyCodeLine{2003     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2004     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2005   \}}
+\DoxyCodeLine{2006 }
+\DoxyCodeLine{2007   result = perform\_test\_load(Idx, TU, filter, prefix, Visitor, PV, NULL);}
+\DoxyCodeLine{2008   \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2009   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{2010 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+create\+Index().
+
+\mbox{\Hypertarget{c-index-test_8c_aea3df772c772b8ca80d93c100b3de16f}\label{c-index-test_8c_aea3df772c772b8ca80d93c100b3de16f}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!perform\_test\_reparse\_source@{perform\_test\_reparse\_source}}
+\index{perform\_test\_reparse\_source@{perform\_test\_reparse\_source}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{perform\_test\_reparse\_source()}{perform\_test\_reparse\_source()}}
+{\footnotesize\ttfamily int perform\+\_\+test\+\_\+reparse\+\_\+source (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv,  }\item[{int}]{trials,  }\item[{const char $\ast$}]{filter,  }\item[{CXCursor\+Visitor}]{Visitor,  }\item[{\mbox{\hyperlink{c-index-test_8c_a66dfbd9b90aeaaa39988cd8ea0bbc669}{Post\+Visit\+TU}}}]{PV }\end{DoxyParamCaption})}
+
+
+
+Definition at line 2088 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{2090                                                 \{}
+\DoxyCodeLine{2091   CXIndex Idx;}
+\DoxyCodeLine{2092   CXTranslationUnit TU;}
+\DoxyCodeLine{2093   \textcolor{keyword}{struct }CXUnsavedFile *unsaved\_files = 0;}
+\DoxyCodeLine{2094   \textcolor{keywordtype}{int} num\_unsaved\_files = 0;}
+\DoxyCodeLine{2095   \textcolor{keywordtype}{int} compiler\_arg\_idx = 0;}
+\DoxyCodeLine{2096   \textcolor{keyword}{enum} CXErrorCode Err;}
+\DoxyCodeLine{2097   \textcolor{keywordtype}{int} result, i;}
+\DoxyCodeLine{2098   \textcolor{keywordtype}{int} trial;}
+\DoxyCodeLine{2099   \textcolor{keywordtype}{int} execute\_after\_trial = 0;}
+\DoxyCodeLine{2100   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *execute\_command = NULL;}
+\DoxyCodeLine{2101   \textcolor{keywordtype}{int} remap\_after\_trial = 0;}
+\DoxyCodeLine{2102   \textcolor{keywordtype}{char} *endptr = 0;}
+\DoxyCodeLine{2103   }
+\DoxyCodeLine{2104   Idx = \mbox{\hyperlink{_c_index_8cpp_a3420c8e7e10a7ff7906130b207cbb763}{clang\_createIndex}}(\textcolor{comment}{/* excludeDeclsFromPCH */}}
+\DoxyCodeLine{2105                           !strcmp(filter, \textcolor{stringliteral}{"{}local"{}}) ? 1 : 0,}
+\DoxyCodeLine{2106                           \textcolor{comment}{/* displayDiagnostics=*/}1);}
+\DoxyCodeLine{2107   }
+\DoxyCodeLine{2108   \textcolor{keywordflow}{if} (parse\_remapped\_files(argc, argv, 0, \&unsaved\_files, \&num\_unsaved\_files)) \{}
+\DoxyCodeLine{2109     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2110     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2111   \}}
+\DoxyCodeLine{2112 }
+\DoxyCodeLine{2113   \textcolor{keywordflow}{for} (i = 0; i < argc; ++i) \{}
+\DoxyCodeLine{2114     \textcolor{keywordflow}{if} (strcmp(argv[i], \textcolor{stringliteral}{"{}-\/-\/"{}}) == 0)}
+\DoxyCodeLine{2115       \textcolor{keywordflow}{break};}
+\DoxyCodeLine{2116   \}}
+\DoxyCodeLine{2117   \textcolor{keywordflow}{if} (i < argc)}
+\DoxyCodeLine{2118     compiler\_arg\_idx = i+1;}
+\DoxyCodeLine{2119   \textcolor{keywordflow}{if} (num\_unsaved\_files > compiler\_arg\_idx)}
+\DoxyCodeLine{2120     compiler\_arg\_idx = num\_unsaved\_files;}
+\DoxyCodeLine{2121   }
+\DoxyCodeLine{2122   \textcolor{comment}{/* Load the initial translation unit -\/-\/ we do this without honoring remapped}}
+\DoxyCodeLine{2123 \textcolor{comment}{   * files, so that we have a way to test results after changing the source. */}}
+\DoxyCodeLine{2124   Err = \mbox{\hyperlink{_c_index_8cpp_a3ddd508cc891d95a82b747955738249a}{clang\_parseTranslationUnit2}}(Idx, 0,}
+\DoxyCodeLine{2125                                     argv + compiler\_arg\_idx,}
+\DoxyCodeLine{2126                                     argc -\/ compiler\_arg\_idx,}
+\DoxyCodeLine{2127                                     0, 0, getDefaultParsingOptions(), \&TU);}
+\DoxyCodeLine{2128   \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{2129     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to load translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{2130     describeLibclangFailure(Err);}
+\DoxyCodeLine{2131     \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2132     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2133     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{2134   \}}
+\DoxyCodeLine{2135   }
+\DoxyCodeLine{2136   \textcolor{keywordflow}{if} (checkForErrors(TU) != 0)}
+\DoxyCodeLine{2137     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2138 }
+\DoxyCodeLine{2139   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EXECUTE\_COMMAND"{}})) \{}
+\DoxyCodeLine{2140     execute\_command = getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EXECUTE\_COMMAND"{}});}
+\DoxyCodeLine{2141   \}}
+\DoxyCodeLine{2142   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EXECUTE\_AFTER\_TRIAL"{}})) \{}
+\DoxyCodeLine{2143     execute\_after\_trial =}
+\DoxyCodeLine{2144         strtol(getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EXECUTE\_AFTER\_TRIAL"{}}), \&endptr, 10);}
+\DoxyCodeLine{2145   \}}
+\DoxyCodeLine{2146 }
+\DoxyCodeLine{2147   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_REMAP\_AFTER\_TRIAL"{}})) \{}
+\DoxyCodeLine{2148     remap\_after\_trial =}
+\DoxyCodeLine{2149         strtol(getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_REMAP\_AFTER\_TRIAL"{}}), \&endptr, 10);}
+\DoxyCodeLine{2150   \}}
+\DoxyCodeLine{2151 }
+\DoxyCodeLine{2152   \textcolor{keywordflow}{for} (trial = 0; trial < trials; ++trial) \{}
+\DoxyCodeLine{2153     \textcolor{keywordflow}{if} (execute\_command \&\& trial == execute\_after\_trial) \{}
+\DoxyCodeLine{2154       result = \mbox{\hyperlink{c-index-test_8c_abf8b8cca4d3659c057fd2ab49afb69be}{indextest\_perform\_shell\_execution}}(execute\_command);}
+\DoxyCodeLine{2155       \textcolor{keywordflow}{if} (result != 0)}
+\DoxyCodeLine{2156         \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{2157     \}}
+\DoxyCodeLine{2158 }
+\DoxyCodeLine{2159     \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2160     \textcolor{keywordflow}{if} (parse\_remapped\_files\_with\_try(trial, argc, argv, 0,}
+\DoxyCodeLine{2161                                       \&unsaved\_files, \&num\_unsaved\_files)) \{}
+\DoxyCodeLine{2162       \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{2163       \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2164       \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2165     \}}
+\DoxyCodeLine{2166 }
+\DoxyCodeLine{2167     Err = \mbox{\hyperlink{_c_index_8cpp_a2befc445c3dde1e89f6900c67892ceaa}{clang\_reparseTranslationUnit}}(}
+\DoxyCodeLine{2168         TU,}
+\DoxyCodeLine{2169         trial >= remap\_after\_trial ? num\_unsaved\_files : 0,}
+\DoxyCodeLine{2170         trial >= remap\_after\_trial ? unsaved\_files : 0,}
+\DoxyCodeLine{2171         \mbox{\hyperlink{_c_index_8cpp_a2f79bdd29d8f799a3943c6a5254eb789}{clang\_defaultReparseOptions}}(TU));}
+\DoxyCodeLine{2172     \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{2173       fprintf(stderr, \textcolor{stringliteral}{"{}Unable to reparse translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{2174       describeLibclangFailure(Err);}
+\DoxyCodeLine{2175       \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{2176       \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2177       \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2178       \textcolor{keywordflow}{return} -\/1;      }
+\DoxyCodeLine{2179     \}}
+\DoxyCodeLine{2180 }
+\DoxyCodeLine{2181     \textcolor{keywordflow}{if} (checkForErrors(TU) != 0)}
+\DoxyCodeLine{2182       \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{2183   \}}
+\DoxyCodeLine{2184   }
+\DoxyCodeLine{2185   result = perform\_test\_load(Idx, TU, filter, NULL, Visitor, PV, NULL);}
+\DoxyCodeLine{2186 }
+\DoxyCodeLine{2187   \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{2188   \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{2189   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{2190 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+create\+Index().
+
+\mbox{\Hypertarget{c-index-test_8c_a8c63bc40ab1b76f5abf55eb8aad9a6d2}\label{c-index-test_8c_a8c63bc40ab1b76f5abf55eb8aad9a6d2}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!perform\_token\_annotation@{perform\_token\_annotation}}
+\index{perform\_token\_annotation@{perform\_token\_annotation}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{perform\_token\_annotation()}{perform\_token\_annotation()}}
+{\footnotesize\ttfamily int perform\+\_\+token\+\_\+annotation (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 4141 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{4141                                                           \{}
+\DoxyCodeLine{4142   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *input = argv[1];}
+\DoxyCodeLine{4143   \textcolor{keywordtype}{char} *filename = 0;}
+\DoxyCodeLine{4144   \textcolor{keywordtype}{unsigned} line, second\_line;}
+\DoxyCodeLine{4145   \textcolor{keywordtype}{unsigned} column, second\_column;}
+\DoxyCodeLine{4146   CXIndex CIdx;}
+\DoxyCodeLine{4147   CXTranslationUnit TU = 0;}
+\DoxyCodeLine{4148   \textcolor{keywordtype}{int} errorCode;}
+\DoxyCodeLine{4149   \textcolor{keyword}{struct }CXUnsavedFile *unsaved\_files = 0;}
+\DoxyCodeLine{4150   \textcolor{keywordtype}{int} num\_unsaved\_files = 0;}
+\DoxyCodeLine{4151   CXToken *tokens;}
+\DoxyCodeLine{4152   \textcolor{keywordtype}{unsigned} num\_tokens;}
+\DoxyCodeLine{4153   CXSourceRange range;}
+\DoxyCodeLine{4154   CXSourceLocation startLoc, endLoc;}
+\DoxyCodeLine{4155   CXFile file = 0;}
+\DoxyCodeLine{4156   CXCursor *cursors = 0;}
+\DoxyCodeLine{4157   CXSourceRangeList *skipped\_ranges = 0;}
+\DoxyCodeLine{4158   \textcolor{keyword}{enum} CXErrorCode Err;}
+\DoxyCodeLine{4159   \textcolor{keywordtype}{unsigned} i;}
+\DoxyCodeLine{4160 }
+\DoxyCodeLine{4161   input += strlen(\textcolor{stringliteral}{"{}-\/test-\/annotate-\/tokens="{}});}
+\DoxyCodeLine{4162   \textcolor{keywordflow}{if} ((errorCode = \mbox{\hyperlink{c-index-test_8c_a86d7b0a04b2271451b84a97a62081480}{parse\_file\_line\_column}}(input, \&filename, \&line, \&column,}
+\DoxyCodeLine{4163                                           \&second\_line, \&second\_column)))}
+\DoxyCodeLine{4164     \textcolor{keywordflow}{return} errorCode;}
+\DoxyCodeLine{4165 }
+\DoxyCodeLine{4166   \textcolor{keywordflow}{if} (parse\_remapped\_files(argc, argv, 2, \&unsaved\_files, \&num\_unsaved\_files)) \{}
+\DoxyCodeLine{4167     free(filename);}
+\DoxyCodeLine{4168     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{4169   \}}
+\DoxyCodeLine{4170 }
+\DoxyCodeLine{4171   CIdx = \mbox{\hyperlink{_c_index_8cpp_a3420c8e7e10a7ff7906130b207cbb763}{clang\_createIndex}}(0, 1);}
+\DoxyCodeLine{4172   Err = \mbox{\hyperlink{_c_index_8cpp_a3ddd508cc891d95a82b747955738249a}{clang\_parseTranslationUnit2}}(CIdx, argv[argc -\/ 1],}
+\DoxyCodeLine{4173                                     argv + num\_unsaved\_files + 2,}
+\DoxyCodeLine{4174                                     argc -\/ num\_unsaved\_files -\/ 3,}
+\DoxyCodeLine{4175                                     unsaved\_files,}
+\DoxyCodeLine{4176                                     num\_unsaved\_files,}
+\DoxyCodeLine{4177                                     getDefaultParsingOptions(), \&TU);}
+\DoxyCodeLine{4178   \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{4179     fprintf(stderr, \textcolor{stringliteral}{"{}unable to parse input\(\backslash\)n"{}});}
+\DoxyCodeLine{4180     describeLibclangFailure(Err);}
+\DoxyCodeLine{4181     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(CIdx);}
+\DoxyCodeLine{4182     free(filename);}
+\DoxyCodeLine{4183     \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{4184     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{4185   \}}
+\DoxyCodeLine{4186   errorCode = 0;}
+\DoxyCodeLine{4187 }
+\DoxyCodeLine{4188   \textcolor{keywordflow}{if} (checkForErrors(TU) != 0) \{}
+\DoxyCodeLine{4189     errorCode = -\/1;}
+\DoxyCodeLine{4190     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4191   \}}
+\DoxyCodeLine{4192 }
+\DoxyCodeLine{4193   \textcolor{keywordflow}{if} (getenv(\textcolor{stringliteral}{"{}CINDEXTEST\_EDITING"{}})) \{}
+\DoxyCodeLine{4194     \textcolor{keywordflow}{for} (i = 0; i < 5; ++i) \{}
+\DoxyCodeLine{4195       Err = \mbox{\hyperlink{_c_index_8cpp_a2befc445c3dde1e89f6900c67892ceaa}{clang\_reparseTranslationUnit}}(TU, num\_unsaved\_files, unsaved\_files,}
+\DoxyCodeLine{4196                                          \mbox{\hyperlink{_c_index_8cpp_a2f79bdd29d8f799a3943c6a5254eb789}{clang\_defaultReparseOptions}}(TU));}
+\DoxyCodeLine{4197       \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{4198         fprintf(stderr, \textcolor{stringliteral}{"{}Unable to reparse translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{4199         describeLibclangFailure(Err);}
+\DoxyCodeLine{4200         errorCode = -\/1;}
+\DoxyCodeLine{4201         \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4202       \}}
+\DoxyCodeLine{4203     \}}
+\DoxyCodeLine{4204   \}}
+\DoxyCodeLine{4205 }
+\DoxyCodeLine{4206   \textcolor{keywordflow}{if} (checkForErrors(TU) != 0) \{}
+\DoxyCodeLine{4207     errorCode = -\/1;}
+\DoxyCodeLine{4208     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4209   \}}
+\DoxyCodeLine{4210 }
+\DoxyCodeLine{4211   file = \mbox{\hyperlink{_c_index_8cpp_a7c72c3450d02a5d985f152cc0dee1785}{clang\_getFile}}(TU, filename);}
+\DoxyCodeLine{4212   \textcolor{keywordflow}{if} (!file) \{}
+\DoxyCodeLine{4213     fprintf(stderr, \textcolor{stringliteral}{"{}file \%s is not in this translation unit\(\backslash\)n"{}}, filename);}
+\DoxyCodeLine{4214     errorCode = -\/1;}
+\DoxyCodeLine{4215     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4216   \}}
+\DoxyCodeLine{4217 }
+\DoxyCodeLine{4218   startLoc = \mbox{\hyperlink{_c_x_source_location_8cpp_a3da1e96662794609af6bec3dc345dd9a}{clang\_getLocation}}(TU, file, line, column);}
+\DoxyCodeLine{4219   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_x_source_location_8cpp_aa18c665664a0dd6ebf8eae9954a3a696}{clang\_equalLocations}}(\mbox{\hyperlink{_c_x_source_location_8cpp_a20bb1e9a72e2c16fbcb21958f0648947}{clang\_getNullLocation}}(), startLoc)) \{}
+\DoxyCodeLine{4220     fprintf(stderr, \textcolor{stringliteral}{"{}invalid source location \%s:\%d:\%d\(\backslash\)n"{}}, filename, line,}
+\DoxyCodeLine{4221             column);}
+\DoxyCodeLine{4222     errorCode = -\/1;}
+\DoxyCodeLine{4223     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4224   \}}
+\DoxyCodeLine{4225 }
+\DoxyCodeLine{4226   endLoc = \mbox{\hyperlink{_c_x_source_location_8cpp_a3da1e96662794609af6bec3dc345dd9a}{clang\_getLocation}}(TU, file, second\_line, second\_column);}
+\DoxyCodeLine{4227   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_x_source_location_8cpp_aa18c665664a0dd6ebf8eae9954a3a696}{clang\_equalLocations}}(\mbox{\hyperlink{_c_x_source_location_8cpp_a20bb1e9a72e2c16fbcb21958f0648947}{clang\_getNullLocation}}(), endLoc)) \{}
+\DoxyCodeLine{4228     fprintf(stderr, \textcolor{stringliteral}{"{}invalid source location \%s:\%d:\%d\(\backslash\)n"{}}, filename,}
+\DoxyCodeLine{4229             second\_line, second\_column);}
+\DoxyCodeLine{4230     errorCode = -\/1;}
+\DoxyCodeLine{4231     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4232   \}}
+\DoxyCodeLine{4233 }
+\DoxyCodeLine{4234   range = \mbox{\hyperlink{_c_x_source_location_8cpp_a6d436a40e815644209860de3f1416210}{clang\_getRange}}(startLoc, endLoc);}
+\DoxyCodeLine{4235   \mbox{\hyperlink{_c_index_8cpp_acb7d078bea44691adbb99cd63ce7e556}{clang\_tokenize}}(TU, range, \&tokens, \&num\_tokens);}
+\DoxyCodeLine{4236 }
+\DoxyCodeLine{4237   \textcolor{keywordflow}{if} (checkForErrors(TU) != 0) \{}
+\DoxyCodeLine{4238     errorCode = -\/1;}
+\DoxyCodeLine{4239     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4240   \}}
+\DoxyCodeLine{4241 }
+\DoxyCodeLine{4242   cursors = (CXCursor *)malloc(num\_tokens * \textcolor{keyword}{sizeof}(CXCursor));}
+\DoxyCodeLine{4243   assert(cursors);}
+\DoxyCodeLine{4244   \mbox{\hyperlink{_c_index_8cpp_aa53f8643daa75a0e72407ab0cee225f3}{clang\_annotateTokens}}(TU, tokens, num\_tokens, cursors);}
+\DoxyCodeLine{4245 }
+\DoxyCodeLine{4246   \textcolor{keywordflow}{if} (checkForErrors(TU) != 0) \{}
+\DoxyCodeLine{4247     errorCode = -\/1;}
+\DoxyCodeLine{4248     \textcolor{keywordflow}{goto} teardown;}
+\DoxyCodeLine{4249   \}}
+\DoxyCodeLine{4250 }
+\DoxyCodeLine{4251   skipped\_ranges = \mbox{\hyperlink{_c_index_8cpp_add341497e44da969ce07c7fbc174d38a}{clang\_getSkippedRanges}}(TU, file);}
+\DoxyCodeLine{4252   \textcolor{keywordflow}{for} (i = 0; i != skipped\_ranges-\/>count; ++i) \{}
+\DoxyCodeLine{4253     \textcolor{keywordtype}{unsigned} start\_line, start\_column, end\_line, end\_column;}
+\DoxyCodeLine{4254     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(\mbox{\hyperlink{_c_x_source_location_8cpp_a14a10dd8d9a4069c4fc1a7be62f58874}{clang\_getRangeStart}}(skipped\_ranges-\/>ranges[i]),}
+\DoxyCodeLine{4255                               0, \&start\_line, \&start\_column, 0);}
+\DoxyCodeLine{4256     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(\mbox{\hyperlink{_c_x_source_location_8cpp_a146c4bda0251ee320dc6e4b1b3fbb919}{clang\_getRangeEnd}}(skipped\_ranges-\/>ranges[i]),}
+\DoxyCodeLine{4257                               0, \&end\_line, \&end\_column, 0);}
+\DoxyCodeLine{4258     printf(\textcolor{stringliteral}{"{}Skipping: "{}});}
+\DoxyCodeLine{4259     PrintExtent(stdout, start\_line, start\_column, end\_line, end\_column);}
+\DoxyCodeLine{4260     printf(\textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{4261   \}}
+\DoxyCodeLine{4262   \mbox{\hyperlink{_c_index_8cpp_acfc7c338d3c08e516bf0773f4fa1180e}{clang\_disposeSourceRangeList}}(skipped\_ranges);}
+\DoxyCodeLine{4263 }
+\DoxyCodeLine{4264   \textcolor{keywordflow}{for} (i = 0; i != num\_tokens; ++i) \{}
+\DoxyCodeLine{4265     \textcolor{keyword}{const} \textcolor{keywordtype}{char} *kind = \textcolor{stringliteral}{"{}<unknown>"{}};}
+\DoxyCodeLine{4266     CXString spelling = \mbox{\hyperlink{_c_index_8cpp_ac54c8685910211b22533b6aea1e5793f}{clang\_getTokenSpelling}}(TU, tokens[i]);}
+\DoxyCodeLine{4267     CXSourceRange extent = \mbox{\hyperlink{_c_index_8cpp_a216d4670f967e3bd9f9c977691282047}{clang\_getTokenExtent}}(TU, tokens[i]);}
+\DoxyCodeLine{4268     \textcolor{keywordtype}{unsigned} start\_line, start\_column, end\_line, end\_column;}
+\DoxyCodeLine{4269 }
+\DoxyCodeLine{4270     \textcolor{keywordflow}{switch} (\mbox{\hyperlink{_c_index_8cpp_a656e3a514ed80a5f265fba4e2cbe6ab3}{clang\_getTokenKind}}(tokens[i])) \{}
+\DoxyCodeLine{4271     \textcolor{keywordflow}{case} CXToken\_Punctuation: kind = \textcolor{stringliteral}{"{}Punctuation"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4272     \textcolor{keywordflow}{case} CXToken\_Keyword: kind = \textcolor{stringliteral}{"{}Keyword"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4273     \textcolor{keywordflow}{case} CXToken\_Identifier: kind = \textcolor{stringliteral}{"{}Identifier"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4274     \textcolor{keywordflow}{case} CXToken\_Literal: kind = \textcolor{stringliteral}{"{}Literal"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4275     \textcolor{keywordflow}{case} CXToken\_Comment: kind = \textcolor{stringliteral}{"{}Comment"{}}; \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4276     \}}
+\DoxyCodeLine{4277     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(\mbox{\hyperlink{_c_x_source_location_8cpp_a14a10dd8d9a4069c4fc1a7be62f58874}{clang\_getRangeStart}}(extent),}
+\DoxyCodeLine{4278                               0, \&start\_line, \&start\_column, 0);}
+\DoxyCodeLine{4279     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(\mbox{\hyperlink{_c_x_source_location_8cpp_a146c4bda0251ee320dc6e4b1b3fbb919}{clang\_getRangeEnd}}(extent),}
+\DoxyCodeLine{4280                               0, \&end\_line, \&end\_column, 0);}
+\DoxyCodeLine{4281     printf(\textcolor{stringliteral}{"{}\%s: \(\backslash\)"{}\%s\(\backslash\)"{} "{}}, kind, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(spelling));}
+\DoxyCodeLine{4282     \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(spelling);}
+\DoxyCodeLine{4283     PrintExtent(stdout, start\_line, start\_column, end\_line, end\_column);}
+\DoxyCodeLine{4284     \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a0c5b391d8bca745084fb8906cce6f66c}{clang\_isInvalid}}(cursors[i].kind)) \{}
+\DoxyCodeLine{4285       printf(\textcolor{stringliteral}{"{} "{}});}
+\DoxyCodeLine{4286       PrintCursor(cursors[i], NULL);}
+\DoxyCodeLine{4287     \}}
+\DoxyCodeLine{4288     printf(\textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{4289   \}}
+\DoxyCodeLine{4290   free(cursors);}
+\DoxyCodeLine{4291   \mbox{\hyperlink{_c_index_8cpp_a69a3b1b393fd8cd3cf50802b2a5b08af}{clang\_disposeTokens}}(TU, tokens, num\_tokens);}
+\DoxyCodeLine{4292 }
+\DoxyCodeLine{4293  teardown:}
+\DoxyCodeLine{4294   \mbox{\hyperlink{c-index-test_8c_a40fceb7e4c2e16f5bce47bae394b973a}{PrintDiagnostics}}(TU);}
+\DoxyCodeLine{4295   \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{4296   \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(CIdx);}
+\DoxyCodeLine{4297   free(filename);}
+\DoxyCodeLine{4298   \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{4299   \textcolor{keywordflow}{return} errorCode;}
+\DoxyCodeLine{4300 \}}
+
+\end{DoxyCode}
+
+
+References parse\+\_\+file\+\_\+line\+\_\+column().
+
+\mbox{\Hypertarget{c-index-test_8c_ae302b130b55b146b76be601a70212b8a}\label{c-index-test_8c_ae302b130b55b146b76be601a70212b8a}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!print\_completion\_contexts@{print\_completion\_contexts}}
+\index{print\_completion\_contexts@{print\_completion\_contexts}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{print\_completion\_contexts()}{print\_completion\_contexts()}}
+{\footnotesize\ttfamily void print\+\_\+completion\+\_\+contexts (\begin{DoxyParamCaption}\item[{unsigned long long}]{contexts,  }\item[{FILE $\ast$}]{file }\end{DoxyParamCaption})}
+
+
+
+Definition at line 2592 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{2592                                                                         \{}
+\DoxyCodeLine{2593   fprintf(file, \textcolor{stringliteral}{"{}Completion contexts:\(\backslash\)n"{}});}
+\DoxyCodeLine{2594   \textcolor{keywordflow}{if} (contexts == CXCompletionContext\_Unknown) \{}
+\DoxyCodeLine{2595     fprintf(file, \textcolor{stringliteral}{"{}Unknown\(\backslash\)n"{}});}
+\DoxyCodeLine{2596   \}}
+\DoxyCodeLine{2597   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_AnyType) \{}
+\DoxyCodeLine{2598     fprintf(file, \textcolor{stringliteral}{"{}Any type\(\backslash\)n"{}});}
+\DoxyCodeLine{2599   \}}
+\DoxyCodeLine{2600   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_AnyValue) \{}
+\DoxyCodeLine{2601     fprintf(file, \textcolor{stringliteral}{"{}Any value\(\backslash\)n"{}});}
+\DoxyCodeLine{2602   \}}
+\DoxyCodeLine{2603   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCObjectValue) \{}
+\DoxyCodeLine{2604     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C object value\(\backslash\)n"{}});}
+\DoxyCodeLine{2605   \}}
+\DoxyCodeLine{2606   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCSelectorValue) \{}
+\DoxyCodeLine{2607     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C selector value\(\backslash\)n"{}});}
+\DoxyCodeLine{2608   \}}
+\DoxyCodeLine{2609   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_CXXClassTypeValue) \{}
+\DoxyCodeLine{2610     fprintf(file, \textcolor{stringliteral}{"{}C++ class type value\(\backslash\)n"{}});}
+\DoxyCodeLine{2611   \}}
+\DoxyCodeLine{2612   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_DotMemberAccess) \{}
+\DoxyCodeLine{2613     fprintf(file, \textcolor{stringliteral}{"{}Dot member access\(\backslash\)n"{}});}
+\DoxyCodeLine{2614   \}}
+\DoxyCodeLine{2615   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ArrowMemberAccess) \{}
+\DoxyCodeLine{2616     fprintf(file, \textcolor{stringliteral}{"{}Arrow member access\(\backslash\)n"{}});}
+\DoxyCodeLine{2617   \}}
+\DoxyCodeLine{2618   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCPropertyAccess) \{}
+\DoxyCodeLine{2619     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C property access\(\backslash\)n"{}});}
+\DoxyCodeLine{2620   \}}
+\DoxyCodeLine{2621   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_EnumTag) \{}
+\DoxyCodeLine{2622     fprintf(file, \textcolor{stringliteral}{"{}Enum tag\(\backslash\)n"{}});}
+\DoxyCodeLine{2623   \}}
+\DoxyCodeLine{2624   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_UnionTag) \{}
+\DoxyCodeLine{2625     fprintf(file, \textcolor{stringliteral}{"{}Union tag\(\backslash\)n"{}});}
+\DoxyCodeLine{2626   \}}
+\DoxyCodeLine{2627   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_StructTag) \{}
+\DoxyCodeLine{2628     fprintf(file, \textcolor{stringliteral}{"{}Struct tag\(\backslash\)n"{}});}
+\DoxyCodeLine{2629   \}}
+\DoxyCodeLine{2630   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ClassTag) \{}
+\DoxyCodeLine{2631     fprintf(file, \textcolor{stringliteral}{"{}Class name\(\backslash\)n"{}});}
+\DoxyCodeLine{2632   \}}
+\DoxyCodeLine{2633   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_Namespace) \{}
+\DoxyCodeLine{2634     fprintf(file, \textcolor{stringliteral}{"{}Namespace or namespace alias\(\backslash\)n"{}});}
+\DoxyCodeLine{2635   \}}
+\DoxyCodeLine{2636   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_NestedNameSpecifier) \{}
+\DoxyCodeLine{2637     fprintf(file, \textcolor{stringliteral}{"{}Nested name specifier\(\backslash\)n"{}});}
+\DoxyCodeLine{2638   \}}
+\DoxyCodeLine{2639   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCInterface) \{}
+\DoxyCodeLine{2640     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C interface\(\backslash\)n"{}});}
+\DoxyCodeLine{2641   \}}
+\DoxyCodeLine{2642   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCProtocol) \{}
+\DoxyCodeLine{2643     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C protocol\(\backslash\)n"{}});}
+\DoxyCodeLine{2644   \}}
+\DoxyCodeLine{2645   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCCategory) \{}
+\DoxyCodeLine{2646     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C category\(\backslash\)n"{}});}
+\DoxyCodeLine{2647   \}}
+\DoxyCodeLine{2648   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCInstanceMessage) \{}
+\DoxyCodeLine{2649     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C instance method\(\backslash\)n"{}});}
+\DoxyCodeLine{2650   \}}
+\DoxyCodeLine{2651   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCClassMessage) \{}
+\DoxyCodeLine{2652     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C class method\(\backslash\)n"{}});}
+\DoxyCodeLine{2653   \}}
+\DoxyCodeLine{2654   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_ObjCSelectorName) \{}
+\DoxyCodeLine{2655     fprintf(file, \textcolor{stringliteral}{"{}Objective-\/C selector name\(\backslash\)n"{}});}
+\DoxyCodeLine{2656   \}}
+\DoxyCodeLine{2657   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_MacroName) \{}
+\DoxyCodeLine{2658     fprintf(file, \textcolor{stringliteral}{"{}Macro name\(\backslash\)n"{}});}
+\DoxyCodeLine{2659   \}}
+\DoxyCodeLine{2660   \textcolor{keywordflow}{if} (contexts \& CXCompletionContext\_NaturalLanguage) \{}
+\DoxyCodeLine{2661     fprintf(file, \textcolor{stringliteral}{"{}Natural language\(\backslash\)n"{}});}
+\DoxyCodeLine{2662   \}}
+\DoxyCodeLine{2663 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_a846a90dd895ad8ab4948dfd8b42e88c1}\label{c-index-test_8c_a846a90dd895ad8ab4948dfd8b42e88c1}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!print\_usrs@{print\_usrs}}
+\index{print\_usrs@{print\_usrs}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{print\_usrs()}{print\_usrs()}}
+{\footnotesize\ttfamily int print\+\_\+usrs (\begin{DoxyParamCaption}\item[{const char $\ast$$\ast$}]{I,  }\item[{const char $\ast$$\ast$}]{E }\end{DoxyParamCaption})}
+
+
+
+Definition at line 4421 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{4421                                                \{}
+\DoxyCodeLine{4422   \textcolor{keywordflow}{while} (I != E) \{}
+\DoxyCodeLine{4423     \textcolor{keyword}{const} \textcolor{keywordtype}{char} *kind = *I;}
+\DoxyCodeLine{4424     \textcolor{keywordtype}{unsigned} len = strlen(kind);}
+\DoxyCodeLine{4425     \textcolor{keywordflow}{switch} (len) \{}
+\DoxyCodeLine{4426       \textcolor{keywordflow}{case} 8:}
+\DoxyCodeLine{4427         \textcolor{keywordflow}{if} (memcmp(kind, \textcolor{stringliteral}{"{}ObjCIvar"{}}, 8) == 0) \{}
+\DoxyCodeLine{4428           \textcolor{keywordflow}{if} (I + 2 >= E)}
+\DoxyCodeLine{4429             \textcolor{keywordflow}{return} insufficient\_usr(kind, \textcolor{stringliteral}{"{}<ivar name> <class USR>"{}});}
+\DoxyCodeLine{4430           \textcolor{keywordflow}{if} (!isUSR(I[2]))}
+\DoxyCodeLine{4431             \textcolor{keywordflow}{return} not\_usr(\textcolor{stringliteral}{"{}<class USR>"{}}, I[2]);}
+\DoxyCodeLine{4432           \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{4433             CXString x = createCXString(I[2]);}
+\DoxyCodeLine{4434             print\_usr(\mbox{\hyperlink{_c_index_u_s_rs_8cpp_a0a694bd3222726fa935bec5d6c6ffa74}{clang\_constructUSR\_ObjCIvar}}(I[1], x));}
+\DoxyCodeLine{4435           \}}
+\DoxyCodeLine{4436 }
+\DoxyCodeLine{4437           I += 3;}
+\DoxyCodeLine{4438           \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4439         \}}
+\DoxyCodeLine{4440         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4441       \textcolor{keywordflow}{case} 9:}
+\DoxyCodeLine{4442         \textcolor{keywordflow}{if} (memcmp(kind, \textcolor{stringliteral}{"{}ObjCClass"{}}, 9) == 0) \{}
+\DoxyCodeLine{4443           \textcolor{keywordflow}{if} (I + 1 >= E)}
+\DoxyCodeLine{4444             \textcolor{keywordflow}{return} insufficient\_usr(kind, \textcolor{stringliteral}{"{}<class name>"{}});}
+\DoxyCodeLine{4445           print\_usr(\mbox{\hyperlink{_c_index_u_s_rs_8cpp_afa75d3cdc7f1246aa196336006b6b17e}{clang\_constructUSR\_ObjCClass}}(I[1]));}
+\DoxyCodeLine{4446           I += 2;}
+\DoxyCodeLine{4447           \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4448         \}}
+\DoxyCodeLine{4449         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4450       \textcolor{keywordflow}{case} 10:}
+\DoxyCodeLine{4451         \textcolor{keywordflow}{if} (memcmp(kind, \textcolor{stringliteral}{"{}ObjCMethod"{}}, 10) == 0) \{}
+\DoxyCodeLine{4452           \textcolor{keywordflow}{if} (I + 3 >= E)}
+\DoxyCodeLine{4453             \textcolor{keywordflow}{return} insufficient\_usr(kind, \textcolor{stringliteral}{"{}<method selector> "{}}}
+\DoxyCodeLine{4454                 \textcolor{stringliteral}{"{}[0=class method|1=instance method] <class USR>"{}});}
+\DoxyCodeLine{4455           \textcolor{keywordflow}{if} (!isUSR(I[3]))}
+\DoxyCodeLine{4456             \textcolor{keywordflow}{return} not\_usr(\textcolor{stringliteral}{"{}<class USR>"{}}, I[3]);}
+\DoxyCodeLine{4457           \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{4458             CXString x = createCXString(I[3]);}
+\DoxyCodeLine{4459             print\_usr(\mbox{\hyperlink{_c_index_u_s_rs_8cpp_a57441154398db67af15555136489c8da}{clang\_constructUSR\_ObjCMethod}}(I[1], atoi(I[2]), x));}
+\DoxyCodeLine{4460           \}}
+\DoxyCodeLine{4461           I += 4;}
+\DoxyCodeLine{4462           \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4463         \}}
+\DoxyCodeLine{4464         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4465       \textcolor{keywordflow}{case} 12:}
+\DoxyCodeLine{4466         \textcolor{keywordflow}{if} (memcmp(kind, \textcolor{stringliteral}{"{}ObjCCategory"{}}, 12) == 0) \{}
+\DoxyCodeLine{4467           \textcolor{keywordflow}{if} (I + 2 >= E)}
+\DoxyCodeLine{4468             \textcolor{keywordflow}{return} insufficient\_usr(kind, \textcolor{stringliteral}{"{}<class name> <category name>"{}});}
+\DoxyCodeLine{4469           print\_usr(\mbox{\hyperlink{_c_index_u_s_rs_8cpp_a100f21ca740fca2384413c0e8fbb26ba}{clang\_constructUSR\_ObjCCategory}}(I[1], I[2]));}
+\DoxyCodeLine{4470           I += 3;}
+\DoxyCodeLine{4471           \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4472         \}}
+\DoxyCodeLine{4473         \textcolor{keywordflow}{if} (memcmp(kind, \textcolor{stringliteral}{"{}ObjCProtocol"{}}, 12) == 0) \{}
+\DoxyCodeLine{4474           \textcolor{keywordflow}{if} (I + 1 >= E)}
+\DoxyCodeLine{4475             \textcolor{keywordflow}{return} insufficient\_usr(kind, \textcolor{stringliteral}{"{}<protocol name>"{}});}
+\DoxyCodeLine{4476           print\_usr(\mbox{\hyperlink{_c_index_u_s_rs_8cpp_ad9eadd6627e168000a1d8a0a487f04ec}{clang\_constructUSR\_ObjCProtocol}}(I[1]));}
+\DoxyCodeLine{4477           I += 2;}
+\DoxyCodeLine{4478           \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4479         \}}
+\DoxyCodeLine{4480         \textcolor{keywordflow}{if} (memcmp(kind, \textcolor{stringliteral}{"{}ObjCProperty"{}}, 12) == 0) \{}
+\DoxyCodeLine{4481           \textcolor{keywordflow}{if} (I + 2 >= E)}
+\DoxyCodeLine{4482             \textcolor{keywordflow}{return} insufficient\_usr(kind, \textcolor{stringliteral}{"{}<property name> <class USR>"{}});}
+\DoxyCodeLine{4483           \textcolor{keywordflow}{if} (!isUSR(I[2]))}
+\DoxyCodeLine{4484             \textcolor{keywordflow}{return} not\_usr(\textcolor{stringliteral}{"{}<class USR>"{}}, I[2]);}
+\DoxyCodeLine{4485           \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{4486             CXString x = createCXString(I[2]);}
+\DoxyCodeLine{4487             print\_usr(\mbox{\hyperlink{_c_index_u_s_rs_8cpp_a06209d1976eb61cf961c047c4ceb0ee4}{clang\_constructUSR\_ObjCProperty}}(I[1], x));}
+\DoxyCodeLine{4488           \}}
+\DoxyCodeLine{4489           I += 3;}
+\DoxyCodeLine{4490           \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4491         \}}
+\DoxyCodeLine{4492         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4493       \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{4494         \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4495     \}}
+\DoxyCodeLine{4496     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4497   \}}
+\DoxyCodeLine{4498 }
+\DoxyCodeLine{4499   \textcolor{keywordflow}{if} (I != E) \{}
+\DoxyCodeLine{4500     fprintf(stderr, \textcolor{stringliteral}{"{}Invalid USR kind: \%s\(\backslash\)n"{}}, *I);}
+\DoxyCodeLine{4501     display\_usrs();}
+\DoxyCodeLine{4502     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{4503   \}}
+\DoxyCodeLine{4504   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{4505 \}}
+
+\end{DoxyCode}
+
+
+Referenced by print\+\_\+usrs\+\_\+file().
+
+\mbox{\Hypertarget{c-index-test_8c_a0847878e5ec5c011f566e2571cba418e}\label{c-index-test_8c_a0847878e5ec5c011f566e2571cba418e}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!print\_usrs\_file@{print\_usrs\_file}}
+\index{print\_usrs\_file@{print\_usrs\_file}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{print\_usrs\_file()}{print\_usrs\_file()}}
+{\footnotesize\ttfamily int print\+\_\+usrs\+\_\+file (\begin{DoxyParamCaption}\item[{const char $\ast$}]{file\+\_\+name }\end{DoxyParamCaption})}
+
+
+
+Definition at line 4507 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{4507                                            \{}
+\DoxyCodeLine{4508   \textcolor{keywordtype}{char} line[2048];}
+\DoxyCodeLine{4509   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *args[128];}
+\DoxyCodeLine{4510   \textcolor{keywordtype}{unsigned} numChars = 0;}
+\DoxyCodeLine{4511 }
+\DoxyCodeLine{4512   FILE *fp = fopen(file\_name, \textcolor{stringliteral}{"{}r"{}});}
+\DoxyCodeLine{4513   \textcolor{keywordflow}{if} (!fp) \{}
+\DoxyCodeLine{4514     fprintf(stderr, \textcolor{stringliteral}{"{}error: cannot open '\%s'\(\backslash\)n"{}}, file\_name);}
+\DoxyCodeLine{4515     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{4516   \}}
+\DoxyCodeLine{4517 }
+\DoxyCodeLine{4518   \textcolor{comment}{/* This code is not really all that safe, but it works fine for testing. */}}
+\DoxyCodeLine{4519   \textcolor{keywordflow}{while} (!feof(fp)) \{}
+\DoxyCodeLine{4520     \textcolor{keywordtype}{char} c = fgetc(fp);}
+\DoxyCodeLine{4521     \textcolor{keywordflow}{if} (c == \textcolor{charliteral}{'\(\backslash\)n'}) \{}
+\DoxyCodeLine{4522       \textcolor{keywordtype}{unsigned} i = 0;}
+\DoxyCodeLine{4523       \textcolor{keyword}{const} \textcolor{keywordtype}{char} *s = 0;}
+\DoxyCodeLine{4524 }
+\DoxyCodeLine{4525       \textcolor{keywordflow}{if} (numChars == 0)}
+\DoxyCodeLine{4526         \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4527 }
+\DoxyCodeLine{4528       line[numChars] = \textcolor{charliteral}{'\(\backslash\)0'};}
+\DoxyCodeLine{4529       numChars = 0;}
+\DoxyCodeLine{4530 }
+\DoxyCodeLine{4531       \textcolor{keywordflow}{if} (line[0] == \textcolor{charliteral}{'/'} \&\& line[1] == \textcolor{charliteral}{'/'})}
+\DoxyCodeLine{4532         \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{4533 }
+\DoxyCodeLine{4534       s = strtok(line, \textcolor{stringliteral}{"{} "{}});}
+\DoxyCodeLine{4535       \textcolor{keywordflow}{while} (s) \{}
+\DoxyCodeLine{4536         args[i] = s;}
+\DoxyCodeLine{4537         ++i;}
+\DoxyCodeLine{4538         s = strtok(0, \textcolor{stringliteral}{"{} "{}});}
+\DoxyCodeLine{4539       \}}
+\DoxyCodeLine{4540       \textcolor{keywordflow}{if} (\mbox{\hyperlink{c-index-test_8c_a846a90dd895ad8ab4948dfd8b42e88c1}{print\_usrs}}(\&args[0], \&args[i]))}
+\DoxyCodeLine{4541         \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{4542     \}}
+\DoxyCodeLine{4543     \textcolor{keywordflow}{else}}
+\DoxyCodeLine{4544       line[numChars++] = c;}
+\DoxyCodeLine{4545   \}}
+\DoxyCodeLine{4546 }
+\DoxyCodeLine{4547   fclose(fp);}
+\DoxyCodeLine{4548   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{4549 \}}
+
+\end{DoxyCode}
+
+
+References print\+\_\+usrs().
+
+\mbox{\Hypertarget{c-index-test_8c_a6163717d21d3db3edb29824ce554d190}\label{c-index-test_8c_a6163717d21d3db3edb29824ce554d190}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PrintDiagnostic@{PrintDiagnostic}}
+\index{PrintDiagnostic@{PrintDiagnostic}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PrintDiagnostic()}{PrintDiagnostic()}}
+{\footnotesize\ttfamily void Print\+Diagnostic (\begin{DoxyParamCaption}\item[{CXDiagnostic}]{Diagnostic }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1189 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1189                                               \{}
+\DoxyCodeLine{1190   FILE *out = stderr;}
+\DoxyCodeLine{1191   CXFile file;}
+\DoxyCodeLine{1192   CXString Msg;}
+\DoxyCodeLine{1193   \textcolor{keywordtype}{unsigned} display\_opts = CXDiagnostic\_DisplaySourceLocation}
+\DoxyCodeLine{1194     | CXDiagnostic\_DisplayColumn | CXDiagnostic\_DisplaySourceRanges}
+\DoxyCodeLine{1195     | CXDiagnostic\_DisplayOption;}
+\DoxyCodeLine{1196   \textcolor{keywordtype}{unsigned} i, num\_fixits;}
+\DoxyCodeLine{1197 }
+\DoxyCodeLine{1198   \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_index_diagnostic_8cpp_a4acc9ff12cb403c96d56e87359dfc7c7}{clang\_getDiagnosticSeverity}}(Diagnostic) == CXDiagnostic\_Ignored)}
+\DoxyCodeLine{1199     \textcolor{keywordflow}{return};}
+\DoxyCodeLine{1200 }
+\DoxyCodeLine{1201   Msg = \mbox{\hyperlink{_c_index_diagnostic_8cpp_a3ed169ee4a472764c11724cc7768e6eb}{clang\_formatDiagnostic}}(Diagnostic, display\_opts);}
+\DoxyCodeLine{1202   fprintf(stderr, \textcolor{stringliteral}{"{}\%s\(\backslash\)n"{}}, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(Msg));}
+\DoxyCodeLine{1203   \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(Msg);}
+\DoxyCodeLine{1204 }
+\DoxyCodeLine{1205   \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(\mbox{\hyperlink{_c_index_diagnostic_8cpp_a1e0502917ec39f222133358991a1dd0a}{clang\_getDiagnosticLocation}}(Diagnostic),}
+\DoxyCodeLine{1206                             \&file, 0, 0, 0);}
+\DoxyCodeLine{1207   \textcolor{keywordflow}{if} (!file)}
+\DoxyCodeLine{1208     \textcolor{keywordflow}{return};}
+\DoxyCodeLine{1209 }
+\DoxyCodeLine{1210   num\_fixits = \mbox{\hyperlink{_c_index_diagnostic_8cpp_a328fab9bb901e108adb1b5ec5f3ed748}{clang\_getDiagnosticNumFixIts}}(Diagnostic);}
+\DoxyCodeLine{1211   fprintf(stderr, \textcolor{stringliteral}{"{}Number FIX-\/ITs = \%d\(\backslash\)n"{}}, num\_fixits);}
+\DoxyCodeLine{1212   \textcolor{keywordflow}{for} (i = 0; i != num\_fixits; ++i) \{}
+\DoxyCodeLine{1213     CXSourceRange range;}
+\DoxyCodeLine{1214     CXString insertion\_text = \mbox{\hyperlink{_c_index_diagnostic_8cpp_a3038a0534d19be1e8f0adc11373b3c69}{clang\_getDiagnosticFixIt}}(Diagnostic, i, \&range);}
+\DoxyCodeLine{1215     CXSourceLocation start = \mbox{\hyperlink{_c_x_source_location_8cpp_a14a10dd8d9a4069c4fc1a7be62f58874}{clang\_getRangeStart}}(range);}
+\DoxyCodeLine{1216     CXSourceLocation end = \mbox{\hyperlink{_c_x_source_location_8cpp_a146c4bda0251ee320dc6e4b1b3fbb919}{clang\_getRangeEnd}}(range);}
+\DoxyCodeLine{1217     \textcolor{keywordtype}{unsigned} start\_line, start\_column, end\_line, end\_column;}
+\DoxyCodeLine{1218     CXFile start\_file, end\_file;}
+\DoxyCodeLine{1219     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(start, \&start\_file, \&start\_line,}
+\DoxyCodeLine{1220                               \&start\_column, 0);}
+\DoxyCodeLine{1221     \mbox{\hyperlink{_c_x_source_location_8cpp_ae2d805527135aac587ca5c8017bde0ef}{clang\_getSpellingLocation}}(end, \&end\_file, \&end\_line, \&end\_column, 0);}
+\DoxyCodeLine{1222     \textcolor{keywordflow}{if} (\mbox{\hyperlink{_c_x_source_location_8cpp_aa18c665664a0dd6ebf8eae9954a3a696}{clang\_equalLocations}}(start, end)) \{}
+\DoxyCodeLine{1223       \textcolor{comment}{/* Insertion. */}}
+\DoxyCodeLine{1224       \textcolor{keywordflow}{if} (start\_file == file)}
+\DoxyCodeLine{1225         fprintf(out, \textcolor{stringliteral}{"{}FIX-\/IT: Insert \(\backslash\)"{}\%s\(\backslash\)"{} at \%d:\%d\(\backslash\)n"{}},}
+\DoxyCodeLine{1226                 \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(insertion\_text), start\_line, start\_column);}
+\DoxyCodeLine{1227     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (strcmp(\mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(insertion\_text), \textcolor{stringliteral}{"{}"{}}) == 0) \{}
+\DoxyCodeLine{1228       \textcolor{comment}{/* Removal. */}}
+\DoxyCodeLine{1229       \textcolor{keywordflow}{if} (start\_file == file \&\& end\_file == file) \{}
+\DoxyCodeLine{1230         fprintf(out, \textcolor{stringliteral}{"{}FIX-\/IT: Remove "{}});}
+\DoxyCodeLine{1231         PrintExtent(out, start\_line, start\_column, end\_line, end\_column);}
+\DoxyCodeLine{1232         fprintf(out, \textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{1233       \}}
+\DoxyCodeLine{1234     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{1235       \textcolor{comment}{/* Replacement. */}}
+\DoxyCodeLine{1236       \textcolor{keywordflow}{if} (start\_file == end\_file) \{}
+\DoxyCodeLine{1237         fprintf(out, \textcolor{stringliteral}{"{}FIX-\/IT: Replace "{}});}
+\DoxyCodeLine{1238         PrintExtent(out, start\_line, start\_column, end\_line, end\_column);}
+\DoxyCodeLine{1239         fprintf(out, \textcolor{stringliteral}{"{} with \(\backslash\)"{}\%s\(\backslash\)"{}\(\backslash\)n"{}}, \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(insertion\_text));}
+\DoxyCodeLine{1240       \}}
+\DoxyCodeLine{1241     \}}
+\DoxyCodeLine{1242     \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(insertion\_text);}
+\DoxyCodeLine{1243   \}}
+\DoxyCodeLine{1244 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+dispose\+String(), clang\+\_\+equal\+Locations(), clang\+\_\+format\+Diagnostic(), clang\+\_\+get\+CString(), clang\+\_\+get\+Diagnostic\+Fix\+It(), clang\+\_\+get\+Diagnostic\+Location(), clang\+\_\+get\+Diagnostic\+Num\+Fix\+Its(), clang\+\_\+get\+Diagnostic\+Severity(), clang\+\_\+get\+Range\+End(), clang\+\_\+get\+Range\+Start(), and clang\+\_\+get\+Spelling\+Location().
+
+
+
+Referenced by Print\+Diagnostic\+Set().
+
+\mbox{\Hypertarget{c-index-test_8c_a40fceb7e4c2e16f5bce47bae394b973a}\label{c-index-test_8c_a40fceb7e4c2e16f5bce47bae394b973a}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PrintDiagnostics@{PrintDiagnostics}}
+\index{PrintDiagnostics@{PrintDiagnostics}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PrintDiagnostics()}{PrintDiagnostics()}}
+{\footnotesize\ttfamily void Print\+Diagnostics (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1257 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1257                                             \{}
+\DoxyCodeLine{1258   CXDiagnosticSet TUSet = \mbox{\hyperlink{_c_index_diagnostic_8cpp_a01fef60398b711267499e2eabd58806e}{clang\_getDiagnosticSetFromTU}}(TU);}
+\DoxyCodeLine{1259   \mbox{\hyperlink{c-index-test_8c_a1edb92a2047f535a1f1407b9557cd10d}{PrintDiagnosticSet}}(TUSet);}
+\DoxyCodeLine{1260   \mbox{\hyperlink{_c_index_diagnostic_8cpp_a0b2786b08bcfa94c6aebdb68249fcd85}{clang\_disposeDiagnosticSet}}(TUSet);}
+\DoxyCodeLine{1261 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+dispose\+Diagnostic\+Set(), clang\+\_\+get\+Diagnostic\+Set\+From\+TU(), and Print\+Diagnostic\+Set().
+
+\mbox{\Hypertarget{c-index-test_8c_a1edb92a2047f535a1f1407b9557cd10d}\label{c-index-test_8c_a1edb92a2047f535a1f1407b9557cd10d}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PrintDiagnosticSet@{PrintDiagnosticSet}}
+\index{PrintDiagnosticSet@{PrintDiagnosticSet}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PrintDiagnosticSet()}{PrintDiagnosticSet()}}
+{\footnotesize\ttfamily void Print\+Diagnostic\+Set (\begin{DoxyParamCaption}\item[{CXDiagnostic\+Set}]{Set }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1246 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1246                                              \{}
+\DoxyCodeLine{1247   \textcolor{keywordtype}{int} i = 0, n = \mbox{\hyperlink{_c_index_diagnostic_8cpp_a9861abba19ec80dae4db68998828261d}{clang\_getNumDiagnosticsInSet}}(Set);}
+\DoxyCodeLine{1248   \textcolor{keywordflow}{for} ( ; i != n ; ++i) \{}
+\DoxyCodeLine{1249     CXDiagnostic Diag = \mbox{\hyperlink{_c_index_diagnostic_8cpp_acc45fefa1e17eade2d10177d4ff77851}{clang\_getDiagnosticInSet}}(Set, i);}
+\DoxyCodeLine{1250     CXDiagnosticSet ChildDiags = \mbox{\hyperlink{_c_index_diagnostic_8cpp_abca973dc6f01b106edd47a39f480dd8f}{clang\_getChildDiagnostics}}(Diag);}
+\DoxyCodeLine{1251     \mbox{\hyperlink{c-index-test_8c_a6163717d21d3db3edb29824ce554d190}{PrintDiagnostic}}(Diag);}
+\DoxyCodeLine{1252     \textcolor{keywordflow}{if} (ChildDiags)}
+\DoxyCodeLine{1253       \mbox{\hyperlink{c-index-test_8c_a1edb92a2047f535a1f1407b9557cd10d}{PrintDiagnosticSet}}(ChildDiags);}
+\DoxyCodeLine{1254   \}  }
+\DoxyCodeLine{1255 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Child\+Diagnostics(), clang\+\_\+get\+Diagnostic\+In\+Set(), clang\+\_\+get\+Num\+Diagnostics\+In\+Set(), and Print\+Diagnostic().
+
+
+
+Referenced by Print\+Diagnostics().
+
+\mbox{\Hypertarget{c-index-test_8c_a271f309ab673d301e539e00164b71483}\label{c-index-test_8c_a271f309ab673d301e539e00164b71483}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PrintInclusionStack@{PrintInclusionStack}}
+\index{PrintInclusionStack@{PrintInclusionStack}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PrintInclusionStack()}{PrintInclusionStack()}}
+{\footnotesize\ttfamily void Print\+Inclusion\+Stack (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1440 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1440                                                \{}
+\DoxyCodeLine{1441   \mbox{\hyperlink{_c_index_inclusion_stack_8cpp_a46a93eb16ff8f277bb63cbbe5d70d3ae}{clang\_getInclusions}}(TU, \mbox{\hyperlink{c-index-test_8c_aeec77843d6ef3e3e453289ec2018c83d}{InclusionVisitor}}, NULL);}
+\DoxyCodeLine{1442 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Inclusions(), and Inclusion\+Visitor().
+
+\mbox{\Hypertarget{c-index-test_8c_ad807e8418e9685a5284b2bbb776ade49}\label{c-index-test_8c_ad807e8418e9685a5284b2bbb776ade49}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!PrintMemoryUsage@{PrintMemoryUsage}}
+\index{PrintMemoryUsage@{PrintMemoryUsage}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{PrintMemoryUsage()}{PrintMemoryUsage()}}
+{\footnotesize\ttfamily void Print\+Memory\+Usage (\begin{DoxyParamCaption}\item[{CXTranslation\+Unit}]{TU }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1263 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1263                                             \{}
+\DoxyCodeLine{1264   \textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{long} total = 0;}
+\DoxyCodeLine{1265   \textcolor{keywordtype}{unsigned} i = 0;}
+\DoxyCodeLine{1266   CXTUResourceUsage usage = \mbox{\hyperlink{_c_index_8cpp_a72299455a328faf612d238bf6aee6eb6}{clang\_getCXTUResourceUsage}}(TU);}
+\DoxyCodeLine{1267   fprintf(stderr, \textcolor{stringliteral}{"{}Memory usage:\(\backslash\)n"{}});}
+\DoxyCodeLine{1268   \textcolor{keywordflow}{for} (i = 0 ; i != usage.numEntries; ++i) \{}
+\DoxyCodeLine{1269     \textcolor{keyword}{const} \textcolor{keywordtype}{char} *name = \mbox{\hyperlink{_c_index_8cpp_aeba9f6263fe5dbde18abb55b2f321a34}{clang\_getTUResourceUsageName}}(usage.entries[i].kind);}
+\DoxyCodeLine{1270     \textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{long} amount = usage.entries[i].amount;}
+\DoxyCodeLine{1271     total += amount;}
+\DoxyCodeLine{1272     fprintf(stderr, \textcolor{stringliteral}{"{}  \%s : \%ld bytes (\%f MBytes)\(\backslash\)n"{}}, name, amount,}
+\DoxyCodeLine{1273             ((\textcolor{keywordtype}{double}) amount)/(1024*1024));}
+\DoxyCodeLine{1274   \}}
+\DoxyCodeLine{1275   fprintf(stderr, \textcolor{stringliteral}{"{}  TOTAL = \%ld bytes (\%f MBytes)\(\backslash\)n"{}}, total,}
+\DoxyCodeLine{1276           ((\textcolor{keywordtype}{double}) total)/(1024*1024));}
+\DoxyCodeLine{1277   \mbox{\hyperlink{_c_index_8cpp_a3e9a2455e3253920304adc26c1084a6f}{clang\_disposeCXTUResourceUsage}}(usage);  }
+\DoxyCodeLine{1278 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+dispose\+CXTUResource\+Usage(), clang\+\_\+get\+CXTUResource\+Usage(), and clang\+\_\+get\+TUResource\+Usage\+Name().
+
+\mbox{\Hypertarget{c-index-test_8c_a91e96908610b154b9dfe897de0e12b79}\label{c-index-test_8c_a91e96908610b154b9dfe897de0e12b79}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!thread\_runner@{thread\_runner}}
+\index{thread\_runner@{thread\_runner}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{thread\_runner()}{thread\_runner()}}
+{\footnotesize\ttfamily void thread\+\_\+runner (\begin{DoxyParamCaption}\item[{void $\ast$}]{client\+\_\+data\+\_\+v }\end{DoxyParamCaption})}
+
+
+
+Definition at line 4989 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{4989                                         \{}
+\DoxyCodeLine{4990   \mbox{\hyperlink{structthread__info}{thread\_info}} *client\_data = client\_data\_v;}
+\DoxyCodeLine{4991   client\_data-\/>\mbox{\hyperlink{structthread__info_ad2caaa988d61b6beba0b6d681a6589ae}{result}} = client\_data-\/>\mbox{\hyperlink{structthread__info_adc28060776617282f0c5a76431aec532}{main\_func}}(client\_data-\/>\mbox{\hyperlink{structthread__info_a78ff8f016b665b19193b194f8a659f96}{argc}},}
+\DoxyCodeLine{4992                                                client\_data-\/>\mbox{\hyperlink{structthread__info_a734b6a1187acc993b18983573234e93f}{argv}});}
+\DoxyCodeLine{4993 \}}
+
+\end{DoxyCode}
+
+
+References thread\+\_\+info\+::argc, thread\+\_\+info\+::argv, thread\+\_\+info\+::main\+\_\+func, and thread\+\_\+info\+::result.
+
+\mbox{\Hypertarget{c-index-test_8c_a0511093879dc5155579f47448dc7f35a}\label{c-index-test_8c_a0511093879dc5155579f47448dc7f35a}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!USRVisitor@{USRVisitor}}
+\index{USRVisitor@{USRVisitor}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{USRVisitor()}{USRVisitor()}}
+{\footnotesize\ttfamily enum CXChild\+Visit\+Result USRVisitor (\begin{DoxyParamCaption}\item[{CXCursor}]{C,  }\item[{CXCursor}]{parent,  }\item[{CXClient\+Data}]{Client\+Data }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1284 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1393                                                             \{}
+\DoxyCodeLine{1394   \mbox{\hyperlink{struct_visitor_data}{VisitorData}} *Data = (\mbox{\hyperlink{struct_visitor_data}{VisitorData}} *)ClientData;}
+\DoxyCodeLine{1395   \textcolor{keywordflow}{if} (!Data-\/>\mbox{\hyperlink{struct_visitor_data_a2adae660b33ba2270dd98ecffbec5fb7}{Filter}} || (C.kind == *(\textcolor{keyword}{enum} CXCursorKind *)Data-\/>\mbox{\hyperlink{struct_visitor_data_a2adae660b33ba2270dd98ecffbec5fb7}{Filter}})) \{}
+\DoxyCodeLine{1396     CXString USR = \mbox{\hyperlink{_c_index_u_s_rs_8cpp_ae603480d6cea9e6b8e4a3bc927c1f43b}{clang\_getCursorUSR}}(C);}
+\DoxyCodeLine{1397     \textcolor{keyword}{const} \textcolor{keywordtype}{char} *cstr = \mbox{\hyperlink{_c_x_string_8cpp_acd478c1b1785e17c0fe377bd70a2195f}{clang\_getCString}}(USR);}
+\DoxyCodeLine{1398     \textcolor{keywordflow}{if} (!cstr || cstr[0] == \textcolor{charliteral}{'\(\backslash\)0'}) \{}
+\DoxyCodeLine{1399       \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(USR);}
+\DoxyCodeLine{1400       \textcolor{keywordflow}{return} CXChildVisit\_Recurse;}
+\DoxyCodeLine{1401     \}}
+\DoxyCodeLine{1402     printf(\textcolor{stringliteral}{"{}// \%s: \%s \%s"{}}, FileCheckPrefix, GetCursorSource(C), cstr);}
+\DoxyCodeLine{1403 }
+\DoxyCodeLine{1404     PrintCursorExtent(C);}
+\DoxyCodeLine{1405     printf(\textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{1406     \mbox{\hyperlink{_c_x_string_8cpp_a46c85f1255580ed186aa6f7380a06883}{clang\_disposeString}}(USR);}
+\DoxyCodeLine{1407 }
+\DoxyCodeLine{1408     \textcolor{keywordflow}{return} CXChildVisit\_Recurse;}
+\DoxyCodeLine{1409   \}}
+\DoxyCodeLine{1410 }
+\DoxyCodeLine{1411   \textcolor{keywordflow}{return} CXChildVisit\_Continue;}
+\DoxyCodeLine{1412 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{c-index-test_8c_ab187a790df1b433ed87b4e13209297d6}\label{c-index-test_8c_ab187a790df1b433ed87b4e13209297d6}} 
+\index{c-\/index-\/test.c@{c-\/index-\/test.c}!write\_pch\_file@{write\_pch\_file}}
+\index{write\_pch\_file@{write\_pch\_file}!c-\/index-\/test.c@{c-\/index-\/test.c}}
+\doxysubsubsection{\texorpdfstring{write\_pch\_file()}{write\_pch\_file()}}
+{\footnotesize\ttfamily int write\+\_\+pch\+\_\+file (\begin{DoxyParamCaption}\item[{const char $\ast$}]{filename,  }\item[{int}]{argc,  }\item[{const char $\ast$}]{argv\mbox{[}$\,$\mbox{]} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 4554 of file c-\/index-\/test.\+c.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{4554                                                                        \{}
+\DoxyCodeLine{4555   CXIndex Idx;}
+\DoxyCodeLine{4556   CXTranslationUnit TU;}
+\DoxyCodeLine{4557   \textcolor{keyword}{struct }CXUnsavedFile *unsaved\_files = 0;}
+\DoxyCodeLine{4558   \textcolor{keywordtype}{int} num\_unsaved\_files = 0;}
+\DoxyCodeLine{4559   \textcolor{keyword}{enum} CXErrorCode Err;}
+\DoxyCodeLine{4560   \textcolor{keywordtype}{int} result = 0;}
+\DoxyCodeLine{4561   }
+\DoxyCodeLine{4562   Idx = \mbox{\hyperlink{_c_index_8cpp_a3420c8e7e10a7ff7906130b207cbb763}{clang\_createIndex}}(\textcolor{comment}{/* excludeDeclsFromPCH */}1, \textcolor{comment}{/* displayDiagnostics=*/}1);}
+\DoxyCodeLine{4563   }
+\DoxyCodeLine{4564   \textcolor{keywordflow}{if} (parse\_remapped\_files(argc, argv, 0, \&unsaved\_files, \&num\_unsaved\_files)) \{}
+\DoxyCodeLine{4565     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{4566     \textcolor{keywordflow}{return} -\/1;}
+\DoxyCodeLine{4567   \}}
+\DoxyCodeLine{4568 }
+\DoxyCodeLine{4569   Err = \mbox{\hyperlink{_c_index_8cpp_a3ddd508cc891d95a82b747955738249a}{clang\_parseTranslationUnit2}}(}
+\DoxyCodeLine{4570       Idx, 0, argv + num\_unsaved\_files, argc -\/ num\_unsaved\_files,}
+\DoxyCodeLine{4571       unsaved\_files, num\_unsaved\_files,}
+\DoxyCodeLine{4572       CXTranslationUnit\_Incomplete |}
+\DoxyCodeLine{4573           CXTranslationUnit\_DetailedPreprocessingRecord |}
+\DoxyCodeLine{4574           CXTranslationUnit\_ForSerialization,}
+\DoxyCodeLine{4575       \&TU);}
+\DoxyCodeLine{4576   \textcolor{keywordflow}{if} (Err != CXError\_Success) \{}
+\DoxyCodeLine{4577     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to load translation unit!\(\backslash\)n"{}});}
+\DoxyCodeLine{4578     describeLibclangFailure(Err);}
+\DoxyCodeLine{4579     \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{4580     \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{4581     \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{4582     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{4583   \}}
+\DoxyCodeLine{4584 }
+\DoxyCodeLine{4585   \textcolor{keywordflow}{switch} (\mbox{\hyperlink{_c_index_8cpp_a1be3baac9f48e48ba4119cbcdaf35391}{clang\_saveTranslationUnit}}(TU, filename, }
+\DoxyCodeLine{4586                                     \mbox{\hyperlink{_c_index_8cpp_af7f47ec6ccc9f05c092f813102672290}{clang\_defaultSaveOptions}}(TU))) \{}
+\DoxyCodeLine{4587   \textcolor{keywordflow}{case} CXSaveError\_None:}
+\DoxyCodeLine{4588     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4589 }
+\DoxyCodeLine{4590   \textcolor{keywordflow}{case} CXSaveError\_TranslationErrors:}
+\DoxyCodeLine{4591     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to write PCH file \%s: translation errors\(\backslash\)n"{}}, }
+\DoxyCodeLine{4592             filename);}
+\DoxyCodeLine{4593     result = 2;    }
+\DoxyCodeLine{4594     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4595 }
+\DoxyCodeLine{4596   \textcolor{keywordflow}{case} CXSaveError\_InvalidTU:}
+\DoxyCodeLine{4597     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to write PCH file \%s: invalid translation unit\(\backslash\)n"{}}, }
+\DoxyCodeLine{4598             filename);}
+\DoxyCodeLine{4599     result = 3;    }
+\DoxyCodeLine{4600     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4601 }
+\DoxyCodeLine{4602   \textcolor{keywordflow}{case} CXSaveError\_Unknown:}
+\DoxyCodeLine{4603   \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{4604     fprintf(stderr, \textcolor{stringliteral}{"{}Unable to write PCH file \%s: unknown error \(\backslash\)n"{}}, filename);}
+\DoxyCodeLine{4605     result = 1;}
+\DoxyCodeLine{4606     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{4607   \}}
+\DoxyCodeLine{4608   }
+\DoxyCodeLine{4609   \mbox{\hyperlink{_c_index_8cpp_a3af88c13004a1954abd6dc956faff3be}{clang\_disposeTranslationUnit}}(TU);}
+\DoxyCodeLine{4610   \mbox{\hyperlink{c-index-test_8c_af28d9933e8a8fd14e8394a1e7f9f6379}{free\_remapped\_files}}(unsaved\_files, num\_unsaved\_files);}
+\DoxyCodeLine{4611   \mbox{\hyperlink{_c_index_8cpp_aea91ddf5e996cba0de2f781cb17db1d5}{clang\_disposeIndex}}(Idx);}
+\DoxyCodeLine{4612   \textcolor{keywordflow}{return} result;}
+\DoxyCodeLine{4613 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+create\+Index().
+

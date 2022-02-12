@@ -1,0 +1,77 @@
+.TH "tests.unit.test_analyze.ExtdefMapSrcToAstTest" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.unit.test_analyze.ExtdefMapSrcToAstTest
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits unittest\&.TestCase\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBtest_empty_gives_empty\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_sources_to_asts\fP (self)"
+.br
+.ti -1c
+.RI "def \fBtest_spaces_handled\fP (self)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 405 of file test_analyze\&.py\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "def tests\&.unit\&.test_analyze\&.ExtdefMapSrcToAstTest\&.test_empty_gives_empty ( self)"
+
+.PP
+Definition at line 407 of file test_analyze\&.py\&.
+.PP
+.nf
+407     def test_empty_gives_empty(self):
+408         fun_ast_lst = sut\&.extdef_map_list_src_to_ast([])
+409         self\&.assertFalse(fun_ast_lst)
+410 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.ExtdefMapSrcToAstTest\&.test_sources_to_asts ( self)"
+
+.PP
+Definition at line 411 of file test_analyze\&.py\&.
+.PP
+.nf
+411     def test_sources_to_asts(self):
+412         fun_src_lst = ['c:@F@f1#I# ' + os\&.path\&.join(os\&.sep + 'path', 'f1\&.c'),
+413                        'c:@F@f2#I# ' + os\&.path\&.join(os\&.sep + 'path', 'f2\&.c')]
+414         fun_ast_lst = sut\&.extdef_map_list_src_to_ast(fun_src_lst)
+415         self\&.assertTrue('c:@F@f1#I# ' +
+416                         os\&.path\&.join('ast', 'path', 'f1\&.c\&.ast')
+417                         in fun_ast_lst)
+418         self\&.assertTrue('c:@F@f2#I# ' +
+419                         os\&.path\&.join('ast', 'path', 'f2\&.c\&.ast')
+420                         in fun_ast_lst)
+421         self\&.assertEqual(2, len(fun_ast_lst))
+422 
+.fi
+.SS "def tests\&.unit\&.test_analyze\&.ExtdefMapSrcToAstTest\&.test_spaces_handled ( self)"
+
+.PP
+Definition at line 423 of file test_analyze\&.py\&.
+.PP
+.nf
+423     def test_spaces_handled(self):
+424         fun_src_lst = ['c:@F@f1#I# ' + os\&.path\&.join(os\&.sep + 'path', 'f 1\&.c')]
+425         fun_ast_lst = sut\&.extdef_map_list_src_to_ast(fun_src_lst)
+426         self\&.assertTrue('c:@F@f1#I# ' +
+427                         os\&.path\&.join('ast', 'path', 'f 1\&.c\&.ast')
+428                         in fun_ast_lst)
+429         self\&.assertEqual(1, len(fun_ast_lst))
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,146 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/Rewrite.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/Rewrite.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang\-c/Rewrite\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/Basic/SourceManager\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Rewrite/Core/Rewriter\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXRewriter \fBclang_CXRewriter_create\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "void \fBclang_CXRewriter_insertTextBefore\fP (CXRewriter Rew, CXSourceLocation Loc, const char *Insert)"
+.br
+.ti -1c
+.RI "void \fBclang_CXRewriter_replaceText\fP (CXRewriter Rew, CXSourceRange ToBeReplaced, const char *Replacement)"
+.br
+.ti -1c
+.RI "void \fBclang_CXRewriter_removeText\fP (CXRewriter Rew, CXSourceRange ToBeRemoved)"
+.br
+.ti -1c
+.RI "int \fBclang_CXRewriter_overwriteChangedFiles\fP (CXRewriter Rew)"
+.br
+.ti -1c
+.RI "void \fBclang_CXRewriter_writeMainFileToStdOut\fP (CXRewriter Rew)"
+.br
+.ti -1c
+.RI "void \fBclang_CXRewriter_dispose\fP (CXRewriter Rew)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXRewriter clang_CXRewriter_create (CXTranslationUnit TU)"
+
+.PP
+Definition at line 16 of file Rewrite\&.cpp\&.
+.PP
+.nf
+16                                                          {
+17   if (clang::cxtu::isNotUsableTU(TU)) {
+18     LOG_BAD_TU(TU);
+19     return {};
+20   }
+21   clang::ASTUnit *AU = clang::cxtu::getASTUnit(TU);
+22   assert(AU);
+23   return reinterpret_cast<CXRewriter>(
+24       new clang::Rewriter(AU->getSourceManager(), AU->getLangOpts()));
+25 }
+.fi
+.PP
+References LOG_BAD_TU\&.
+.SS "void clang_CXRewriter_dispose (CXRewriter Rew)"
+
+.PP
+Definition at line 60 of file Rewrite\&.cpp\&.
+.PP
+.nf
+60                                               {
+61   if (Rew)
+62     delete reinterpret_cast<clang::Rewriter *>(Rew);
+63 }
+.fi
+.SS "void clang_CXRewriter_insertTextBefore (CXRewriter Rew, CXSourceLocation Loc, const char * Insert)"
+
+.PP
+Definition at line 27 of file Rewrite\&.cpp\&.
+.PP
+.nf
+28                                                 {
+29   assert(Rew);
+30   clang::Rewriter &R = *reinterpret_cast<clang::Rewriter *>(Rew);
+31   R\&.InsertTextBefore(clang::cxloc::translateSourceLocation(Loc), Insert);
+32 }
+.fi
+.SS "int clang_CXRewriter_overwriteChangedFiles (CXRewriter Rew)"
+
+.PP
+Definition at line 48 of file Rewrite\&.cpp\&.
+.PP
+.nf
+48                                                            {
+49   assert(Rew);
+50   clang::Rewriter &R = *reinterpret_cast<clang::Rewriter *>(Rew);
+51   return R\&.overwriteChangedFiles();
+52 }
+.fi
+.SS "void clang_CXRewriter_removeText (CXRewriter Rew, CXSourceRange ToBeRemoved)"
+
+.PP
+Definition at line 42 of file Rewrite\&.cpp\&.
+.PP
+.nf
+42                                                                             {
+43   assert(Rew);
+44   clang::Rewriter &R = *reinterpret_cast<clang::Rewriter *>(Rew);
+45   R\&.RemoveText(clang::cxloc::translateCXRangeToCharRange(ToBeRemoved));
+46 }
+.fi
+.PP
+References clang::cxloc::translateCXRangeToCharRange()\&.
+.SS "void clang_CXRewriter_replaceText (CXRewriter Rew, CXSourceRange ToBeReplaced, const char * Replacement)"
+
+.PP
+Definition at line 34 of file Rewrite\&.cpp\&.
+.PP
+.nf
+35                                                 {
+36   assert(Rew);
+37   clang::Rewriter &R = *reinterpret_cast<clang::Rewriter *>(Rew);
+38   R\&.ReplaceText(clang::cxloc::translateCXRangeToCharRange(ToBeReplaced),
+39                 Replacement);
+40 }
+.fi
+.PP
+References clang::cxloc::translateCXRangeToCharRange()\&.
+.SS "void clang_CXRewriter_writeMainFileToStdOut (CXRewriter Rew)"
+
+.PP
+Definition at line 54 of file Rewrite\&.cpp\&.
+.PP
+.nf
+54                                                             {
+55   assert(Rew);
+56   clang::Rewriter &R = *reinterpret_cast<clang::Rewriter *>(Rew);
+57   R\&.getEditBuffer(R\&.getSourceMgr()\&.getMainFileID())\&.write(llvm::outs());
+58 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

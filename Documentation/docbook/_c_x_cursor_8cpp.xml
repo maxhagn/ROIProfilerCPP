@@ -1,0 +1,635 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_cursor_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/CXCursor.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXCursor.cpp</primary></indexterm>
+<programlisting>#include &quot;CXCursor.h&quot;
+#include &quot;CXString.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;CXType.h&quot;
+#include &quot;clang-c/Index.h&quot;
+#include &quot;clang/AST/Attr.h&quot;
+#include &quot;clang/AST/Decl.h&quot;
+#include &quot;clang/AST/DeclCXX.h&quot;
+#include &quot;clang/AST/DeclObjC.h&quot;
+#include &quot;clang/AST/DeclTemplate.h&quot;
+#include &quot;clang/AST/Expr.h&quot;
+#include &quot;clang/AST/ExprCXX.h&quot;
+#include &quot;clang/AST/ExprObjC.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;llvm/Support/ErrorHandling.h&quot;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>struct <link linkend="_structllvm_1_1_dense_map_info_3_01_c_x_cursor_01_4">llvm::DenseMapInfo&lt; CXCursor &gt;</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespacellvm">llvm</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Typedefs    </title>
+        <itemizedlist>
+            <listitem><para>typedef llvm::DenseMap&lt; CXCursor, unsigned &gt; <link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Enumerations    </title>
+        <itemizedlist>
+            <listitem><para>enum <link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0">CXGetTemplateArgumentStatus</link> { 
+<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link> = 0
+, <link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0aaf8ad5bd5667e021565b6cc938736ce8">CXGetTemplateArgumentStatus_CursorNotFunctionDecl</link> = -1
+, <link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0ae5ffd24518659004ac765426aa814f21">CXGetTemplateArgumentStatus_BadFunctionDeclCast</link> = -2
+, <link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a9598d9e5fbd7b5ef5a1984cb91ae3167">CXGetTemplateArgumentStatus_NullTemplSpecInfo</link> = -3
+, 
+<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a98e1ed6cbe9728b3356a34a075eeef3c">CXGetTemplateArgumentStatus_InvalidIndex</link> = -4
+ }</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__c_x_cursor_8cpp_1af734553e3bac74a4a1f6f7450513cf0f">clang_Cursor_isNull</link> (CXCursor cursor)</para>
+</listitem>
+            <listitem><para>CXTranslationUnit <link linkend="__c_x_cursor_8cpp_1ace7e0a4fcee3aa54c74aa75615cef62a">clang_Cursor_getTranslationUnit</link> (CXCursor cursor)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_cursor_8cpp_1a22f41fe117dda1a72b55c84e1ae64c6b">clang_Cursor_getNumArguments</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXCursor <link linkend="__c_x_cursor_8cpp_1a776c46967cf1110bc067e119e8034434">clang_Cursor_getArgument</link> (CXCursor C, unsigned i)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_cursor_8cpp_1accb5e7f9bb249d933b1b77fdc53fc5da">clang_Cursor_getNumTemplateArguments</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>enum CXTemplateArgumentKind <link linkend="__c_x_cursor_8cpp_1ab1c5cb44256e5b1861c54b4a2cb48574">clang_Cursor_getTemplateArgumentKind</link> (CXCursor C, unsigned I)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_cursor_8cpp_1a96e7b0702b7bd3ea7cbbb081b3c52268">clang_Cursor_getTemplateArgumentType</link> (CXCursor C, unsigned I)</para>
+</listitem>
+            <listitem><para>long long <link linkend="__c_x_cursor_8cpp_1a49f91eaf8d2c14fe0541f9b8d2fbd3c2">clang_Cursor_getTemplateArgumentValue</link> (CXCursor C, unsigned I)</para>
+</listitem>
+            <listitem><para>unsigned long long <link linkend="__c_x_cursor_8cpp_1a12157e0c0c40c3fe78744f272a80c3bc">clang_Cursor_getTemplateArgumentUnsignedValue</link> (CXCursor C, unsigned I)</para>
+</listitem>
+            <listitem><para>CXCursorSet <link linkend="__c_x_cursor_8cpp_1aaa8c6ee0c13438ebab6fc782fc4e2eba">clang_createCXCursorSet</link> ()</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_x_cursor_8cpp_1a4a09bda865be0ddaa715ee6b208354f8">clang_disposeCXCursorSet</link> (CXCursorSet set)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_cursor_8cpp_1a7bd87b9de64dde3a368215a0448f9cae">clang_CXCursorSet_contains</link> (CXCursorSet set, CXCursor cursor)</para>
+</listitem>
+            <listitem><para>unsigned <link linkend="__c_x_cursor_8cpp_1aaa9a7e6d3b6d7e1925055e67cae6eabf">clang_CXCursorSet_insert</link> (CXCursorSet set, CXCursor cursor)</para>
+</listitem>
+            <listitem><para>CXCompletionString <link linkend="__c_x_cursor_8cpp_1ac65a717dd583769c4bc5dccb4625a496">clang_getCursorCompletionString</link> (CXCursor cursor)</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_x_cursor_8cpp_1a04940185910bcfa9b6d008b3fb5aba1c">clang_getOverriddenCursors</link> (CXCursor cursor, CXCursor **overridden, unsigned *num_overridden)</para>
+</listitem>
+            <listitem><para>void <link linkend="__c_x_cursor_8cpp_1a2135ed9fac6fe68a043d59e466ee9842">clang_disposeOverriddenCursors</link> (CXCursor *overridden)</para>
+</listitem>
+            <listitem><para>int <link linkend="__c_x_cursor_8cpp_1a124276f443ec62421673da6692b3dbda">clang_Cursor_isDynamicCall</link> (CXCursor C)</para>
+</listitem>
+            <listitem><para>CXType <link linkend="__c_x_cursor_8cpp_1ad857136af3443094d221eb72518d969a">clang_Cursor_getReceiverType</link> (CXCursor C)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Typedef Documentation</title>
+<anchor xml:id="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a"/>    <section>
+    <title>CXCursorSet_Impl</title>
+<indexterm><primary>CXCursorSet_Impl</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXCursorSet_Impl</secondary></indexterm>
+<para><computeroutput>typedef llvm::DenseMap&lt;CXCursor, unsigned&gt; <link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link></computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01461">1461</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+</section>
+</section>
+<section>
+<title>Enumeration Type Documentation</title>
+<anchor xml:id="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0"/>    <section>
+    <title>CXGetTemplateArgumentStatus</title>
+<indexterm><primary>CXGetTemplateArgumentStatus</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXGetTemplateArgumentStatus</secondary></indexterm>
+<para><computeroutput>enum <link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0">CXGetTemplateArgumentStatus</link></computeroutput></para><informaltable frame="all">
+<title>Enumerator</title>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <colspec colname='c1'/>
+      <colspec colname='c2'/>
+<tbody>
+<row><entry><indexterm><primary>CXGetTemplateArgumentStatus_Success</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXGetTemplateArgumentStatus_Success</secondary></indexterm>
+<anchor xml:id="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71"/>CXGetTemplateArgumentStatus_Success</entry><entry>
+<para>The operation completed successfully </para>
+</entry></row><row><entry><indexterm><primary>CXGetTemplateArgumentStatus_CursorNotFunctionDecl</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXGetTemplateArgumentStatus_CursorNotFunctionDecl</secondary></indexterm>
+<anchor xml:id="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0aaf8ad5bd5667e021565b6cc938736ce8"/>CXGetTemplateArgumentStatus_CursorNotFunctionDecl</entry><entry>
+<para>The specified cursor did not represent a FunctionDecl. </para>
+</entry></row><row><entry><indexterm><primary>CXGetTemplateArgumentStatus_BadFunctionDeclCast</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXGetTemplateArgumentStatus_BadFunctionDeclCast</secondary></indexterm>
+<anchor xml:id="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0ae5ffd24518659004ac765426aa814f21"/>CXGetTemplateArgumentStatus_BadFunctionDeclCast</entry><entry>
+<para>The specified cursor was not castable to a FunctionDecl. </para>
+</entry></row><row><entry><indexterm><primary>CXGetTemplateArgumentStatus_NullTemplSpecInfo</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXGetTemplateArgumentStatus_NullTemplSpecInfo</secondary></indexterm>
+<anchor xml:id="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a9598d9e5fbd7b5ef5a1984cb91ae3167"/>CXGetTemplateArgumentStatus_NullTemplSpecInfo</entry><entry>
+<para>A NULL FunctionTemplateSpecializationInfo was retrieved. </para>
+</entry></row><row><entry><indexterm><primary>CXGetTemplateArgumentStatus_InvalidIndex</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>CXGetTemplateArgumentStatus_InvalidIndex</secondary></indexterm>
+<anchor xml:id="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a98e1ed6cbe9728b3356a34a075eeef3c"/>CXGetTemplateArgumentStatus_InvalidIndex</entry><entry>
+<para>An invalid (OOB) argument index was specified </para>
+</entry></row>    </tbody>
+    </tgroup>
+</informaltable>
+<para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01336">1336</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01336 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01338 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>&#32;=&#32;0,
+01339 
+01341 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0aaf8ad5bd5667e021565b6cc938736ce8">CXGetTemplateArgumentStatus_CursorNotFunctionDecl</link>&#32;=&#32;-1,
+01342 
+01344 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0ae5ffd24518659004ac765426aa814f21">CXGetTemplateArgumentStatus_BadFunctionDeclCast</link>&#32;=&#32;-2,
+01345 
+01347 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a9598d9e5fbd7b5ef5a1984cb91ae3167">CXGetTemplateArgumentStatus_NullTemplSpecInfo</link>&#32;=&#32;-3,
+01348 
+01350 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a98e1ed6cbe9728b3356a34a075eeef3c">CXGetTemplateArgumentStatus_InvalidIndex</link>&#32;=&#32;-4
+01351 };
+</programlisting></section>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__c_x_cursor_8cpp_1aaa8c6ee0c13438ebab6fc782fc4e2eba"/>    <section>
+    <title>clang_createCXCursorSet()</title>
+<indexterm><primary>clang_createCXCursorSet</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_createCXCursorSet</secondary></indexterm>
+<para><computeroutput>CXCursorSet clang_createCXCursorSet ( )</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01488">1488</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01489 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;packCXCursorSet(<emphasis role="keyword">new</emphasis>&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>());
+01490 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1a776c46967cf1110bc067e119e8034434"/>    <section>
+    <title>clang_Cursor_getArgument()</title>
+<indexterm><primary>clang_Cursor_getArgument</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getArgument</secondary></indexterm>
+<para><computeroutput>CXCursor clang_Cursor_getArgument (CXCursor C, unsigned i)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01283">1283</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01283 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01284 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+01285 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01286 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*MD&#32;=&#32;dyn_cast_or_null&lt;ObjCMethodDecl&gt;(D))&#32;{
+01287 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;MD-&gt;param_size())
+01288 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(MD-&gt;parameters()[i],
+01289 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01290 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FunctionDecl&gt;(D))&#32;{
+01291 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;FD-&gt;param_size())
+01292 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(FD-&gt;parameters()[i],
+01293 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01294 &#32;&#32;&#32;&#32;}
+01295 &#32;&#32;}
+01296 
+01297 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))&#32;{
+01298 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">cxcursor::getCursorExpr</link>(C);
+01299 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))&#32;{
+01300 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;CE-&gt;getNumArgs())&#32;{
+01301 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(CE-&gt;getArg(i),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C),
+01302 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01303 &#32;&#32;&#32;&#32;&#32;&#32;}
+01304 &#32;&#32;&#32;&#32;}
+01305 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXConstructExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CXXConstructExpr&gt;(E))&#32;{
+01306 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;CE-&gt;getNumArgs())&#32;{
+01307 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">cxcursor::MakeCXCursor</link>(CE-&gt;getArg(i),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C),
+01308 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C));
+01309 &#32;&#32;&#32;&#32;&#32;&#32;}
+01310 &#32;&#32;&#32;&#32;}
+01311 &#32;&#32;}
+01312 
+01313 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>();
+01314 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05901">clang_getNullCursor()</link>, <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_index_8cpp_source_1l05952">clang_isExpression()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01105">clang::cxcursor::getCursorExpr()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, and <link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">clang::cxcursor::MakeCXCursor()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1a22f41fe117dda1a72b55c84e1ae64c6b"/>    <section>
+    <title>clang_Cursor_getNumArguments()</title>
+<indexterm><primary>clang_Cursor_getNumArguments</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getNumArguments</secondary></indexterm>
+<para><computeroutput>int clang_Cursor_getNumArguments (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01261">1261</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01261 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01262 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(C.kind))&#32;{
+01263 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">cxcursor::getCursorDecl</link>(C);
+01264 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMethodDecl&#32;*MD&#32;=&#32;dyn_cast_or_null&lt;ObjCMethodDecl&gt;(D))
+01265 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;MD-&gt;param_size();
+01266 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=&#32;dyn_cast_or_null&lt;FunctionDecl&gt;(D))
+01267 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;FD-&gt;param_size();
+01268 &#32;&#32;}
+01269 
+01270 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))&#32;{
+01271 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">cxcursor::getCursorExpr</link>(C);
+01272 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))&#32;{
+01273 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CE-&gt;getNumArgs();
+01274 &#32;&#32;&#32;&#32;}
+01275 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXConstructExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CXXConstructExpr&gt;(E))&#32;{
+01276 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CE-&gt;getNumArgs();
+01277 &#32;&#32;&#32;&#32;}
+01278 &#32;&#32;}
+01279 
+01280 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01281 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_index_8cpp_source_1l05952">clang_isExpression()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01105">clang::cxcursor::getCursorExpr()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1accb5e7f9bb249d933b1b77fdc53fc5da"/>    <section>
+    <title>clang_Cursor_getNumTemplateArguments()</title>
+<indexterm><primary>clang_Cursor_getNumTemplateArguments</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getNumTemplateArguments</secondary></indexterm>
+<para><computeroutput>int clang_Cursor_getNumTemplateArguments (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01316">1316</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01316 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01317 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(C)&#32;!=&#32;CXCursor_FunctionDecl)&#32;{
+01318 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01319 &#32;&#32;}
+01320 
+01321 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionDecl&#32;*FD&#32;=
+01322 &#32;&#32;&#32;&#32;&#32;&#32;llvm::dyn_cast_or_null&lt;clang::FunctionDecl&gt;(<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(C));
+01323 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FD)&#32;{
+01324 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01325 &#32;&#32;}
+01326 
+01327 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;FunctionTemplateSpecializationInfo&#32;*SpecInfo&#32;=
+01328 &#32;&#32;&#32;&#32;&#32;&#32;FD-&gt;getTemplateSpecializationInfo();
+01329 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!SpecInfo)&#32;{
+01330 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+01331 &#32;&#32;}
+01332 
+01333 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SpecInfo-&gt;TemplateArguments-&gt;size();
+01334 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05984">clang_getCursorKind()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1ad857136af3443094d221eb72518d969a"/>    <section>
+    <title>clang_Cursor_getReceiverType()</title>
+<indexterm><primary>clang_Cursor_getReceiverType</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getReceiverType</secondary></indexterm>
+<para><computeroutput>CXType clang_Cursor_getReceiverType (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01687">1687</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01687 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01688 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(C);
+01689 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01690 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))
+01691 &#32;&#32;&#32;&#32;E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(C);
+01692 
+01693 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMessageExpr&#32;*MsgE&#32;=&#32;dyn_cast_or_null&lt;ObjCMessageExpr&gt;(E))
+01694 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(MsgE-&gt;getReceiverType(),&#32;TU);
+01695 
+01696 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*PropRefE&#32;=&#32;dyn_cast&lt;ObjCPropertyRefExpr&gt;(E))&#32;{
+01697 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(
+01698 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PropRefE-&gt;getReceiverType(<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(C)),&#32;TU);
+01699 &#32;&#32;}
+01700 
+01701 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MemberExpr&#32;*ME&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01702 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;MemberExpr&gt;(E))
+01703 &#32;&#32;&#32;&#32;ME&#32;=&#32;cast&lt;MemberExpr&gt;(E);
+01704 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))
+01705 &#32;&#32;&#32;&#32;ME&#32;=&#32;dyn_cast_or_null&lt;MemberExpr&gt;(CE-&gt;getCallee());
+01706 
+01707 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ME)&#32;{
+01708 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(dyn_cast_or_null&lt;CXXMethodDecl&gt;(ME-&gt;getMemberDecl()))&#32;{
+01709 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;receiverTy&#32;=&#32;ME-&gt;getBase()-&gt;IgnoreImpCasts()-&gt;getType();
+01710 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(receiverTy,&#32;TU);
+01711 &#32;&#32;&#32;&#32;}
+01712 &#32;&#32;}
+01713 
+01714 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(QualType(),&#32;TU);
+01715 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05952">clang_isExpression()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01122">clang::cxcursor::getCursorContext()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01105">clang::cxcursor::getCursorExpr()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, and <link linkend="__c_x_type_8cpp_source_1l00126">clang::cxtype::MakeCXType()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1ab1c5cb44256e5b1861c54b4a2cb48574"/>    <section>
+    <title>clang_Cursor_getTemplateArgumentKind()</title>
+<indexterm><primary>clang_Cursor_getTemplateArgumentKind</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getTemplateArgumentKind</secondary></indexterm>
+<para><computeroutput>enum CXTemplateArgumentKind clang_Cursor_getTemplateArgumentKind (CXCursor C, unsigned I)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01353">1353</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01380 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01381 &#32;&#32;TemplateArgument&#32;TA;
+01382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA))&#32;{
+01383 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Invalid;
+01384 &#32;&#32;}
+01385 
+01386 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(TA.getKind())&#32;{
+01387 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Null:
+01388 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Null;
+01389 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Type:
+01390 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Type;
+01391 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Declaration:
+01392 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Declaration;
+01393 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::NullPtr:
+01394 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_NullPtr;
+01395 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Integral:
+01396 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Integral;
+01397 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Template:
+01398 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Template;
+01399 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::TemplateExpansion:
+01400 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_TemplateExpansion;
+01401 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Expression:
+01402 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Expression;
+01403 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;TemplateArgument::Pack:
+01404 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Pack;
+01405 &#32;&#32;}
+01406 
+01407 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXTemplateArgumentKind_Invalid;
+01408 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1a96e7b0702b7bd3ea7cbbb081b3c52268"/>    <section>
+    <title>clang_Cursor_getTemplateArgumentType()</title>
+<indexterm><primary>clang_Cursor_getTemplateArgumentType</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getTemplateArgumentType</secondary></indexterm>
+<para><computeroutput>CXType clang_Cursor_getTemplateArgumentType (CXCursor C, unsigned I)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01410">1410</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01410 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01411 &#32;&#32;TemplateArgument&#32;TA;
+01412 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA)&#32;!=
+01413 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>)&#32;{
+01414 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(QualType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+01415 &#32;&#32;}
+01416 
+01417 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TA.getKind()&#32;!=&#32;TemplateArgument::Type)&#32;{
+01418 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(QualType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+01419 &#32;&#32;}
+01420 
+01421 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxtype_1afab44f51bd657249b6dcf6476c6b6b98">cxtype::MakeCXType</link>(TA.getAsType(),&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(C));
+01422 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1a12157e0c0c40c3fe78744f272a80c3bc"/>    <section>
+    <title>clang_Cursor_getTemplateArgumentUnsignedValue()</title>
+<indexterm><primary>clang_Cursor_getTemplateArgumentUnsignedValue</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getTemplateArgumentUnsignedValue</secondary></indexterm>
+<para><computeroutput>unsigned long long clang_Cursor_getTemplateArgumentUnsignedValue (CXCursor C, unsigned I)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01440">1440</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01441 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01442 &#32;&#32;TemplateArgument&#32;TA;
+01443 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA)&#32;!=
+01444 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>)&#32;{
+01445 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;retrieve&#32;TemplateArgument&quot;</emphasis>);
+01446 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01447 &#32;&#32;}
+01448 
+01449 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TA.getKind()&#32;!=&#32;TemplateArgument::Integral)&#32;{
+01450 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Passed&#32;template&#32;argument&#32;is&#32;not&#32;Integral&quot;</emphasis>);
+01451 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01452 &#32;&#32;}
+01453 
+01454 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TA.getAsIntegral().getZExtValue();
+01455 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1a49f91eaf8d2c14fe0541f9b8d2fbd3c2"/>    <section>
+    <title>clang_Cursor_getTemplateArgumentValue()</title>
+<indexterm><primary>clang_Cursor_getTemplateArgumentValue</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getTemplateArgumentValue</secondary></indexterm>
+<para><computeroutput>long long clang_Cursor_getTemplateArgumentValue (CXCursor C, unsigned I)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01424">1424</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01424 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01425 &#32;&#32;TemplateArgument&#32;TA;
+01426 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(clang_Cursor_getTemplateArgument(C,&#32;I,&#32;&amp;TA)&#32;!=
+01427 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_cursor_8cpp_1a1e95119cadf8e10c21de3b84c26580a0a6a7fdc09d61a32dd5a47c2f0c8325d71">CXGetTemplateArgumentStatus_Success</link>)&#32;{
+01428 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;retrieve&#32;TemplateArgument&quot;</emphasis>);
+01429 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01430 &#32;&#32;}
+01431 
+01432 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(TA.getKind()&#32;!=&#32;TemplateArgument::Integral)&#32;{
+01433 &#32;&#32;&#32;&#32;assert(0&#32;&amp;&amp;&#32;<emphasis role="stringliteral">&quot;Passed&#32;template&#32;argument&#32;is&#32;not&#32;Integral&quot;</emphasis>);
+01434 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01435 &#32;&#32;}
+01436 
+01437 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;TA.getAsIntegral().getSExtValue();
+01438 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1ace7e0a4fcee3aa54c74aa75615cef62a"/>    <section>
+    <title>clang_Cursor_getTranslationUnit()</title>
+<indexterm><primary>clang_Cursor_getTranslationUnit</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_getTranslationUnit</secondary></indexterm>
+<para><computeroutput>CXTranslationUnit clang_Cursor_getTranslationUnit (CXCursor cursor)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01257">1257</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01258 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(cursor);
+01259 }
+</programlisting><para>
+References <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1a124276f443ec62421673da6692b3dbda"/>    <section>
+    <title>clang_Cursor_isDynamicCall()</title>
+<indexterm><primary>clang_Cursor_isDynamicCall</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_isDynamicCall</secondary></indexterm>
+<para><computeroutput>int clang_Cursor_isDynamicCall (CXCursor C)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01648">1648</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01648 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01649 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Expr&#32;*E&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01650 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1ab958945dd59c351e1ae1a3f7f5668095">clang_isExpression</link>(C.kind))
+01651 &#32;&#32;&#32;&#32;E&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(C);
+01652 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!E)
+01653 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01654 
+01655 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;ObjCMessageExpr&#32;*MsgE&#32;=&#32;dyn_cast&lt;ObjCMessageExpr&gt;(E))&#32;{
+01656 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MsgE-&gt;getReceiverKind()&#32;!=&#32;ObjCMessageExpr::Instance)
+01657 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01658 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*RecE&#32;=&#32;dyn_cast&lt;ObjCMessageExpr&gt;(
+01659 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;MsgE-&gt;getInstanceReceiver()-&gt;IgnoreParenCasts()))&#32;{
+01660 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(RecE-&gt;getMethodFamily()&#32;==&#32;OMF_alloc)
+01661 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+01662 &#32;&#32;&#32;&#32;}
+01663 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+01664 &#32;&#32;}
+01665 
+01666 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">auto</emphasis>&#32;*PropRefE&#32;=&#32;dyn_cast&lt;ObjCPropertyRefExpr&gt;(E))&#32;{
+01667 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;!PropRefE-&gt;isSuperReceiver();
+01668 &#32;&#32;}
+01669 
+01670 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MemberExpr&#32;*ME&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01671 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(isa&lt;MemberExpr&gt;(E))
+01672 &#32;&#32;&#32;&#32;ME&#32;=&#32;cast&lt;MemberExpr&gt;(E);
+01673 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CallExpr&#32;*CE&#32;=&#32;dyn_cast&lt;CallExpr&gt;(E))
+01674 &#32;&#32;&#32;&#32;ME&#32;=&#32;dyn_cast_or_null&lt;MemberExpr&gt;(CE-&gt;getCallee());
+01675 
+01676 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ME)&#32;{
+01677 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;CXXMethodDecl&#32;*MD&#32;=
+01678 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;dyn_cast_or_null&lt;CXXMethodDecl&gt;(ME-&gt;getMemberDecl()))
+01679 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;MD-&gt;isVirtual()&#32;&amp;&amp;
+01680 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ME-&gt;performsVirtualDispatch(
+01681 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">cxcursor::getCursorContext</link>(C).getLangOpts());
+01682 &#32;&#32;}
+01683 
+01684 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01685 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05952">clang_isExpression()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01122">clang::cxcursor::getCursorContext()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l01105">clang::cxcursor::getCursorExpr()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1af734553e3bac74a4a1f6f7450513cf0f"/>    <section>
+    <title>clang_Cursor_isNull()</title>
+<indexterm><primary>clang_Cursor_isNull</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_Cursor_isNull</secondary></indexterm>
+<para><computeroutput>int clang_Cursor_isNull (CXCursor cursor)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01253">1253</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01253 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01254 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_index_8cpp_1a96d5f0059613428736715de616ed38f9">clang_equalCursors</link>(cursor,&#32;<link linkend="__c_index_8cpp_1aa22233466eaf91f6f3cf6b84255c3b68">clang_getNullCursor</link>());
+01255 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05905">clang_equalCursors()</link>, and <link linkend="__c_index_8cpp_source_1l05901">clang_getNullCursor()</link>.</para>
+<para>
+Referenced by <link linkend="__c_index_8cpp_source_1l04795">clang_Cursor_getSpellingNameRange()</link>, <link linkend="__c_index_high_8cpp_source_1l00409">clang_findReferencesInFile()</link>, <link linkend="__c_index_8cpp_source_1l05099">clang_getCursorPrettyPrinted()</link>, and <link linkend="__c_index_8cpp_source_1l04931">clang_getCursorPrintingPolicy()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1a7bd87b9de64dde3a368215a0448f9cae"/>    <section>
+    <title>clang_CXCursorSet_contains()</title>
+<indexterm><primary>clang_CXCursorSet_contains</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_CXCursorSet_contains</secondary></indexterm>
+<para><computeroutput>unsigned clang_CXCursorSet_contains (CXCursorSet set, CXCursor cursor)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01496">1496</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01496 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01497 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*setImpl&#32;=&#32;unpackCXCursorSet(set);
+01498 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!setImpl)
+01499 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+01500 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;setImpl-&gt;find(cursor)&#32;!=&#32;setImpl-&gt;end();
+01501 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1aaa9a7e6d3b6d7e1925055e67cae6eabf"/>    <section>
+    <title>clang_CXCursorSet_insert()</title>
+<indexterm><primary>clang_CXCursorSet_insert</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_CXCursorSet_insert</secondary></indexterm>
+<para><computeroutput>unsigned clang_CXCursorSet_insert (CXCursorSet set, CXCursor cursor)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01503">1503</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01503 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01504 &#32;&#32;<emphasis role="comment">//&#32;Do&#32;not&#32;insert&#32;invalid&#32;cursors&#32;into&#32;the&#32;set.</emphasis>
+01505 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;&gt;=&#32;CXCursor_FirstInvalid&#32;&amp;&amp;
+01506 &#32;&#32;&#32;&#32;&#32;&#32;cursor.kind&#32;&lt;=&#32;CXCursor_LastInvalid)
+01507 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+01508 
+01509 &#32;&#32;<link linkend="__c_x_cursor_8cpp_1af3eedeefd5c1dcb3f998fa5637f0638a">CXCursorSet_Impl</link>&#32;*setImpl&#32;=&#32;unpackCXCursorSet(set);
+01510 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!setImpl)
+01511 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+01512 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;&amp;entry&#32;=&#32;(*setImpl)[cursor];
+01513 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;flag&#32;=&#32;entry&#32;==&#32;0&#32;?&#32;1&#32;:&#32;0;
+01514 &#32;&#32;entry&#32;=&#32;1;
+01515 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;flag;
+01516 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1a4a09bda865be0ddaa715ee6b208354f8"/>    <section>
+    <title>clang_disposeCXCursorSet()</title>
+<indexterm><primary>clang_disposeCXCursorSet</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_disposeCXCursorSet</secondary></indexterm>
+<para><computeroutput>void clang_disposeCXCursorSet (CXCursorSet set)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01492">1492</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01492 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01493 &#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;unpackCXCursorSet(set);
+01494 }
+</programlisting>    </section><anchor xml:id="__c_x_cursor_8cpp_1a2135ed9fac6fe68a043d59e466ee9842"/>    <section>
+    <title>clang_disposeOverriddenCursors()</title>
+<indexterm><primary>clang_disposeOverriddenCursors</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_disposeOverriddenCursors</secondary></indexterm>
+<para><computeroutput>void clang_disposeOverriddenCursors (CXCursor * overridden)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01628">1628</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01628 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01629 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!overridden)
+01630 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01631 
+01632 &#32;&#32;<emphasis role="comment">//&#32;Use&#32;pointer&#32;arithmetic&#32;to&#32;get&#32;back&#32;the&#32;first&#32;faux&#32;entry</emphasis>
+01633 &#32;&#32;<emphasis role="comment">//&#32;which&#32;has&#32;a&#32;back-reference&#32;to&#32;the&#32;TU&#32;and&#32;the&#32;vector.</emphasis>
+01634 &#32;&#32;--overridden;
+01635 &#32;&#32;OverridenCursorsPool::CursorVec&#32;*Vec&#32;=
+01636 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool::CursorVec&#32;*<emphasis role="keyword">&gt;</emphasis>(
+01637 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis><emphasis role="keywordtype">void</emphasis>&#32;*<emphasis role="keyword">&gt;</emphasis>(overridden-&gt;data[0]));
+01638 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(*overridden);
+01639 
+01640 &#32;&#32;assert(Vec&#32;&amp;&amp;&#32;TU);
+01641 
+01642 &#32;&#32;OverridenCursorsPool&#32;&amp;pool&#32;=
+01643 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool&#32;*<emphasis role="keyword">&gt;</emphasis>(TU-&gt;OverridenCursorsPool);
+01644 
+01645 &#32;&#32;pool.AvailableCursors.push_back(Vec);
+01646 }
+</programlisting><para>
+References <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1ac65a717dd583769c4bc5dccb4625a496"/>    <section>
+    <title>clang_getCursorCompletionString()</title>
+<indexterm><primary>clang_getCursorCompletionString</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_getCursorCompletionString</secondary></indexterm>
+<para><computeroutput>CXCompletionString clang_getCursorCompletionString (CXCursor cursor)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01518">1518</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01518 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01519 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;kind&#32;=&#32;<link linkend="__c_index_8cpp_1a88e594fe730830706a0b7cff796eaedf">clang_getCursorKind</link>(cursor);
+01520 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(kind))&#32;{
+01521 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*decl&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(cursor);
+01522 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*namedDecl&#32;=&#32;dyn_cast_or_null&lt;NamedDecl&gt;(decl))&#32;{
+01523 &#32;&#32;&#32;&#32;&#32;&#32;ASTUnit&#32;*unit&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(cursor);
+01524 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionResult&#32;Result(namedDecl,&#32;CCP_Declaration);
+01525 &#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionString&#32;*String&#32;=&#32;Result.CreateCodeCompletionString(
+01526 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getASTContext(),&#32;unit-&gt;getPreprocessor(),
+01527 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionContext::CCC_Other,
+01528 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo().getAllocator(),
+01529 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo(),&#32;<emphasis role="keyword">true</emphasis>);
+01530 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;String;
+01531 &#32;&#32;&#32;&#32;}
+01532 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(kind&#32;==&#32;CXCursor_MacroDefinition)&#32;{
+01533 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*definition&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">getCursorMacroDefinition</link>(cursor);
+01534 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*Macro&#32;=&#32;definition-&gt;getName();
+01535 &#32;&#32;&#32;&#32;ASTUnit&#32;*unit&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(cursor);
+01536 &#32;&#32;&#32;&#32;CodeCompletionResult&#32;Result(
+01537 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Macro,
+01538 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getPreprocessor().getMacroDefinition(Macro).getMacroInfo());
+01539 &#32;&#32;&#32;&#32;CodeCompletionString&#32;*String&#32;=&#32;Result.CreateCodeCompletionString(
+01540 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getASTContext(),&#32;unit-&gt;getPreprocessor(),
+01541 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CodeCompletionContext::CCC_Other,
+01542 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo().getAllocator(),
+01543 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unit-&gt;getCodeCompletionTUInfo(),&#32;<emphasis role="keyword">false</emphasis>);
+01544 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;String;
+01545 &#32;&#32;}
+01546 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+01547 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05984">clang_getCursorKind()</link>, <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01126">clang::cxcursor::getCursorASTUnit()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01101">clang::cxcursor::getCursorDecl()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l00998">clang::cxcursor::getCursorMacroDefinition()</link>.</para>
+    </section><anchor xml:id="__c_x_cursor_8cpp_1a04940185910bcfa9b6d008b3fb5aba1c"/>    <section>
+    <title>clang_getOverriddenCursors()</title>
+<indexterm><primary>clang_getOverriddenCursors</primary><secondary>CXCursor.cpp</secondary></indexterm>
+<indexterm><primary>CXCursor.cpp</primary><secondary>clang_getOverriddenCursors</secondary></indexterm>
+<para><computeroutput>void clang_getOverriddenCursors (CXCursor cursor, CXCursor ** overridden, unsigned * num_overridden)</computeroutput></para><para>
+Definition at line <link linkend="__c_x_cursor_8cpp_source_1l01573">1573</link> of file <link linkend="__c_x_cursor_8cpp_source">CXCursor.cpp</link>.</para>
+<programlisting>01574 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01575 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(overridden)
+01576 &#32;&#32;&#32;&#32;*overridden&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01577 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_overridden)
+01578 &#32;&#32;&#32;&#32;*num_overridden&#32;=&#32;0;
+01579 
+01580 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(cursor);
+01581 
+01582 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!overridden&#32;||&#32;!num_overridden&#32;||&#32;!TU)
+01583 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01584 
+01585 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(cursor.kind))
+01586 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01587 
+01588 &#32;&#32;OverridenCursorsPool&#32;&amp;pool&#32;=
+01589 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis>OverridenCursorsPool&#32;*<emphasis role="keyword">&gt;</emphasis>(TU-&gt;OverridenCursorsPool);
+01590 
+01591 &#32;&#32;OverridenCursorsPool::CursorVec&#32;*Vec&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+01592 
+01593 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!pool.AvailableCursors.empty())&#32;{
+01594 &#32;&#32;&#32;&#32;Vec&#32;=&#32;pool.AvailableCursors.back();
+01595 &#32;&#32;&#32;&#32;pool.AvailableCursors.pop_back();
+01596 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01597 &#32;&#32;&#32;&#32;Vec&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;OverridenCursorsPool::CursorVec();
+01598 &#32;&#32;&#32;&#32;pool.AllCursors.push_back(Vec);
+01599 &#32;&#32;}
+01600 
+01601 &#32;&#32;<emphasis role="comment">//&#32;Clear&#32;out&#32;the&#32;vector,&#32;but&#32;don&apos;t&#32;free&#32;the&#32;memory&#32;contents.&#32;&#32;This</emphasis>
+01602 &#32;&#32;<emphasis role="comment">//&#32;reduces&#32;malloc()&#32;traffic.</emphasis>
+01603 &#32;&#32;Vec-&gt;clear();
+01604 
+01605 &#32;&#32;<emphasis role="comment">//&#32;Use&#32;the&#32;first&#32;entry&#32;to&#32;contain&#32;a&#32;back&#32;reference&#32;to&#32;the&#32;vector.</emphasis>
+01606 &#32;&#32;<emphasis role="comment">//&#32;This&#32;is&#32;a&#32;complete&#32;hack.</emphasis>
+01607 &#32;&#32;CXCursor&#32;backRefCursor&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">MakeCXCursorInvalid</link>(CXCursor_InvalidFile,&#32;TU);
+01608 &#32;&#32;backRefCursor.data[0]&#32;=&#32;Vec;
+01609 &#32;&#32;assert(<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">cxcursor::getCursorTU</link>(backRefCursor)&#32;==&#32;TU);
+01610 &#32;&#32;Vec-&gt;push_back(backRefCursor);
+01611 
+01612 &#32;&#32;<emphasis role="comment">//&#32;Get&#32;the&#32;overridden&#32;cursors.</emphasis>
+01613 &#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ada86f0e873b92af5429ba6da7c7cd56f">cxcursor::getOverriddenCursors</link>(cursor,&#32;*Vec);
+01614 
+01615 &#32;&#32;<emphasis role="comment">//&#32;Did&#32;we&#32;get&#32;any&#32;overridden&#32;cursors?&#32;&#32;If&#32;not,&#32;return&#32;Vec&#32;to&#32;the&#32;pool</emphasis>
+01616 &#32;&#32;<emphasis role="comment">//&#32;of&#32;available&#32;cursor&#32;vectors.</emphasis>
+01617 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Vec-&gt;size()&#32;==&#32;1)&#32;{
+01618 &#32;&#32;&#32;&#32;pool.AvailableCursors.push_back(Vec);
+01619 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01620 &#32;&#32;}
+01621 
+01622 &#32;&#32;<emphasis role="comment">//&#32;Now&#32;tell&#32;the&#32;caller&#32;about&#32;the&#32;overridden&#32;cursors.</emphasis>
+01623 &#32;&#32;assert(Vec-&gt;size()&#32;&gt;&#32;1);
+01624 &#32;&#32;*overridden&#32;=&#32;&amp;((*Vec)[1]);
+01625 &#32;&#32;*num_overridden&#32;=&#32;Vec-&gt;size()&#32;-&#32;1;
+01626 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l05934">clang_isDeclaration()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01133">clang::cxcursor::getCursorTU()</link>, <link linkend="__c_x_cursor_8cpp_source_1l01137">clang::cxcursor::getOverriddenCursors()</link>, and <link linkend="__c_x_cursor_8cpp_source_1l00034">clang::cxcursor::MakeCXCursorInvalid()</link>.</para>
+</section>
+</section>
+</section>

@@ -1,0 +1,295 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CXCompilationDatabase.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CXCompilationDatabase.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang\-c/CXCompilationDatabase\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'clang/Tooling/CompilationDatabase\&.h'\fP
+.br
+\fC#include <cstdio>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBAllocatedCXCompileCommands\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXCompilationDatabase \fBclang_CompilationDatabase_fromDirectory\fP (const char *BuildDir, CXCompilationDatabase_Error *ErrorCode)"
+.br
+.ti -1c
+.RI "void \fBclang_CompilationDatabase_dispose\fP (CXCompilationDatabase CDb)"
+.br
+.ti -1c
+.RI "CXCompileCommands \fBclang_CompilationDatabase_getCompileCommands\fP (CXCompilationDatabase CDb, const char *CompleteFileName)"
+.br
+.ti -1c
+.RI "CXCompileCommands \fBclang_CompilationDatabase_getAllCompileCommands\fP (CXCompilationDatabase CDb)"
+.br
+.ti -1c
+.RI "void \fBclang_CompileCommands_dispose\fP (CXCompileCommands Cmds)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CompileCommands_getSize\fP (CXCompileCommands Cmds)"
+.br
+.ti -1c
+.RI "CXCompileCommand \fBclang_CompileCommands_getCommand\fP (CXCompileCommands Cmds, unsigned I)"
+.br
+.ti -1c
+.RI "CXString \fBclang_CompileCommand_getDirectory\fP (CXCompileCommand CCmd)"
+.br
+.ti -1c
+.RI "CXString \fBclang_CompileCommand_getFilename\fP (CXCompileCommand CCmd)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CompileCommand_getNumArgs\fP (CXCompileCommand CCmd)"
+.br
+.ti -1c
+.RI "CXString \fBclang_CompileCommand_getArg\fP (CXCompileCommand CCmd, unsigned Arg)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CompileCommand_getNumMappedSources\fP (CXCompileCommand CCmd)"
+.br
+.ti -1c
+.RI "CXString \fBclang_CompileCommand_getMappedSourcePath\fP (CXCompileCommand CCmd, unsigned I)"
+.br
+.ti -1c
+.RI "CXString \fBclang_CompileCommand_getMappedSourceContent\fP (CXCompileCommand CCmd, unsigned I)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "void clang_CompilationDatabase_dispose (CXCompilationDatabase CDb)"
+
+.PP
+Definition at line 32 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+33 {
+34   delete static_cast<CompilationDatabase *>(CDb);
+35 }
+.fi
+.SS "CXCompilationDatabase clang_CompilationDatabase_fromDirectory (const char * BuildDir, CXCompilationDatabase_Error * ErrorCode)"
+
+.PP
+Definition at line 11 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+13 {
+14   std::string ErrorMsg;
+15   CXCompilationDatabase_Error Err = CXCompilationDatabase_NoError;
+16 
+17   std::unique_ptr<CompilationDatabase> db =
+18       CompilationDatabase::loadFromDirectory(BuildDir, ErrorMsg);
+19 
+20   if (!db) {
+21     fprintf(stderr, "LIBCLANG TOOLING ERROR: %s\n", ErrorMsg\&.c_str());
+22     Err = CXCompilationDatabase_CanNotLoadDatabase;
+23   }
+24 
+25   if (ErrorCode)
+26     *ErrorCode = Err;
+27 
+28   return db\&.release();
+29 }
+.fi
+.SS "CXCompileCommands clang_CompilationDatabase_getAllCompileCommands (CXCompilationDatabase CDb)"
+
+.PP
+Definition at line 59 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+59                                                                            {
+60   if (CompilationDatabase *db = static_cast<CompilationDatabase *>(CDb)) {
+61     std::vector<CompileCommand> CCmd(db->getAllCompileCommands());
+62     if (!CCmd\&.empty())
+63       return new AllocatedCXCompileCommands(std::move(CCmd));
+64   }
+65 
+66   return nullptr;
+67 }
+.fi
+.SS "CXCompileCommands clang_CompilationDatabase_getCompileCommands (CXCompilationDatabase CDb, const char * CompleteFileName)"
+
+.PP
+Definition at line 46 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+48 {
+49   if (CompilationDatabase *db = static_cast<CompilationDatabase *>(CDb)) {
+50     std::vector<CompileCommand> CCmd(db->getCompileCommands(CompleteFileName));
+51     if (!CCmd\&.empty())
+52       return new AllocatedCXCompileCommands(std::move(CCmd));
+53   }
+54 
+55   return nullptr;
+56 }
+.fi
+.SS "CXString clang_CompileCommand_getArg (CXCompileCommand CCmd, unsigned Arg)"
+
+.PP
+Definition at line 132 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+133 {
+134   if (!CCmd)
+135     return cxstring::createNull();
+136 
+137   CompileCommand *Cmd = static_cast<CompileCommand *>(CCmd);
+138 
+139   if (Arg >= Cmd->CommandLine\&.size())
+140     return cxstring::createNull();
+141 
+142   return cxstring::createRef(Cmd->CommandLine[Arg]\&.c_str());
+143 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_CompileCommand_getDirectory (CXCompileCommand CCmd)"
+
+.PP
+Definition at line 103 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+104 {
+105   if (!CCmd)
+106     return cxstring::createNull();
+107 
+108   CompileCommand *cmd = static_cast<CompileCommand *>(CCmd);
+109   return cxstring::createRef(cmd->Directory\&.c_str());
+110 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_CompileCommand_getFilename (CXCompileCommand CCmd)"
+
+.PP
+Definition at line 113 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+114 {
+115   if (!CCmd)
+116     return cxstring::createNull();
+117 
+118   CompileCommand *cmd = static_cast<CompileCommand *>(CCmd);
+119   return cxstring::createRef(cmd->Filename\&.c_str());
+120 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_CompileCommand_getMappedSourceContent (CXCompileCommand CCmd, unsigned I)"
+
+.PP
+Definition at line 162 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+163 {
+164   // Left here for backward compatibility\&. No mapped sources exists in the C++
+165   // backend anymore\&.
+166   return cxstring::createNull();
+167 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "CXString clang_CompileCommand_getMappedSourcePath (CXCompileCommand CCmd, unsigned I)"
+
+.PP
+Definition at line 154 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+155 {
+156   // Left here for backward compatibility\&. No mapped sources exists in the C++
+157   // backend anymore\&.
+158   return cxstring::createNull();
+159 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "unsigned clang_CompileCommand_getNumArgs (CXCompileCommand CCmd)"
+
+.PP
+Definition at line 123 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+124 {
+125   if (!CCmd)
+126     return 0;
+127 
+128   return static_cast<CompileCommand *>(CCmd)->CommandLine\&.size();
+129 }
+.fi
+.SS "unsigned clang_CompileCommand_getNumMappedSources (CXCompileCommand CCmd)"
+
+.PP
+Definition at line 146 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+147 {
+148   // Left here for backward compatibility\&. No mapped sources exists in the C++
+149   // backend anymore\&.
+150   return 0;
+151 }
+.fi
+.SS "void clang_CompileCommands_dispose (CXCompileCommands Cmds)"
+
+.PP
+Definition at line 70 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+71 {
+72   delete static_cast<AllocatedCXCompileCommands *>(Cmds);
+73 }
+.fi
+.SS "CXCompileCommand clang_CompileCommands_getCommand (CXCompileCommands Cmds, unsigned I)"
+
+.PP
+Definition at line 88 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+89 {
+90   if (!Cmds)
+91     return nullptr;
+92 
+93   AllocatedCXCompileCommands *ACC =
+94     static_cast<AllocatedCXCompileCommands *>(Cmds);
+95 
+96   if (I >= ACC->CCmd\&.size())
+97     return nullptr;
+98 
+99   return &ACC->CCmd[I];
+100 }
+.fi
+.PP
+References AllocatedCXCompileCommands::CCmd\&.
+.SS "unsigned clang_CompileCommands_getSize (CXCompileCommands Cmds)"
+
+.PP
+Definition at line 76 of file CXCompilationDatabase\&.cpp\&.
+.PP
+.nf
+77 {
+78   if (!Cmds)
+79     return 0;
+80 
+81   AllocatedCXCompileCommands *ACC =
+82     static_cast<AllocatedCXCompileCommands *>(Cmds);
+83 
+84   return ACC->CCmd\&.size();
+85 }
+.fi
+.PP
+References AllocatedCXCompileCommands::CCmd\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

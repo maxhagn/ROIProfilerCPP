@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_inclusion_stack_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexInclusionStack.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexInclusionStack.cpp</primary></indexterm>
+<programlisting>#include &quot;CIndexer.h&quot;
+#include &quot;CXSourceLocation.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;clang/AST/DeclVisitor.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>void <link linkend="__c_index_inclusion_stack_8cpp_1a46a93eb16ff8f277bb63cbbe5d70d3ae">clang_getInclusions</link> (CXTranslationUnit TU, CXInclusionVisitor CB, CXClientData clientData)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__c_index_inclusion_stack_8cpp_1a46a93eb16ff8f277bb63cbbe5d70d3ae"/>    <section>
+    <title>clang_getInclusions()</title>
+<indexterm><primary>clang_getInclusions</primary><secondary>CIndexInclusionStack.cpp</secondary></indexterm>
+<indexterm><primary>CIndexInclusionStack.cpp</primary><secondary>clang_getInclusions</secondary></indexterm>
+<para><computeroutput>void clang_getInclusions (CXTranslationUnit TU, CXInclusionVisitor CB, CXClientData clientData)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_inclusion_stack_8cpp_source_1l00069">69</link> of file <link linkend="__c_index_inclusion_stack_8cpp_source">CIndexInclusionStack.cpp</link>.</para>
+<programlisting>00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00071 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(TU))&#32;{
+00072 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(TU);
+00073 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00074 &#32;&#32;}
+00075 
+00076 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;cxtu::getASTUnit(TU)-&gt;getSourceManager();
+00077 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;n&#32;=&#32;&#32;SM.local_sloc_entry_size();
+00078 
+00079 &#32;&#32;<emphasis role="comment">//&#32;In&#32;the&#32;case&#32;where&#32;all&#32;the&#32;SLocEntries&#32;are&#32;in&#32;an&#32;external&#32;source,&#32;traverse</emphasis>
+00080 &#32;&#32;<emphasis role="comment">//&#32;those&#32;SLocEntries&#32;as&#32;well.&#32;&#32;This&#32;is&#32;the&#32;case&#32;where&#32;we&#32;are&#32;looking</emphasis>
+00081 &#32;&#32;<emphasis role="comment">//&#32;at&#32;the&#32;inclusion&#32;stack&#32;of&#32;an&#32;AST/PCH&#32;file.&#32;Also,&#32;if&#32;we&#32;are&#32;not&#32;looking&#32;at</emphasis>
+00082 &#32;&#32;<emphasis role="comment">//&#32;a&#32;AST/PCH&#32;file,&#32;but&#32;this&#32;file&#32;has&#32;a&#32;pre-compiled&#32;preamble,&#32;we&#32;also&#32;need</emphasis>
+00083 &#32;&#32;<emphasis role="comment">//&#32;to&#32;look&#32;in&#32;that&#32;file.</emphasis>
+00084 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(n&#32;==&#32;1&#32;||&#32;SM.getPreambleFileID().isValid())&#32;{
+00085 &#32;&#32;&#32;&#32;getInclusions(<emphasis role="comment">/*IsLocal=*/</emphasis><emphasis role="keyword">false</emphasis>,&#32;SM.loaded_sloc_entry_size(),&#32;TU,&#32;CB,
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clientData);
+00087 &#32;&#32;}
+00088 
+00089 &#32;&#32;<emphasis role="comment">//&#32;Not&#32;a&#32;PCH/AST&#32;file.&#32;Note,&#32;if&#32;there&#32;is&#32;a&#32;preamble,&#32;it&#32;could&#32;still&#32;be&#32;that</emphasis>
+00090 &#32;&#32;<emphasis role="comment">//&#32;there&#32;are&#32;#includes&#32;in&#32;this&#32;file&#32;(e.g.&#32;for&#32;any&#32;include&#32;after&#32;the&#32;first</emphasis>
+00091 &#32;&#32;<emphasis role="comment">//&#32;declaration).</emphasis>
+00092 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(n&#32;!=&#32;1)
+00093 &#32;&#32;&#32;&#32;getInclusions(<emphasis role="comment">/*IsLocal=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;n,&#32;TU,&#32;CB,&#32;clientData);
+00094 }
+</programlisting><para>
+References <link linkend="__c_x_translation_unit_8h_source_1l00063">LOG_BAD_TU</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01440">PrintInclusionStack()</link>.</para>
+</section>
+</section>
+</section>

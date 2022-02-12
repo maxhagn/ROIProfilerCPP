@@ -1,0 +1,108 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/arcmt-test/arcmt-test.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/arcmt-test/arcmt-test.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/ARCMigrate/ARCMT\&.h'\fP
+.br
+\fC#include 'clang/AST/ASTContext\&.h'\fP
+.br
+\fC#include 'clang/Frontend/PCHContainerOperations\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticPrinter\&.h'\fP
+.br
+\fC#include 'clang/Frontend/Utils\&.h'\fP
+.br
+\fC#include 'clang/Frontend/VerifyDiagnosticConsumer\&.h'\fP
+.br
+\fC#include 'clang/Lex/Preprocessor\&.h'\fP
+.br
+\fC#include 'clang/Lex/PreprocessorOptions\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Path\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include <system_error>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "std::string \fBGetExecutablePath\fP (const char *Argv0)"
+.br
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "std::string GetExecutablePath (const char * Argv0)"
+
+.PP
+Definition at line 66 of file arcmt\-test\&.cpp\&.
+.PP
+.nf
+66                                                {
+67   // This just needs to be some symbol in the binary; C++ doesn't
+68   // allow taking the address of ::main however\&.
+69   void *MainAddr = (void*) (intptr_t) GetExecutablePath;
+70   return llvm::sys::fs::getMainExecutable(Argv0, MainAddr);
+71 }
+.fi
+.PP
+Referenced by main()\&.
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 343 of file arcmt\-test\&.cpp\&.
+.PP
+.nf
+343                                       {
+344   void *MainAddr = (void*) (intptr_t) GetExecutablePath;
+345   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+346 
+347   std::string
+348     resourcesPath = CompilerInvocation::GetResourcesPath(argv[0], MainAddr);
+349 
+350   int optargc = 0;
+351   for (; optargc != argc; ++optargc) {
+352     if (StringRef(argv[optargc]) == "--args")
+353       break;
+354   }
+355   llvm::cl::ParseCommandLineOptions(optargc, argv, "arcmt-test");
+356 
+357   if (VerifyTransformedFiles) {
+358     if (ResultFiles\&.empty()) {
+359       llvm::cl::PrintHelpMessage();
+360       return 1;
+361     }
+362     return verifyTransformedFiles(ResultFiles);
+363   }
+364 
+365   if (optargc == argc) {
+366     llvm::cl::PrintHelpMessage();
+367     return 1;
+368   }
+369 
+370   ArrayRef<const char*> Args(argv+optargc+1, argc-optargc-1);
+371 
+372   if (CheckOnly)
+373     return checkForMigration(resourcesPath, Args);
+374 
+375   return performTransformations(resourcesPath, Args);
+376 }
+.fi
+.PP
+References GetExecutablePath()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

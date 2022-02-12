@@ -1,0 +1,5376 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndex.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndex.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexDiagnostic\&.h'\fP
+.br
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CLog\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'CXType\&.h'\fP
+.br
+\fC#include 'CursorVisitor\&.h'\fP
+.br
+\fC#include 'clang\-c/FatalErrorHandler\&.h'\fP
+.br
+\fC#include 'clang/AST/Attr\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclObjCCommon\&.h'\fP
+.br
+\fC#include 'clang/AST/Mangle\&.h'\fP
+.br
+\fC#include 'clang/AST/OpenMPClause\&.h'\fP
+.br
+\fC#include 'clang/AST/StmtVisitor\&.h'\fP
+.br
+\fC#include 'clang/Basic/Diagnostic\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticCategories\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticIDs\&.h'\fP
+.br
+\fC#include 'clang/Basic/Stack\&.h'\fP
+.br
+\fC#include 'clang/Basic/TargetInfo\&.h'\fP
+.br
+\fC#include 'clang/Basic/Version\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Index/CommentToXML\&.h'\fP
+.br
+\fC#include 'clang/Lex/HeaderSearch\&.h'\fP
+.br
+\fC#include 'clang/Lex/Lexer\&.h'\fP
+.br
+\fC#include 'clang/Lex/PreprocessingRecord\&.h'\fP
+.br
+\fC#include 'clang/Lex/Preprocessor\&.h'\fP
+.br
+\fC#include 'llvm/ADT/Optional\&.h'\fP
+.br
+\fC#include 'llvm/ADT/STLExtras\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringSwitch\&.h'\fP
+.br
+\fC#include 'llvm/Config/llvm\-config\&.h'\fP
+.br
+\fC#include 'llvm/Support/Compiler\&.h'\fP
+.br
+\fC#include 'llvm/Support/CrashRecoveryContext\&.h'\fP
+.br
+\fC#include 'llvm/Support/Format\&.h'\fP
+.br
+\fC#include 'llvm/Support/ManagedStatic\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Program\&.h'\fP
+.br
+\fC#include 'llvm/Support/SaveAndRestore\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/TargetSelect\&.h'\fP
+.br
+\fC#include 'llvm/Support/Threading\&.h'\fP
+.br
+\fC#include 'llvm/Support/Timer\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include <mutex>\fP
+.br
+\fC#include 'clang/Basic/OpenCLImageTypes\&.def'\fP
+.br
+\fC#include 'clang/Basic/OpenCLExtensionTypes\&.def'\fP
+.br
+\fC#include 'clang/Basic/AArch64SVEACLETypes\&.def'\fP
+.br
+\fC#include 'clang/Basic/PPCTypes\&.def'\fP
+.br
+\fC#include 'clang/Basic/RISCVVTypes\&.def'\fP
+.br
+\fC#include 'clang/AST/BuiltinTypes\&.def'\fP
+.br
+\fC#include 'llvm/Frontend/OpenMP/OMP\&.inc'\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBExprEvalResult\fP"
+.br
+.ti -1c
+.RI "struct \fB_CXChildVisitResult\fP"
+.br
+.ti -1c
+.RI "struct \fBGetCursorData\fP"
+.br
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBclang\fP"
+.br
+.RI "-rename "
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBIMAGE_TYPE\fP(ImgType,  Id,  SingletonId,  Access,  Suffix)     case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBEXT_OPAQUE_TYPE\fP(ExtTYpe,  Id,  Ext)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBSVE_TYPE\fP(Name,  Id,  SingletonId)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBPPC_VECTOR_TYPE\fP(Name,  Id,  Size)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBRVV_TYPE\fP(Name,  Id,  SingletonId)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBBUILTIN_TYPE\fP(Id,  SingletonId)"
+.br
+.ti -1c
+.RI "#define \fBSIGNED_TYPE\fP(Id,  SingletonId)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBUNSIGNED_TYPE\fP(Id,  SingletonId)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBFLOATING_TYPE\fP(Id,  SingletonId)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBPLACEHOLDER_TYPE\fP(Id,  SingletonId)   case BuiltinType::Id:"
+.br
+.ti -1c
+.RI "#define \fBDEFAULT_TYPELOC_IMPL\fP(CLASS,  PARENT)"
+.br
+.ti -1c
+.RI "#define \fBDEF_JOB\fP(NAME,  DATA,  KIND)"
+.br
+.ti -1c
+.RI "#define \fBGEN_CLANG_CLAUSE_CLASS\fP"
+.br
+.ti -1c
+.RI "#define \fBCLAUSE_CLASS\fP(Enum,  Str,  Class)   void Visit##Class(const Class *C);"
+.br
+.ti -1c
+.RI "#define \fBSET_CXOBJCPROP_ATTR\fP(A)"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fB_CXChildVisitResult\fP * \fBCXCursorVisitorBlock\fP"
+.br
+.ti -1c
+.RI "typedef std::vector< CXTUResourceUsageEntry > \fBMemUsageEntries\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXIndex \fBclang_createIndex\fP (int excludeDeclarationsFromPCH, int displayDiagnostics)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeIndex\fP (CXIndex CIdx)"
+.br
+.ti -1c
+.RI "void \fBclang_CXIndex_setGlobalOptions\fP (CXIndex CIdx, unsigned options)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXIndex_getGlobalOptions\fP (CXIndex CIdx)"
+.br
+.ti -1c
+.RI "void \fBclang_CXIndex_setInvocationEmissionPathOption\fP (CXIndex CIdx, const char *Path)"
+.br
+.ti -1c
+.RI "void \fBclang_toggleCrashRecovery\fP (unsigned isEnabled)"
+.br
+.ti -1c
+.RI "CXTranslationUnit \fBclang_createTranslationUnit\fP (CXIndex CIdx, const char *ast_filename)"
+.br
+.ti -1c
+.RI "enum CXErrorCode \fBclang_createTranslationUnit2\fP (CXIndex CIdx, const char *ast_filename, CXTranslationUnit *out_TU)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_defaultEditingTranslationUnitOptions\fP ()"
+.br
+.ti -1c
+.RI "CXTranslationUnit \fBclang_createTranslationUnitFromSourceFile\fP (CXIndex CIdx, const char *source_filename, int num_command_line_args, const char *const *command_line_args, unsigned num_unsaved_files, struct CXUnsavedFile *unsaved_files)"
+.br
+.ti -1c
+.RI "CXTranslationUnit \fBclang_parseTranslationUnit\fP (CXIndex CIdx, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, unsigned options)"
+.br
+.ti -1c
+.RI "enum CXErrorCode \fBclang_parseTranslationUnit2\fP (CXIndex CIdx, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, unsigned options, CXTranslationUnit *out_TU)"
+.br
+.ti -1c
+.RI "enum CXErrorCode \fBclang_parseTranslationUnit2FullArgv\fP (CXIndex CIdx, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, unsigned options, CXTranslationUnit *out_TU)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Type_getObjCEncoding\fP (CXType CT)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_isMacroFunctionLike\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_isMacroBuiltin\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_isFunctionInlined\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "void \fBclang_EvalResult_dispose\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "CXEvalResultKind \fBclang_EvalResult_getKind\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "int \fBclang_EvalResult_getAsInt\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "long long \fBclang_EvalResult_getAsLongLong\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_EvalResult_isUnsignedInt\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "unsigned long long \fBclang_EvalResult_getAsUnsigned\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "double \fBclang_EvalResult_getAsDouble\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "const char * \fBclang_EvalResult_getAsStr\fP (CXEvalResult E)"
+.br
+.ti -1c
+.RI "CXEvalResult \fBclang_Cursor_Evaluate\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_hasAttrs\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_defaultSaveOptions\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "int \fBclang_saveTranslationUnit\fP (CXTranslationUnit TU, const char *FileName, unsigned options)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeTranslationUnit\fP (CXTranslationUnit CTUnit)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_suspendTranslationUnit\fP (CXTranslationUnit CTUnit)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_defaultReparseOptions\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "int \fBclang_reparseTranslationUnit\fP (CXTranslationUnit TU, unsigned num_unsaved_files, struct CXUnsavedFile *unsaved_files, unsigned options)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getTranslationUnitSpelling\fP (CXTranslationUnit CTUnit)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getTranslationUnitCursor\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "CXTargetInfo \fBclang_getTranslationUnitTargetInfo\fP (CXTranslationUnit CTUnit)"
+.br
+.ti -1c
+.RI "CXString \fBclang_TargetInfo_getTriple\fP (CXTargetInfo TargetInfo)"
+.br
+.ti -1c
+.RI "int \fBclang_TargetInfo_getPointerWidth\fP (CXTargetInfo TargetInfo)"
+.br
+.ti -1c
+.RI "void \fBclang_TargetInfo_dispose\fP (CXTargetInfo TargetInfo)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getFileName\fP (CXFile SFile)"
+.br
+.ti -1c
+.RI "time_t \fBclang_getFileTime\fP (CXFile SFile)"
+.br
+.ti -1c
+.RI "CXFile \fBclang_getFile\fP (CXTranslationUnit TU, const char *file_name)"
+.br
+.ti -1c
+.RI "const char * \fBclang_getFileContents\fP (CXTranslationUnit TU, CXFile file, size_t *size)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isFileMultipleIncludeGuarded\fP (CXTranslationUnit TU, CXFile file)"
+.br
+.ti -1c
+.RI "int \fBclang_getFileUniqueID\fP (CXFile file, CXFileUniqueID *outID)"
+.br
+.ti -1c
+.RI "int \fBclang_File_isEqual\fP (CXFile file1, CXFile file2)"
+.br
+.ti -1c
+.RI "CXString \fBclang_File_tryGetRealPathName\fP (CXFile SFile)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_visitChildren\fP (CXCursor parent, CXCursorVisitor visitor, CXClientData client_data)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_visitChildrenWithBlock\fP (CXCursor parent, \fBCXCursorVisitorBlock\fP block)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCursorSpelling\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXSourceRange \fBclang_Cursor_getSpellingNameRange\fP (CXCursor C, unsigned pieceIndex, unsigned options)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Cursor_getMangling\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXStringSet * \fBclang_Cursor_getCXXManglings\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXStringSet * \fBclang_Cursor_getObjCManglings\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXPrintingPolicy \fBclang_getCursorPrintingPolicy\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "void \fBclang_PrintingPolicy_dispose\fP (CXPrintingPolicy Policy)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_PrintingPolicy_getProperty\fP (CXPrintingPolicy Policy, enum CXPrintingPolicyProperty Property)"
+.br
+.ti -1c
+.RI "void \fBclang_PrintingPolicy_setProperty\fP (CXPrintingPolicy Policy, enum CXPrintingPolicyProperty Property, unsigned Value)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCursorPrettyPrinted\fP (CXCursor C, CXPrintingPolicy cxPolicy)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCursorDisplayName\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getCursorKindSpelling\fP (enum CXCursorKind Kind)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getCursor\fP (CXTranslationUnit TU, CXSourceLocation Loc)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getNullCursor\fP (void)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_equalCursors\fP (CXCursor X, CXCursor Y)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_hashCursor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isInvalid\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isDeclaration\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isInvalidDeclaration\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isReference\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isExpression\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isStatement\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isAttribute\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isTranslationUnit\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isPreprocessing\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isUnexposed\fP (enum CXCursorKind K)"
+.br
+.ti -1c
+.RI "CXCursorKind \fBclang_getCursorKind\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXSourceLocation \fBclang_getCursorLocation\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXSourceRange \fBclang_getCursorExtent\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getCursorReferenced\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getCursorDefinition\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_isCursorDefinition\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getCanonicalCursor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "int \fBclang_Cursor_getObjCSelectorIndex\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getNumOverloadedDecls\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getOverloadedDecl\fP (CXCursor cursor, unsigned index)"
+.br
+.ti -1c
+.RI "void \fBclang_getDefinitionSpellingAndExtent\fP (CXCursor C, const char **startBuf, const char **endBuf, unsigned *startLine, unsigned *startColumn, unsigned *endLine, unsigned *endColumn)"
+.br
+.ti -1c
+.RI "CXSourceRange \fBclang_getCursorReferenceNameRange\fP (CXCursor C, unsigned NameFlags, unsigned PieceIndex)"
+.br
+.ti -1c
+.RI "void \fBclang_enableStackTraces\fP (void)"
+.br
+.ti -1c
+.RI "void \fBclang_executeOnThread\fP (void(*fn)(void *), void *user_data, unsigned stack_size)"
+.br
+.ti -1c
+.RI "CXTokenKind \fBclang_getTokenKind\fP (CXToken CXTok)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getTokenSpelling\fP (CXTranslationUnit TU, CXToken CXTok)"
+.br
+.ti -1c
+.RI "CXSourceLocation \fBclang_getTokenLocation\fP (CXTranslationUnit TU, CXToken CXTok)"
+.br
+.ti -1c
+.RI "CXSourceRange \fBclang_getTokenExtent\fP (CXTranslationUnit TU, CXToken CXTok)"
+.br
+.ti -1c
+.RI "CXToken * \fBclang_getToken\fP (CXTranslationUnit TU, CXSourceLocation Location)"
+.br
+.ti -1c
+.RI "void \fBclang_tokenize\fP (CXTranslationUnit TU, CXSourceRange Range, CXToken **Tokens, unsigned *NumTokens)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeTokens\fP (CXTranslationUnit TU, CXToken *Tokens, unsigned NumTokens)"
+.br
+.ti -1c
+.RI "const CXXOperatorCallExpr * \fBGetSubscriptOrCallOperator\fP (CXCursor Cursor)"
+.br
+.ti -1c
+.RI "void \fBclang_annotateTokens\fP (CXTranslationUnit TU, CXToken *Tokens, unsigned NumTokens, CXCursor *Cursors)"
+.br
+.ti -1c
+.RI "CXLinkageKind \fBclang_getCursorLinkage\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXVisibilityKind \fBclang_getCursorVisibility\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "enum CXAvailabilityKind \fBclang_getCursorAvailability\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "int \fBclang_getCursorPlatformAvailability\fP (CXCursor cursor, int *always_deprecated, CXString *deprecated_message, int *always_unavailable, CXString *unavailable_message, CXPlatformAvailability *availability, int availability_size)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeCXPlatformAvailability\fP (CXPlatformAvailability *availability)"
+.br
+.ti -1c
+.RI "CXLanguageKind \fBclang_getCursorLanguage\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXTLSKind \fBclang_getCursorTLSKind\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "enum CX_StorageClass \fBclang_Cursor_getStorageClass\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getCursorSemanticParent\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getCursorLexicalParent\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "CXFile \fBclang_getIncludedFile\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_getObjCPropertyAttributes\fP (CXCursor C, unsigned reserved)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Cursor_getObjCPropertyGetterName\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Cursor_getObjCPropertySetterName\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_getObjCDeclQualifiers\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_isObjCOptional\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_isVariadic\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Cursor_isExternalSymbol\fP (CXCursor C, CXString *language, CXString *definedIn, unsigned *isGenerated)"
+.br
+.ti -1c
+.RI "CXSourceRange \fBclang_Cursor_getCommentRange\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Cursor_getRawCommentText\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Cursor_getBriefCommentText\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXModule \fBclang_Cursor_getModule\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXModule \fBclang_getModuleForFile\fP (CXTranslationUnit TU, CXFile File)"
+.br
+.ti -1c
+.RI "CXFile \fBclang_Module_getASTFile\fP (CXModule CXMod)"
+.br
+.ti -1c
+.RI "CXModule \fBclang_Module_getParent\fP (CXModule CXMod)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Module_getName\fP (CXModule CXMod)"
+.br
+.ti -1c
+.RI "CXString \fBclang_Module_getFullName\fP (CXModule CXMod)"
+.br
+.ti -1c
+.RI "int \fBclang_Module_isSystem\fP (CXModule CXMod)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Module_getNumTopLevelHeaders\fP (CXTranslationUnit TU, CXModule CXMod)"
+.br
+.ti -1c
+.RI "CXFile \fBclang_Module_getTopLevelHeader\fP (CXTranslationUnit TU, CXModule CXMod, unsigned Index)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXConstructor_isDefaultConstructor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXConstructor_isCopyConstructor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXConstructor_isMoveConstructor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXConstructor_isConvertingConstructor\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXField_isMutable\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXMethod_isPureVirtual\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXMethod_isConst\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXMethod_isDefaulted\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXMethod_isStatic\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXMethod_isVirtual\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_CXXRecord_isAbstract\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_EnumDecl_isScoped\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXType \fBclang_getIBOutletCollectionType\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "const char * \fBclang_getTUResourceUsageName\fP (CXTUResourceUsageKind kind)"
+.br
+.ti -1c
+.RI "CXTUResourceUsage \fBclang_getCXTUResourceUsage\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeCXTUResourceUsage\fP (CXTUResourceUsage usage)"
+.br
+.ti -1c
+.RI "CXSourceRangeList * \fBclang_getSkippedRanges\fP (CXTranslationUnit TU, CXFile file)"
+.br
+.ti -1c
+.RI "CXSourceRangeList * \fBclang_getAllSkippedRanges\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeSourceRangeList\fP (CXSourceRangeList *ranges)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_Cursor_getVarDeclInitializer\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "int \fBclang_Cursor_hasVarDeclGlobalStorage\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "int \fBclang_Cursor_hasVarDeclExternalStorage\fP (CXCursor cursor)"
+.br
+.ti -1c
+.RI "bool \fBclang::RunSafely\fP (llvm::CrashRecoveryContext &CRC, llvm::function_ref< void()> Fn, unsigned Size)"
+.br
+.ti -1c
+.RI "unsigned \fBclang::GetSafetyThreadStackSize\fP ()"
+.br
+.RI "Return the current size to request for 'safety'\&. "
+.ti -1c
+.RI "void \fBclang::SetSafetyThreadStackSize\fP (unsigned Value)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getClangVersion\fP ()"
+.br
+.in -1c
+.SH "Macro Definition Documentation"
+.PP 
+.SS "#define BUILTIN_TYPE(Id, SingletonId)"
+
+.SS "#define CLAUSE_CLASS(Enum, Str, Class)   void Visit##Class(const Class *C);"
+
+.PP
+Definition at line 2183 of file CIndex\&.cpp\&.
+.SS "#define DEF_JOB(NAME, DATA, KIND)"
+\fBValue:\fP
+.PP
+.nf
+  class NAME : public VisitorJob {                                             \
+  public:                                                                      \
+    NAME(const DATA *d, CXCursor parent)                                       \
+        : VisitorJob(parent, VisitorJob::KIND, d) {}                           \
+    static bool classof(const VisitorJob *VJ) {                                \
+      return VJ->getKind() == KIND;                                            \
+    }                                                                          \
+    const DATA *get() const { return static_cast<const DATA *>(data[0]); }     \
+  };
+.fi
+.PP
+Definition at line 1851 of file CIndex\&.cpp\&.
+.SS "#define DEFAULT_TYPELOC_IMPL(CLASS, PARENT)"
+\fBValue:\fP
+.PP
+.nf
+  bool CursorVisitor::Visit##CLASS##TypeLoc(CLASS##TypeLoc TL) {               \
+    return Visit##PARENT##Loc(TL);                                             \
+  }
+.fi
+.PP
+Definition at line 1793 of file CIndex\&.cpp\&.
+.SS "#define EXT_OPAQUE_TYPE(ExtTYpe, Id, Ext)   case BuiltinType::Id:"
+
+.SS "#define FLOATING_TYPE(Id, SingletonId)   case BuiltinType::Id:"
+
+.SS "#define GEN_CLANG_CLAUSE_CLASS"
+
+.PP
+Definition at line 2182 of file CIndex\&.cpp\&.
+.SS "#define IMAGE_TYPE(ImgType, Id, SingletonId, Access, Suffix)     case BuiltinType::Id:"
+
+.SS "#define PLACEHOLDER_TYPE(Id, SingletonId)   case BuiltinType::Id:"
+
+.SS "#define PPC_VECTOR_TYPE(Name, Id, Size)   case BuiltinType::Id:"
+
+.SS "#define RVV_TYPE(Name, Id, SingletonId)   case BuiltinType::Id:"
+
+.SS "#define SET_CXOBJCPROP_ATTR(A)"
+\fBValue:\fP
+.PP
+.nf
+  if (Attr & ObjCPropertyAttribute::kind_##A)                                  \
+  Result |= CXObjCPropertyAttr_##A
+.fi
+.SS "#define SIGNED_TYPE(Id, SingletonId)   case BuiltinType::Id:"
+
+.SS "#define SVE_TYPE(Name, Id, SingletonId)   case BuiltinType::Id:"
+
+.SS "#define UNSIGNED_TYPE(Id, SingletonId)   case BuiltinType::Id:"
+
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fB_CXChildVisitResult\fP * \fBCXCursorVisitorBlock\fP"
+
+.SS "typedef std::vector<CXTUResourceUsageEntry> \fBMemUsageEntries\fP"
+
+.PP
+Definition at line 8678 of file CIndex\&.cpp\&.
+.SH "Function Documentation"
+.PP 
+.SS "void clang_annotateTokens (CXTranslationUnit TU, CXToken * Tokens, unsigned NumTokens, CXCursor * Cursors)"
+
+.PP
+Definition at line 7815 of file CIndex\&.cpp\&.
+.PP
+.nf
+7816                                                                  {
+7817   if (isNotUsableTU(TU)) {
+7818     LOG_BAD_TU(TU);
+7819     return;
+7820   }
+7821   if (NumTokens == 0 || !Tokens || !Cursors) {
+7822     LOG_FUNC_SECTION { *Log << "<null input>"; }
+7823     return;
+7824   }
+7825 
+7826   LOG_FUNC_SECTION {
+7827     *Log << TU << ' ';
+7828     CXSourceLocation bloc = clang_getTokenLocation(TU, Tokens[0]);
+7829     CXSourceLocation eloc = clang_getTokenLocation(TU, Tokens[NumTokens - 1]);
+7830     *Log << clang_getRange(bloc, eloc);
+7831   }
+7832 
+7833   // Any token we don't specifically annotate will have a NULL cursor\&.
+7834   CXCursor C = clang_getNullCursor();
+7835   for (unsigned I = 0; I != NumTokens; ++I)
+7836     Cursors[I] = C;
+7837 
+7838   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+7839   if (!CXXUnit)
+7840     return;
+7841 
+7842   ASTUnit::ConcurrencyCheck Check(*CXXUnit);
+7843 
+7844   auto AnnotateTokensImpl = [=]() {
+7845     clang_annotateTokensImpl(TU, CXXUnit, Tokens, NumTokens, Cursors);
+7846   };
+7847   llvm::CrashRecoveryContext CRC;
+7848   if (!RunSafely(CRC, AnnotateTokensImpl, GetSafetyThreadStackSize() * 2)) {
+7849     fprintf(stderr, "libclang: crash detected while annotating tokens\n");
+7850   }
+7851 }
+.fi
+.SS "CXIndex clang_createIndex (int excludeDeclarationsFromPCH, int displayDiagnostics)"
+
+.PP
+Definition at line 3436 of file CIndex\&.cpp\&.
+.PP
+.nf
+3437                                                   {
+3438   // We use crash recovery to make some of our APIs more reliable, implicitly
+3439   // enable it\&.
+3440   if (!getenv("LIBCLANG_DISABLE_CRASH_RECOVERY"))
+3441     llvm::CrashRecoveryContext::Enable();
+3442 
+3443   // Look through the managed static to trigger construction of the managed
+3444   // static which registers our fatal error handler\&. This ensures it is only
+3445   // registered once\&.
+3446   (void)*RegisterFatalErrorHandlerOnce;
+3447 
+3448   // Initialize targets for clang module support\&.
+3449   llvm::InitializeAllTargets();
+3450   llvm::InitializeAllTargetMCs();
+3451   llvm::InitializeAllAsmPrinters();
+3452   llvm::InitializeAllAsmParsers();
+3453 
+3454   CIndexer *CIdxr = new CIndexer();
+3455 
+3456   if (excludeDeclarationsFromPCH)
+3457     CIdxr->setOnlyLocalDecls();
+3458   if (displayDiagnostics)
+3459     CIdxr->setDisplayDiagnostics();
+3460 
+3461   if (getenv("LIBCLANG_BGPRIO_INDEX"))
+3462     CIdxr->setCXGlobalOptFlags(CIdxr->getCXGlobalOptFlags() |
+3463                                CXGlobalOpt_ThreadBackgroundPriorityForIndexing);
+3464   if (getenv("LIBCLANG_BGPRIO_EDIT"))
+3465     CIdxr->setCXGlobalOptFlags(CIdxr->getCXGlobalOptFlags() |
+3466                                CXGlobalOpt_ThreadBackgroundPriorityForEditing);
+3467 
+3468   return CIdxr;
+3469 }
+.fi
+.PP
+Referenced by perform_test_load_source(), perform_test_load_tu(), perform_test_reparse_source(), and write_pch_file()\&.
+.SS "CXTranslationUnit clang_createTranslationUnit (CXIndex CIdx, const char * ast_filename)"
+
+.PP
+Definition at line 3500 of file CIndex\&.cpp\&.
+.PP
+.nf
+3501                                                                         {
+3502   CXTranslationUnit TU;
+3503   enum CXErrorCode Result =
+3504       clang_createTranslationUnit2(CIdx, ast_filename, &TU);
+3505   (void)Result;
+3506   assert((TU && Result == CXError_Success) ||
+3507          (!TU && Result != CXError_Success));
+3508   return TU;
+3509 }
+.fi
+.PP
+References clang_createTranslationUnit2()\&.
+.PP
+Referenced by clang::CIndexer::getClangResourcesPath()\&.
+.SS "enum CXErrorCode clang_createTranslationUnit2 (CXIndex CIdx, const char * ast_filename, CXTranslationUnit * out_TU)"
+
+.PP
+Definition at line 3500 of file CIndex\&.cpp\&.
+.PP
+.nf
+3513                                                                          {
+3514   if (out_TU)
+3515     *out_TU = nullptr;
+3516 
+3517   if (!CIdx || !ast_filename || !out_TU)
+3518     return CXError_InvalidArguments;
+3519 
+3520   LOG_FUNC_SECTION { *Log << ast_filename; }
+3521 
+3522   CIndexer *CXXIdx = static_cast<CIndexer *>(CIdx);
+3523   FileSystemOptions FileSystemOpts;
+3524 
+3525   IntrusiveRefCntPtr<DiagnosticsEngine> Diags =
+3526       CompilerInstance::createDiagnostics(new DiagnosticOptions());
+3527   std::unique_ptr<ASTUnit> AU = ASTUnit::LoadFromASTFile(
+3528       ast_filename, CXXIdx->getPCHContainerOperations()->getRawReader(),
+3529       ASTUnit::LoadEverything, Diags, FileSystemOpts, /*UseDebugInfo=*/false,
+3530       CXXIdx->getOnlyLocalDecls(), CaptureDiagsKind::All,
+3531       /*AllowASTWithCompilerErrors=*/true,
+3532       /*UserFilesAreVolatile=*/true);
+3533   *out_TU = MakeCXTranslationUnit(CXXIdx, std::move(AU));
+3534   return *out_TU ? CXError_Success : CXError_Failure;
+3535 }
+.fi
+.PP
+Referenced by clang_createTranslationUnit()\&.
+.SS "CXTranslationUnit clang_createTranslationUnitFromSourceFile (CXIndex CIdx, const char * source_filename, int num_command_line_args, const char *const * command_line_args, unsigned num_unsaved_files, struct CXUnsavedFile * unsaved_files)"
+
+.PP
+Definition at line 3542 of file CIndex\&.cpp\&.
+.PP
+.nf
+3545                                          {
+3546   unsigned Options = CXTranslationUnit_DetailedPreprocessingRecord;
+3547   return clang_parseTranslationUnit(CIdx, source_filename, command_line_args,
+3548                                     num_command_line_args, unsaved_files,
+3549                                     num_unsaved_files, Options);
+3550 }
+.fi
+.SS "CXEvalResult clang_Cursor_Evaluate (CXCursor C)"
+
+.PP
+Definition at line 4118 of file CIndex\&.cpp\&.
+.PP
+.nf
+4118                                                {
+4119   const Expr *E = nullptr;
+4120   if (clang_getCursorKind(C) == CXCursor_CompoundStmt)
+4121     E = evaluateCompoundStmtExpr(cast<CompoundStmt>(getCursorStmt(C)));
+4122   else if (clang_isDeclaration(C\&.kind))
+4123     E = evaluateDeclExpr(getCursorDecl(C));
+4124   else if (clang_isExpression(C\&.kind))
+4125     E = getCursorExpr(C);
+4126   if (E)
+4127     return const_cast<CXEvalResult>(
+4128         reinterpret_cast<const void *>(evaluateExpr(const_cast<Expr *>(E), C)));
+4129   return nullptr;
+4130 }
+.fi
+.PP
+References clang_getCursorKind()\&.
+.SS "CXString clang_Cursor_getBriefCommentText (CXCursor C)"
+
+.PP
+Definition at line 8421 of file CIndex\&.cpp\&.
+.PP
+.nf
+8421                                                       {
+8422   if (!clang_isDeclaration(C\&.kind))
+8423     return cxstring::createNull();
+8424 
+8425   const Decl *D = getCursorDecl(C);
+8426   const ASTContext &Context = getCursorContext(C);
+8427   const RawComment *RC = Context\&.getRawCommentForAnyRedecl(D);
+8428 
+8429   if (RC) {
+8430     StringRef BriefText = RC->getBriefText(Context);
+8431 
+8432     // Don't duplicate the string because RawComment ensures that this memory
+8433     // will not go away\&.
+8434     return cxstring::createRef(BriefText);
+8435   }
+8436 
+8437   return cxstring::createNull();
+8438 }
+.fi
+.PP
+References clang_isDeclaration(), clang::cxstring::createNull(), clang::cxstring::createRef(), clang::cxcursor::getCursorContext(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXSourceRange clang_Cursor_getCommentRange (CXCursor C)"
+
+.PP
+Definition at line 8393 of file CIndex\&.cpp\&.
+.PP
+.nf
+8393                                                        {
+8394   if (!clang_isDeclaration(C\&.kind))
+8395     return clang_getNullRange();
+8396 
+8397   const Decl *D = getCursorDecl(C);
+8398   ASTContext &Context = getCursorContext(C);
+8399   const RawComment *RC = Context\&.getRawCommentForAnyRedecl(D);
+8400   if (!RC)
+8401     return clang_getNullRange();
+8402 
+8403   return cxloc::translateSourceRange(Context, RC->getSourceRange());
+8404 }
+.fi
+.PP
+References clang_getNullRange(), clang_isDeclaration(), clang::cxcursor::getCursorContext(), clang::cxcursor::getCursorDecl(), and clang::cxloc::translateSourceRange()\&.
+.SS "CXStringSet* clang_Cursor_getCXXManglings (CXCursor C)"
+
+.PP
+Definition at line 4903 of file CIndex\&.cpp\&.
+.PP
+.nf
+4903                                                       {
+4904   if (clang_isInvalid(C\&.kind) || !clang_isDeclaration(C\&.kind))
+4905     return nullptr;
+4906 
+4907   const Decl *D = getCursorDecl(C);
+4908   if (!(isa<CXXRecordDecl>(D) || isa<CXXMethodDecl>(D)))
+4909     return nullptr;
+4910 
+4911   ASTContext &Ctx = D->getASTContext();
+4912   ASTNameGenerator ASTNameGen(Ctx);
+4913   std::vector<std::string> Manglings = ASTNameGen\&.getAllManglings(D);
+4914   return cxstring::createSet(Manglings);
+4915 }
+.fi
+.PP
+References clang_isDeclaration(), clang_isInvalid(), clang::cxstring::createSet(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXString clang_Cursor_getMangling (CXCursor C)"
+
+.PP
+Definition at line 4889 of file CIndex\&.cpp\&.
+.PP
+.nf
+4889                                               {
+4890   if (clang_isInvalid(C\&.kind) || !clang_isDeclaration(C\&.kind))
+4891     return cxstring::createEmpty();
+4892 
+4893   // Mangling only works for functions and variables\&.
+4894   const Decl *D = getCursorDecl(C);
+4895   if (!D || !(isa<FunctionDecl>(D) || isa<VarDecl>(D)))
+4896     return cxstring::createEmpty();
+4897 
+4898   ASTContext &Ctx = D->getASTContext();
+4899   ASTNameGenerator ASTNameGen(Ctx);
+4900   return cxstring::createDup(ASTNameGen\&.getName(D));
+4901 }
+.fi
+.PP
+References clang_isDeclaration(), clang_isInvalid(), clang::cxstring::createDup(), clang::cxstring::createEmpty(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXModule clang_Cursor_getModule (CXCursor C)"
+
+.PP
+Definition at line 8440 of file CIndex\&.cpp\&.
+.PP
+.nf
+8440                                             {
+8441   if (C\&.kind == CXCursor_ModuleImportDecl) {
+8442     if (const ImportDecl *ImportD =
+8443             dyn_cast_or_null<ImportDecl>(getCursorDecl(C)))
+8444       return ImportD->getImportedModule();
+8445   }
+8446 
+8447   return nullptr;
+8448 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_Cursor_getObjCDeclQualifiers (CXCursor C)"
+
+.PP
+Definition at line 8317 of file CIndex\&.cpp\&.
+.PP
+.nf
+8317                                                         {
+8318   if (!clang_isDeclaration(C\&.kind))
+8319     return CXObjCDeclQualifier_None;
+8320 
+8321   Decl::ObjCDeclQualifier QT = Decl::OBJC_TQ_None;
+8322   const Decl *D = getCursorDecl(C);
+8323   if (const ObjCMethodDecl *MD = dyn_cast<ObjCMethodDecl>(D))
+8324     QT = MD->getObjCDeclQualifier();
+8325   else if (const ParmVarDecl *PD = dyn_cast<ParmVarDecl>(D))
+8326     QT = PD->getObjCDeclQualifier();
+8327   if (QT == Decl::OBJC_TQ_None)
+8328     return CXObjCDeclQualifier_None;
+8329 
+8330   unsigned Result = CXObjCDeclQualifier_None;
+8331   if (QT & Decl::OBJC_TQ_In)
+8332     Result |= CXObjCDeclQualifier_In;
+8333   if (QT & Decl::OBJC_TQ_Inout)
+8334     Result |= CXObjCDeclQualifier_Inout;
+8335   if (QT & Decl::OBJC_TQ_Out)
+8336     Result |= CXObjCDeclQualifier_Out;
+8337   if (QT & Decl::OBJC_TQ_Bycopy)
+8338     Result |= CXObjCDeclQualifier_Bycopy;
+8339   if (QT & Decl::OBJC_TQ_Byref)
+8340     Result |= CXObjCDeclQualifier_Byref;
+8341   if (QT & Decl::OBJC_TQ_Oneway)
+8342     Result |= CXObjCDeclQualifier_Oneway;
+8343 
+8344   return Result;
+8345 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXStringSet* clang_Cursor_getObjCManglings (CXCursor C)"
+
+.PP
+Definition at line 4917 of file CIndex\&.cpp\&.
+.PP
+.nf
+4917                                                        {
+4918   if (clang_isInvalid(C\&.kind) || !clang_isDeclaration(C\&.kind))
+4919     return nullptr;
+4920 
+4921   const Decl *D = getCursorDecl(C);
+4922   if (!(isa<ObjCInterfaceDecl>(D) || isa<ObjCImplementationDecl>(D)))
+4923     return nullptr;
+4924 
+4925   ASTContext &Ctx = D->getASTContext();
+4926   ASTNameGenerator ASTNameGen(Ctx);
+4927   std::vector<std::string> Manglings = ASTNameGen\&.getAllManglings(D);
+4928   return cxstring::createSet(Manglings);
+4929 }
+.fi
+.PP
+References clang_isDeclaration(), clang_isInvalid(), clang::cxstring::createSet(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_Cursor_getObjCPropertyAttributes (CXCursor C, unsigned reserved)"
+
+.PP
+Definition at line 8264 of file CIndex\&.cpp\&.
+.PP
+.nf
+8264                                                                                {
+8265   if (C\&.kind != CXCursor_ObjCPropertyDecl)
+8266     return CXObjCPropertyAttr_noattr;
+8267 
+8268   unsigned Result = CXObjCPropertyAttr_noattr;
+8269   const ObjCPropertyDecl *PD = dyn_cast<ObjCPropertyDecl>(getCursorDecl(C));
+8270   ObjCPropertyAttribute::Kind Attr = PD->getPropertyAttributesAsWritten();
+8271 
+8272 #define SET_CXOBJCPROP_ATTR(A)                                                 \
+8273   if (Attr & ObjCPropertyAttribute::kind_##A)                                  \
+8274   Result |= CXObjCPropertyAttr_##A
+8275   SET_CXOBJCPROP_ATTR(readonly);
+8276   SET_CXOBJCPROP_ATTR(getter);
+8277   SET_CXOBJCPROP_ATTR(assign);
+8278   SET_CXOBJCPROP_ATTR(readwrite);
+8279   SET_CXOBJCPROP_ATTR(retain);
+8280   SET_CXOBJCPROP_ATTR(copy);
+8281   SET_CXOBJCPROP_ATTR(nonatomic);
+8282   SET_CXOBJCPROP_ATTR(setter);
+8283   SET_CXOBJCPROP_ATTR(atomic);
+8284   SET_CXOBJCPROP_ATTR(weak);
+8285   SET_CXOBJCPROP_ATTR(strong);
+8286   SET_CXOBJCPROP_ATTR(unsafe_unretained);
+8287   SET_CXOBJCPROP_ATTR(class);
+8288 #undef SET_CXOBJCPROP_ATTR
+8289 
+8290   return Result;
+8291 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl(), and SET_CXOBJCPROP_ATTR\&.
+.SS "CXString clang_Cursor_getObjCPropertyGetterName (CXCursor C)"
+
+.PP
+Definition at line 8293 of file CIndex\&.cpp\&.
+.PP
+.nf
+8293                                                             {
+8294   if (C\&.kind != CXCursor_ObjCPropertyDecl)
+8295     return cxstring::createNull();
+8296 
+8297   const ObjCPropertyDecl *PD = dyn_cast<ObjCPropertyDecl>(getCursorDecl(C));
+8298   Selector sel = PD->getGetterName();
+8299   if (sel\&.isNull())
+8300     return cxstring::createNull();
+8301 
+8302   return cxstring::createDup(sel\&.getAsString());
+8303 }
+.fi
+.PP
+References clang::cxstring::createDup(), clang::cxstring::createNull(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXString clang_Cursor_getObjCPropertySetterName (CXCursor C)"
+
+.PP
+Definition at line 8305 of file CIndex\&.cpp\&.
+.PP
+.nf
+8305                                                             {
+8306   if (C\&.kind != CXCursor_ObjCPropertyDecl)
+8307     return cxstring::createNull();
+8308 
+8309   const ObjCPropertyDecl *PD = dyn_cast<ObjCPropertyDecl>(getCursorDecl(C));
+8310   Selector sel = PD->getSetterName();
+8311   if (sel\&.isNull())
+8312     return cxstring::createNull();
+8313 
+8314   return cxstring::createDup(sel\&.getAsString());
+8315 }
+.fi
+.PP
+References clang::cxstring::createDup(), clang::cxstring::createNull(), and clang::cxcursor::getCursorDecl()\&.
+.SS "int clang_Cursor_getObjCSelectorIndex (CXCursor cursor)"
+
+.PP
+Definition at line 6666 of file CIndex\&.cpp\&.
+.PP
+.nf
+6666                                                        {
+6667   return cxcursor::getSelectorIdentifierIndexAndLoc(cursor)\&.first;
+6668 }
+.fi
+.PP
+References clang::cxcursor::getSelectorIdentifierIndexAndLoc()\&.
+.SS "CXString clang_Cursor_getRawCommentText (CXCursor C)"
+
+.PP
+Definition at line 8406 of file CIndex\&.cpp\&.
+.PP
+.nf
+8406                                                     {
+8407   if (!clang_isDeclaration(C\&.kind))
+8408     return cxstring::createNull();
+8409 
+8410   const Decl *D = getCursorDecl(C);
+8411   ASTContext &Context = getCursorContext(C);
+8412   const RawComment *RC = Context\&.getRawCommentForAnyRedecl(D);
+8413   StringRef RawText =
+8414       RC ? RC->getRawText(Context\&.getSourceManager()) : StringRef();
+8415 
+8416   // Don't duplicate the string because RawText points directly into source
+8417   // code\&.
+8418   return cxstring::createRef(RawText);
+8419 }
+.fi
+.PP
+References clang_isDeclaration(), clang::cxstring::createNull(), clang::cxstring::createRef(), clang::cxcursor::getCursorContext(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXSourceRange clang_Cursor_getSpellingNameRange (CXCursor C, unsigned pieceIndex, unsigned options)"
+
+.PP
+Definition at line 4795 of file CIndex\&.cpp\&.
+.PP
+.nf
+4796                                                                   {
+4797   if (clang_Cursor_isNull(C))
+4798     return clang_getNullRange();
+4799 
+4800   ASTContext &Ctx = getCursorContext(C);
+4801 
+4802   if (clang_isStatement(C\&.kind)) {
+4803     const Stmt *S = getCursorStmt(C);
+4804     if (const LabelStmt *Label = dyn_cast_or_null<LabelStmt>(S)) {
+4805       if (pieceIndex > 0)
+4806         return clang_getNullRange();
+4807       return cxloc::translateSourceRange(Ctx, Label->getIdentLoc());
+4808     }
+4809 
+4810     return clang_getNullRange();
+4811   }
+4812 
+4813   if (C\&.kind == CXCursor_ObjCMessageExpr) {
+4814     if (const ObjCMessageExpr *ME =
+4815             dyn_cast_or_null<ObjCMessageExpr>(getCursorExpr(C))) {
+4816       if (pieceIndex >= ME->getNumSelectorLocs())
+4817         return clang_getNullRange();
+4818       return cxloc::translateSourceRange(Ctx, ME->getSelectorLoc(pieceIndex));
+4819     }
+4820   }
+4821 
+4822   if (C\&.kind == CXCursor_ObjCInstanceMethodDecl ||
+4823       C\&.kind == CXCursor_ObjCClassMethodDecl) {
+4824     if (const ObjCMethodDecl *MD =
+4825             dyn_cast_or_null<ObjCMethodDecl>(getCursorDecl(C))) {
+4826       if (pieceIndex >= MD->getNumSelectorLocs())
+4827         return clang_getNullRange();
+4828       return cxloc::translateSourceRange(Ctx, MD->getSelectorLoc(pieceIndex));
+4829     }
+4830   }
+4831 
+4832   if (C\&.kind == CXCursor_ObjCCategoryDecl ||
+4833       C\&.kind == CXCursor_ObjCCategoryImplDecl) {
+4834     if (pieceIndex > 0)
+4835       return clang_getNullRange();
+4836     if (const ObjCCategoryDecl *CD =
+4837             dyn_cast_or_null<ObjCCategoryDecl>(getCursorDecl(C)))
+4838       return cxloc::translateSourceRange(Ctx, CD->getCategoryNameLoc());
+4839     if (const ObjCCategoryImplDecl *CID =
+4840             dyn_cast_or_null<ObjCCategoryImplDecl>(getCursorDecl(C)))
+4841       return cxloc::translateSourceRange(Ctx, CID->getCategoryNameLoc());
+4842   }
+4843 
+4844   if (C\&.kind == CXCursor_ModuleImportDecl) {
+4845     if (pieceIndex > 0)
+4846       return clang_getNullRange();
+4847     if (const ImportDecl *ImportD =
+4848             dyn_cast_or_null<ImportDecl>(getCursorDecl(C))) {
+4849       ArrayRef<SourceLocation> Locs = ImportD->getIdentifierLocs();
+4850       if (!Locs\&.empty())
+4851         return cxloc::translateSourceRange(
+4852             Ctx, SourceRange(Locs\&.front(), Locs\&.back()));
+4853     }
+4854     return clang_getNullRange();
+4855   }
+4856 
+4857   if (C\&.kind == CXCursor_CXXMethod || C\&.kind == CXCursor_Destructor ||
+4858       C\&.kind == CXCursor_ConversionFunction ||
+4859       C\&.kind == CXCursor_FunctionDecl) {
+4860     if (pieceIndex > 0)
+4861       return clang_getNullRange();
+4862     if (const FunctionDecl *FD =
+4863             dyn_cast_or_null<FunctionDecl>(getCursorDecl(C))) {
+4864       DeclarationNameInfo FunctionName = FD->getNameInfo();
+4865       return cxloc::translateSourceRange(Ctx, FunctionName\&.getSourceRange());
+4866     }
+4867     return clang_getNullRange();
+4868   }
+4869 
+4870   // FIXME: A CXCursor_InclusionDirective should give the location of the
+4871   // filename, but we don't keep track of this\&.
+4872 
+4873   // FIXME: A CXCursor_AnnotateAttr should give the location of the annotation
+4874   // but we don't keep track of this\&.
+4875 
+4876   // FIXME: A CXCursor_AsmLabelAttr should give the location of the label
+4877   // but we don't keep track of this\&.
+4878 
+4879   // Default handling, give the location of the cursor\&.
+4880 
+4881   if (pieceIndex > 0)
+4882     return clang_getNullRange();
+4883 
+4884   CXSourceLocation CXLoc = clang_getCursorLocation(C);
+4885   SourceLocation Loc = cxloc::translateSourceLocation(CXLoc);
+4886   return cxloc::translateSourceRange(Ctx, Loc);
+4887 }
+.fi
+.PP
+References clang_Cursor_isNull(), clang_getCursorLocation(), clang_getNullRange(), clang_isStatement(), clang::cxcursor::getCursorContext(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorExpr(), clang::cxcursor::getCursorStmt(), and clang::cxloc::translateSourceRange()\&.
+.SS "enum CX_StorageClass clang_Cursor_getStorageClass (CXCursor C)"
+
+.PP
+Definition at line 8173 of file CIndex\&.cpp\&.
+.PP
+.nf
+8188                                                               {
+8189   StorageClass sc = SC_None;
+8190   const Decl *D = getCursorDecl(C);
+8191   if (D) {
+8192     if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(D)) {
+8193       sc = FD->getStorageClass();
+8194     } else if (const VarDecl *VD = dyn_cast<VarDecl>(D)) {
+8195       sc = VD->getStorageClass();
+8196     } else {
+8197       return CX_SC_Invalid;
+8198     }
+8199   } else {
+8200     return CX_SC_Invalid;
+8201   }
+8202   switch (sc) {
+8203   case SC_None:
+8204     return CX_SC_None;
+8205   case SC_Extern:
+8206     return CX_SC_Extern;
+8207   case SC_Static:
+8208     return CX_SC_Static;
+8209   case SC_PrivateExtern:
+8210     return CX_SC_PrivateExtern;
+8211   case SC_Auto:
+8212     return CX_SC_Auto;
+8213   case SC_Register:
+8214     return CX_SC_Register;
+8215   }
+8216   llvm_unreachable("Unhandled storage class!");
+8217 }
+.fi
+.SS "CXCursor clang_Cursor_getVarDeclInitializer (CXCursor cursor)"
+
+.PP
+Definition at line 8925 of file CIndex\&.cpp\&.
+.PP
+.nf
+8925                                                              {
+8926   const Decl *const D = getCursorDecl(cursor);
+8927   if (!D)
+8928     return clang_getNullCursor();
+8929   const auto *const VD = dyn_cast<VarDecl>(D);
+8930   if (!VD)
+8931     return clang_getNullCursor();
+8932   const Expr *const Init = VD->getInit();
+8933   if (!Init)
+8934     return clang_getNullCursor();
+8935 
+8936   return cxcursor::MakeCXCursor(Init, VD, cxcursor::getCursorTU(cursor));
+8937 }
+.fi
+.PP
+References clang_getNullCursor(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorTU(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "unsigned clang_Cursor_hasAttrs (CXCursor C)"
+
+.PP
+Definition at line 4132 of file CIndex\&.cpp\&.
+.PP
+.nf
+4132                                            {
+4133   const Decl *D = getCursorDecl(C);
+4134   if (!D) {
+4135     return 0;
+4136   }
+4137 
+4138   if (D->hasAttrs()) {
+4139     return 1;
+4140   }
+4141 
+4142   return 0;
+4143 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "int clang_Cursor_hasVarDeclExternalStorage (CXCursor cursor)"
+
+.PP
+Definition at line 8950 of file CIndex\&.cpp\&.
+.PP
+.nf
+8950                                                             {
+8951   const Decl *const D = getCursorDecl(cursor);
+8952   if (!D)
+8953     return -1;
+8954   const auto *const VD = dyn_cast<VarDecl>(D);
+8955   if (!VD)
+8956     return -1;
+8957 
+8958   return VD->hasExternalStorage();
+8959 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "int clang_Cursor_hasVarDeclGlobalStorage (CXCursor cursor)"
+
+.PP
+Definition at line 8939 of file CIndex\&.cpp\&.
+.PP
+.nf
+8939                                                           {
+8940   const Decl *const D = getCursorDecl(cursor);
+8941   if (!D)
+8942     return -1;
+8943   const auto *const VD = dyn_cast<VarDecl>(D);
+8944   if (!VD)
+8945     return -1;
+8946 
+8947   return VD->hasGlobalStorage();
+8948 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_Cursor_isExternalSymbol (CXCursor C, CXString * language, CXString * definedIn, unsigned * isGenerated)"
+
+.PP
+Definition at line 8373 of file CIndex\&.cpp\&.
+.PP
+.nf
+8375                                                               {
+8376   if (!clang_isDeclaration(C\&.kind))
+8377     return 0;
+8378 
+8379   const Decl *D = getCursorDecl(C);
+8380 
+8381   if (auto *attr = D->getExternalSourceSymbolAttr()) {
+8382     if (language)
+8383       *language = cxstring::createDup(attr->getLanguage());
+8384     if (definedIn)
+8385       *definedIn = cxstring::createDup(attr->getDefinedIn());
+8386     if (isGenerated)
+8387       *isGenerated = attr->getGeneratedDeclaration();
+8388     return 1;
+8389   }
+8390   return 0;
+8391 }
+.fi
+.PP
+References clang_isDeclaration(), clang::cxstring::createDup(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_Cursor_isFunctionInlined (CXCursor C)"
+
+.PP
+Definition at line 3844 of file CIndex\&.cpp\&.
+.PP
+.nf
+3844                                                     {
+3845   const Decl *D = getCursorDecl(C);
+3846   const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D);
+3847   if (!FD) {
+3848     return false;
+3849   }
+3850   return FD->isInlined();
+3851 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_Cursor_isMacroBuiltin (CXCursor C)"
+
+.PP
+Definition at line 3832 of file CIndex\&.cpp\&.
+.PP
+.nf
+3832                                                  {
+3833   const IdentifierInfo *II = getMacroIdentifier(C);
+3834   if (!II) {
+3835     return false;
+3836   }
+3837   ASTUnit *ASTU = getCursorASTUnit(C);
+3838   Preprocessor &PP = ASTU->getPreprocessor();
+3839   if (const MacroInfo *MI = PP\&.getMacroInfo(II))
+3840     return MI->isBuiltinMacro();
+3841   return false;
+3842 }
+.fi
+.SS "unsigned clang_Cursor_isMacroFunctionLike (CXCursor C)"
+
+.PP
+Definition at line 3820 of file CIndex\&.cpp\&.
+.PP
+.nf
+3820                                                       {
+3821   const IdentifierInfo *II = getMacroIdentifier(C);
+3822   if (!II) {
+3823     return false;
+3824   }
+3825   ASTUnit *ASTU = getCursorASTUnit(C);
+3826   Preprocessor &PP = ASTU->getPreprocessor();
+3827   if (const MacroInfo *MI = PP\&.getMacroInfo(II))
+3828     return MI->isFunctionLike();
+3829   return false;
+3830 }
+.fi
+.SS "unsigned clang_Cursor_isObjCOptional (CXCursor C)"
+
+.PP
+Definition at line 8347 of file CIndex\&.cpp\&.
+.PP
+.nf
+8347                                                  {
+8348   if (!clang_isDeclaration(C\&.kind))
+8349     return 0;
+8350 
+8351   const Decl *D = getCursorDecl(C);
+8352   if (const ObjCPropertyDecl *PD = dyn_cast<ObjCPropertyDecl>(D))
+8353     return PD->getPropertyImplementation() == ObjCPropertyDecl::Optional;
+8354   if (const ObjCMethodDecl *MD = dyn_cast<ObjCMethodDecl>(D))
+8355     return MD->getImplementationControl() == ObjCMethodDecl::Optional;
+8356 
+8357   return 0;
+8358 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_Cursor_isVariadic (CXCursor C)"
+
+.PP
+Definition at line 8360 of file CIndex\&.cpp\&.
+.PP
+.nf
+8360                                              {
+8361   if (!clang_isDeclaration(C\&.kind))
+8362     return 0;
+8363 
+8364   const Decl *D = getCursorDecl(C);
+8365   if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(D))
+8366     return FD->isVariadic();
+8367   if (const ObjCMethodDecl *MD = dyn_cast<ObjCMethodDecl>(D))
+8368     return MD->isVariadic();
+8369 
+8370   return 0;
+8371 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXIndex_getGlobalOptions (CXIndex CIdx)"
+
+.PP
+Definition at line 3481 of file CIndex\&.cpp\&.
+.PP
+.nf
+3481                                                       {
+3482   if (CIdx)
+3483     return static_cast<CIndexer *>(CIdx)->getCXGlobalOptFlags();
+3484   return 0;
+3485 }
+.fi
+.SS "void clang_CXIndex_setGlobalOptions (CXIndex CIdx, unsigned options)"
+
+.PP
+Definition at line 3476 of file CIndex\&.cpp\&.
+.PP
+.nf
+3476                                                                     {
+3477   if (CIdx)
+3478     static_cast<CIndexer *>(CIdx)->setCXGlobalOptFlags(options);
+3479 }
+.fi
+.SS "void clang_CXIndex_setInvocationEmissionPathOption (CXIndex CIdx, const char * Path)"
+
+.PP
+Definition at line 3487 of file CIndex\&.cpp\&.
+.PP
+.nf
+3488                                                                      {
+3489   if (CIdx)
+3490     static_cast<CIndexer *>(CIdx)->setInvocationEmissionPath(Path ? Path : "");
+3491 }
+.fi
+.PP
+Referenced by perform_test_load_source()\&.
+.SS "unsigned clang_CXXConstructor_isConvertingConstructor (CXCursor C)"
+
+.PP
+Definition at line 8569 of file CIndex\&.cpp\&.
+.PP
+.nf
+8569                                                                   {
+8570   if (!clang_isDeclaration(C\&.kind))
+8571     return 0;
+8572 
+8573   const Decl *D = cxcursor::getCursorDecl(C);
+8574   const CXXConstructorDecl *Constructor =
+8575       D ? dyn_cast_or_null<CXXConstructorDecl>(D->getAsFunction()) : nullptr;
+8576   // Passing 'false' excludes constructors marked 'explicit'\&.
+8577   return (Constructor && Constructor->isConvertingConstructor(false)) ? 1 : 0;
+8578 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXConstructor_isCopyConstructor (CXCursor C)"
+
+.PP
+Definition at line 8549 of file CIndex\&.cpp\&.
+.PP
+.nf
+8549                                                             {
+8550   if (!clang_isDeclaration(C\&.kind))
+8551     return 0;
+8552 
+8553   const Decl *D = cxcursor::getCursorDecl(C);
+8554   const CXXConstructorDecl *Constructor =
+8555       D ? dyn_cast_or_null<CXXConstructorDecl>(D->getAsFunction()) : nullptr;
+8556   return (Constructor && Constructor->isCopyConstructor()) ? 1 : 0;
+8557 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXConstructor_isDefaultConstructor (CXCursor C)"
+
+.PP
+Definition at line 8539 of file CIndex\&.cpp\&.
+.PP
+.nf
+8539                                                                {
+8540   if (!clang_isDeclaration(C\&.kind))
+8541     return 0;
+8542 
+8543   const Decl *D = cxcursor::getCursorDecl(C);
+8544   const CXXConstructorDecl *Constructor =
+8545       D ? dyn_cast_or_null<CXXConstructorDecl>(D->getAsFunction()) : nullptr;
+8546   return (Constructor && Constructor->isDefaultConstructor()) ? 1 : 0;
+8547 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXConstructor_isMoveConstructor (CXCursor C)"
+
+.PP
+Definition at line 8559 of file CIndex\&.cpp\&.
+.PP
+.nf
+8559                                                             {
+8560   if (!clang_isDeclaration(C\&.kind))
+8561     return 0;
+8562 
+8563   const Decl *D = cxcursor::getCursorDecl(C);
+8564   const CXXConstructorDecl *Constructor =
+8565       D ? dyn_cast_or_null<CXXConstructorDecl>(D->getAsFunction()) : nullptr;
+8566   return (Constructor && Constructor->isMoveConstructor()) ? 1 : 0;
+8567 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXField_isMutable (CXCursor C)"
+
+.PP
+Definition at line 8580 of file CIndex\&.cpp\&.
+.PP
+.nf
+8580                                               {
+8581   if (!clang_isDeclaration(C\&.kind))
+8582     return 0;
+8583 
+8584   if (const auto D = cxcursor::getCursorDecl(C))
+8585     if (const auto FD = dyn_cast_or_null<FieldDecl>(D))
+8586       return FD->isMutable() ? 1 : 0;
+8587   return 0;
+8588 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXMethod_isConst (CXCursor C)"
+
+.PP
+Definition at line 8600 of file CIndex\&.cpp\&.
+.PP
+.nf
+8600                                              {
+8601   if (!clang_isDeclaration(C\&.kind))
+8602     return 0;
+8603 
+8604   const Decl *D = cxcursor::getCursorDecl(C);
+8605   const CXXMethodDecl *Method =
+8606       D ? dyn_cast_or_null<CXXMethodDecl>(D->getAsFunction()) : nullptr;
+8607   return (Method && Method->getMethodQualifiers()\&.hasConst()) ? 1 : 0;
+8608 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXMethod_isDefaulted (CXCursor C)"
+
+.PP
+Definition at line 8610 of file CIndex\&.cpp\&.
+.PP
+.nf
+8610                                                  {
+8611   if (!clang_isDeclaration(C\&.kind))
+8612     return 0;
+8613 
+8614   const Decl *D = cxcursor::getCursorDecl(C);
+8615   const CXXMethodDecl *Method =
+8616       D ? dyn_cast_or_null<CXXMethodDecl>(D->getAsFunction()) : nullptr;
+8617   return (Method && Method->isDefaulted()) ? 1 : 0;
+8618 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXMethod_isPureVirtual (CXCursor C)"
+
+.PP
+Definition at line 8590 of file CIndex\&.cpp\&.
+.PP
+.nf
+8590                                                    {
+8591   if (!clang_isDeclaration(C\&.kind))
+8592     return 0;
+8593 
+8594   const Decl *D = cxcursor::getCursorDecl(C);
+8595   const CXXMethodDecl *Method =
+8596       D ? dyn_cast_or_null<CXXMethodDecl>(D->getAsFunction()) : nullptr;
+8597   return (Method && Method->isVirtual() && Method->isPure()) ? 1 : 0;
+8598 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXMethod_isStatic (CXCursor C)"
+
+.PP
+Definition at line 8620 of file CIndex\&.cpp\&.
+.PP
+.nf
+8620                                               {
+8621   if (!clang_isDeclaration(C\&.kind))
+8622     return 0;
+8623 
+8624   const Decl *D = cxcursor::getCursorDecl(C);
+8625   const CXXMethodDecl *Method =
+8626       D ? dyn_cast_or_null<CXXMethodDecl>(D->getAsFunction()) : nullptr;
+8627   return (Method && Method->isStatic()) ? 1 : 0;
+8628 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXMethod_isVirtual (CXCursor C)"
+
+.PP
+Definition at line 8630 of file CIndex\&.cpp\&.
+.PP
+.nf
+8630                                                {
+8631   if (!clang_isDeclaration(C\&.kind))
+8632     return 0;
+8633 
+8634   const Decl *D = cxcursor::getCursorDecl(C);
+8635   const CXXMethodDecl *Method =
+8636       D ? dyn_cast_or_null<CXXMethodDecl>(D->getAsFunction()) : nullptr;
+8637   return (Method && Method->isVirtual()) ? 1 : 0;
+8638 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_CXXRecord_isAbstract (CXCursor C)"
+
+.PP
+Definition at line 8640 of file CIndex\&.cpp\&.
+.PP
+.nf
+8640                                                 {
+8641   if (!clang_isDeclaration(C\&.kind))
+8642     return 0;
+8643 
+8644   const auto *D = cxcursor::getCursorDecl(C);
+8645   const auto *RD = dyn_cast_or_null<CXXRecordDecl>(D);
+8646   if (RD)
+8647     RD = RD->getDefinition();
+8648   return (RD && RD->isAbstract()) ? 1 : 0;
+8649 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_defaultEditingTranslationUnitOptions ()"
+
+.PP
+Definition at line 3537 of file CIndex\&.cpp\&.
+.PP
+.nf
+3537                                                       {
+3538   return CXTranslationUnit_PrecompiledPreamble |
+3539          CXTranslationUnit_CacheCompletionResults;
+3540 }
+.fi
+.SS "unsigned clang_defaultReparseOptions (CXTranslationUnit TU)"
+
+.PP
+Definition at line 4238 of file CIndex\&.cpp\&.
+.PP
+.nf
+4238                                                            {
+4239   return CXReparse_None;
+4240 }
+.fi
+.SS "unsigned clang_defaultSaveOptions (CXTranslationUnit TU)"
+
+.PP
+Definition at line 4144 of file CIndex\&.cpp\&.
+.PP
+.nf
+4144                                                         {
+4145   return CXSaveTranslationUnit_None;
+4146 }
+.fi
+.SS "void clang_disposeCXPlatformAvailability (CXPlatformAvailability * availability)"
+
+.PP
+Definition at line 8142 of file CIndex\&.cpp\&.
+.PP
+.nf
+8142                                                                                {
+8143   clang_disposeString(availability->Platform);
+8144   clang_disposeString(availability->Message);
+8145 }
+.fi
+.PP
+References clang_disposeString()\&.
+.SS "void clang_disposeCXTUResourceUsage (CXTUResourceUsage usage)"
+
+.PP
+Definition at line 8829 of file CIndex\&.cpp\&.
+.PP
+.nf
+8829                                                              {
+8830   if (usage\&.data)
+8831     delete (MemUsageEntries *)usage\&.data;
+8832 }
+.fi
+.PP
+Referenced by clang::PrintLibclangResourceUsage(), and PrintMemoryUsage()\&.
+.SS "void clang_disposeIndex (CXIndex CIdx)"
+
+.PP
+Definition at line 3471 of file CIndex\&.cpp\&.
+.PP
+.nf
+3471                                       {
+3472   if (CIdx)
+3473     delete static_cast<CIndexer *>(CIdx);
+3474 }
+.fi
+.SS "void clang_disposeSourceRangeList (CXSourceRangeList * ranges)"
+
+.PP
+Definition at line 8908 of file CIndex\&.cpp\&.
+.PP
+.nf
+8908                                                              {
+8909   if (ranges) {
+8910     delete[] ranges->ranges;
+8911     delete ranges;
+8912   }
+8913 }
+.fi
+.SS "void clang_disposeTokens (CXTranslationUnit TU, CXToken * Tokens, unsigned NumTokens)"
+
+.PP
+Definition at line 7022 of file CIndex\&.cpp\&.
+.PP
+.nf
+7023                                              {
+7024   free(Tokens);
+7025 }
+.fi
+.SS "void clang_disposeTranslationUnit (CXTranslationUnit CTUnit)"
+
+.PP
+Definition at line 4207 of file CIndex\&.cpp\&.
+.PP
+.nf
+4207                                                             {
+4208   if (CTUnit) {
+4209     // If the translation unit has been marked as unsafe to free, just discard
+4210     // it\&.
+4211     ASTUnit *Unit = cxtu::getASTUnit(CTUnit);
+4212     if (Unit && Unit->isUnsafeToFree())
+4213       return;
+4214 
+4215     delete cxtu::getASTUnit(CTUnit);
+4216     delete CTUnit->StringPool;
+4217     delete static_cast<CXDiagnosticSetImpl *>(CTUnit->Diagnostics);
+4218     disposeOverridenCXCursorsPool(CTUnit->OverridenCursorsPool);
+4219     delete CTUnit->CommentToXML;
+4220     delete CTUnit;
+4221   }
+4222 }
+.fi
+.PP
+References clang::cxcursor::disposeOverridenCXCursorsPool()\&.
+.PP
+Referenced by clang::cxtu::CXTUOwner::~CXTUOwner()\&.
+.SS "void clang_enableStackTraces (void)"
+
+.PP
+Definition at line 6781 of file CIndex\&.cpp\&.
+.PP
+.nf
+6781                                    {
+6782   // FIXME: Provide an argv0 here so we can find llvm-symbolizer\&.
+6783   llvm::sys::PrintStackTraceOnErrorSignal(StringRef());
+6784 }
+.fi
+.PP
+Referenced by carcmttest_main(), and cindextest_main()\&.
+.SS "unsigned clang_EnumDecl_isScoped (CXCursor C)"
+
+.PP
+Definition at line 8651 of file CIndex\&.cpp\&.
+.PP
+.nf
+8651                                              {
+8652   if (!clang_isDeclaration(C\&.kind))
+8653     return 0;
+8654 
+8655   const Decl *D = cxcursor::getCursorDecl(C);
+8656   auto *Enum = dyn_cast_or_null<EnumDecl>(D);
+8657   return (Enum && Enum->isScoped()) ? 1 : 0;
+8658 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_equalCursors (CXCursor X, CXCursor Y)"
+
+.PP
+Definition at line 5905 of file CIndex\&.cpp\&.
+.PP
+.nf
+5905                                                     {
+5906   // Clear out the "FirstInDeclGroup" part in a declaration cursor, since we
+5907   // can't set consistently\&. For example, when visiting a DeclStmt we will set
+5908   // it but we don't set it on the result of clang_getCursorDefinition for
+5909   // a reference of the same declaration\&.
+5910   // FIXME: Setting "FirstInDeclGroup" in CXCursors is a hack that only works
+5911   // when visiting a DeclStmt currently, the AST should be enhanced to be able
+5912   // to provide that kind of info\&.
+5913   if (clang_isDeclaration(X\&.kind))
+5914     X\&.data[1] = nullptr;
+5915   if (clang_isDeclaration(Y\&.kind))
+5916     Y\&.data[1] = nullptr;
+5917 
+5918   return X == Y;
+5919 }
+.fi
+.PP
+References clang_isDeclaration()\&.
+.PP
+Referenced by clang_Cursor_isNull()\&.
+.SS "void clang_EvalResult_dispose (CXEvalResult E)"
+
+.PP
+Definition at line 3894 of file CIndex\&.cpp\&.
+.PP
+.nf
+3894                                               {
+3895   delete static_cast<ExprEvalResult *>(E);
+3896 }
+.fi
+.SS "double clang_EvalResult_getAsDouble (CXEvalResult E)"
+
+.PP
+Definition at line 3934 of file CIndex\&.cpp\&.
+.PP
+.nf
+3934                                                     {
+3935   if (!E) {
+3936     return 0;
+3937   }
+3938   return ((ExprEvalResult *)E)->EvalData\&.floatVal;
+3939 }
+.fi
+.SS "int clang_EvalResult_getAsInt (CXEvalResult E)"
+
+.PP
+Definition at line 3905 of file CIndex\&.cpp\&.
+.PP
+.nf
+3905                                               {
+3906   return clang_EvalResult_getAsLongLong(E);
+3907 }
+.fi
+.PP
+References clang_EvalResult_getAsLongLong()\&.
+.SS "long long clang_EvalResult_getAsLongLong (CXEvalResult E)"
+
+.PP
+Definition at line 3909 of file CIndex\&.cpp\&.
+.PP
+.nf
+3909                                                          {
+3910   if (!E) {
+3911     return 0;
+3912   }
+3913   ExprEvalResult *Result = (ExprEvalResult *)E;
+3914   if (Result->IsUnsignedInt)
+3915     return Result->EvalData\&.unsignedVal;
+3916   return Result->EvalData\&.intVal;
+3917 }
+.fi
+.PP
+References ExprEvalResult::EvalData, ExprEvalResult::intVal, ExprEvalResult::IsUnsignedInt, and ExprEvalResult::unsignedVal\&.
+.PP
+Referenced by clang_EvalResult_getAsInt()\&.
+.SS "const char* clang_EvalResult_getAsStr (CXEvalResult E)"
+
+.PP
+Definition at line 3941 of file CIndex\&.cpp\&.
+.PP
+.nf
+3941                                                       {
+3942   if (!E) {
+3943     return nullptr;
+3944   }
+3945   return ((ExprEvalResult *)E)->EvalData\&.stringVal;
+3946 }
+.fi
+.SS "unsigned long long clang_EvalResult_getAsUnsigned (CXEvalResult E)"
+
+.PP
+Definition at line 3923 of file CIndex\&.cpp\&.
+.PP
+.nf
+3923                                                                   {
+3924   if (!E) {
+3925     return 0;
+3926   }
+3927 
+3928   ExprEvalResult *Result = (ExprEvalResult *)E;
+3929   if (Result->IsUnsignedInt)
+3930     return Result->EvalData\&.unsignedVal;
+3931   return Result->EvalData\&.intVal;
+3932 }
+.fi
+.PP
+References ExprEvalResult::EvalData, ExprEvalResult::intVal, ExprEvalResult::IsUnsignedInt, and ExprEvalResult::unsignedVal\&.
+.SS "CXEvalResultKind clang_EvalResult_getKind (CXEvalResult E)"
+
+.PP
+Definition at line 3898 of file CIndex\&.cpp\&.
+.PP
+.nf
+3898                                                           {
+3899   if (!E) {
+3900     return CXEval_UnExposed;
+3901   }
+3902   return ((ExprEvalResult *)E)->EvalType;
+3903 }
+.fi
+.SS "unsigned clang_EvalResult_isUnsignedInt (CXEvalResult E)"
+
+.PP
+Definition at line 3919 of file CIndex\&.cpp\&.
+.PP
+.nf
+3919                                                         {
+3920   return ((ExprEvalResult *)E)->IsUnsignedInt;
+3921 }
+.fi
+.SS "void clang_executeOnThread (void(*)(void *) fn, void * user_data, unsigned stack_size)"
+
+.PP
+Definition at line 6786 of file CIndex\&.cpp\&.
+.PP
+.nf
+6787                                                 {
+6788   llvm::llvm_execute_on_thread(fn, user_data,
+6789                                stack_size == 0
+6790                                    ? clang::DesiredStackSize
+6791                                    : llvm::Optional<unsigned>(stack_size));
+6792 }
+.fi
+.SS "int clang_File_isEqual (CXFile file1, CXFile file2)"
+
+.PP
+Definition at line 4458 of file CIndex\&.cpp\&.
+.PP
+.nf
+4458                                                    {
+4459   if (file1 == file2)
+4460     return true;
+4461 
+4462   if (!file1 || !file2)
+4463     return false;
+4464 
+4465   FileEntry *FEnt1 = static_cast<FileEntry *>(file1);
+4466   FileEntry *FEnt2 = static_cast<FileEntry *>(file2);
+4467   return FEnt1->getUniqueID() == FEnt2->getUniqueID();
+4468 }
+.fi
+.SS "CXString clang_File_tryGetRealPathName (CXFile SFile)"
+
+.PP
+Definition at line 4470 of file CIndex\&.cpp\&.
+.PP
+.nf
+4470                                                      {
+4471   if (!SFile)
+4472     return cxstring::createNull();
+4473 
+4474   FileEntry *FEnt = static_cast<FileEntry *>(SFile);
+4475   return cxstring::createRef(FEnt->tryGetRealPathName());
+4476 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXSourceRangeList* clang_getAllSkippedRanges (CXTranslationUnit TU)"
+
+.PP
+Definition at line 8880 of file CIndex\&.cpp\&.
+.PP
+.nf
+8880                                                                    {
+8881   CXSourceRangeList *skipped = new CXSourceRangeList;
+8882   skipped->count = 0;
+8883   skipped->ranges = nullptr;
+8884 
+8885   if (isNotUsableTU(TU)) {
+8886     LOG_BAD_TU(TU);
+8887     return skipped;
+8888   }
+8889 
+8890   ASTUnit *astUnit = cxtu::getASTUnit(TU);
+8891   PreprocessingRecord *ppRec =
+8892       astUnit->getPreprocessor()\&.getPreprocessingRecord();
+8893   if (!ppRec)
+8894     return skipped;
+8895 
+8896   ASTContext &Ctx = astUnit->getASTContext();
+8897 
+8898   const std::vector<SourceRange> &SkippedRanges = ppRec->getSkippedRanges();
+8899 
+8900   skipped->count = SkippedRanges\&.size();
+8901   skipped->ranges = new CXSourceRange[skipped->count];
+8902   for (unsigned i = 0, ei = skipped->count; i != ei; ++i)
+8903     skipped->ranges[i] = cxloc::translateSourceRange(Ctx, SkippedRanges[i]);
+8904 
+8905   return skipped;
+8906 }
+.fi
+.SS "CXCursor clang_getCanonicalCursor (CXCursor C)"
+
+.PP
+Definition at line 6646 of file CIndex\&.cpp\&.
+.PP
+.nf
+6646                                               {
+6647   if (!clang_isDeclaration(C\&.kind))
+6648     return C;
+6649 
+6650   if (const Decl *D = getCursorDecl(C)) {
+6651     if (const ObjCCategoryImplDecl *CatImplD =
+6652             dyn_cast<ObjCCategoryImplDecl>(D))
+6653       if (ObjCCategoryDecl *CatD = CatImplD->getCategoryDecl())
+6654         return MakeCXCursor(CatD, getCursorTU(C));
+6655 
+6656     if (const ObjCImplDecl *ImplD = dyn_cast<ObjCImplDecl>(D))
+6657       if (const ObjCInterfaceDecl *IFD = ImplD->getClassInterface())
+6658         return MakeCXCursor(IFD, getCursorTU(C));
+6659 
+6660     return MakeCXCursor(D->getCanonicalDecl(), getCursorTU(C));
+6661   }
+6662 
+6663   return C;
+6664 }
+.fi
+.PP
+References clang_isDeclaration(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorTU(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "CXString clang_getClangVersion ()"
+
+.PP
+Definition at line 9109 of file CIndex\&.cpp\&.
+.PP
+.nf
+9109                                  {
+9110   return cxstring::createDup(getClangFullVersion());
+9111 }
+.fi
+.PP
+References clang::cxstring::createDup()\&.
+.SS "CXCursor clang_getCursor (CXTranslationUnit TU, CXSourceLocation Loc)"
+
+.PP
+Definition at line 5839 of file CIndex\&.cpp\&.
+.PP
+.nf
+5839                                                                      {
+5840   if (isNotUsableTU(TU)) {
+5841     LOG_BAD_TU(TU);
+5842     return clang_getNullCursor();
+5843   }
+5844 
+5845   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+5846   ASTUnit::ConcurrencyCheck Check(*CXXUnit);
+5847 
+5848   SourceLocation SLoc = cxloc::translateSourceLocation(Loc);
+5849   CXCursor Result = cxcursor::getCursor(TU, SLoc);
+5850 
+5851   LOG_FUNC_SECTION {
+5852     CXFile SearchFile;
+5853     unsigned SearchLine, SearchColumn;
+5854     CXFile ResultFile;
+5855     unsigned ResultLine, ResultColumn;
+5856     CXString SearchFileName, ResultFileName, KindSpelling, USR;
+5857     const char *IsDef = clang_isCursorDefinition(Result) ? " (Definition)" : "";
+5858     CXSourceLocation ResultLoc = clang_getCursorLocation(Result);
+5859 
+5860     clang_getFileLocation(Loc, &SearchFile, &SearchLine, &SearchColumn,
+5861                           nullptr);
+5862     clang_getFileLocation(ResultLoc, &ResultFile, &ResultLine, &ResultColumn,
+5863                           nullptr);
+5864     SearchFileName = clang_getFileName(SearchFile);
+5865     ResultFileName = clang_getFileName(ResultFile);
+5866     KindSpelling = clang_getCursorKindSpelling(Result\&.kind);
+5867     USR = clang_getCursorUSR(Result);
+5868     *Log << llvm::format("(%s:%d:%d) = %s", clang_getCString(SearchFileName),
+5869                          SearchLine, SearchColumn,
+5870                          clang_getCString(KindSpelling))
+5871          << llvm::format("(%s:%d:%d):%s%s", clang_getCString(ResultFileName),
+5872                          ResultLine, ResultColumn, clang_getCString(USR),
+5873                          IsDef);
+5874     clang_disposeString(SearchFileName);
+5875     clang_disposeString(ResultFileName);
+5876     clang_disposeString(KindSpelling);
+5877     clang_disposeString(USR);
+5878 
+5879     CXCursor Definition = clang_getCursorDefinition(Result);
+5880     if (!clang_equalCursors(Definition, clang_getNullCursor())) {
+5881       CXSourceLocation DefinitionLoc = clang_getCursorLocation(Definition);
+5882       CXString DefinitionKindSpelling =
+5883           clang_getCursorKindSpelling(Definition\&.kind);
+5884       CXFile DefinitionFile;
+5885       unsigned DefinitionLine, DefinitionColumn;
+5886       clang_getFileLocation(DefinitionLoc, &DefinitionFile, &DefinitionLine,
+5887                             &DefinitionColumn, nullptr);
+5888       CXString DefinitionFileName = clang_getFileName(DefinitionFile);
+5889       *Log << llvm::format("  -> %s(%s:%d:%d)",
+5890                            clang_getCString(DefinitionKindSpelling),
+5891                            clang_getCString(DefinitionFileName), DefinitionLine,
+5892                            DefinitionColumn);
+5893       clang_disposeString(DefinitionFileName);
+5894       clang_disposeString(DefinitionKindSpelling);
+5895     }
+5896   }
+5897 
+5898   return Result;
+5899 }
+.fi
+.SS "enum CXAvailabilityKind clang_getCursorAvailability (CXCursor cursor)"
+
+.PP
+Definition at line 7956 of file CIndex\&.cpp\&.
+.PP
+.nf
+7978                                                                      {
+7979   if (clang_isDeclaration(cursor\&.kind))
+7980     if (const Decl *D = cxcursor::getCursorDecl(cursor))
+7981       return getCursorAvailabilityForDecl(D);
+7982 
+7983   return CXAvailability_Available;
+7984 }
+.fi
+.SS "CXCursor clang_getCursorDefinition (CXCursor C)"
+
+.PP
+Definition at line 6411 of file CIndex\&.cpp\&.
+.PP
+.nf
+6411                                                {
+6412   if (clang_isInvalid(C\&.kind))
+6413     return clang_getNullCursor();
+6414 
+6415   CXTranslationUnit TU = getCursorTU(C);
+6416 
+6417   bool WasReference = false;
+6418   if (clang_isReference(C\&.kind) || clang_isExpression(C\&.kind)) {
+6419     C = clang_getCursorReferenced(C);
+6420     WasReference = true;
+6421   }
+6422 
+6423   if (C\&.kind == CXCursor_MacroExpansion)
+6424     return clang_getCursorReferenced(C);
+6425 
+6426   if (!clang_isDeclaration(C\&.kind))
+6427     return clang_getNullCursor();
+6428 
+6429   const Decl *D = getCursorDecl(C);
+6430   if (!D)
+6431     return clang_getNullCursor();
+6432 
+6433   switch (D->getKind()) {
+6434   // Declaration kinds that don't really separate the notions of
+6435   // declaration and definition\&.
+6436   case Decl::Namespace:
+6437   case Decl::Typedef:
+6438   case Decl::TypeAlias:
+6439   case Decl::TypeAliasTemplate:
+6440   case Decl::TemplateTypeParm:
+6441   case Decl::EnumConstant:
+6442   case Decl::Field:
+6443   case Decl::Binding:
+6444   case Decl::MSProperty:
+6445   case Decl::MSGuid:
+6446   case Decl::TemplateParamObject:
+6447   case Decl::IndirectField:
+6448   case Decl::ObjCIvar:
+6449   case Decl::ObjCAtDefsField:
+6450   case Decl::ImplicitParam:
+6451   case Decl::ParmVar:
+6452   case Decl::NonTypeTemplateParm:
+6453   case Decl::TemplateTemplateParm:
+6454   case Decl::ObjCCategoryImpl:
+6455   case Decl::ObjCImplementation:
+6456   case Decl::AccessSpec:
+6457   case Decl::LinkageSpec:
+6458   case Decl::Export:
+6459   case Decl::ObjCPropertyImpl:
+6460   case Decl::FileScopeAsm:
+6461   case Decl::StaticAssert:
+6462   case Decl::Block:
+6463   case Decl::Captured:
+6464   case Decl::OMPCapturedExpr:
+6465   case Decl::Label: // FIXME: Is this right??
+6466   case Decl::ClassScopeFunctionSpecialization:
+6467   case Decl::CXXDeductionGuide:
+6468   case Decl::Import:
+6469   case Decl::OMPThreadPrivate:
+6470   case Decl::OMPAllocate:
+6471   case Decl::OMPDeclareReduction:
+6472   case Decl::OMPDeclareMapper:
+6473   case Decl::OMPRequires:
+6474   case Decl::ObjCTypeParam:
+6475   case Decl::BuiltinTemplate:
+6476   case Decl::PragmaComment:
+6477   case Decl::PragmaDetectMismatch:
+6478   case Decl::UsingPack:
+6479   case Decl::Concept:
+6480   case Decl::LifetimeExtendedTemporary:
+6481   case Decl::RequiresExprBody:
+6482   case Decl::UnresolvedUsingIfExists:
+6483     return C;
+6484 
+6485   // Declaration kinds that don't make any sense here, but are
+6486   // nonetheless harmless\&.
+6487   case Decl::Empty:
+6488   case Decl::TranslationUnit:
+6489   case Decl::ExternCContext:
+6490     break;
+6491 
+6492   // Declaration kinds for which the definition is not resolvable\&.
+6493   case Decl::UnresolvedUsingTypename:
+6494   case Decl::UnresolvedUsingValue:
+6495     break;
+6496 
+6497   case Decl::UsingDirective:
+6498     return MakeCXCursor(cast<UsingDirectiveDecl>(D)->getNominatedNamespace(),
+6499                         TU);
+6500 
+6501   case Decl::NamespaceAlias:
+6502     return MakeCXCursor(cast<NamespaceAliasDecl>(D)->getNamespace(), TU);
+6503 
+6504   case Decl::Enum:
+6505   case Decl::Record:
+6506   case Decl::CXXRecord:
+6507   case Decl::ClassTemplateSpecialization:
+6508   case Decl::ClassTemplatePartialSpecialization:
+6509     if (TagDecl *Def = cast<TagDecl>(D)->getDefinition())
+6510       return MakeCXCursor(Def, TU);
+6511     return clang_getNullCursor();
+6512 
+6513   case Decl::Function:
+6514   case Decl::CXXMethod:
+6515   case Decl::CXXConstructor:
+6516   case Decl::CXXDestructor:
+6517   case Decl::CXXConversion: {
+6518     const FunctionDecl *Def = nullptr;
+6519     if (cast<FunctionDecl>(D)->getBody(Def))
+6520       return MakeCXCursor(Def, TU);
+6521     return clang_getNullCursor();
+6522   }
+6523 
+6524   case Decl::Var:
+6525   case Decl::VarTemplateSpecialization:
+6526   case Decl::VarTemplatePartialSpecialization:
+6527   case Decl::Decomposition: {
+6528     // Ask the variable if it has a definition\&.
+6529     if (const VarDecl *Def = cast<VarDecl>(D)->getDefinition())
+6530       return MakeCXCursor(Def, TU);
+6531     return clang_getNullCursor();
+6532   }
+6533 
+6534   case Decl::FunctionTemplate: {
+6535     const FunctionDecl *Def = nullptr;
+6536     if (cast<FunctionTemplateDecl>(D)->getTemplatedDecl()->getBody(Def))
+6537       return MakeCXCursor(Def->getDescribedFunctionTemplate(), TU);
+6538     return clang_getNullCursor();
+6539   }
+6540 
+6541   case Decl::ClassTemplate: {
+6542     if (RecordDecl *Def =
+6543             cast<ClassTemplateDecl>(D)->getTemplatedDecl()->getDefinition())
+6544       return MakeCXCursor(cast<CXXRecordDecl>(Def)->getDescribedClassTemplate(),
+6545                           TU);
+6546     return clang_getNullCursor();
+6547   }
+6548 
+6549   case Decl::VarTemplate: {
+6550     if (VarDecl *Def =
+6551             cast<VarTemplateDecl>(D)->getTemplatedDecl()->getDefinition())
+6552       return MakeCXCursor(cast<VarDecl>(Def)->getDescribedVarTemplate(), TU);
+6553     return clang_getNullCursor();
+6554   }
+6555 
+6556   case Decl::Using:
+6557   case Decl::UsingEnum:
+6558     return MakeCursorOverloadedDeclRef(cast<BaseUsingDecl>(D), D->getLocation(),
+6559                                        TU);
+6560 
+6561   case Decl::UsingShadow:
+6562   case Decl::ConstructorUsingShadow:
+6563     return clang_getCursorDefinition(
+6564         MakeCXCursor(cast<UsingShadowDecl>(D)->getTargetDecl(), TU));
+6565 
+6566   case Decl::ObjCMethod: {
+6567     const ObjCMethodDecl *Method = cast<ObjCMethodDecl>(D);
+6568     if (Method->isThisDeclarationADefinition())
+6569       return C;
+6570 
+6571     // Dig out the method definition in the associated
+6572     // @implementation, if we have it\&.
+6573     // FIXME: The ASTs should make finding the definition easier\&.
+6574     if (const ObjCInterfaceDecl *Class =
+6575             dyn_cast<ObjCInterfaceDecl>(Method->getDeclContext()))
+6576       if (ObjCImplementationDecl *ClassImpl = Class->getImplementation())
+6577         if (ObjCMethodDecl *Def = ClassImpl->getMethod(
+6578                 Method->getSelector(), Method->isInstanceMethod()))
+6579           if (Def->isThisDeclarationADefinition())
+6580             return MakeCXCursor(Def, TU);
+6581 
+6582     return clang_getNullCursor();
+6583   }
+6584 
+6585   case Decl::ObjCCategory:
+6586     if (ObjCCategoryImplDecl *Impl =
+6587             cast<ObjCCategoryDecl>(D)->getImplementation())
+6588       return MakeCXCursor(Impl, TU);
+6589     return clang_getNullCursor();
+6590 
+6591   case Decl::ObjCProtocol:
+6592     if (const ObjCProtocolDecl *Def =
+6593             cast<ObjCProtocolDecl>(D)->getDefinition())
+6594       return MakeCXCursor(Def, TU);
+6595     return clang_getNullCursor();
+6596 
+6597   case Decl::ObjCInterface: {
+6598     // There are two notions of a "definition" for an Objective-C
+6599     // class: the interface and its implementation\&. When we resolved a
+6600     // reference to an Objective-C class, produce the @interface as
+6601     // the definition; when we were provided with the interface,
+6602     // produce the @implementation as the definition\&.
+6603     const ObjCInterfaceDecl *IFace = cast<ObjCInterfaceDecl>(D);
+6604     if (WasReference) {
+6605       if (const ObjCInterfaceDecl *Def = IFace->getDefinition())
+6606         return MakeCXCursor(Def, TU);
+6607     } else if (ObjCImplementationDecl *Impl = IFace->getImplementation())
+6608       return MakeCXCursor(Impl, TU);
+6609     return clang_getNullCursor();
+6610   }
+6611 
+6612   case Decl::ObjCProperty:
+6613     // FIXME: We don't really know where to find the
+6614     // ObjCPropertyImplDecls that implement this property\&.
+6615     return clang_getNullCursor();
+6616 
+6617   case Decl::ObjCCompatibleAlias:
+6618     if (const ObjCInterfaceDecl *Class =
+6619             cast<ObjCCompatibleAliasDecl>(D)->getClassInterface())
+6620       if (const ObjCInterfaceDecl *Def = Class->getDefinition())
+6621         return MakeCXCursor(Def, TU);
+6622 
+6623     return clang_getNullCursor();
+6624 
+6625   case Decl::Friend:
+6626     if (NamedDecl *Friend = cast<FriendDecl>(D)->getFriendDecl())
+6627       return clang_getCursorDefinition(MakeCXCursor(Friend, TU));
+6628     return clang_getNullCursor();
+6629 
+6630   case Decl::FriendTemplate:
+6631     if (NamedDecl *Friend = cast<FriendTemplateDecl>(D)->getFriendDecl())
+6632       return clang_getCursorDefinition(MakeCXCursor(Friend, TU));
+6633     return clang_getNullCursor();
+6634   }
+6635 
+6636   return clang_getNullCursor();
+6637 }
+.fi
+.PP
+References clang_getCursorReferenced(), clang_getNullCursor(), clang_isDeclaration(), clang_isExpression(), clang_isInvalid(), clang_isReference(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorTU(), clang::cxcursor::MakeCursorOverloadedDeclRef(), and clang::cxcursor::MakeCXCursor()\&.
+.PP
+Referenced by clang_isCursorDefinition()\&.
+.SS "CXString clang_getCursorDisplayName (CXCursor C)"
+
+.PP
+Definition at line 5120 of file CIndex\&.cpp\&.
+.PP
+.nf
+5120                                                 {
+5121   if (!clang_isDeclaration(C\&.kind))
+5122     return clang_getCursorSpelling(C);
+5123 
+5124   const Decl *D = getCursorDecl(C);
+5125   if (!D)
+5126     return cxstring::createEmpty();
+5127 
+5128   PrintingPolicy Policy = getCursorContext(C)\&.getPrintingPolicy();
+5129   if (const FunctionTemplateDecl *FunTmpl = dyn_cast<FunctionTemplateDecl>(D))
+5130     D = FunTmpl->getTemplatedDecl();
+5131 
+5132   if (const FunctionDecl *Function = dyn_cast<FunctionDecl>(D)) {
+5133     SmallString<64> Str;
+5134     llvm::raw_svector_ostream OS(Str);
+5135     OS << *Function;
+5136     if (Function->getPrimaryTemplate())
+5137       OS << "<>";
+5138     OS << "(";
+5139     for (unsigned I = 0, N = Function->getNumParams(); I != N; ++I) {
+5140       if (I)
+5141         OS << ", ";
+5142       OS << Function->getParamDecl(I)->getType()\&.getAsString(Policy);
+5143     }
+5144 
+5145     if (Function->isVariadic()) {
+5146       if (Function->getNumParams())
+5147         OS << ", ";
+5148       OS << "\&.\&.\&.";
+5149     }
+5150     OS << ")";
+5151     return cxstring::createDup(OS\&.str());
+5152   }
+5153 
+5154   if (const ClassTemplateDecl *ClassTemplate = dyn_cast<ClassTemplateDecl>(D)) {
+5155     SmallString<64> Str;
+5156     llvm::raw_svector_ostream OS(Str);
+5157     OS << *ClassTemplate;
+5158     OS << "<";
+5159     TemplateParameterList *Params = ClassTemplate->getTemplateParameters();
+5160     for (unsigned I = 0, N = Params->size(); I != N; ++I) {
+5161       if (I)
+5162         OS << ", ";
+5163 
+5164       NamedDecl *Param = Params->getParam(I);
+5165       if (Param->getIdentifier()) {
+5166         OS << Param->getIdentifier()->getName();
+5167         continue;
+5168       }
+5169 
+5170       // There is no parameter name, which makes this tricky\&. Try to come up
+5171       // with something useful that isn't too long\&.
+5172       if (TemplateTypeParmDecl *TTP = dyn_cast<TemplateTypeParmDecl>(Param))
+5173         if (const auto *TC = TTP->getTypeConstraint()) {
+5174           TC->getConceptNameInfo()\&.printName(OS, Policy);
+5175           if (TC->hasExplicitTemplateArgs())
+5176             OS << "<\&.\&.\&.>";
+5177         } else
+5178           OS << (TTP->wasDeclaredWithTypename() ? "typename" : "class");
+5179       else if (NonTypeTemplateParmDecl *NTTP =
+5180                    dyn_cast<NonTypeTemplateParmDecl>(Param))
+5181         OS << NTTP->getType()\&.getAsString(Policy);
+5182       else
+5183         OS << "template<\&.\&.\&.> class";
+5184     }
+5185 
+5186     OS << ">";
+5187     return cxstring::createDup(OS\&.str());
+5188   }
+5189 
+5190   if (const ClassTemplateSpecializationDecl *ClassSpec =
+5191           dyn_cast<ClassTemplateSpecializationDecl>(D)) {
+5192     // If the type was explicitly written, use that\&.
+5193     if (TypeSourceInfo *TSInfo = ClassSpec->getTypeAsWritten())
+5194       return cxstring::createDup(TSInfo->getType()\&.getAsString(Policy));
+5195 
+5196     SmallString<128> Str;
+5197     llvm::raw_svector_ostream OS(Str);
+5198     OS << *ClassSpec;
+5199     printTemplateArgumentList(
+5200         OS, ClassSpec->getTemplateArgs()\&.asArray(), Policy,
+5201         ClassSpec->getSpecializedTemplate()->getTemplateParameters());
+5202     return cxstring::createDup(OS\&.str());
+5203   }
+5204 
+5205   return clang_getCursorSpelling(C);
+5206 }
+.fi
+.PP
+References clang_getCursorSpelling(), clang_isDeclaration(), clang::cxstring::createDup(), clang::cxstring::createEmpty(), clang::cxcursor::getCursorContext(), and clang::cxcursor::getCursorDecl()\&.
+.PP
+Referenced by clang::cxindex::Logger::operator<<()\&.
+.SS "CXSourceRange clang_getCursorExtent (CXCursor C)"
+
+.PP
+Definition at line 6293 of file CIndex\&.cpp\&.
+.PP
+.nf
+6293                                                 {
+6294   SourceRange R = getRawCursorExtent(C);
+6295   if (R\&.isInvalid())
+6296     return clang_getNullRange();
+6297 
+6298   return cxloc::translateSourceRange(getCursorContext(C), R);
+6299 }
+.fi
+.PP
+Referenced by clang_getCursorReferenceNameRange()\&.
+.SS "CXCursorKind clang_getCursorKind (CXCursor C)"
+
+.PP
+Definition at line 5984 of file CIndex\&.cpp\&.
+.PP
+.nf
+5984 { return C\&.kind; }
+.fi
+.PP
+Referenced by clang_Cursor_Evaluate(), clang_Cursor_getNumTemplateArguments(), clang_getCursorCompletionString(), and clang_getCursorUSR()\&.
+.SS "CXString clang_getCursorKindSpelling (enum CXCursorKind Kind)"
+
+.PP
+Definition at line 5208 of file CIndex\&.cpp\&.
+.PP
+.nf
+5208                                                              {
+5209   switch (Kind) {
+5210   case CXCursor_FunctionDecl:
+5211     return cxstring::createRef("FunctionDecl");
+5212   case CXCursor_TypedefDecl:
+5213     return cxstring::createRef("TypedefDecl");
+5214   case CXCursor_EnumDecl:
+5215     return cxstring::createRef("EnumDecl");
+5216   case CXCursor_EnumConstantDecl:
+5217     return cxstring::createRef("EnumConstantDecl");
+5218   case CXCursor_StructDecl:
+5219     return cxstring::createRef("StructDecl");
+5220   case CXCursor_UnionDecl:
+5221     return cxstring::createRef("UnionDecl");
+5222   case CXCursor_ClassDecl:
+5223     return cxstring::createRef("ClassDecl");
+5224   case CXCursor_FieldDecl:
+5225     return cxstring::createRef("FieldDecl");
+5226   case CXCursor_VarDecl:
+5227     return cxstring::createRef("VarDecl");
+5228   case CXCursor_ParmDecl:
+5229     return cxstring::createRef("ParmDecl");
+5230   case CXCursor_ObjCInterfaceDecl:
+5231     return cxstring::createRef("ObjCInterfaceDecl");
+5232   case CXCursor_ObjCCategoryDecl:
+5233     return cxstring::createRef("ObjCCategoryDecl");
+5234   case CXCursor_ObjCProtocolDecl:
+5235     return cxstring::createRef("ObjCProtocolDecl");
+5236   case CXCursor_ObjCPropertyDecl:
+5237     return cxstring::createRef("ObjCPropertyDecl");
+5238   case CXCursor_ObjCIvarDecl:
+5239     return cxstring::createRef("ObjCIvarDecl");
+5240   case CXCursor_ObjCInstanceMethodDecl:
+5241     return cxstring::createRef("ObjCInstanceMethodDecl");
+5242   case CXCursor_ObjCClassMethodDecl:
+5243     return cxstring::createRef("ObjCClassMethodDecl");
+5244   case CXCursor_ObjCImplementationDecl:
+5245     return cxstring::createRef("ObjCImplementationDecl");
+5246   case CXCursor_ObjCCategoryImplDecl:
+5247     return cxstring::createRef("ObjCCategoryImplDecl");
+5248   case CXCursor_CXXMethod:
+5249     return cxstring::createRef("CXXMethod");
+5250   case CXCursor_UnexposedDecl:
+5251     return cxstring::createRef("UnexposedDecl");
+5252   case CXCursor_ObjCSuperClassRef:
+5253     return cxstring::createRef("ObjCSuperClassRef");
+5254   case CXCursor_ObjCProtocolRef:
+5255     return cxstring::createRef("ObjCProtocolRef");
+5256   case CXCursor_ObjCClassRef:
+5257     return cxstring::createRef("ObjCClassRef");
+5258   case CXCursor_TypeRef:
+5259     return cxstring::createRef("TypeRef");
+5260   case CXCursor_TemplateRef:
+5261     return cxstring::createRef("TemplateRef");
+5262   case CXCursor_NamespaceRef:
+5263     return cxstring::createRef("NamespaceRef");
+5264   case CXCursor_MemberRef:
+5265     return cxstring::createRef("MemberRef");
+5266   case CXCursor_LabelRef:
+5267     return cxstring::createRef("LabelRef");
+5268   case CXCursor_OverloadedDeclRef:
+5269     return cxstring::createRef("OverloadedDeclRef");
+5270   case CXCursor_VariableRef:
+5271     return cxstring::createRef("VariableRef");
+5272   case CXCursor_IntegerLiteral:
+5273     return cxstring::createRef("IntegerLiteral");
+5274   case CXCursor_FixedPointLiteral:
+5275     return cxstring::createRef("FixedPointLiteral");
+5276   case CXCursor_FloatingLiteral:
+5277     return cxstring::createRef("FloatingLiteral");
+5278   case CXCursor_ImaginaryLiteral:
+5279     return cxstring::createRef("ImaginaryLiteral");
+5280   case CXCursor_StringLiteral:
+5281     return cxstring::createRef("StringLiteral");
+5282   case CXCursor_CharacterLiteral:
+5283     return cxstring::createRef("CharacterLiteral");
+5284   case CXCursor_ParenExpr:
+5285     return cxstring::createRef("ParenExpr");
+5286   case CXCursor_UnaryOperator:
+5287     return cxstring::createRef("UnaryOperator");
+5288   case CXCursor_ArraySubscriptExpr:
+5289     return cxstring::createRef("ArraySubscriptExpr");
+5290   case CXCursor_OMPArraySectionExpr:
+5291     return cxstring::createRef("OMPArraySectionExpr");
+5292   case CXCursor_OMPArrayShapingExpr:
+5293     return cxstring::createRef("OMPArrayShapingExpr");
+5294   case CXCursor_OMPIteratorExpr:
+5295     return cxstring::createRef("OMPIteratorExpr");
+5296   case CXCursor_BinaryOperator:
+5297     return cxstring::createRef("BinaryOperator");
+5298   case CXCursor_CompoundAssignOperator:
+5299     return cxstring::createRef("CompoundAssignOperator");
+5300   case CXCursor_ConditionalOperator:
+5301     return cxstring::createRef("ConditionalOperator");
+5302   case CXCursor_CStyleCastExpr:
+5303     return cxstring::createRef("CStyleCastExpr");
+5304   case CXCursor_CompoundLiteralExpr:
+5305     return cxstring::createRef("CompoundLiteralExpr");
+5306   case CXCursor_InitListExpr:
+5307     return cxstring::createRef("InitListExpr");
+5308   case CXCursor_AddrLabelExpr:
+5309     return cxstring::createRef("AddrLabelExpr");
+5310   case CXCursor_StmtExpr:
+5311     return cxstring::createRef("StmtExpr");
+5312   case CXCursor_GenericSelectionExpr:
+5313     return cxstring::createRef("GenericSelectionExpr");
+5314   case CXCursor_GNUNullExpr:
+5315     return cxstring::createRef("GNUNullExpr");
+5316   case CXCursor_CXXStaticCastExpr:
+5317     return cxstring::createRef("CXXStaticCastExpr");
+5318   case CXCursor_CXXDynamicCastExpr:
+5319     return cxstring::createRef("CXXDynamicCastExpr");
+5320   case CXCursor_CXXReinterpretCastExpr:
+5321     return cxstring::createRef("CXXReinterpretCastExpr");
+5322   case CXCursor_CXXConstCastExpr:
+5323     return cxstring::createRef("CXXConstCastExpr");
+5324   case CXCursor_CXXFunctionalCastExpr:
+5325     return cxstring::createRef("CXXFunctionalCastExpr");
+5326   case CXCursor_CXXAddrspaceCastExpr:
+5327     return cxstring::createRef("CXXAddrspaceCastExpr");
+5328   case CXCursor_CXXTypeidExpr:
+5329     return cxstring::createRef("CXXTypeidExpr");
+5330   case CXCursor_CXXBoolLiteralExpr:
+5331     return cxstring::createRef("CXXBoolLiteralExpr");
+5332   case CXCursor_CXXNullPtrLiteralExpr:
+5333     return cxstring::createRef("CXXNullPtrLiteralExpr");
+5334   case CXCursor_CXXThisExpr:
+5335     return cxstring::createRef("CXXThisExpr");
+5336   case CXCursor_CXXThrowExpr:
+5337     return cxstring::createRef("CXXThrowExpr");
+5338   case CXCursor_CXXNewExpr:
+5339     return cxstring::createRef("CXXNewExpr");
+5340   case CXCursor_CXXDeleteExpr:
+5341     return cxstring::createRef("CXXDeleteExpr");
+5342   case CXCursor_UnaryExpr:
+5343     return cxstring::createRef("UnaryExpr");
+5344   case CXCursor_ObjCStringLiteral:
+5345     return cxstring::createRef("ObjCStringLiteral");
+5346   case CXCursor_ObjCBoolLiteralExpr:
+5347     return cxstring::createRef("ObjCBoolLiteralExpr");
+5348   case CXCursor_ObjCAvailabilityCheckExpr:
+5349     return cxstring::createRef("ObjCAvailabilityCheckExpr");
+5350   case CXCursor_ObjCSelfExpr:
+5351     return cxstring::createRef("ObjCSelfExpr");
+5352   case CXCursor_ObjCEncodeExpr:
+5353     return cxstring::createRef("ObjCEncodeExpr");
+5354   case CXCursor_ObjCSelectorExpr:
+5355     return cxstring::createRef("ObjCSelectorExpr");
+5356   case CXCursor_ObjCProtocolExpr:
+5357     return cxstring::createRef("ObjCProtocolExpr");
+5358   case CXCursor_ObjCBridgedCastExpr:
+5359     return cxstring::createRef("ObjCBridgedCastExpr");
+5360   case CXCursor_BlockExpr:
+5361     return cxstring::createRef("BlockExpr");
+5362   case CXCursor_PackExpansionExpr:
+5363     return cxstring::createRef("PackExpansionExpr");
+5364   case CXCursor_SizeOfPackExpr:
+5365     return cxstring::createRef("SizeOfPackExpr");
+5366   case CXCursor_LambdaExpr:
+5367     return cxstring::createRef("LambdaExpr");
+5368   case CXCursor_UnexposedExpr:
+5369     return cxstring::createRef("UnexposedExpr");
+5370   case CXCursor_DeclRefExpr:
+5371     return cxstring::createRef("DeclRefExpr");
+5372   case CXCursor_MemberRefExpr:
+5373     return cxstring::createRef("MemberRefExpr");
+5374   case CXCursor_CallExpr:
+5375     return cxstring::createRef("CallExpr");
+5376   case CXCursor_ObjCMessageExpr:
+5377     return cxstring::createRef("ObjCMessageExpr");
+5378   case CXCursor_BuiltinBitCastExpr:
+5379     return cxstring::createRef("BuiltinBitCastExpr");
+5380   case CXCursor_UnexposedStmt:
+5381     return cxstring::createRef("UnexposedStmt");
+5382   case CXCursor_DeclStmt:
+5383     return cxstring::createRef("DeclStmt");
+5384   case CXCursor_LabelStmt:
+5385     return cxstring::createRef("LabelStmt");
+5386   case CXCursor_CompoundStmt:
+5387     return cxstring::createRef("CompoundStmt");
+5388   case CXCursor_CaseStmt:
+5389     return cxstring::createRef("CaseStmt");
+5390   case CXCursor_DefaultStmt:
+5391     return cxstring::createRef("DefaultStmt");
+5392   case CXCursor_IfStmt:
+5393     return cxstring::createRef("IfStmt");
+5394   case CXCursor_SwitchStmt:
+5395     return cxstring::createRef("SwitchStmt");
+5396   case CXCursor_WhileStmt:
+5397     return cxstring::createRef("WhileStmt");
+5398   case CXCursor_DoStmt:
+5399     return cxstring::createRef("DoStmt");
+5400   case CXCursor_ForStmt:
+5401     return cxstring::createRef("ForStmt");
+5402   case CXCursor_GotoStmt:
+5403     return cxstring::createRef("GotoStmt");
+5404   case CXCursor_IndirectGotoStmt:
+5405     return cxstring::createRef("IndirectGotoStmt");
+5406   case CXCursor_ContinueStmt:
+5407     return cxstring::createRef("ContinueStmt");
+5408   case CXCursor_BreakStmt:
+5409     return cxstring::createRef("BreakStmt");
+5410   case CXCursor_ReturnStmt:
+5411     return cxstring::createRef("ReturnStmt");
+5412   case CXCursor_GCCAsmStmt:
+5413     return cxstring::createRef("GCCAsmStmt");
+5414   case CXCursor_MSAsmStmt:
+5415     return cxstring::createRef("MSAsmStmt");
+5416   case CXCursor_ObjCAtTryStmt:
+5417     return cxstring::createRef("ObjCAtTryStmt");
+5418   case CXCursor_ObjCAtCatchStmt:
+5419     return cxstring::createRef("ObjCAtCatchStmt");
+5420   case CXCursor_ObjCAtFinallyStmt:
+5421     return cxstring::createRef("ObjCAtFinallyStmt");
+5422   case CXCursor_ObjCAtThrowStmt:
+5423     return cxstring::createRef("ObjCAtThrowStmt");
+5424   case CXCursor_ObjCAtSynchronizedStmt:
+5425     return cxstring::createRef("ObjCAtSynchronizedStmt");
+5426   case CXCursor_ObjCAutoreleasePoolStmt:
+5427     return cxstring::createRef("ObjCAutoreleasePoolStmt");
+5428   case CXCursor_ObjCForCollectionStmt:
+5429     return cxstring::createRef("ObjCForCollectionStmt");
+5430   case CXCursor_CXXCatchStmt:
+5431     return cxstring::createRef("CXXCatchStmt");
+5432   case CXCursor_CXXTryStmt:
+5433     return cxstring::createRef("CXXTryStmt");
+5434   case CXCursor_CXXForRangeStmt:
+5435     return cxstring::createRef("CXXForRangeStmt");
+5436   case CXCursor_SEHTryStmt:
+5437     return cxstring::createRef("SEHTryStmt");
+5438   case CXCursor_SEHExceptStmt:
+5439     return cxstring::createRef("SEHExceptStmt");
+5440   case CXCursor_SEHFinallyStmt:
+5441     return cxstring::createRef("SEHFinallyStmt");
+5442   case CXCursor_SEHLeaveStmt:
+5443     return cxstring::createRef("SEHLeaveStmt");
+5444   case CXCursor_NullStmt:
+5445     return cxstring::createRef("NullStmt");
+5446   case CXCursor_InvalidFile:
+5447     return cxstring::createRef("InvalidFile");
+5448   case CXCursor_InvalidCode:
+5449     return cxstring::createRef("InvalidCode");
+5450   case CXCursor_NoDeclFound:
+5451     return cxstring::createRef("NoDeclFound");
+5452   case CXCursor_NotImplemented:
+5453     return cxstring::createRef("NotImplemented");
+5454   case CXCursor_TranslationUnit:
+5455     return cxstring::createRef("TranslationUnit");
+5456   case CXCursor_UnexposedAttr:
+5457     return cxstring::createRef("UnexposedAttr");
+5458   case CXCursor_IBActionAttr:
+5459     return cxstring::createRef("attribute(ibaction)");
+5460   case CXCursor_IBOutletAttr:
+5461     return cxstring::createRef("attribute(iboutlet)");
+5462   case CXCursor_IBOutletCollectionAttr:
+5463     return cxstring::createRef("attribute(iboutletcollection)");
+5464   case CXCursor_CXXFinalAttr:
+5465     return cxstring::createRef("attribute(final)");
+5466   case CXCursor_CXXOverrideAttr:
+5467     return cxstring::createRef("attribute(override)");
+5468   case CXCursor_AnnotateAttr:
+5469     return cxstring::createRef("attribute(annotate)");
+5470   case CXCursor_AsmLabelAttr:
+5471     return cxstring::createRef("asm label");
+5472   case CXCursor_PackedAttr:
+5473     return cxstring::createRef("attribute(packed)");
+5474   case CXCursor_PureAttr:
+5475     return cxstring::createRef("attribute(pure)");
+5476   case CXCursor_ConstAttr:
+5477     return cxstring::createRef("attribute(const)");
+5478   case CXCursor_NoDuplicateAttr:
+5479     return cxstring::createRef("attribute(noduplicate)");
+5480   case CXCursor_CUDAConstantAttr:
+5481     return cxstring::createRef("attribute(constant)");
+5482   case CXCursor_CUDADeviceAttr:
+5483     return cxstring::createRef("attribute(device)");
+5484   case CXCursor_CUDAGlobalAttr:
+5485     return cxstring::createRef("attribute(global)");
+5486   case CXCursor_CUDAHostAttr:
+5487     return cxstring::createRef("attribute(host)");
+5488   case CXCursor_CUDASharedAttr:
+5489     return cxstring::createRef("attribute(shared)");
+5490   case CXCursor_VisibilityAttr:
+5491     return cxstring::createRef("attribute(visibility)");
+5492   case CXCursor_DLLExport:
+5493     return cxstring::createRef("attribute(dllexport)");
+5494   case CXCursor_DLLImport:
+5495     return cxstring::createRef("attribute(dllimport)");
+5496   case CXCursor_NSReturnsRetained:
+5497     return cxstring::createRef("attribute(ns_returns_retained)");
+5498   case CXCursor_NSReturnsNotRetained:
+5499     return cxstring::createRef("attribute(ns_returns_not_retained)");
+5500   case CXCursor_NSReturnsAutoreleased:
+5501     return cxstring::createRef("attribute(ns_returns_autoreleased)");
+5502   case CXCursor_NSConsumesSelf:
+5503     return cxstring::createRef("attribute(ns_consumes_self)");
+5504   case CXCursor_NSConsumed:
+5505     return cxstring::createRef("attribute(ns_consumed)");
+5506   case CXCursor_ObjCException:
+5507     return cxstring::createRef("attribute(objc_exception)");
+5508   case CXCursor_ObjCNSObject:
+5509     return cxstring::createRef("attribute(NSObject)");
+5510   case CXCursor_ObjCIndependentClass:
+5511     return cxstring::createRef("attribute(objc_independent_class)");
+5512   case CXCursor_ObjCPreciseLifetime:
+5513     return cxstring::createRef("attribute(objc_precise_lifetime)");
+5514   case CXCursor_ObjCReturnsInnerPointer:
+5515     return cxstring::createRef("attribute(objc_returns_inner_pointer)");
+5516   case CXCursor_ObjCRequiresSuper:
+5517     return cxstring::createRef("attribute(objc_requires_super)");
+5518   case CXCursor_ObjCRootClass:
+5519     return cxstring::createRef("attribute(objc_root_class)");
+5520   case CXCursor_ObjCSubclassingRestricted:
+5521     return cxstring::createRef("attribute(objc_subclassing_restricted)");
+5522   case CXCursor_ObjCExplicitProtocolImpl:
+5523     return cxstring::createRef(
+5524         "attribute(objc_protocol_requires_explicit_implementation)");
+5525   case CXCursor_ObjCDesignatedInitializer:
+5526     return cxstring::createRef("attribute(objc_designated_initializer)");
+5527   case CXCursor_ObjCRuntimeVisible:
+5528     return cxstring::createRef("attribute(objc_runtime_visible)");
+5529   case CXCursor_ObjCBoxable:
+5530     return cxstring::createRef("attribute(objc_boxable)");
+5531   case CXCursor_FlagEnum:
+5532     return cxstring::createRef("attribute(flag_enum)");
+5533   case CXCursor_PreprocessingDirective:
+5534     return cxstring::createRef("preprocessing directive");
+5535   case CXCursor_MacroDefinition:
+5536     return cxstring::createRef("macro definition");
+5537   case CXCursor_MacroExpansion:
+5538     return cxstring::createRef("macro expansion");
+5539   case CXCursor_InclusionDirective:
+5540     return cxstring::createRef("inclusion directive");
+5541   case CXCursor_Namespace:
+5542     return cxstring::createRef("Namespace");
+5543   case CXCursor_LinkageSpec:
+5544     return cxstring::createRef("LinkageSpec");
+5545   case CXCursor_CXXBaseSpecifier:
+5546     return cxstring::createRef("C++ base class specifier");
+5547   case CXCursor_Constructor:
+5548     return cxstring::createRef("CXXConstructor");
+5549   case CXCursor_Destructor:
+5550     return cxstring::createRef("CXXDestructor");
+5551   case CXCursor_ConversionFunction:
+5552     return cxstring::createRef("CXXConversion");
+5553   case CXCursor_TemplateTypeParameter:
+5554     return cxstring::createRef("TemplateTypeParameter");
+5555   case CXCursor_NonTypeTemplateParameter:
+5556     return cxstring::createRef("NonTypeTemplateParameter");
+5557   case CXCursor_TemplateTemplateParameter:
+5558     return cxstring::createRef("TemplateTemplateParameter");
+5559   case CXCursor_FunctionTemplate:
+5560     return cxstring::createRef("FunctionTemplate");
+5561   case CXCursor_ClassTemplate:
+5562     return cxstring::createRef("ClassTemplate");
+5563   case CXCursor_ClassTemplatePartialSpecialization:
+5564     return cxstring::createRef("ClassTemplatePartialSpecialization");
+5565   case CXCursor_NamespaceAlias:
+5566     return cxstring::createRef("NamespaceAlias");
+5567   case CXCursor_UsingDirective:
+5568     return cxstring::createRef("UsingDirective");
+5569   case CXCursor_UsingDeclaration:
+5570     return cxstring::createRef("UsingDeclaration");
+5571   case CXCursor_TypeAliasDecl:
+5572     return cxstring::createRef("TypeAliasDecl");
+5573   case CXCursor_ObjCSynthesizeDecl:
+5574     return cxstring::createRef("ObjCSynthesizeDecl");
+5575   case CXCursor_ObjCDynamicDecl:
+5576     return cxstring::createRef("ObjCDynamicDecl");
+5577   case CXCursor_CXXAccessSpecifier:
+5578     return cxstring::createRef("CXXAccessSpecifier");
+5579   case CXCursor_ModuleImportDecl:
+5580     return cxstring::createRef("ModuleImport");
+5581   case CXCursor_OMPCanonicalLoop:
+5582     return cxstring::createRef("OMPCanonicalLoop");
+5583   case CXCursor_OMPParallelDirective:
+5584     return cxstring::createRef("OMPParallelDirective");
+5585   case CXCursor_OMPSimdDirective:
+5586     return cxstring::createRef("OMPSimdDirective");
+5587   case CXCursor_OMPTileDirective:
+5588     return cxstring::createRef("OMPTileDirective");
+5589   case CXCursor_OMPUnrollDirective:
+5590     return cxstring::createRef("OMPUnrollDirective");
+5591   case CXCursor_OMPForDirective:
+5592     return cxstring::createRef("OMPForDirective");
+5593   case CXCursor_OMPForSimdDirective:
+5594     return cxstring::createRef("OMPForSimdDirective");
+5595   case CXCursor_OMPSectionsDirective:
+5596     return cxstring::createRef("OMPSectionsDirective");
+5597   case CXCursor_OMPSectionDirective:
+5598     return cxstring::createRef("OMPSectionDirective");
+5599   case CXCursor_OMPSingleDirective:
+5600     return cxstring::createRef("OMPSingleDirective");
+5601   case CXCursor_OMPMasterDirective:
+5602     return cxstring::createRef("OMPMasterDirective");
+5603   case CXCursor_OMPCriticalDirective:
+5604     return cxstring::createRef("OMPCriticalDirective");
+5605   case CXCursor_OMPParallelForDirective:
+5606     return cxstring::createRef("OMPParallelForDirective");
+5607   case CXCursor_OMPParallelForSimdDirective:
+5608     return cxstring::createRef("OMPParallelForSimdDirective");
+5609   case CXCursor_OMPParallelMasterDirective:
+5610     return cxstring::createRef("OMPParallelMasterDirective");
+5611   case CXCursor_OMPParallelSectionsDirective:
+5612     return cxstring::createRef("OMPParallelSectionsDirective");
+5613   case CXCursor_OMPTaskDirective:
+5614     return cxstring::createRef("OMPTaskDirective");
+5615   case CXCursor_OMPTaskyieldDirective:
+5616     return cxstring::createRef("OMPTaskyieldDirective");
+5617   case CXCursor_OMPBarrierDirective:
+5618     return cxstring::createRef("OMPBarrierDirective");
+5619   case CXCursor_OMPTaskwaitDirective:
+5620     return cxstring::createRef("OMPTaskwaitDirective");
+5621   case CXCursor_OMPTaskgroupDirective:
+5622     return cxstring::createRef("OMPTaskgroupDirective");
+5623   case CXCursor_OMPFlushDirective:
+5624     return cxstring::createRef("OMPFlushDirective");
+5625   case CXCursor_OMPDepobjDirective:
+5626     return cxstring::createRef("OMPDepobjDirective");
+5627   case CXCursor_OMPScanDirective:
+5628     return cxstring::createRef("OMPScanDirective");
+5629   case CXCursor_OMPOrderedDirective:
+5630     return cxstring::createRef("OMPOrderedDirective");
+5631   case CXCursor_OMPAtomicDirective:
+5632     return cxstring::createRef("OMPAtomicDirective");
+5633   case CXCursor_OMPTargetDirective:
+5634     return cxstring::createRef("OMPTargetDirective");
+5635   case CXCursor_OMPTargetDataDirective:
+5636     return cxstring::createRef("OMPTargetDataDirective");
+5637   case CXCursor_OMPTargetEnterDataDirective:
+5638     return cxstring::createRef("OMPTargetEnterDataDirective");
+5639   case CXCursor_OMPTargetExitDataDirective:
+5640     return cxstring::createRef("OMPTargetExitDataDirective");
+5641   case CXCursor_OMPTargetParallelDirective:
+5642     return cxstring::createRef("OMPTargetParallelDirective");
+5643   case CXCursor_OMPTargetParallelForDirective:
+5644     return cxstring::createRef("OMPTargetParallelForDirective");
+5645   case CXCursor_OMPTargetUpdateDirective:
+5646     return cxstring::createRef("OMPTargetUpdateDirective");
+5647   case CXCursor_OMPTeamsDirective:
+5648     return cxstring::createRef("OMPTeamsDirective");
+5649   case CXCursor_OMPCancellationPointDirective:
+5650     return cxstring::createRef("OMPCancellationPointDirective");
+5651   case CXCursor_OMPCancelDirective:
+5652     return cxstring::createRef("OMPCancelDirective");
+5653   case CXCursor_OMPTaskLoopDirective:
+5654     return cxstring::createRef("OMPTaskLoopDirective");
+5655   case CXCursor_OMPTaskLoopSimdDirective:
+5656     return cxstring::createRef("OMPTaskLoopSimdDirective");
+5657   case CXCursor_OMPMasterTaskLoopDirective:
+5658     return cxstring::createRef("OMPMasterTaskLoopDirective");
+5659   case CXCursor_OMPMasterTaskLoopSimdDirective:
+5660     return cxstring::createRef("OMPMasterTaskLoopSimdDirective");
+5661   case CXCursor_OMPParallelMasterTaskLoopDirective:
+5662     return cxstring::createRef("OMPParallelMasterTaskLoopDirective");
+5663   case CXCursor_OMPParallelMasterTaskLoopSimdDirective:
+5664     return cxstring::createRef("OMPParallelMasterTaskLoopSimdDirective");
+5665   case CXCursor_OMPDistributeDirective:
+5666     return cxstring::createRef("OMPDistributeDirective");
+5667   case CXCursor_OMPDistributeParallelForDirective:
+5668     return cxstring::createRef("OMPDistributeParallelForDirective");
+5669   case CXCursor_OMPDistributeParallelForSimdDirective:
+5670     return cxstring::createRef("OMPDistributeParallelForSimdDirective");
+5671   case CXCursor_OMPDistributeSimdDirective:
+5672     return cxstring::createRef("OMPDistributeSimdDirective");
+5673   case CXCursor_OMPTargetParallelForSimdDirective:
+5674     return cxstring::createRef("OMPTargetParallelForSimdDirective");
+5675   case CXCursor_OMPTargetSimdDirective:
+5676     return cxstring::createRef("OMPTargetSimdDirective");
+5677   case CXCursor_OMPTeamsDistributeDirective:
+5678     return cxstring::createRef("OMPTeamsDistributeDirective");
+5679   case CXCursor_OMPTeamsDistributeSimdDirective:
+5680     return cxstring::createRef("OMPTeamsDistributeSimdDirective");
+5681   case CXCursor_OMPTeamsDistributeParallelForSimdDirective:
+5682     return cxstring::createRef("OMPTeamsDistributeParallelForSimdDirective");
+5683   case CXCursor_OMPTeamsDistributeParallelForDirective:
+5684     return cxstring::createRef("OMPTeamsDistributeParallelForDirective");
+5685   case CXCursor_OMPTargetTeamsDirective:
+5686     return cxstring::createRef("OMPTargetTeamsDirective");
+5687   case CXCursor_OMPTargetTeamsDistributeDirective:
+5688     return cxstring::createRef("OMPTargetTeamsDistributeDirective");
+5689   case CXCursor_OMPTargetTeamsDistributeParallelForDirective:
+5690     return cxstring::createRef("OMPTargetTeamsDistributeParallelForDirective");
+5691   case CXCursor_OMPTargetTeamsDistributeParallelForSimdDirective:
+5692     return cxstring::createRef(
+5693         "OMPTargetTeamsDistributeParallelForSimdDirective");
+5694   case CXCursor_OMPTargetTeamsDistributeSimdDirective:
+5695     return cxstring::createRef("OMPTargetTeamsDistributeSimdDirective");
+5696   case CXCursor_OMPInteropDirective:
+5697     return cxstring::createRef("OMPInteropDirective");
+5698   case CXCursor_OMPDispatchDirective:
+5699     return cxstring::createRef("OMPDispatchDirective");
+5700   case CXCursor_OMPMaskedDirective:
+5701     return cxstring::createRef("OMPMaskedDirective");
+5702   case CXCursor_OverloadCandidate:
+5703     return cxstring::createRef("OverloadCandidate");
+5704   case CXCursor_TypeAliasTemplateDecl:
+5705     return cxstring::createRef("TypeAliasTemplateDecl");
+5706   case CXCursor_StaticAssert:
+5707     return cxstring::createRef("StaticAssert");
+5708   case CXCursor_FriendDecl:
+5709     return cxstring::createRef("FriendDecl");
+5710   case CXCursor_ConvergentAttr:
+5711     return cxstring::createRef("attribute(convergent)");
+5712   case CXCursor_WarnUnusedAttr:
+5713     return cxstring::createRef("attribute(warn_unused)");
+5714   case CXCursor_WarnUnusedResultAttr:
+5715     return cxstring::createRef("attribute(warn_unused_result)");
+5716   case CXCursor_AlignedAttr:
+5717     return cxstring::createRef("attribute(aligned)");
+5718   }
+5719 
+5720   llvm_unreachable("Unhandled CXCursorKind");
+5721 }
+.fi
+.PP
+References clang::cxstring::createRef()\&.
+.SS "CXLanguageKind clang_getCursorLanguage (CXCursor cursor)"
+
+.PP
+Definition at line 8147 of file CIndex\&.cpp\&.
+.PP
+.nf
+8147                                                         {
+8148   if (clang_isDeclaration(cursor\&.kind))
+8149     return getDeclLanguage(cxcursor::getCursorDecl(cursor));
+8150 
+8151   return CXLanguage_Invalid;
+8152 }
+.fi
+.PP
+References clang_isDeclaration()\&.
+.SS "CXCursor clang_getCursorLexicalParent (CXCursor cursor)"
+
+.PP
+Definition at line 8239 of file CIndex\&.cpp\&.
+.PP
+.nf
+8239                                                        {
+8240   if (clang_isDeclaration(cursor\&.kind)) {
+8241     if (const Decl *D = getCursorDecl(cursor)) {
+8242       const DeclContext *DC = D->getLexicalDeclContext();
+8243       if (!DC)
+8244         return clang_getNullCursor();
+8245 
+8246       return MakeCXCursor(maybeGetTemplateCursor(cast<Decl>(DC)),
+8247                           getCursorTU(cursor));
+8248     }
+8249   }
+8250 
+8251   // FIXME: Note that we can't easily compute the lexical context of a
+8252   // statement or expression, so we return nothing\&.
+8253   return clang_getNullCursor();
+8254 }
+.fi
+.PP
+References clang_getNullCursor(), clang_isDeclaration(), clang::cxcursor::getCursorDecl(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "CXLinkageKind clang_getCursorLinkage (CXCursor cursor)"
+
+.PP
+Definition at line 7857 of file CIndex\&.cpp\&.
+.PP
+.nf
+7857                                                       {
+7858   if (!clang_isDeclaration(cursor\&.kind))
+7859     return CXLinkage_Invalid;
+7860 
+7861   const Decl *D = cxcursor::getCursorDecl(cursor);
+7862   if (const NamedDecl *ND = dyn_cast_or_null<NamedDecl>(D))
+7863     switch (ND->getLinkageInternal()) {
+7864     case NoLinkage:
+7865     case VisibleNoLinkage:
+7866       return CXLinkage_NoLinkage;
+7867     case ModuleInternalLinkage:
+7868     case InternalLinkage:
+7869       return CXLinkage_Internal;
+7870     case UniqueExternalLinkage:
+7871       return CXLinkage_UniqueExternal;
+7872     case ModuleLinkage:
+7873     case ExternalLinkage:
+7874       return CXLinkage_External;
+7875     };
+7876 
+7877   return CXLinkage_Invalid;
+7878 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXSourceLocation clang_getCursorLocation (CXCursor C)"
+
+.PP
+Definition at line 5986 of file CIndex\&.cpp\&.
+.PP
+.nf
+5986                                                      {
+5987   if (clang_isReference(C\&.kind)) {
+5988     switch (C\&.kind) {
+5989     case CXCursor_ObjCSuperClassRef: {
+5990       std::pair<const ObjCInterfaceDecl *, SourceLocation> P =
+5991           getCursorObjCSuperClassRef(C);
+5992       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+5993     }
+5994 
+5995     case CXCursor_ObjCProtocolRef: {
+5996       std::pair<const ObjCProtocolDecl *, SourceLocation> P =
+5997           getCursorObjCProtocolRef(C);
+5998       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+5999     }
+6000 
+6001     case CXCursor_ObjCClassRef: {
+6002       std::pair<const ObjCInterfaceDecl *, SourceLocation> P =
+6003           getCursorObjCClassRef(C);
+6004       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+6005     }
+6006 
+6007     case CXCursor_TypeRef: {
+6008       std::pair<const TypeDecl *, SourceLocation> P = getCursorTypeRef(C);
+6009       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+6010     }
+6011 
+6012     case CXCursor_TemplateRef: {
+6013       std::pair<const TemplateDecl *, SourceLocation> P =
+6014           getCursorTemplateRef(C);
+6015       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+6016     }
+6017 
+6018     case CXCursor_NamespaceRef: {
+6019       std::pair<const NamedDecl *, SourceLocation> P = getCursorNamespaceRef(C);
+6020       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+6021     }
+6022 
+6023     case CXCursor_MemberRef: {
+6024       std::pair<const FieldDecl *, SourceLocation> P = getCursorMemberRef(C);
+6025       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+6026     }
+6027 
+6028     case CXCursor_VariableRef: {
+6029       std::pair<const VarDecl *, SourceLocation> P = getCursorVariableRef(C);
+6030       return cxloc::translateSourceLocation(P\&.first->getASTContext(), P\&.second);
+6031     }
+6032 
+6033     case CXCursor_CXXBaseSpecifier: {
+6034       const CXXBaseSpecifier *BaseSpec = getCursorCXXBaseSpecifier(C);
+6035       if (!BaseSpec)
+6036         return clang_getNullLocation();
+6037 
+6038       if (TypeSourceInfo *TSInfo = BaseSpec->getTypeSourceInfo())
+6039         return cxloc::translateSourceLocation(
+6040             getCursorContext(C), TSInfo->getTypeLoc()\&.getBeginLoc());
+6041 
+6042       return cxloc::translateSourceLocation(getCursorContext(C),
+6043                                             BaseSpec->getBeginLoc());
+6044     }
+6045 
+6046     case CXCursor_LabelRef: {
+6047       std::pair<const LabelStmt *, SourceLocation> P = getCursorLabelRef(C);
+6048       return cxloc::translateSourceLocation(getCursorContext(C), P\&.second);
+6049     }
+6050 
+6051     case CXCursor_OverloadedDeclRef:
+6052       return cxloc::translateSourceLocation(
+6053           getCursorContext(C), getCursorOverloadedDeclRef(C)\&.second);
+6054 
+6055     default:
+6056       // FIXME: Need a way to enumerate all non-reference cases\&.
+6057       llvm_unreachable("Missed a reference kind");
+6058     }
+6059   }
+6060 
+6061   if (clang_isExpression(C\&.kind))
+6062     return cxloc::translateSourceLocation(
+6063         getCursorContext(C), getLocationFromExpr(getCursorExpr(C)));
+6064 
+6065   if (clang_isStatement(C\&.kind))
+6066     return cxloc::translateSourceLocation(getCursorContext(C),
+6067                                           getCursorStmt(C)->getBeginLoc());
+6068 
+6069   if (C\&.kind == CXCursor_PreprocessingDirective) {
+6070     SourceLocation L = cxcursor::getCursorPreprocessingDirective(C)\&.getBegin();
+6071     return cxloc::translateSourceLocation(getCursorContext(C), L);
+6072   }
+6073 
+6074   if (C\&.kind == CXCursor_MacroExpansion) {
+6075     SourceLocation L =
+6076         cxcursor::getCursorMacroExpansion(C)\&.getSourceRange()\&.getBegin();
+6077     return cxloc::translateSourceLocation(getCursorContext(C), L);
+6078   }
+6079 
+6080   if (C\&.kind == CXCursor_MacroDefinition) {
+6081     SourceLocation L = cxcursor::getCursorMacroDefinition(C)->getLocation();
+6082     return cxloc::translateSourceLocation(getCursorContext(C), L);
+6083   }
+6084 
+6085   if (C\&.kind == CXCursor_InclusionDirective) {
+6086     SourceLocation L =
+6087         cxcursor::getCursorInclusionDirective(C)->getSourceRange()\&.getBegin();
+6088     return cxloc::translateSourceLocation(getCursorContext(C), L);
+6089   }
+6090 
+6091   if (clang_isAttribute(C\&.kind)) {
+6092     SourceLocation L = cxcursor::getCursorAttr(C)->getLocation();
+6093     return cxloc::translateSourceLocation(getCursorContext(C), L);
+6094   }
+6095 
+6096   if (!clang_isDeclaration(C\&.kind))
+6097     return clang_getNullLocation();
+6098 
+6099   const Decl *D = getCursorDecl(C);
+6100   if (!D)
+6101     return clang_getNullLocation();
+6102 
+6103   SourceLocation Loc = D->getLocation();
+6104   // FIXME: Multiple variables declared in a single declaration
+6105   // currently lack the information needed to correctly determine their
+6106   // ranges when accounting for the type-specifier\&.  We use context
+6107   // stored in the CXCursor to determine if the VarDecl is in a DeclGroup,
+6108   // and if so, whether it is the first decl\&.
+6109   if (const VarDecl *VD = dyn_cast<VarDecl>(D)) {
+6110     if (!cxcursor::isFirstInDeclGroup(C))
+6111       Loc = VD->getLocation();
+6112   }
+6113 
+6114   // For ObjC methods, give the start location of the method name\&.
+6115   if (const ObjCMethodDecl *MD = dyn_cast<ObjCMethodDecl>(D))
+6116     Loc = MD->getSelectorStartLoc();
+6117 
+6118   return cxloc::translateSourceLocation(getCursorContext(C), Loc);
+6119 }
+.fi
+.PP
+References clang_getNullLocation(), clang_isExpression(), clang_isReference(), clang::cxcursor::getCursorContext(), clang::cxcursor::getCursorCXXBaseSpecifier(), clang::cxcursor::getCursorLabelRef(), clang::cxcursor::getCursorMemberRef(), clang::cxcursor::getCursorNamespaceRef(), clang::cxcursor::getCursorObjCClassRef(), clang::cxcursor::getCursorObjCProtocolRef(), clang::cxcursor::getCursorObjCSuperClassRef(), clang::cxcursor::getCursorOverloadedDeclRef(), clang::cxcursor::getCursorTemplateRef(), clang::cxcursor::getCursorTypeRef(), and clang::cxcursor::getCursorVariableRef()\&.
+.PP
+Referenced by clang_Cursor_getSpellingNameRange(), and clang::cxindex::Logger::operator<<()\&.
+.SS "int clang_getCursorPlatformAvailability (CXCursor cursor, int * always_deprecated, CXString * deprecated_message, int * always_unavailable, CXString * unavailable_message, CXPlatformAvailability * availability, int availability_size)"
+
+.PP
+Definition at line 8097 of file CIndex\&.cpp\&.
+.PP
+.nf
+8102                                                                {
+8103   if (always_deprecated)
+8104     *always_deprecated = 0;
+8105   if (deprecated_message)
+8106     *deprecated_message = cxstring::createEmpty();
+8107   if (always_unavailable)
+8108     *always_unavailable = 0;
+8109   if (unavailable_message)
+8110     *unavailable_message = cxstring::createEmpty();
+8111 
+8112   if (!clang_isDeclaration(cursor\&.kind))
+8113     return 0;
+8114 
+8115   const Decl *D = cxcursor::getCursorDecl(cursor);
+8116   if (!D)
+8117     return 0;
+8118 
+8119   SmallVector<AvailabilityAttr *, 8> AvailabilityAttrs;
+8120   getCursorPlatformAvailabilityForDecl(D, always_deprecated, deprecated_message,
+8121                                        always_unavailable, unavailable_message,
+8122                                        AvailabilityAttrs);
+8123   for (const auto &Avail :
+8124        llvm::enumerate(llvm::makeArrayRef(AvailabilityAttrs)
+8125                            \&.take_front(availability_size))) {
+8126     availability[Avail\&.index()]\&.Platform =
+8127         cxstring::createDup(Avail\&.value()->getPlatform()->getName());
+8128     availability[Avail\&.index()]\&.Introduced =
+8129         convertVersion(Avail\&.value()->getIntroduced());
+8130     availability[Avail\&.index()]\&.Deprecated =
+8131         convertVersion(Avail\&.value()->getDeprecated());
+8132     availability[Avail\&.index()]\&.Obsoleted =
+8133         convertVersion(Avail\&.value()->getObsoleted());
+8134     availability[Avail\&.index()]\&.Unavailable = Avail\&.value()->getUnavailable();
+8135     availability[Avail\&.index()]\&.Message =
+8136         cxstring::createDup(Avail\&.value()->getMessage());
+8137   }
+8138 
+8139   return AvailabilityAttrs\&.size();
+8140 }
+.fi
+.PP
+References clang_isDeclaration(), clang::cxstring::createEmpty(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXString clang_getCursorPrettyPrinted (CXCursor C, CXPrintingPolicy cxPolicy)"
+
+.PP
+Definition at line 5099 of file CIndex\&.cpp\&.
+.PP
+.nf
+5099                                                                              {
+5100   if (clang_Cursor_isNull(C))
+5101     return cxstring::createEmpty();
+5102 
+5103   if (clang_isDeclaration(C\&.kind)) {
+5104     const Decl *D = getCursorDecl(C);
+5105     if (!D)
+5106       return cxstring::createEmpty();
+5107 
+5108     SmallString<128> Str;
+5109     llvm::raw_svector_ostream OS(Str);
+5110     PrintingPolicy *UserPolicy = static_cast<PrintingPolicy *>(cxPolicy);
+5111     D->print(OS, UserPolicy ? *UserPolicy
+5112                             : getCursorContext(C)\&.getPrintingPolicy());
+5113 
+5114     return cxstring::createDup(OS\&.str());
+5115   }
+5116 
+5117   return cxstring::createEmpty();
+5118 }
+.fi
+.PP
+References clang_Cursor_isNull(), clang_isDeclaration(), clang::cxstring::createDup(), clang::cxstring::createEmpty(), clang::cxcursor::getCursorContext(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXPrintingPolicy clang_getCursorPrintingPolicy (CXCursor C)"
+
+.PP
+Definition at line 4931 of file CIndex\&.cpp\&.
+.PP
+.nf
+4931                                                            {
+4932   if (clang_Cursor_isNull(C))
+4933     return 0;
+4934   return new PrintingPolicy(getCursorContext(C)\&.getPrintingPolicy());
+4935 }
+.fi
+.PP
+References clang_Cursor_isNull(), and clang::cxcursor::getCursorContext()\&.
+.SS "CXCursor clang_getCursorReferenced (CXCursor C)"
+
+.PP
+Definition at line 6301 of file CIndex\&.cpp\&.
+.PP
+.nf
+6301                                                {
+6302   if (clang_isInvalid(C\&.kind))
+6303     return clang_getNullCursor();
+6304 
+6305   CXTranslationUnit tu = getCursorTU(C);
+6306   if (clang_isDeclaration(C\&.kind)) {
+6307     const Decl *D = getCursorDecl(C);
+6308     if (!D)
+6309       return clang_getNullCursor();
+6310     if (const UsingDecl *Using = dyn_cast<UsingDecl>(D))
+6311       return MakeCursorOverloadedDeclRef(Using, D->getLocation(), tu);
+6312     if (const ObjCPropertyImplDecl *PropImpl =
+6313             dyn_cast<ObjCPropertyImplDecl>(D))
+6314       if (ObjCPropertyDecl *Property = PropImpl->getPropertyDecl())
+6315         return MakeCXCursor(Property, tu);
+6316 
+6317     return C;
+6318   }
+6319 
+6320   if (clang_isExpression(C\&.kind)) {
+6321     const Expr *E = getCursorExpr(C);
+6322     const Decl *D = getDeclFromExpr(E);
+6323     if (D) {
+6324       CXCursor declCursor = MakeCXCursor(D, tu);
+6325       declCursor = getSelectorIdentifierCursor(getSelectorIdentifierIndex(C),
+6326                                                declCursor);
+6327       return declCursor;
+6328     }
+6329 
+6330     if (const OverloadExpr *Ovl = dyn_cast_or_null<OverloadExpr>(E))
+6331       return MakeCursorOverloadedDeclRef(Ovl, tu);
+6332 
+6333     return clang_getNullCursor();
+6334   }
+6335 
+6336   if (clang_isStatement(C\&.kind)) {
+6337     const Stmt *S = getCursorStmt(C);
+6338     if (const GotoStmt *Goto = dyn_cast_or_null<GotoStmt>(S))
+6339       if (LabelDecl *label = Goto->getLabel())
+6340         if (LabelStmt *labelS = label->getStmt())
+6341           return MakeCXCursor(labelS, getCursorDecl(C), tu);
+6342 
+6343     return clang_getNullCursor();
+6344   }
+6345 
+6346   if (C\&.kind == CXCursor_MacroExpansion) {
+6347     if (const MacroDefinitionRecord *Def =
+6348             getCursorMacroExpansion(C)\&.getDefinition())
+6349       return MakeMacroDefinitionCursor(Def, tu);
+6350   }
+6351 
+6352   if (!clang_isReference(C\&.kind))
+6353     return clang_getNullCursor();
+6354 
+6355   switch (C\&.kind) {
+6356   case CXCursor_ObjCSuperClassRef:
+6357     return MakeCXCursor(getCursorObjCSuperClassRef(C)\&.first, tu);
+6358 
+6359   case CXCursor_ObjCProtocolRef: {
+6360     const ObjCProtocolDecl *Prot = getCursorObjCProtocolRef(C)\&.first;
+6361     if (const ObjCProtocolDecl *Def = Prot->getDefinition())
+6362       return MakeCXCursor(Def, tu);
+6363 
+6364     return MakeCXCursor(Prot, tu);
+6365   }
+6366 
+6367   case CXCursor_ObjCClassRef: {
+6368     const ObjCInterfaceDecl *Class = getCursorObjCClassRef(C)\&.first;
+6369     if (const ObjCInterfaceDecl *Def = Class->getDefinition())
+6370       return MakeCXCursor(Def, tu);
+6371 
+6372     return MakeCXCursor(Class, tu);
+6373   }
+6374 
+6375   case CXCursor_TypeRef:
+6376     return MakeCXCursor(getCursorTypeRef(C)\&.first, tu);
+6377 
+6378   case CXCursor_TemplateRef:
+6379     return MakeCXCursor(getCursorTemplateRef(C)\&.first, tu);
+6380 
+6381   case CXCursor_NamespaceRef:
+6382     return MakeCXCursor(getCursorNamespaceRef(C)\&.first, tu);
+6383 
+6384   case CXCursor_MemberRef:
+6385     return MakeCXCursor(getCursorMemberRef(C)\&.first, tu);
+6386 
+6387   case CXCursor_CXXBaseSpecifier: {
+6388     const CXXBaseSpecifier *B = cxcursor::getCursorCXXBaseSpecifier(C);
+6389     return clang_getTypeDeclaration(cxtype::MakeCXType(B->getType(), tu));
+6390   }
+6391 
+6392   case CXCursor_LabelRef:
+6393     // FIXME: We end up faking the "parent" declaration here because we
+6394     // don't want to make CXCursor larger\&.
+6395     return MakeCXCursor(
+6396         getCursorLabelRef(C)\&.first,
+6397         cxtu::getASTUnit(tu)->getASTContext()\&.getTranslationUnitDecl(), tu);
+6398 
+6399   case CXCursor_OverloadedDeclRef:
+6400     return C;
+6401 
+6402   case CXCursor_VariableRef:
+6403     return MakeCXCursor(getCursorVariableRef(C)\&.first, tu);
+6404 
+6405   default:
+6406     // We would prefer to enumerate all non-reference cursor kinds here\&.
+6407     llvm_unreachable("Unhandled reference cursor kind");
+6408   }
+6409 }
+.fi
+.PP
+References clang_getNullCursor(), clang_isDeclaration(), clang_isExpression(), clang_isInvalid(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorExpr(), clang::cxcursor::getCursorTU(), clang::cxcursor::MakeCursorOverloadedDeclRef(), and clang::cxcursor::MakeCXCursor()\&.
+.PP
+Referenced by clang_getCursorDefinition()\&.
+.SS "CXSourceRange clang_getCursorReferenceNameRange (CXCursor C, unsigned NameFlags, unsigned PieceIndex)"
+
+.PP
+Definition at line 6732 of file CIndex\&.cpp\&.
+.PP
+.nf
+6733                                                                      {
+6734   RefNamePieces Pieces;
+6735 
+6736   switch (C\&.kind) {
+6737   case CXCursor_MemberRefExpr:
+6738     if (const MemberExpr *E = dyn_cast<MemberExpr>(getCursorExpr(C)))
+6739       Pieces = buildPieces(NameFlags, true, E->getMemberNameInfo(),
+6740                            E->getQualifierLoc()\&.getSourceRange());
+6741     break;
+6742 
+6743   case CXCursor_DeclRefExpr:
+6744     if (const DeclRefExpr *E = dyn_cast<DeclRefExpr>(getCursorExpr(C))) {
+6745       SourceRange TemplateArgLoc(E->getLAngleLoc(), E->getRAngleLoc());
+6746       Pieces =
+6747           buildPieces(NameFlags, false, E->getNameInfo(),
+6748                       E->getQualifierLoc()\&.getSourceRange(), &TemplateArgLoc);
+6749     }
+6750     break;
+6751 
+6752   case CXCursor_CallExpr:
+6753     if (const CXXOperatorCallExpr *OCE =
+6754             dyn_cast<CXXOperatorCallExpr>(getCursorExpr(C))) {
+6755       const Expr *Callee = OCE->getCallee();
+6756       if (const ImplicitCastExpr *ICE = dyn_cast<ImplicitCastExpr>(Callee))
+6757         Callee = ICE->getSubExpr();
+6758 
+6759       if (const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(Callee))
+6760         Pieces = buildPieces(NameFlags, false, DRE->getNameInfo(),
+6761                              DRE->getQualifierLoc()\&.getSourceRange());
+6762     }
+6763     break;
+6764 
+6765   default:
+6766     break;
+6767   }
+6768 
+6769   if (Pieces\&.empty()) {
+6770     if (PieceIndex == 0)
+6771       return clang_getCursorExtent(C);
+6772   } else if (PieceIndex < Pieces\&.size()) {
+6773     SourceRange R = Pieces[PieceIndex];
+6774     if (R\&.isValid())
+6775       return cxloc::translateSourceRange(getCursorContext(C), R);
+6776   }
+6777 
+6778   return clang_getNullRange();
+6779 }
+.fi
+.PP
+References clang_getCursorExtent(), clang_getNullRange(), clang::cxcursor::getCursorContext(), clang::cxcursor::getCursorExpr(), and clang::cxloc::translateSourceRange()\&.
+.SS "CXCursor clang_getCursorSemanticParent (CXCursor cursor)"
+
+.PP
+Definition at line 8219 of file CIndex\&.cpp\&.
+.PP
+.nf
+8219                                                         {
+8220   if (clang_isDeclaration(cursor\&.kind)) {
+8221     if (const Decl *D = getCursorDecl(cursor)) {
+8222       const DeclContext *DC = D->getDeclContext();
+8223       if (!DC)
+8224         return clang_getNullCursor();
+8225 
+8226       return MakeCXCursor(maybeGetTemplateCursor(cast<Decl>(DC)),
+8227                           getCursorTU(cursor));
+8228     }
+8229   }
+8230 
+8231   if (clang_isStatement(cursor\&.kind) || clang_isExpression(cursor\&.kind)) {
+8232     if (const Decl *D = getCursorDecl(cursor))
+8233       return MakeCXCursor(D, getCursorTU(cursor));
+8234   }
+8235 
+8236   return clang_getNullCursor();
+8237 }
+.fi
+.PP
+References clang_getNullCursor(), clang_isDeclaration(), clang::cxcursor::getCursorDecl(), and clang::cxcursor::MakeCXCursor()\&.
+.PP
+Referenced by clang_Cursor_getOffsetOfField()\&.
+.SS "CXString clang_getCursorSpelling (CXCursor C)"
+
+.PP
+Definition at line 4634 of file CIndex\&.cpp\&.
+.PP
+.nf
+4634                                              {
+4635   if (clang_isTranslationUnit(C\&.kind))
+4636     return clang_getTranslationUnitSpelling(getCursorTU(C));
+4637 
+4638   if (clang_isReference(C\&.kind)) {
+4639     switch (C\&.kind) {
+4640     case CXCursor_ObjCSuperClassRef: {
+4641       const ObjCInterfaceDecl *Super = getCursorObjCSuperClassRef(C)\&.first;
+4642       return cxstring::createRef(Super->getIdentifier()->getNameStart());
+4643     }
+4644     case CXCursor_ObjCClassRef: {
+4645       const ObjCInterfaceDecl *Class = getCursorObjCClassRef(C)\&.first;
+4646       return cxstring::createRef(Class->getIdentifier()->getNameStart());
+4647     }
+4648     case CXCursor_ObjCProtocolRef: {
+4649       const ObjCProtocolDecl *OID = getCursorObjCProtocolRef(C)\&.first;
+4650       assert(OID && "getCursorSpelling(): Missing protocol decl");
+4651       return cxstring::createRef(OID->getIdentifier()->getNameStart());
+4652     }
+4653     case CXCursor_CXXBaseSpecifier: {
+4654       const CXXBaseSpecifier *B = getCursorCXXBaseSpecifier(C);
+4655       return cxstring::createDup(B->getType()\&.getAsString());
+4656     }
+4657     case CXCursor_TypeRef: {
+4658       const TypeDecl *Type = getCursorTypeRef(C)\&.first;
+4659       assert(Type && "Missing type decl");
+4660 
+4661       return cxstring::createDup(
+4662           getCursorContext(C)\&.getTypeDeclType(Type)\&.getAsString());
+4663     }
+4664     case CXCursor_TemplateRef: {
+4665       const TemplateDecl *Template = getCursorTemplateRef(C)\&.first;
+4666       assert(Template && "Missing template decl");
+4667 
+4668       return cxstring::createDup(Template->getNameAsString());
+4669     }
+4670 
+4671     case CXCursor_NamespaceRef: {
+4672       const NamedDecl *NS = getCursorNamespaceRef(C)\&.first;
+4673       assert(NS && "Missing namespace decl");
+4674 
+4675       return cxstring::createDup(NS->getNameAsString());
+4676     }
+4677 
+4678     case CXCursor_MemberRef: {
+4679       const FieldDecl *Field = getCursorMemberRef(C)\&.first;
+4680       assert(Field && "Missing member decl");
+4681 
+4682       return cxstring::createDup(Field->getNameAsString());
+4683     }
+4684 
+4685     case CXCursor_LabelRef: {
+4686       const LabelStmt *Label = getCursorLabelRef(C)\&.first;
+4687       assert(Label && "Missing label");
+4688 
+4689       return cxstring::createRef(Label->getName());
+4690     }
+4691 
+4692     case CXCursor_OverloadedDeclRef: {
+4693       OverloadedDeclRefStorage Storage = getCursorOverloadedDeclRef(C)\&.first;
+4694       if (const Decl *D = Storage\&.dyn_cast<const Decl *>()) {
+4695         if (const NamedDecl *ND = dyn_cast<NamedDecl>(D))
+4696           return cxstring::createDup(ND->getNameAsString());
+4697         return cxstring::createEmpty();
+4698       }
+4699       if (const OverloadExpr *E = Storage\&.dyn_cast<const OverloadExpr *>())
+4700         return cxstring::createDup(E->getName()\&.getAsString());
+4701       OverloadedTemplateStorage *Ovl =
+4702           Storage\&.get<OverloadedTemplateStorage *>();
+4703       if (Ovl->size() == 0)
+4704         return cxstring::createEmpty();
+4705       return cxstring::createDup((*Ovl->begin())->getNameAsString());
+4706     }
+4707 
+4708     case CXCursor_VariableRef: {
+4709       const VarDecl *Var = getCursorVariableRef(C)\&.first;
+4710       assert(Var && "Missing variable decl");
+4711 
+4712       return cxstring::createDup(Var->getNameAsString());
+4713     }
+4714 
+4715     default:
+4716       return cxstring::createRef("<not implemented>");
+4717     }
+4718   }
+4719 
+4720   if (clang_isExpression(C\&.kind)) {
+4721     const Expr *E = getCursorExpr(C);
+4722 
+4723     if (C\&.kind == CXCursor_ObjCStringLiteral ||
+4724         C\&.kind == CXCursor_StringLiteral) {
+4725       const StringLiteral *SLit;
+4726       if (const ObjCStringLiteral *OSL = dyn_cast<ObjCStringLiteral>(E)) {
+4727         SLit = OSL->getString();
+4728       } else {
+4729         SLit = cast<StringLiteral>(E);
+4730       }
+4731       SmallString<256> Buf;
+4732       llvm::raw_svector_ostream OS(Buf);
+4733       SLit->outputString(OS);
+4734       return cxstring::createDup(OS\&.str());
+4735     }
+4736 
+4737     const Decl *D = getDeclFromExpr(getCursorExpr(C));
+4738     if (D)
+4739       return getDeclSpelling(D);
+4740     return cxstring::createEmpty();
+4741   }
+4742 
+4743   if (clang_isStatement(C\&.kind)) {
+4744     const Stmt *S = getCursorStmt(C);
+4745     if (const LabelStmt *Label = dyn_cast_or_null<LabelStmt>(S))
+4746       return cxstring::createRef(Label->getName());
+4747 
+4748     return cxstring::createEmpty();
+4749   }
+4750 
+4751   if (C\&.kind == CXCursor_MacroExpansion)
+4752     return cxstring::createRef(
+4753         getCursorMacroExpansion(C)\&.getName()->getNameStart());
+4754 
+4755   if (C\&.kind == CXCursor_MacroDefinition)
+4756     return cxstring::createRef(
+4757         getCursorMacroDefinition(C)->getName()->getNameStart());
+4758 
+4759   if (C\&.kind == CXCursor_InclusionDirective)
+4760     return cxstring::createDup(getCursorInclusionDirective(C)->getFileName());
+4761 
+4762   if (clang_isDeclaration(C\&.kind))
+4763     return getDeclSpelling(getCursorDecl(C));
+4764 
+4765   if (C\&.kind == CXCursor_AnnotateAttr) {
+4766     const AnnotateAttr *AA = cast<AnnotateAttr>(cxcursor::getCursorAttr(C));
+4767     return cxstring::createDup(AA->getAnnotation());
+4768   }
+4769 
+4770   if (C\&.kind == CXCursor_AsmLabelAttr) {
+4771     const AsmLabelAttr *AA = cast<AsmLabelAttr>(cxcursor::getCursorAttr(C));
+4772     return cxstring::createDup(AA->getLabel());
+4773   }
+4774 
+4775   if (C\&.kind == CXCursor_PackedAttr) {
+4776     return cxstring::createRef("packed");
+4777   }
+4778 
+4779   if (C\&.kind == CXCursor_VisibilityAttr) {
+4780     const VisibilityAttr *AA = cast<VisibilityAttr>(cxcursor::getCursorAttr(C));
+4781     switch (AA->getVisibility()) {
+4782     case VisibilityAttr::VisibilityType::Default:
+4783       return cxstring::createRef("default");
+4784     case VisibilityAttr::VisibilityType::Hidden:
+4785       return cxstring::createRef("hidden");
+4786     case VisibilityAttr::VisibilityType::Protected:
+4787       return cxstring::createRef("protected");
+4788     }
+4789     llvm_unreachable("unknown visibility type");
+4790   }
+4791 
+4792   return cxstring::createEmpty();
+4793 }
+.fi
+.PP
+References clang_getTranslationUnitSpelling(), clang_isExpression(), clang_isReference(), clang_isTranslationUnit(), clang::cxstring::createDup(), clang::cxstring::createEmpty(), clang::cxstring::createRef(), clang::cxcursor::getCursorContext(), clang::cxcursor::getCursorCXXBaseSpecifier(), clang::cxcursor::getCursorExpr(), clang::cxcursor::getCursorLabelRef(), clang::cxcursor::getCursorMemberRef(), clang::cxcursor::getCursorNamespaceRef(), clang::cxcursor::getCursorObjCClassRef(), clang::cxcursor::getCursorObjCProtocolRef(), clang::cxcursor::getCursorObjCSuperClassRef(), clang::cxcursor::getCursorOverloadedDeclRef(), clang::cxcursor::getCursorTemplateRef(), clang::cxcursor::getCursorTU(), clang::cxcursor::getCursorTypeRef(), and clang::cxcursor::getCursorVariableRef()\&.
+.PP
+Referenced by clang_getCursorDisplayName()\&.
+.SS "CXTLSKind clang_getCursorTLSKind (CXCursor cursor)"
+
+.PP
+Definition at line 8154 of file CIndex\&.cpp\&.
+.PP
+.nf
+8154                                                   {
+8155   const Decl *D = cxcursor::getCursorDecl(cursor);
+8156   if (const VarDecl *VD = dyn_cast<VarDecl>(D)) {
+8157     switch (VD->getTLSKind()) {
+8158     case VarDecl::TLS_None:
+8159       return CXTLS_None;
+8160     case VarDecl::TLS_Dynamic:
+8161       return CXTLS_Dynamic;
+8162     case VarDecl::TLS_Static:
+8163       return CXTLS_Static;
+8164     }
+8165   }
+8166 
+8167   return CXTLS_None;
+8168 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "CXVisibilityKind clang_getCursorVisibility (CXCursor cursor)"
+
+.PP
+Definition at line 7884 of file CIndex\&.cpp\&.
+.PP
+.nf
+7884                                                             {
+7885   if (!clang_isDeclaration(cursor\&.kind))
+7886     return CXVisibility_Invalid;
+7887 
+7888   const Decl *D = cxcursor::getCursorDecl(cursor);
+7889   if (const NamedDecl *ND = dyn_cast_or_null<NamedDecl>(D))
+7890     switch (ND->getVisibility()) {
+7891     case HiddenVisibility:
+7892       return CXVisibility_Hidden;
+7893     case ProtectedVisibility:
+7894       return CXVisibility_Protected;
+7895     case DefaultVisibility:
+7896       return CXVisibility_Default;
+7897     };
+7898 
+7899   return CXVisibility_Invalid;
+7900 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "CXTUResourceUsage clang_getCXTUResourceUsage (CXTranslationUnit TU)"
+
+.PP
+Definition at line 8736 of file CIndex\&.cpp\&.
+.PP
+.nf
+8736                                                                    {
+8737   if (isNotUsableTU(TU)) {
+8738     LOG_BAD_TU(TU);
+8739     CXTUResourceUsage usage = {(void *)nullptr, 0, nullptr};
+8740     return usage;
+8741   }
+8742 
+8743   ASTUnit *astUnit = cxtu::getASTUnit(TU);
+8744   std::unique_ptr<MemUsageEntries> entries(new MemUsageEntries());
+8745   ASTContext &astContext = astUnit->getASTContext();
+8746 
+8747   // How much memory is used by AST nodes and types?
+8748   createCXTUResourceUsageEntry(
+8749       *entries, CXTUResourceUsage_AST,
+8750       (unsigned long)astContext\&.getASTAllocatedMemory());
+8751 
+8752   // How much memory is used by identifiers?
+8753   createCXTUResourceUsageEntry(
+8754       *entries, CXTUResourceUsage_Identifiers,
+8755       (unsigned long)astContext\&.Idents\&.getAllocator()\&.getTotalMemory());
+8756 
+8757   // How much memory is used for selectors?
+8758   createCXTUResourceUsageEntry(
+8759       *entries, CXTUResourceUsage_Selectors,
+8760       (unsigned long)astContext\&.Selectors\&.getTotalMemory());
+8761 
+8762   // How much memory is used by ASTContext's side tables?
+8763   createCXTUResourceUsageEntry(
+8764       *entries, CXTUResourceUsage_AST_SideTables,
+8765       (unsigned long)astContext\&.getSideTableAllocatedMemory());
+8766 
+8767   // How much memory is used for caching global code completion results?
+8768   unsigned long completionBytes = 0;
+8769   if (GlobalCodeCompletionAllocator *completionAllocator =
+8770           astUnit->getCachedCompletionAllocator()\&.get()) {
+8771     completionBytes = completionAllocator->getTotalMemory();
+8772   }
+8773   createCXTUResourceUsageEntry(
+8774       *entries, CXTUResourceUsage_GlobalCompletionResults, completionBytes);
+8775 
+8776   // How much memory is being used by SourceManager's content cache?
+8777   createCXTUResourceUsageEntry(
+8778       *entries, CXTUResourceUsage_SourceManagerContentCache,
+8779       (unsigned long)astContext\&.getSourceManager()\&.getContentCacheSize());
+8780 
+8781   // How much memory is being used by the MemoryBuffer's in SourceManager?
+8782   const SourceManager::MemoryBufferSizes &srcBufs =
+8783       astUnit->getSourceManager()\&.getMemoryBufferSizes();
+8784 
+8785   createCXTUResourceUsageEntry(*entries,
+8786                                CXTUResourceUsage_SourceManager_Membuffer_Malloc,
+8787                                (unsigned long)srcBufs\&.malloc_bytes);
+8788   createCXTUResourceUsageEntry(*entries,
+8789                                CXTUResourceUsage_SourceManager_Membuffer_MMap,
+8790                                (unsigned long)srcBufs\&.mmap_bytes);
+8791   createCXTUResourceUsageEntry(
+8792       *entries, CXTUResourceUsage_SourceManager_DataStructures,
+8793       (unsigned long)astContext\&.getSourceManager()\&.getDataStructureSizes());
+8794 
+8795   // How much memory is being used by the ExternalASTSource?
+8796   if (ExternalASTSource *esrc = astContext\&.getExternalSource()) {
+8797     const ExternalASTSource::MemoryBufferSizes &sizes =
+8798         esrc->getMemoryBufferSizes();
+8799 
+8800     createCXTUResourceUsageEntry(
+8801         *entries, CXTUResourceUsage_ExternalASTSource_Membuffer_Malloc,
+8802         (unsigned long)sizes\&.malloc_bytes);
+8803     createCXTUResourceUsageEntry(
+8804         *entries, CXTUResourceUsage_ExternalASTSource_Membuffer_MMap,
+8805         (unsigned long)sizes\&.mmap_bytes);
+8806   }
+8807 
+8808   // How much memory is being used by the Preprocessor?
+8809   Preprocessor &pp = astUnit->getPreprocessor();
+8810   createCXTUResourceUsageEntry(*entries, CXTUResourceUsage_Preprocessor,
+8811                                pp\&.getTotalMemory());
+8812 
+8813   if (PreprocessingRecord *pRec = pp\&.getPreprocessingRecord()) {
+8814     createCXTUResourceUsageEntry(*entries,
+8815                                  CXTUResourceUsage_PreprocessingRecord,
+8816                                  pRec->getTotalMemory());
+8817   }
+8818 
+8819   createCXTUResourceUsageEntry(*entries,
+8820                                CXTUResourceUsage_Preprocessor_HeaderSearch,
+8821                                pp\&.getHeaderSearchInfo()\&.getTotalMemory());
+8822 
+8823   CXTUResourceUsage usage = {(void *)entries\&.get(), (unsigned)entries->size(),
+8824                              !entries->empty() ? &(*entries)[0] : nullptr};
+8825   (void)entries\&.release();
+8826   return usage;
+8827 }
+.fi
+.PP
+Referenced by clang::PrintLibclangResourceUsage(), and PrintMemoryUsage()\&.
+.SS "void clang_getDefinitionSpellingAndExtent (CXCursor C, const char ** startBuf, const char ** endBuf, unsigned * startLine, unsigned * startColumn, unsigned * endLine, unsigned * endColumn)"
+
+.PP
+Definition at line 6716 of file CIndex\&.cpp\&.
+.PP
+.nf
+6718                                                                    {
+6719   assert(getCursorDecl(C) && "CXCursor has null decl");
+6720   const FunctionDecl *FD = dyn_cast<FunctionDecl>(getCursorDecl(C));
+6721   CompoundStmt *Body = dyn_cast<CompoundStmt>(FD->getBody());
+6722 
+6723   SourceManager &SM = FD->getASTContext()\&.getSourceManager();
+6724   *startBuf = SM\&.getCharacterData(Body->getLBracLoc());
+6725   *endBuf = SM\&.getCharacterData(Body->getRBracLoc());
+6726   *startLine = SM\&.getSpellingLineNumber(Body->getLBracLoc());
+6727   *startColumn = SM\&.getSpellingColumnNumber(Body->getLBracLoc());
+6728   *endLine = SM\&.getSpellingLineNumber(Body->getRBracLoc());
+6729   *endColumn = SM\&.getSpellingColumnNumber(Body->getRBracLoc());
+6730 }
+.fi
+.PP
+References clang::cxcursor::getCursorDecl()\&.
+.SS "CXFile clang_getFile (CXTranslationUnit TU, const char * file_name)"
+
+.PP
+Definition at line 4395 of file CIndex\&.cpp\&.
+.PP
+.nf
+4395                                                                   {
+4396   if (isNotUsableTU(TU)) {
+4397     LOG_BAD_TU(TU);
+4398     return nullptr;
+4399   }
+4400 
+4401   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+4402 
+4403   FileManager &FMgr = CXXUnit->getFileManager();
+4404   auto File = FMgr\&.getFile(file_name);
+4405   if (!File)
+4406     return nullptr;
+4407   return const_cast<FileEntry *>(*File);
+4408 }
+.fi
+.SS "const char* clang_getFileContents (CXTranslationUnit TU, CXFile file, size_t * size)"
+
+.PP
+Definition at line 4410 of file CIndex\&.cpp\&.
+.PP
+.nf
+4411                                                 {
+4412   if (isNotUsableTU(TU)) {
+4413     LOG_BAD_TU(TU);
+4414     return nullptr;
+4415   }
+4416 
+4417   const SourceManager &SM = cxtu::getASTUnit(TU)->getSourceManager();
+4418   FileID fid = SM\&.translateFile(static_cast<FileEntry *>(file));
+4419   llvm::Optional<llvm::MemoryBufferRef> buf = SM\&.getBufferOrNone(fid);
+4420   if (!buf) {
+4421     if (size)
+4422       *size = 0;
+4423     return nullptr;
+4424   }
+4425   if (size)
+4426     *size = buf->getBufferSize();
+4427   return buf->getBufferStart();
+4428 }
+.fi
+.SS "CXString clang_getFileName (CXFile SFile)"
+
+.PP
+Definition at line 4379 of file CIndex\&.cpp\&.
+.PP
+.nf
+4379                                          {
+4380   if (!SFile)
+4381     return cxstring::createNull();
+4382 
+4383   FileEntry *FEnt = static_cast<FileEntry *>(SFile);
+4384   return cxstring::createRef(FEnt->getName());
+4385 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.PP
+Referenced by InclusionVisitor(), and clang::cxindex::Logger::operator<<()\&.
+.SS "time_t clang_getFileTime (CXFile SFile)"
+
+.PP
+Definition at line 4387 of file CIndex\&.cpp\&.
+.PP
+.nf
+4387                                        {
+4388   if (!SFile)
+4389     return 0;
+4390 
+4391   FileEntry *FEnt = static_cast<FileEntry *>(SFile);
+4392   return FEnt->getModificationTime();
+4393 }
+.fi
+.SS "int clang_getFileUniqueID (CXFile file, CXFileUniqueID * outID)"
+
+.PP
+Definition at line 4446 of file CIndex\&.cpp\&.
+.PP
+.nf
+4446                                                               {
+4447   if (!file || !outID)
+4448     return 1;
+4449 
+4450   FileEntry *FEnt = static_cast<FileEntry *>(file);
+4451   const llvm::sys::fs::UniqueID &ID = FEnt->getUniqueID();
+4452   outID->data[0] = ID\&.getDevice();
+4453   outID->data[1] = ID\&.getFile();
+4454   outID->data[2] = FEnt->getModificationTime();
+4455   return 0;
+4456 }
+.fi
+.SS "CXType clang_getIBOutletCollectionType (CXCursor C)"
+
+.PP
+Definition at line 8664 of file CIndex\&.cpp\&.
+.PP
+.nf
+8664                                                    {
+8665   if (C\&.kind != CXCursor_IBOutletCollectionAttr)
+8666     return cxtype::MakeCXType(QualType(), cxcursor::getCursorTU(C));
+8667 
+8668   const IBOutletCollectionAttr *A =
+8669       cast<IBOutletCollectionAttr>(cxcursor::getCursorAttr(C));
+8670 
+8671   return cxtype::MakeCXType(A->getInterface(), cxcursor::getCursorTU(C));
+8672 }
+.fi
+.PP
+References clang::cxcursor::getCursorAttr(), clang::cxcursor::getCursorTU(), and clang::cxtype::MakeCXType()\&.
+.SS "CXFile clang_getIncludedFile (CXCursor cursor)"
+
+.PP
+Definition at line 8256 of file CIndex\&.cpp\&.
+.PP
+.nf
+8256                                               {
+8257   if (cursor\&.kind != CXCursor_InclusionDirective)
+8258     return nullptr;
+8259 
+8260   const InclusionDirective *ID = getCursorInclusionDirective(cursor);
+8261   return const_cast<FileEntry *>(ID->getFile());
+8262 }
+.fi
+.PP
+References clang::cxcursor::getCursorInclusionDirective()\&.
+.SS "CXModule clang_getModuleForFile (CXTranslationUnit TU, CXFile File)"
+
+.PP
+Definition at line 8450 of file CIndex\&.cpp\&.
+.PP
+.nf
+8450                                                                    {
+8451   if (isNotUsableTU(TU)) {
+8452     LOG_BAD_TU(TU);
+8453     return nullptr;
+8454   }
+8455   if (!File)
+8456     return nullptr;
+8457   FileEntry *FE = static_cast<FileEntry *>(File);
+8458 
+8459   ASTUnit &Unit = *cxtu::getASTUnit(TU);
+8460   HeaderSearch &HS = Unit\&.getPreprocessor()\&.getHeaderSearchInfo();
+8461   ModuleMap::KnownHeader Header = HS\&.findModuleForHeader(FE);
+8462 
+8463   return Header\&.getModule();
+8464 }
+.fi
+.SS "CXCursor clang_getNullCursor (void)"
+
+.PP
+Definition at line 5901 of file CIndex\&.cpp\&.
+.PP
+.nf
+5901                                    {
+5902   return MakeCXCursorInvalid(CXCursor_InvalidFile);
+5903 }
+.fi
+.PP
+References clang::cxcursor::MakeCXCursorInvalid()\&.
+.PP
+Referenced by clang::cxindex::AttrListInfo::AttrListInfo(), clang_Cursor_getArgument(), clang_Cursor_getVarDeclInitializer(), clang_Cursor_isNull(), clang_getCursorDefinition(), clang_getCursorLexicalParent(), clang_getCursorReferenced(), clang_getCursorSemanticParent(), clang_getOverloadedDecl(), clang_getSpecializedCursorTemplate(), clang::cxcursor::getCursor(), clang::cxindex::CXIndexDataConsumer::handleObjCCategory(), clang::cxindex::CXIndexDataConsumer::handleObjCCategoryImpl(), and clang::cxindex::CXIndexDataConsumer::handleObjCInterface()\&.
+.SS "unsigned clang_getNumOverloadedDecls (CXCursor C)"
+
+.PP
+Definition at line 6670 of file CIndex\&.cpp\&.
+.PP
+.nf
+6670                                                  {
+6671   if (C\&.kind != CXCursor_OverloadedDeclRef)
+6672     return 0;
+6673 
+6674   OverloadedDeclRefStorage Storage = getCursorOverloadedDeclRef(C)\&.first;
+6675   if (const OverloadExpr *E = Storage\&.dyn_cast<const OverloadExpr *>())
+6676     return E->getNumDecls();
+6677 
+6678   if (OverloadedTemplateStorage *S =
+6679           Storage\&.dyn_cast<OverloadedTemplateStorage *>())
+6680     return S->size();
+6681 
+6682   const Decl *D = Storage\&.get<const Decl *>();
+6683   if (const UsingDecl *Using = dyn_cast<UsingDecl>(D))
+6684     return Using->shadow_size();
+6685 
+6686   return 0;
+6687 }
+.fi
+.PP
+References clang::cxcursor::getCursorOverloadedDeclRef()\&.
+.PP
+Referenced by clang_getOverloadedDecl()\&.
+.SS "CXCursor clang_getOverloadedDecl (CXCursor cursor, unsigned index)"
+
+.PP
+Definition at line 6689 of file CIndex\&.cpp\&.
+.PP
+.nf
+6689                                                                   {
+6690   if (cursor\&.kind != CXCursor_OverloadedDeclRef)
+6691     return clang_getNullCursor();
+6692 
+6693   if (index >= clang_getNumOverloadedDecls(cursor))
+6694     return clang_getNullCursor();
+6695 
+6696   CXTranslationUnit TU = getCursorTU(cursor);
+6697   OverloadedDeclRefStorage Storage = getCursorOverloadedDeclRef(cursor)\&.first;
+6698   if (const OverloadExpr *E = Storage\&.dyn_cast<const OverloadExpr *>())
+6699     return MakeCXCursor(E->decls_begin()[index], TU);
+6700 
+6701   if (OverloadedTemplateStorage *S =
+6702           Storage\&.dyn_cast<OverloadedTemplateStorage *>())
+6703     return MakeCXCursor(S->begin()[index], TU);
+6704 
+6705   const Decl *D = Storage\&.get<const Decl *>();
+6706   if (const UsingDecl *Using = dyn_cast<UsingDecl>(D)) {
+6707     // FIXME: This is, unfortunately, linear time\&.
+6708     UsingDecl::shadow_iterator Pos = Using->shadow_begin();
+6709     std::advance(Pos, index);
+6710     return MakeCXCursor(cast<UsingShadowDecl>(*Pos)->getTargetDecl(), TU);
+6711   }
+6712 
+6713   return clang_getNullCursor();
+6714 }
+.fi
+.PP
+References clang_getNullCursor(), clang_getNumOverloadedDecls(), clang::cxcursor::getCursorOverloadedDeclRef(), clang::cxcursor::getCursorTU(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "CXSourceRangeList* clang_getSkippedRanges (CXTranslationUnit TU, CXFile file)"
+
+.PP
+Definition at line 8834 of file CIndex\&.cpp\&.
+.PP
+.nf
+8834                                                                              {
+8835   CXSourceRangeList *skipped = new CXSourceRangeList;
+8836   skipped->count = 0;
+8837   skipped->ranges = nullptr;
+8838 
+8839   if (isNotUsableTU(TU)) {
+8840     LOG_BAD_TU(TU);
+8841     return skipped;
+8842   }
+8843 
+8844   if (!file)
+8845     return skipped;
+8846 
+8847   ASTUnit *astUnit = cxtu::getASTUnit(TU);
+8848   PreprocessingRecord *ppRec =
+8849       astUnit->getPreprocessor()\&.getPreprocessingRecord();
+8850   if (!ppRec)
+8851     return skipped;
+8852 
+8853   ASTContext &Ctx = astUnit->getASTContext();
+8854   SourceManager &sm = Ctx\&.getSourceManager();
+8855   FileEntry *fileEntry = static_cast<FileEntry *>(file);
+8856   FileID wantedFileID = sm\&.translateFile(fileEntry);
+8857   bool isMainFile = wantedFileID == sm\&.getMainFileID();
+8858 
+8859   const std::vector<SourceRange> &SkippedRanges = ppRec->getSkippedRanges();
+8860   std::vector<SourceRange> wantedRanges;
+8861   for (std::vector<SourceRange>::const_iterator i = SkippedRanges\&.begin(),
+8862                                                 ei = SkippedRanges\&.end();
+8863        i != ei; ++i) {
+8864     if (sm\&.getFileID(i->getBegin()) == wantedFileID ||
+8865         sm\&.getFileID(i->getEnd()) == wantedFileID)
+8866       wantedRanges\&.push_back(*i);
+8867     else if (isMainFile && (astUnit->isInPreambleFileID(i->getBegin()) ||
+8868                             astUnit->isInPreambleFileID(i->getEnd())))
+8869       wantedRanges\&.push_back(*i);
+8870   }
+8871 
+8872   skipped->count = wantedRanges\&.size();
+8873   skipped->ranges = new CXSourceRange[skipped->count];
+8874   for (unsigned i = 0, ei = skipped->count; i != ei; ++i)
+8875     skipped->ranges[i] = cxloc::translateSourceRange(Ctx, wantedRanges[i]);
+8876 
+8877   return skipped;
+8878 }
+.fi
+.SS "CXToken* clang_getToken (CXTranslationUnit TU, CXSourceLocation Location)"
+
+.PP
+Definition at line 6950 of file CIndex\&.cpp\&.
+.PP
+.nf
+6950                                                                          {
+6951   LOG_FUNC_SECTION { *Log << TU << ' ' << Location; }
+6952 
+6953   if (isNotUsableTU(TU)) {
+6954     LOG_BAD_TU(TU);
+6955     return NULL;
+6956   }
+6957 
+6958   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+6959   if (!CXXUnit)
+6960     return NULL;
+6961 
+6962   SourceLocation Begin = cxloc::translateSourceLocation(Location);
+6963   if (Begin\&.isInvalid())
+6964     return NULL;
+6965   SourceManager &SM = CXXUnit->getSourceManager();
+6966   std::pair<FileID, unsigned> DecomposedEnd = SM\&.getDecomposedLoc(Begin);
+6967   DecomposedEnd\&.second +=
+6968       Lexer::MeasureTokenLength(Begin, SM, CXXUnit->getLangOpts());
+6969 
+6970   SourceLocation End =
+6971       SM\&.getComposedLoc(DecomposedEnd\&.first, DecomposedEnd\&.second);
+6972 
+6973   SmallVector<CXToken, 32> CXTokens;
+6974   getTokens(CXXUnit, SourceRange(Begin, End), CXTokens);
+6975 
+6976   if (CXTokens\&.empty())
+6977     return NULL;
+6978 
+6979   CXTokens\&.resize(1);
+6980   CXToken *Token = static_cast<CXToken *>(llvm::safe_malloc(sizeof(CXToken)));
+6981 
+6982   memmove(Token, CXTokens\&.data(), sizeof(CXToken));
+6983   return Token;
+6984 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.SS "CXSourceRange clang_getTokenExtent (CXTranslationUnit TU, CXToken CXTok)"
+
+.PP
+Definition at line 6867 of file CIndex\&.cpp\&.
+.PP
+.nf
+6867                                                                         {
+6868   if (isNotUsableTU(TU)) {
+6869     LOG_BAD_TU(TU);
+6870     return clang_getNullRange();
+6871   }
+6872 
+6873   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+6874   if (!CXXUnit)
+6875     return clang_getNullRange();
+6876 
+6877   return cxloc::translateSourceRange(
+6878       CXXUnit->getASTContext(),
+6879       SourceLocation::getFromRawEncoding(CXTok\&.int_data[1]));
+6880 }
+.fi
+.SS "CXTokenKind clang_getTokenKind (CXToken CXTok)"
+
+.PP
+Definition at line 6806 of file CIndex\&.cpp\&.
+.PP
+.nf
+6806                                               {
+6807   return static_cast<CXTokenKind>(CXTok\&.int_data[0]);
+6808 }
+.fi
+.PP
+Referenced by clang_getTokenSpelling()\&.
+.SS "CXSourceLocation clang_getTokenLocation (CXTranslationUnit TU, CXToken CXTok)"
+
+.PP
+Definition at line 6852 of file CIndex\&.cpp\&.
+.PP
+.nf
+6852                                                                              {
+6853   if (isNotUsableTU(TU)) {
+6854     LOG_BAD_TU(TU);
+6855     return clang_getNullLocation();
+6856   }
+6857 
+6858   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+6859   if (!CXXUnit)
+6860     return clang_getNullLocation();
+6861 
+6862   return cxloc::translateSourceLocation(
+6863       CXXUnit->getASTContext(),
+6864       SourceLocation::getFromRawEncoding(CXTok\&.int_data[1]));
+6865 }
+.fi
+.SS "CXString clang_getTokenSpelling (CXTranslationUnit TU, CXToken CXTok)"
+
+.PP
+Definition at line 6810 of file CIndex\&.cpp\&.
+.PP
+.nf
+6810                                                                      {
+6811   switch (clang_getTokenKind(CXTok)) {
+6812   case CXToken_Identifier:
+6813   case CXToken_Keyword:
+6814     // We know we have an IdentifierInfo*, so use that\&.
+6815     return cxstring::createRef(
+6816         static_cast<IdentifierInfo *>(CXTok\&.ptr_data)->getNameStart());
+6817 
+6818   case CXToken_Literal: {
+6819     // We have stashed the starting pointer in the ptr_data field\&. Use it\&.
+6820     const char *Text = static_cast<const char *>(CXTok\&.ptr_data);
+6821     return cxstring::createDup(StringRef(Text, CXTok\&.int_data[2]));
+6822   }
+6823 
+6824   case CXToken_Punctuation:
+6825   case CXToken_Comment:
+6826     break;
+6827   }
+6828 
+6829   if (isNotUsableTU(TU)) {
+6830     LOG_BAD_TU(TU);
+6831     return cxstring::createEmpty();
+6832   }
+6833 
+6834   // We have to find the starting buffer pointer the hard way, by
+6835   // deconstructing the source location\&.
+6836   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+6837   if (!CXXUnit)
+6838     return cxstring::createEmpty();
+6839 
+6840   SourceLocation Loc = SourceLocation::getFromRawEncoding(CXTok\&.int_data[1]);
+6841   std::pair<FileID, unsigned> LocInfo =
+6842       CXXUnit->getSourceManager()\&.getDecomposedSpellingLoc(Loc);
+6843   bool Invalid = false;
+6844   StringRef Buffer =
+6845       CXXUnit->getSourceManager()\&.getBufferData(LocInfo\&.first, &Invalid);
+6846   if (Invalid)
+6847     return cxstring::createEmpty();
+6848 
+6849   return cxstring::createDup(Buffer\&.substr(LocInfo\&.second, CXTok\&.int_data[2]));
+6850 }
+.fi
+.PP
+References clang_getTokenKind(), clang::cxstring::createDup(), and clang::cxstring::createRef()\&.
+.SS "CXCursor clang_getTranslationUnitCursor (CXTranslationUnit TU)"
+
+.PP
+Definition at line 4321 of file CIndex\&.cpp\&.
+.PP
+.nf
+4321                                                               {
+4322   if (isNotUsableTU(TU)) {
+4323     LOG_BAD_TU(TU);
+4324     return clang_getNullCursor();
+4325   }
+4326 
+4327   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+4328   return MakeCXCursor(CXXUnit->getASTContext()\&.getTranslationUnitDecl(), TU);
+4329 }
+.fi
+.SS "CXString clang_getTranslationUnitSpelling (CXTranslationUnit CTUnit)"
+
+.PP
+Definition at line 4311 of file CIndex\&.cpp\&.
+.PP
+.nf
+4311                                                                     {
+4312   if (isNotUsableTU(CTUnit)) {
+4313     LOG_BAD_TU(CTUnit);
+4314     return cxstring::createEmpty();
+4315   }
+4316 
+4317   ASTUnit *CXXUnit = cxtu::getASTUnit(CTUnit);
+4318   return cxstring::createDup(CXXUnit->getOriginalSourceFileName());
+4319 }
+.fi
+.PP
+Referenced by clang_getCursorSpelling()\&.
+.SS "CXTargetInfo clang_getTranslationUnitTargetInfo (CXTranslationUnit CTUnit)"
+
+.PP
+Definition at line 4331 of file CIndex\&.cpp\&.
+.PP
+.nf
+4331                                                                           {
+4332   if (isNotUsableTU(CTUnit)) {
+4333     LOG_BAD_TU(CTUnit);
+4334     return nullptr;
+4335   }
+4336 
+4337   CXTargetInfoImpl *impl = new CXTargetInfoImpl();
+4338   impl->TranslationUnit = CTUnit;
+4339   return impl;
+4340 }
+.fi
+.SS "const char* clang_getTUResourceUsageName (CXTUResourceUsageKind kind)"
+
+.PP
+Definition at line 8687 of file CIndex\&.cpp\&.
+.PP
+.nf
+8687                                                                      {
+8688   const char *str = "";
+8689   switch (kind) {
+8690   case CXTUResourceUsage_AST:
+8691     str = "ASTContext: expressions, declarations, and types";
+8692     break;
+8693   case CXTUResourceUsage_Identifiers:
+8694     str = "ASTContext: identifiers";
+8695     break;
+8696   case CXTUResourceUsage_Selectors:
+8697     str = "ASTContext: selectors";
+8698     break;
+8699   case CXTUResourceUsage_GlobalCompletionResults:
+8700     str = "Code completion: cached global results";
+8701     break;
+8702   case CXTUResourceUsage_SourceManagerContentCache:
+8703     str = "SourceManager: content cache allocator";
+8704     break;
+8705   case CXTUResourceUsage_AST_SideTables:
+8706     str = "ASTContext: side tables";
+8707     break;
+8708   case CXTUResourceUsage_SourceManager_Membuffer_Malloc:
+8709     str = "SourceManager: malloc'ed memory buffers";
+8710     break;
+8711   case CXTUResourceUsage_SourceManager_Membuffer_MMap:
+8712     str = "SourceManager: mmap'ed memory buffers";
+8713     break;
+8714   case CXTUResourceUsage_ExternalASTSource_Membuffer_Malloc:
+8715     str = "ExternalASTSource: malloc'ed memory buffers";
+8716     break;
+8717   case CXTUResourceUsage_ExternalASTSource_Membuffer_MMap:
+8718     str = "ExternalASTSource: mmap'ed memory buffers";
+8719     break;
+8720   case CXTUResourceUsage_Preprocessor:
+8721     str = "Preprocessor: malloc'ed memory";
+8722     break;
+8723   case CXTUResourceUsage_PreprocessingRecord:
+8724     str = "Preprocessor: PreprocessingRecord";
+8725     break;
+8726   case CXTUResourceUsage_SourceManager_DataStructures:
+8727     str = "SourceManager: data structures and tables";
+8728     break;
+8729   case CXTUResourceUsage_Preprocessor_HeaderSearch:
+8730     str = "Preprocessor: header search tables";
+8731     break;
+8732   }
+8733   return str;
+8734 }
+.fi
+.PP
+Referenced by clang::PrintLibclangResourceUsage(), and PrintMemoryUsage()\&.
+.SS "unsigned clang_hashCursor (CXCursor C)"
+
+.PP
+Definition at line 5921 of file CIndex\&.cpp\&.
+.PP
+.nf
+5921                                       {
+5922   unsigned Index = 0;
+5923   if (clang_isExpression(C\&.kind) || clang_isStatement(C\&.kind))
+5924     Index = 1;
+5925 
+5926   return llvm::DenseMapInfo<std::pair<unsigned, const void *>>::getHashValue(
+5927       std::make_pair(C\&.kind, C\&.data[Index]));
+5928 }
+.fi
+.PP
+References clang_isExpression(), and clang_isStatement()\&.
+.SS "unsigned clang_isAttribute (enum CXCursorKind K)"
+
+.PP
+Definition at line 5960 of file CIndex\&.cpp\&.
+.PP
+.nf
+5960                                                 {
+5961   return K >= CXCursor_FirstAttr && K <= CXCursor_LastAttr;
+5962 }
+.fi
+.SS "unsigned clang_isCursorDefinition (CXCursor C)"
+
+.PP
+Definition at line 6639 of file CIndex\&.cpp\&.
+.PP
+.nf
+6639                                               {
+6640   if (!clang_isDeclaration(C\&.kind))
+6641     return 0;
+6642 
+6643   return clang_getCursorDefinition(C) == C;
+6644 }
+.fi
+.PP
+References clang_getCursorDefinition(), and clang_isDeclaration()\&.
+.SS "unsigned clang_isDeclaration (enum CXCursorKind K)"
+
+.PP
+Definition at line 5934 of file CIndex\&.cpp\&.
+.PP
+.nf
+5934                                                   {
+5935   return (K >= CXCursor_FirstDecl && K <= CXCursor_LastDecl) ||
+5936          (K >= CXCursor_FirstExtraDecl && K <= CXCursor_LastExtraDecl);
+5937 }
+.fi
+.PP
+Referenced by clang_Comment_getKind(), clang_Cursor_getArgument(), clang_Cursor_getBriefCommentText(), clang_Cursor_getCommentRange(), clang_Cursor_getCXXManglings(), clang_Cursor_getMangling(), clang_Cursor_getNumArguments(), clang_Cursor_getObjCDeclQualifiers(), clang_Cursor_getObjCManglings(), clang_Cursor_getOffsetOfField(), clang_Cursor_getRawCommentText(), clang_Cursor_isAnonymous(), clang_Cursor_isAnonymousRecordDecl(), clang_Cursor_isBitField(), clang_Cursor_isExternalSymbol(), clang_Cursor_isInlineNamespace(), clang_Cursor_isObjCOptional(), clang_Cursor_isVariadic(), clang_CXXConstructor_isConvertingConstructor(), clang_CXXConstructor_isCopyConstructor(), clang_CXXConstructor_isDefaultConstructor(), clang_CXXConstructor_isMoveConstructor(), clang_CXXField_isMutable(), clang_CXXMethod_isConst(), clang_CXXMethod_isDefaulted(), clang_CXXMethod_isPureVirtual(), clang_CXXMethod_isStatic(), clang_CXXMethod_isVirtual(), clang_CXXRecord_isAbstract(), clang_EnumDecl_isScoped(), clang_equalCursors(), clang_getCanonicalCursor(), clang_getCursorCompletionString(), clang_getCursorDefinition(), clang_getCursorDisplayName(), clang_getCursorExceptionSpecificationType(), clang_getCursorLanguage(), clang_getCursorLexicalParent(), clang_getCursorLinkage(), clang_getCursorPlatformAvailability(), clang_getCursorPrettyPrinted(), clang_getCursorReferenced(), clang_getCursorResultType(), clang_getCursorSemanticParent(), clang_getCursorType(), clang_getCursorUSR(), clang_getCursorVisibility(), clang_getDeclObjCTypeEncoding(), clang_getEnumConstantDeclUnsignedValue(), clang_getEnumConstantDeclValue(), clang_getEnumDeclIntegerType(), clang_getFieldDeclBitWidth(), clang_getOverriddenCursors(), clang_getSpecializedCursorTemplate(), clang_getTypedefDeclUnderlyingType(), clang_isCursorDefinition(), clang_isInvalidDeclaration(), clang::cxcursor::getOverriddenCursors(), and clang::cxcursor::isFirstInDeclGroup()\&.
+.SS "unsigned clang_isExpression (enum CXCursorKind K)"
+
+.PP
+Definition at line 5952 of file CIndex\&.cpp\&.
+.PP
+.nf
+5952                                                  {
+5953   return K >= CXCursor_FirstExpr && K <= CXCursor_LastExpr;
+5954 }
+.fi
+.PP
+Referenced by clang_Cursor_getArgument(), clang_Cursor_getNumArguments(), clang_Cursor_getReceiverType(), clang_Cursor_isDynamicCall(), clang_getCursorDefinition(), clang_getCursorLocation(), clang_getCursorReferenced(), clang_getCursorSpelling(), clang_getCursorType(), and clang_hashCursor()\&.
+.SS "unsigned clang_isFileMultipleIncludeGuarded (CXTranslationUnit TU, CXFile file)"
+
+.PP
+Definition at line 4430 of file CIndex\&.cpp\&.
+.PP
+.nf
+4430                                                                                {
+4431   if (isNotUsableTU(TU)) {
+4432     LOG_BAD_TU(TU);
+4433     return 0;
+4434   }
+4435 
+4436   if (!file)
+4437     return 0;
+4438 
+4439   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+4440   FileEntry *FEnt = static_cast<FileEntry *>(file);
+4441   return CXXUnit->getPreprocessor()
+4442       \&.getHeaderSearchInfo()
+4443       \&.isFileMultipleIncludeGuarded(FEnt);
+4444 }
+.fi
+.SS "unsigned clang_isInvalid (enum CXCursorKind K)"
+
+.PP
+Definition at line 5930 of file CIndex\&.cpp\&.
+.PP
+.nf
+5930                                               {
+5931   return K >= CXCursor_FirstInvalid && K <= CXCursor_LastInvalid;
+5932 }
+.fi
+.PP
+Referenced by clang_Cursor_getCXXManglings(), clang_Cursor_getMangling(), clang_Cursor_getObjCManglings(), clang_getCursorDefinition(), clang_getCursorReferenced(), and clang_Type_visitFields()\&.
+.SS "unsigned clang_isInvalidDeclaration (CXCursor C)"
+
+.PP
+Definition at line 5939 of file CIndex\&.cpp\&.
+.PP
+.nf
+5939                                                 {
+5940   if (clang_isDeclaration(C\&.kind)) {
+5941     if (const Decl *D = getCursorDecl(C))
+5942       return D->isInvalidDecl();
+5943   }
+5944 
+5945   return 0;
+5946 }
+.fi
+.PP
+References clang_isDeclaration(), and clang::cxcursor::getCursorDecl()\&.
+.SS "unsigned clang_isPreprocessing (enum CXCursorKind K)"
+
+.PP
+Definition at line 5968 of file CIndex\&.cpp\&.
+.PP
+.nf
+5968                                                     {
+5969   return K >= CXCursor_FirstPreprocessing && K <= CXCursor_LastPreprocessing;
+5970 }
+.fi
+.SS "unsigned clang_isReference (enum CXCursorKind K)"
+
+.PP
+Definition at line 5948 of file CIndex\&.cpp\&.
+.PP
+.nf
+5948                                                 {
+5949   return K >= CXCursor_FirstRef && K <= CXCursor_LastRef;
+5950 }
+.fi
+.PP
+Referenced by clang_getCursorDefinition(), clang_getCursorLocation(), clang_getCursorSpelling(), and clang_getCursorType()\&.
+.SS "unsigned clang_isStatement (enum CXCursorKind K)"
+
+.PP
+Definition at line 5956 of file CIndex\&.cpp\&.
+.PP
+.nf
+5956                                                 {
+5957   return K >= CXCursor_FirstStmt && K <= CXCursor_LastStmt;
+5958 }
+.fi
+.PP
+Referenced by clang_Cursor_getSpellingNameRange(), and clang_hashCursor()\&.
+.SS "unsigned clang_isTranslationUnit (enum CXCursorKind K)"
+
+.PP
+Definition at line 5964 of file CIndex\&.cpp\&.
+.PP
+.nf
+5964                                                       {
+5965   return K == CXCursor_TranslationUnit;
+5966 }
+.fi
+.PP
+Referenced by clang_getCursorSpelling()\&.
+.SS "unsigned clang_isUnexposed (enum CXCursorKind K)"
+
+.PP
+Definition at line 5972 of file CIndex\&.cpp\&.
+.PP
+.nf
+5972                                                 {
+5973   switch (K) {
+5974   case CXCursor_UnexposedDecl:
+5975   case CXCursor_UnexposedExpr:
+5976   case CXCursor_UnexposedStmt:
+5977   case CXCursor_UnexposedAttr:
+5978     return true;
+5979   default:
+5980     return false;
+5981   }
+5982 }
+.fi
+.SS "CXFile clang_Module_getASTFile (CXModule CXMod)"
+
+.PP
+Definition at line 8466 of file CIndex\&.cpp\&.
+.PP
+.nf
+8466                                                {
+8467   if (!CXMod)
+8468     return nullptr;
+8469   Module *Mod = static_cast<Module *>(CXMod);
+8470   if (auto File = Mod->getASTFile())
+8471     return const_cast<FileEntry *>(&File->getFileEntry());
+8472   return nullptr;
+8473 }
+.fi
+.SS "CXString clang_Module_getFullName (CXModule CXMod)"
+
+.PP
+Definition at line 8489 of file CIndex\&.cpp\&.
+.PP
+.nf
+8489                                                   {
+8490   if (!CXMod)
+8491     return cxstring::createEmpty();
+8492   Module *Mod = static_cast<Module *>(CXMod);
+8493   return cxstring::createDup(Mod->getFullModuleName());
+8494 }
+.fi
+.PP
+References clang::cxstring::createDup(), and clang::cxstring::createEmpty()\&.
+.SS "CXString clang_Module_getName (CXModule CXMod)"
+
+.PP
+Definition at line 8482 of file CIndex\&.cpp\&.
+.PP
+.nf
+8482                                               {
+8483   if (!CXMod)
+8484     return cxstring::createEmpty();
+8485   Module *Mod = static_cast<Module *>(CXMod);
+8486   return cxstring::createDup(Mod->Name);
+8487 }
+.fi
+.PP
+References clang::cxstring::createDup(), and clang::cxstring::createEmpty()\&.
+.SS "unsigned clang_Module_getNumTopLevelHeaders (CXTranslationUnit TU, CXModule CXMod)"
+
+.PP
+Definition at line 8503 of file CIndex\&.cpp\&.
+.PP
+.nf
+8504                                                             {
+8505   if (isNotUsableTU(TU)) {
+8506     LOG_BAD_TU(TU);
+8507     return 0;
+8508   }
+8509   if (!CXMod)
+8510     return 0;
+8511   Module *Mod = static_cast<Module *>(CXMod);
+8512   FileManager &FileMgr = cxtu::getASTUnit(TU)->getFileManager();
+8513   ArrayRef<const FileEntry *> TopHeaders = Mod->getTopHeaders(FileMgr);
+8514   return TopHeaders\&.size();
+8515 }
+.fi
+.SS "CXModule clang_Module_getParent (CXModule CXMod)"
+
+.PP
+Definition at line 8475 of file CIndex\&.cpp\&.
+.PP
+.nf
+8475                                                 {
+8476   if (!CXMod)
+8477     return nullptr;
+8478   Module *Mod = static_cast<Module *>(CXMod);
+8479   return Mod->Parent;
+8480 }
+.fi
+.SS "CXFile clang_Module_getTopLevelHeader (CXTranslationUnit TU, CXModule CXMod, unsigned Index)"
+
+.PP
+Definition at line 8517 of file CIndex\&.cpp\&.
+.PP
+.nf
+8518                                                       {
+8519   if (isNotUsableTU(TU)) {
+8520     LOG_BAD_TU(TU);
+8521     return nullptr;
+8522   }
+8523   if (!CXMod)
+8524     return nullptr;
+8525   Module *Mod = static_cast<Module *>(CXMod);
+8526   FileManager &FileMgr = cxtu::getASTUnit(TU)->getFileManager();
+8527 
+8528   ArrayRef<const FileEntry *> TopHeaders = Mod->getTopHeaders(FileMgr);
+8529   if (Index < TopHeaders\&.size())
+8530     return const_cast<FileEntry *>(TopHeaders[Index]);
+8531 
+8532   return nullptr;
+8533 }
+.fi
+.SS "int clang_Module_isSystem (CXModule CXMod)"
+
+.PP
+Definition at line 8496 of file CIndex\&.cpp\&.
+.PP
+.nf
+8496                                           {
+8497   if (!CXMod)
+8498     return 0;
+8499   Module *Mod = static_cast<Module *>(CXMod);
+8500   return Mod->IsSystem;
+8501 }
+.fi
+.SS "CXTranslationUnit clang_parseTranslationUnit (CXIndex CIdx, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, unsigned options)"
+
+.PP
+Definition at line 3717 of file CIndex\&.cpp\&.
+.PP
+.nf
+3721                                                                          {
+3722   CXTranslationUnit TU;
+3723   enum CXErrorCode Result = clang_parseTranslationUnit2(
+3724       CIdx, source_filename, command_line_args, num_command_line_args,
+3725       unsaved_files, num_unsaved_files, options, &TU);
+3726   (void)Result;
+3727   assert((TU && Result == CXError_Success) ||
+3728          (!TU && Result != CXError_Success));
+3729   return TU;
+3730 }
+.fi
+.PP
+References clang_parseTranslationUnit2()\&.
+.SS "enum CXErrorCode clang_parseTranslationUnit2 (CXIndex CIdx, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, unsigned options, CXTranslationUnit * out_TU)"
+
+.PP
+Definition at line 3717 of file CIndex\&.cpp\&.
+.PP
+.nf
+3736                                                  {
+3737   noteBottomOfStack();
+3738   SmallVector<const char *, 4> Args;
+3739   Args\&.push_back("clang");
+3740   Args\&.append(command_line_args, command_line_args + num_command_line_args);
+3741   return clang_parseTranslationUnit2FullArgv(
+3742       CIdx, source_filename, Args\&.data(), Args\&.size(), unsaved_files,
+3743       num_unsaved_files, options, out_TU);
+3744 }
+.fi
+.PP
+Referenced by clang_parseTranslationUnit()\&.
+.SS "enum CXErrorCode clang_parseTranslationUnit2FullArgv (CXIndex CIdx, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, unsigned options, CXTranslationUnit * out_TU)"
+
+.PP
+Definition at line 3717 of file CIndex\&.cpp\&.
+.PP
+.nf
+3750                                                  {
+3751   LOG_FUNC_SECTION {
+3752     *Log << source_filename << ": ";
+3753     for (int i = 0; i != num_command_line_args; ++i)
+3754       *Log << command_line_args[i] << " ";
+3755   }
+3756 
+3757   if (num_unsaved_files && !unsaved_files)
+3758     return CXError_InvalidArguments;
+3759 
+3760   CXErrorCode result = CXError_Failure;
+3761   auto ParseTranslationUnitImpl = [=, &result] {
+3762     noteBottomOfStack();
+3763     result = clang_parseTranslationUnit_Impl(
+3764         CIdx, source_filename, command_line_args, num_command_line_args,
+3765         llvm::makeArrayRef(unsaved_files, num_unsaved_files), options, out_TU);
+3766   };
+3767 
+3768   llvm::CrashRecoveryContext CRC;
+3769 
+3770   if (!RunSafely(CRC, ParseTranslationUnitImpl)) {
+3771     fprintf(stderr, "libclang: crash detected during parsing: {\n");
+3772     fprintf(stderr, "  'source_filename' : '%s'\n", source_filename);
+3773     fprintf(stderr, "  'command_line_args' : [");
+3774     for (int i = 0; i != num_command_line_args; ++i) {
+3775       if (i)
+3776         fprintf(stderr, ", ");
+3777       fprintf(stderr, "'%s'", command_line_args[i]);
+3778     }
+3779     fprintf(stderr, "],\n");
+3780     fprintf(stderr, "  'unsaved_files' : [");
+3781     for (unsigned i = 0; i != num_unsaved_files; ++i) {
+3782       if (i)
+3783         fprintf(stderr, ", ");
+3784       fprintf(stderr, "('%s', '\&.\&.\&.', %ld)", unsaved_files[i]\&.Filename,
+3785               unsaved_files[i]\&.Length);
+3786     }
+3787     fprintf(stderr, "],\n");
+3788     fprintf(stderr, "  'options' : %d,\n", options);
+3789     fprintf(stderr, "}\n");
+3790 
+3791     return CXError_Crashed;
+3792   } else if (getenv("LIBCLANG_RESOURCE_USAGE")) {
+3793     if (CXTranslationUnit *TU = out_TU)
+3794       PrintLibclangResourceUsage(*TU);
+3795   }
+3796 
+3797   return result;
+3798 }
+.fi
+.SS "void clang_PrintingPolicy_dispose (CXPrintingPolicy Policy)"
+
+.PP
+Definition at line 4937 of file CIndex\&.cpp\&.
+.PP
+.nf
+4937                                                            {
+4938   if (Policy)
+4939     delete static_cast<PrintingPolicy *>(Policy);
+4940 }
+.fi
+.SS "unsigned clang_PrintingPolicy_getProperty (CXPrintingPolicy Policy, enum CXPrintingPolicyProperty Property)"
+
+.PP
+Definition at line 4943 of file CIndex\&.cpp\&.
+.PP
+.nf
+4944                                                                          {
+4945   if (!Policy)
+4946     return 0;
+4947 
+4948   PrintingPolicy *P = static_cast<PrintingPolicy *>(Policy);
+4949   switch (Property) {
+4950   case CXPrintingPolicy_Indentation:
+4951     return P->Indentation;
+4952   case CXPrintingPolicy_SuppressSpecifiers:
+4953     return P->SuppressSpecifiers;
+4954   case CXPrintingPolicy_SuppressTagKeyword:
+4955     return P->SuppressTagKeyword;
+4956   case CXPrintingPolicy_IncludeTagDefinition:
+4957     return P->IncludeTagDefinition;
+4958   case CXPrintingPolicy_SuppressScope:
+4959     return P->SuppressScope;
+4960   case CXPrintingPolicy_SuppressUnwrittenScope:
+4961     return P->SuppressUnwrittenScope;
+4962   case CXPrintingPolicy_SuppressInitializers:
+4963     return P->SuppressInitializers;
+4964   case CXPrintingPolicy_ConstantArraySizeAsWritten:
+4965     return P->ConstantArraySizeAsWritten;
+4966   case CXPrintingPolicy_AnonymousTagLocations:
+4967     return P->AnonymousTagLocations;
+4968   case CXPrintingPolicy_SuppressStrongLifetime:
+4969     return P->SuppressStrongLifetime;
+4970   case CXPrintingPolicy_SuppressLifetimeQualifiers:
+4971     return P->SuppressLifetimeQualifiers;
+4972   case CXPrintingPolicy_SuppressTemplateArgsInCXXConstructors:
+4973     return P->SuppressTemplateArgsInCXXConstructors;
+4974   case CXPrintingPolicy_Bool:
+4975     return P->Bool;
+4976   case CXPrintingPolicy_Restrict:
+4977     return P->Restrict;
+4978   case CXPrintingPolicy_Alignof:
+4979     return P->Alignof;
+4980   case CXPrintingPolicy_UnderscoreAlignof:
+4981     return P->UnderscoreAlignof;
+4982   case CXPrintingPolicy_UseVoidForZeroParams:
+4983     return P->UseVoidForZeroParams;
+4984   case CXPrintingPolicy_TerseOutput:
+4985     return P->TerseOutput;
+4986   case CXPrintingPolicy_PolishForDeclaration:
+4987     return P->PolishForDeclaration;
+4988   case CXPrintingPolicy_Half:
+4989     return P->Half;
+4990   case CXPrintingPolicy_MSWChar:
+4991     return P->MSWChar;
+4992   case CXPrintingPolicy_IncludeNewlines:
+4993     return P->IncludeNewlines;
+4994   case CXPrintingPolicy_MSVCFormatting:
+4995     return P->MSVCFormatting;
+4996   case CXPrintingPolicy_ConstantsAsWritten:
+4997     return P->ConstantsAsWritten;
+4998   case CXPrintingPolicy_SuppressImplicitBase:
+4999     return P->SuppressImplicitBase;
+5000   case CXPrintingPolicy_FullyQualifiedName:
+5001     return P->FullyQualifiedName;
+5002   }
+5003 
+5004   assert(false && "Invalid CXPrintingPolicyProperty");
+5005   return 0;
+5006 }
+.fi
+.SS "void clang_PrintingPolicy_setProperty (CXPrintingPolicy Policy, enum CXPrintingPolicyProperty Property, unsigned Value)"
+
+.PP
+Definition at line 5008 of file CIndex\&.cpp\&.
+.PP
+.nf
+5010                                                       {
+5011   if (!Policy)
+5012     return;
+5013 
+5014   PrintingPolicy *P = static_cast<PrintingPolicy *>(Policy);
+5015   switch (Property) {
+5016   case CXPrintingPolicy_Indentation:
+5017     P->Indentation = Value;
+5018     return;
+5019   case CXPrintingPolicy_SuppressSpecifiers:
+5020     P->SuppressSpecifiers = Value;
+5021     return;
+5022   case CXPrintingPolicy_SuppressTagKeyword:
+5023     P->SuppressTagKeyword = Value;
+5024     return;
+5025   case CXPrintingPolicy_IncludeTagDefinition:
+5026     P->IncludeTagDefinition = Value;
+5027     return;
+5028   case CXPrintingPolicy_SuppressScope:
+5029     P->SuppressScope = Value;
+5030     return;
+5031   case CXPrintingPolicy_SuppressUnwrittenScope:
+5032     P->SuppressUnwrittenScope = Value;
+5033     return;
+5034   case CXPrintingPolicy_SuppressInitializers:
+5035     P->SuppressInitializers = Value;
+5036     return;
+5037   case CXPrintingPolicy_ConstantArraySizeAsWritten:
+5038     P->ConstantArraySizeAsWritten = Value;
+5039     return;
+5040   case CXPrintingPolicy_AnonymousTagLocations:
+5041     P->AnonymousTagLocations = Value;
+5042     return;
+5043   case CXPrintingPolicy_SuppressStrongLifetime:
+5044     P->SuppressStrongLifetime = Value;
+5045     return;
+5046   case CXPrintingPolicy_SuppressLifetimeQualifiers:
+5047     P->SuppressLifetimeQualifiers = Value;
+5048     return;
+5049   case CXPrintingPolicy_SuppressTemplateArgsInCXXConstructors:
+5050     P->SuppressTemplateArgsInCXXConstructors = Value;
+5051     return;
+5052   case CXPrintingPolicy_Bool:
+5053     P->Bool = Value;
+5054     return;
+5055   case CXPrintingPolicy_Restrict:
+5056     P->Restrict = Value;
+5057     return;
+5058   case CXPrintingPolicy_Alignof:
+5059     P->Alignof = Value;
+5060     return;
+5061   case CXPrintingPolicy_UnderscoreAlignof:
+5062     P->UnderscoreAlignof = Value;
+5063     return;
+5064   case CXPrintingPolicy_UseVoidForZeroParams:
+5065     P->UseVoidForZeroParams = Value;
+5066     return;
+5067   case CXPrintingPolicy_TerseOutput:
+5068     P->TerseOutput = Value;
+5069     return;
+5070   case CXPrintingPolicy_PolishForDeclaration:
+5071     P->PolishForDeclaration = Value;
+5072     return;
+5073   case CXPrintingPolicy_Half:
+5074     P->Half = Value;
+5075     return;
+5076   case CXPrintingPolicy_MSWChar:
+5077     P->MSWChar = Value;
+5078     return;
+5079   case CXPrintingPolicy_IncludeNewlines:
+5080     P->IncludeNewlines = Value;
+5081     return;
+5082   case CXPrintingPolicy_MSVCFormatting:
+5083     P->MSVCFormatting = Value;
+5084     return;
+5085   case CXPrintingPolicy_ConstantsAsWritten:
+5086     P->ConstantsAsWritten = Value;
+5087     return;
+5088   case CXPrintingPolicy_SuppressImplicitBase:
+5089     P->SuppressImplicitBase = Value;
+5090     return;
+5091   case CXPrintingPolicy_FullyQualifiedName:
+5092     P->FullyQualifiedName = Value;
+5093     return;
+5094   }
+5095 
+5096   assert(false && "Invalid CXPrintingPolicyProperty");
+5097 }
+.fi
+.SS "int clang_reparseTranslationUnit (CXTranslationUnit TU, unsigned num_unsaved_files, struct CXUnsavedFile * unsaved_files, unsigned options)"
+
+.PP
+Definition at line 4284 of file CIndex\&.cpp\&.
+.PP
+.nf
+4287                                                    {
+4288   LOG_FUNC_SECTION { *Log << TU; }
+4289 
+4290   if (num_unsaved_files && !unsaved_files)
+4291     return CXError_InvalidArguments;
+4292 
+4293   CXErrorCode result;
+4294   auto ReparseTranslationUnitImpl = [=, &result]() {
+4295     result = clang_reparseTranslationUnit_Impl(
+4296         TU, llvm::makeArrayRef(unsaved_files, num_unsaved_files), options);
+4297   };
+4298 
+4299   llvm::CrashRecoveryContext CRC;
+4300 
+4301   if (!RunSafely(CRC, ReparseTranslationUnitImpl)) {
+4302     fprintf(stderr, "libclang: crash detected during reparsing\n");
+4303     cxtu::getASTUnit(TU)->setUnsafeToFree(true);
+4304     return CXError_Crashed;
+4305   } else if (getenv("LIBCLANG_RESOURCE_USAGE"))
+4306     PrintLibclangResourceUsage(TU);
+4307 
+4308   return result;
+4309 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.SS "int clang_saveTranslationUnit (CXTranslationUnit TU, const char * FileName, unsigned options)"
+
+.PP
+Definition at line 4159 of file CIndex\&.cpp\&.
+.PP
+.nf
+4160                                                 {
+4161   LOG_FUNC_SECTION { *Log << TU << ' ' << FileName; }
+4162 
+4163   if (isNotUsableTU(TU)) {
+4164     LOG_BAD_TU(TU);
+4165     return CXSaveError_InvalidTU;
+4166   }
+4167 
+4168   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+4169   ASTUnit::ConcurrencyCheck Check(*CXXUnit);
+4170   if (!CXXUnit->hasSema())
+4171     return CXSaveError_InvalidTU;
+4172 
+4173   CXSaveError result;
+4174   auto SaveTranslationUnitImpl = [=, &result]() {
+4175     result = clang_saveTranslationUnit_Impl(TU, FileName, options);
+4176   };
+4177 
+4178   if (!CXXUnit->getDiagnostics()\&.hasUnrecoverableErrorOccurred()) {
+4179     SaveTranslationUnitImpl();
+4180 
+4181     if (getenv("LIBCLANG_RESOURCE_USAGE"))
+4182       PrintLibclangResourceUsage(TU);
+4183 
+4184     return result;
+4185   }
+4186 
+4187   // We have an AST that has invalid nodes due to compiler errors\&.
+4188   // Use a crash recovery thread for protection\&.
+4189 
+4190   llvm::CrashRecoveryContext CRC;
+4191 
+4192   if (!RunSafely(CRC, SaveTranslationUnitImpl)) {
+4193     fprintf(stderr, "libclang: crash detected during AST saving: {\n");
+4194     fprintf(stderr, "  'filename' : '%s'\n", FileName);
+4195     fprintf(stderr, "  'options' : %d,\n", options);
+4196     fprintf(stderr, "}\n");
+4197 
+4198     return CXSaveError_Unknown;
+4199 
+4200   } else if (getenv("LIBCLANG_RESOURCE_USAGE")) {
+4201     PrintLibclangResourceUsage(TU);
+4202   }
+4203 
+4204   return result;
+4205 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.SS "unsigned clang_suspendTranslationUnit (CXTranslationUnit CTUnit)"
+
+.PP
+Definition at line 4224 of file CIndex\&.cpp\&.
+.PP
+.nf
+4224                                                                 {
+4225   if (CTUnit) {
+4226     ASTUnit *Unit = cxtu::getASTUnit(CTUnit);
+4227 
+4228     if (Unit && Unit->isUnsafeToFree())
+4229       return false;
+4230 
+4231     Unit->ResetForParse();
+4232     return true;
+4233   }
+4234 
+4235   return false;
+4236 }
+.fi
+.SS "void clang_TargetInfo_dispose (CXTargetInfo TargetInfo)"
+
+.PP
+Definition at line 4368 of file CIndex\&.cpp\&.
+.PP
+.nf
+4368                                                        {
+4369   if (!TargetInfo)
+4370     return;
+4371 
+4372   delete TargetInfo;
+4373 }
+.fi
+.SS "int clang_TargetInfo_getPointerWidth (CXTargetInfo TargetInfo)"
+
+.PP
+Definition at line 4356 of file CIndex\&.cpp\&.
+.PP
+.nf
+4356                                                               {
+4357   if (!TargetInfo)
+4358     return -1;
+4359 
+4360   CXTranslationUnit CTUnit = TargetInfo->TranslationUnit;
+4361   assert(!isNotUsableTU(CTUnit) &&
+4362          "Unexpected unusable translation unit in TargetInfo");
+4363 
+4364   ASTUnit *CXXUnit = cxtu::getASTUnit(CTUnit);
+4365   return CXXUnit->getASTContext()\&.getTargetInfo()\&.getMaxPointerWidth();
+4366 }
+.fi
+.SS "CXString clang_TargetInfo_getTriple (CXTargetInfo TargetInfo)"
+
+.PP
+Definition at line 4342 of file CIndex\&.cpp\&.
+.PP
+.nf
+4342                                                              {
+4343   if (!TargetInfo)
+4344     return cxstring::createEmpty();
+4345 
+4346   CXTranslationUnit CTUnit = TargetInfo->TranslationUnit;
+4347   assert(!isNotUsableTU(CTUnit) &&
+4348          "Unexpected unusable translation unit in TargetInfo");
+4349 
+4350   ASTUnit *CXXUnit = cxtu::getASTUnit(CTUnit);
+4351   std::string Triple =
+4352       CXXUnit->getASTContext()\&.getTargetInfo()\&.getTriple()\&.normalize();
+4353   return cxstring::createDup(Triple);
+4354 }
+.fi
+.PP
+References clang::cxstring::createEmpty()\&.
+.SS "void clang_toggleCrashRecovery (unsigned isEnabled)"
+
+.PP
+Definition at line 3493 of file CIndex\&.cpp\&.
+.PP
+.nf
+3493                                                    {
+3494   if (isEnabled)
+3495     llvm::CrashRecoveryContext::Enable();
+3496   else
+3497     llvm::CrashRecoveryContext::Disable();
+3498 }
+.fi
+.SS "void clang_tokenize (CXTranslationUnit TU, CXSourceRange Range, CXToken ** Tokens, unsigned * NumTokens)"
+
+.PP
+Definition at line 6986 of file CIndex\&.cpp\&.
+.PP
+.nf
+6987                                          {
+6988   LOG_FUNC_SECTION { *Log << TU << ' ' << Range; }
+6989 
+6990   if (Tokens)
+6991     *Tokens = nullptr;
+6992   if (NumTokens)
+6993     *NumTokens = 0;
+6994 
+6995   if (isNotUsableTU(TU)) {
+6996     LOG_BAD_TU(TU);
+6997     return;
+6998   }
+6999 
+7000   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+7001   if (!CXXUnit || !Tokens || !NumTokens)
+7002     return;
+7003 
+7004   ASTUnit::ConcurrencyCheck Check(*CXXUnit);
+7005 
+7006   SourceRange R = cxloc::translateCXSourceRange(Range);
+7007   if (R\&.isInvalid())
+7008     return;
+7009 
+7010   SmallVector<CXToken, 32> CXTokens;
+7011   getTokens(CXXUnit, R, CXTokens);
+7012 
+7013   if (CXTokens\&.empty())
+7014     return;
+7015 
+7016   *Tokens = static_cast<CXToken *>(
+7017       llvm::safe_malloc(sizeof(CXToken) * CXTokens\&.size()));
+7018   memmove(*Tokens, CXTokens\&.data(), sizeof(CXToken) * CXTokens\&.size());
+7019   *NumTokens = CXTokens\&.size();
+7020 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.SS "CXString clang_Type_getObjCEncoding (CXType CT)"
+
+.PP
+Definition at line 3800 of file CIndex\&.cpp\&.
+.PP
+.nf
+3800                                                {
+3801   CXTranslationUnit tu = static_cast<CXTranslationUnit>(CT\&.data[1]);
+3802   ASTContext &Ctx = getASTUnit(tu)->getASTContext();
+3803   std::string encoding;
+3804   Ctx\&.getObjCEncodingForType(QualType::getFromOpaquePtr(CT\&.data[0]), encoding);
+3805 
+3806   return cxstring::createDup(encoding);
+3807 }
+.fi
+.SS "unsigned clang_visitChildren (CXCursor parent, CXCursorVisitor visitor, CXClientData client_data)"
+
+.PP
+Definition at line 4555 of file CIndex\&.cpp\&.
+.PP
+.nf
+4556                                                        {
+4557   CursorVisitor CursorVis(getCursorTU(parent), visitor, client_data,
+4558                           /*VisitPreprocessorLast=*/false);
+4559   return CursorVis\&.VisitChildren(parent);
+4560 }
+.fi
+.PP
+References clang::cxcursor::getCursorTU(), and clang::cxcursor::CursorVisitor::VisitChildren()\&.
+.PP
+Referenced by clang_visitChildrenWithBlock()\&.
+.SS "unsigned clang_visitChildrenWithBlock (CXCursor parent, \fBCXCursorVisitorBlock\fP block)"
+
+.PP
+Definition at line 4592 of file CIndex\&.cpp\&.
+.PP
+.nf
+4593                                                                   {
+4594   return clang_visitChildren(parent, visitWithBlock, block);
+4595 }
+.fi
+.PP
+References clang_visitChildren()\&.
+.SS "const CXXOperatorCallExpr* GetSubscriptOrCallOperator (CXCursor Cursor)"
+
+.PP
+Definition at line 7142 of file CIndex\&.cpp\&.
+.PP
+.nf
+7142                                                                        {
+7143   if (!clang_isExpression(Cursor\&.kind))
+7144     return nullptr;
+7145 
+7146   const Expr *E = getCursorExpr(Cursor);
+7147   if (const auto *OCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+7148     const OverloadedOperatorKind Kind = OCE->getOperator();
+7149     if (Kind == OO_Call || Kind == OO_Subscript)
+7150       return OCE;
+7151   }
+7152 
+7153   return nullptr;
+7154 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,610 @@
+.TH "clang_fuzzer" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang_fuzzer
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBInnerLoop\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "const std::vector< const char * > & \fBGetCLArgs\fP ()"
+.br
+.ti -1c
+.RI "void \fBHandleCXX\fP (const std::string &S, const char *FileName, const std::vector< const char * > &ExtraArgs)"
+.br
+.ti -1c
+.RI "void \fBHandleLLVM\fP (const std::string &S, const std::vector< const char * > &ExtraArgs)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const BinaryOp &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const StatementSeq &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const Const &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const VarRef &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const Rvalue &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const AssignmentStatement &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const Statement &x)"
+.br
+.ti -1c
+.RI "void \fBNestedLoopToString\fP (std::ostream &os, const LoopFunction &x)"
+.br
+.ti -1c
+.RI "void \fBSingleLoopToString\fP (std::ostream &os, const LoopFunction &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const LoopFunction &x)"
+.br
+.ti -1c
+.RI "std::string \fBLoopFunctionToString\fP (const LoopFunction &input)"
+.br
+.ti -1c
+.RI "std::string \fBLoopProtoToCxx\fP (const uint8_t *data, size_t size)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const Lvalue &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const IfElse &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const While &x)"
+.br
+.ti -1c
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &os, const Function &x)"
+.br
+.ti -1c
+.RI "std::string \fBFunctionToString\fP (const Function &input)"
+.br
+.ti -1c
+.RI "std::string \fBProtoToCxx\fP (const uint8_t *data, size_t size)"
+.br
+.ti -1c
+.RI "std::string \fBBinopToString\fP (std::ostream &os, const BinaryOp &x)"
+.br
+.ti -1c
+.RI "std::string \fBStateSeqToString\fP (std::ostream &os, const StatementSeq &x)"
+.br
+.ti -1c
+.RI "std::string \fBConstToString\fP (const Const &x)"
+.br
+.ti -1c
+.RI "std::string \fBVarRefToString\fP (std::ostream &os, const VarRef &x)"
+.br
+.ti -1c
+.RI "std::string \fBRvalueToString\fP (std::ostream &os, const Rvalue &x)"
+.br
+.ti -1c
+.RI "std::string \fBLoopFunctionToLLVMString\fP (const LoopFunction &input)"
+.br
+.ti -1c
+.RI "std::string \fBLoopProtoToLLVM\fP (const uint8_t *data, size_t size)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "std::string clang_fuzzer::BinopToString (std::ostream & os, const BinaryOp & x)"
+
+.PP
+Definition at line 87 of file loop_proto_to_llvm\&.cpp\&.
+.PP
+.nf
+87                                                            {
+88   std::string left = RvalueToString(os, x\&.left());
+89   std::string right = RvalueToString(os, x\&.right());
+90   std::string op;
+91   switch (x\&.op()) {
+92   case BinaryOp::PLUS:
+93     op = "add";
+94     break;
+95   case BinaryOp::MINUS:
+96     op = "sub";
+97     break;
+98   case BinaryOp::MUL:
+99     op = "mul";
+100     break;
+101   case BinaryOp::XOR:
+102     op = "xor";
+103     break;
+104   case BinaryOp::AND:
+105     op = "and";
+106     break;
+107   case BinaryOp::OR:
+108     op = "or";
+109     break;
+110   // Support for Boolean operators will be added later
+111   case BinaryOp::EQ:
+112   case BinaryOp::NE:
+113   case BinaryOp::LE:
+114   case BinaryOp::GE:
+115   case BinaryOp::LT:
+116   case BinaryOp::GT:
+117     op = "add";
+118     break;
+119   }
+120   std::string val_var = get_var();
+121   os << val_var << " = " << op << " i32 " << left << ", " << right << "\n";
+122   return val_var;
+123 }
+.fi
+.PP
+References RvalueToString()\&.
+.PP
+Referenced by RvalueToString()\&.
+.SS "std::string clang_fuzzer::ConstToString (const Const & x)"
+
+.PP
+Definition at line 51 of file loop_proto_to_llvm\&.cpp\&.
+.PP
+.nf
+51                                         {
+52   return std::to_string(x\&.val());
+53 }
+.fi
+.PP
+Referenced by RvalueToString()\&.
+.SS "std::string clang_fuzzer::FunctionToString (const Function & input)"
+
+.PP
+Definition at line 88 of file proto_to_cxx\&.cpp\&.
+.PP
+.nf
+88                                                   {
+89   std::ostringstream os;
+90   os << input;
+91   return os\&.str();
+92 
+93 }
+.fi
+.PP
+Referenced by DEFINE_BINARY_PROTO_FUZZER(), and ProtoToCxx()\&.
+.SS "const std::vector< const char * > & clang_fuzzer::GetCLArgs ()"
+
+.PP
+Definition at line 31 of file fuzzer_initialize\&.cpp\&.
+.PP
+.nf
+31                                            {
+32   return CLArgs;
+33 }
+.fi
+.PP
+Referenced by DEFINE_BINARY_PROTO_FUZZER()\&.
+.SS "void clang_fuzzer::HandleCXX (const std::string & S, const char * FileName, const std::vector< const char * > & ExtraArgs)"
+
+.PP
+Definition at line 23 of file handle_cxx\&.cpp\&.
+.PP
+.nf
+25                                                                        {
+26   llvm::opt::ArgStringList CC1Args;
+27   CC1Args\&.push_back("-cc1");
+28   for (auto &A : ExtraArgs)
+29     CC1Args\&.push_back(A);
+30   CC1Args\&.push_back(FileName);
+31 
+32   llvm::IntrusiveRefCntPtr<FileManager> Files(
+33       new FileManager(FileSystemOptions()));
+34   IgnoringDiagConsumer Diags;
+35   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+36   DiagnosticsEngine Diagnostics(
+37       IntrusiveRefCntPtr<clang::DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+38       &Diags, false);
+39   std::unique_ptr<clang::CompilerInvocation> Invocation(
+40       tooling::newInvocation(&Diagnostics, CC1Args, /*BinaryName=*/nullptr));
+41   std::unique_ptr<llvm::MemoryBuffer> Input =
+42       llvm::MemoryBuffer::getMemBuffer(S);
+43   Invocation->getPreprocessorOpts()\&.addRemappedFile(FileName,
+44                                                     Input\&.release());
+45   std::unique_ptr<tooling::ToolAction> action(
+46       tooling::newFrontendActionFactory<clang::EmitObjAction>());
+47   std::shared_ptr<PCHContainerOperations> PCHContainerOps =
+48       std::make_shared<PCHContainerOperations>();
+49   action->runInvocation(std::move(Invocation), Files\&.get(), PCHContainerOps,
+50                         &Diags);
+51 }
+.fi
+.PP
+Referenced by DEFINE_BINARY_PROTO_FUZZER(), and LLVMFuzzerTestOneInput()\&.
+.SS "void clang_fuzzer::HandleLLVM (const std::string & S, const std::vector< const char * > & ExtraArgs)"
+
+.PP
+Definition at line 212 of file handle_llvm\&.cpp\&.
+.PP
+.nf
+213                                                                         {
+214   // Populate OptArrays and UnoptArrays with the arrays from InputArrays
+215   memcpy(OptArrays, InputArrays, kTotalSize);
+216   memcpy(UnoptArrays, InputArrays, kTotalSize);
+217 
+218   // Parse ExtraArgs to set the optimization level
+219   CodeGenOpt::Level OLvl;
+220   getOptLevel(ExtraArgs, OLvl);
+221 
+222   // First we optimize the IR by running a loop vectorizer pass
+223   std::string OptIR = OptLLVM(IR, OLvl);
+224 
+225   CreateAndRunJITFunc(OptIR, OLvl);
+226   CreateAndRunJITFunc(IR, CodeGenOpt::None);
+227 
+228   if (memcmp(OptArrays, UnoptArrays, kTotalSize))
+229     ErrorAndExit("!!!BUG!!!");
+230 
+231   return;
+232 }
+.fi
+.PP
+Referenced by DEFINE_BINARY_PROTO_FUZZER()\&.
+.SS "std::string clang_fuzzer::LoopFunctionToLLVMString (const LoopFunction & input)"
+
+.PP
+Definition at line 197 of file loop_proto_to_llvm\&.cpp\&.
+.PP
+.nf
+197                                                               {
+198   std::ostringstream os;
+199   os << input;
+200   return os\&.str();
+201 }
+.fi
+.PP
+Referenced by DEFINE_BINARY_PROTO_FUZZER(), and LoopProtoToLLVM()\&.
+.SS "std::string clang_fuzzer::LoopFunctionToString (const LoopFunction & input)"
+
+.PP
+Definition at line 147 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+147                                                           {
+148   std::ostringstream os;
+149   os << input;
+150   return os\&.str();
+151 }
+.fi
+.PP
+Referenced by DEFINE_BINARY_PROTO_FUZZER(), and LoopProtoToCxx()\&.
+.SS "std::string clang_fuzzer::LoopProtoToCxx (const uint8_t * data, size_t size)"
+
+.PP
+Definition at line 152 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+152                                                            {
+153   LoopFunction message;
+154   if (!message\&.ParsePartialFromArray(data, size))
+155     return "#error invalid proto\n";
+156   return LoopFunctionToString(message);
+157 }
+.fi
+.PP
+References LoopFunctionToString()\&.
+.PP
+Referenced by main()\&.
+.SS "std::string clang_fuzzer::LoopProtoToLLVM (const uint8_t * data, size_t size)"
+
+.PP
+Definition at line 202 of file loop_proto_to_llvm\&.cpp\&.
+.PP
+.nf
+202                                                             {
+203   LoopFunction message;
+204   if (!message\&.ParsePartialFromArray(data, size))
+205     return "#error invalid proto\n";
+206   return LoopFunctionToLLVMString(message);
+207 }
+.fi
+.PP
+References LoopFunctionToLLVMString()\&.
+.PP
+Referenced by main()\&.
+.SS "void clang_fuzzer::NestedLoopToString (std::ostream & os, const LoopFunction & x)"
+
+.PP
+Definition at line 122 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+122                                                                {
+123   os << "void foo(int *a, int *b, int *__restrict__ c, size_t s) {\n"
+124      << "for (int i=0; i<s; i++){\n"
+125      << "for (int j=0; j<s; j++){\n";
+126   {
+127     InnerLoop IL;
+128     os << x\&.inner_statements() << "}\n";
+129   }
+130   os << x\&.outer_statements() << "}\n}\n";
+131 }
+.fi
+.PP
+Referenced by operator<<()\&.
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const AssignmentStatement & x)"
+
+.PP
+Definition at line 111 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+111                                                                      {
+112   return os << x\&.varref() << "=" << x\&.rvalue() << ";\n";
+113 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const BinaryOp & x)"
+
+.PP
+Definition at line 69 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+69                                                           {
+70   os << "(" << x\&.left();
+71   switch (x\&.op()) {
+72   case BinaryOp::PLUS:
+73     os << "+";
+74     break;
+75   case BinaryOp::MINUS:
+76     os << "-";
+77     break;
+78   case BinaryOp::MUL:
+79     os << "*";
+80     break;
+81   case BinaryOp::XOR:
+82     os << "^";
+83     break;
+84   case BinaryOp::AND:
+85     os << "&";
+86     break;
+87   case BinaryOp::OR:
+88     os << "|";
+89     break;
+90   case BinaryOp::EQ:
+91     os << "==";
+92     break;
+93   case BinaryOp::NE:
+94     os << "!=";
+95     break;
+96   case BinaryOp::LE:
+97     os << "<=";
+98     break;
+99   case BinaryOp::GE:
+100     os << ">=";
+101     break;
+102   case BinaryOp::LT:
+103     os << "<";
+104     break;
+105   case BinaryOp::GT:
+106     os << ">";
+107     break;
+108   }
+109   return os << x\&.right() << ")";
+110 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const Const & x)"
+
+.PP
+Definition at line 46 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+46                                                        {
+47   return os << "(" << x\&.val() << ")";
+48 }
+.fi
+.SS "std::ostream& clang_fuzzer::operator<< (std::ostream & os, const Function & x)"
+
+.PP
+Definition at line 82 of file proto_to_cxx\&.cpp\&.
+.PP
+.nf
+82                                                           {
+83   return os << "void foo(int *a) {\n" << x\&.statements() << "}\n";
+84 }
+.fi
+.SS "std::ostream& clang_fuzzer::operator<< (std::ostream & os, const IfElse & x)"
+
+.PP
+Definition at line 64 of file proto_to_cxx\&.cpp\&.
+.PP
+.nf
+64                                                         {
+65   return os << "if (" << x\&.cond() << "){\n"
+66             << x\&.if_body() << "} else { \n"
+67             << x\&.else_body() << "}\n";
+68 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const LoopFunction & x)"
+
+.PP
+Definition at line 137 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+137                                                               {
+138   if (x\&.has_inner_statements())
+139     NestedLoopToString(os, x);
+140   else
+141     SingleLoopToString(os, x);
+142   return os;
+143 }
+.fi
+.PP
+References NestedLoopToString(), and SingleLoopToString()\&.
+.SS "std::ostream& clang_fuzzer::operator<< (std::ostream & os, const Lvalue & x)"
+
+.PP
+Definition at line 32 of file proto_to_cxx\&.cpp\&.
+.PP
+.nf
+32                                                         {
+33   return os << x\&.varref();
+34 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const Rvalue & x)"
+
+.PP
+Definition at line 60 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+60                                                         {
+61   if (x\&.has_cons())
+62     return os << x\&.cons();
+63   if (x\&.has_binop())
+64     return os << x\&.binop();
+65   if (x\&.has_varref())
+66     return os << x\&.varref();
+67   return os << "1";
+68 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const Statement & x)"
+
+.PP
+Definition at line 114 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+114                                                            {
+115   return os << x\&.assignment();
+116 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const StatementSeq & x)"
+
+.PP
+Definition at line 117 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+117                                                               {
+118   for (auto &st : x\&.statements())
+119     os << st;
+120   return os;
+121 }
+.fi
+.SS "std::ostream & clang_fuzzer::operator<< (std::ostream & os, const VarRef & x)"
+
+.PP
+Definition at line 49 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+49                                                         {
+50   std::string which_loop = inner_loop ? "j" : "i";
+51   switch (x\&.arr()) {
+52     case VarRef::ARR_A:
+53       return os << "a[" << which_loop << "]";
+54     case VarRef::ARR_B:
+55       return os << "b[" << which_loop << "]";
+56     case VarRef::ARR_C:
+57       return os << "c[" << which_loop << "]";
+58   }
+59 }
+.fi
+.SS "std::ostream& clang_fuzzer::operator<< (std::ostream & os, const While & x)"
+
+.PP
+Definition at line 69 of file proto_to_cxx\&.cpp\&.
+.PP
+.nf
+69                                                        {
+70   return os << "while (" << x\&.cond() << "){\n" << x\&.body() << "}\n";
+71 }
+.fi
+.SS "std::string clang_fuzzer::ProtoToCxx (const uint8_t * data, size_t size)"
+
+.PP
+Definition at line 94 of file proto_to_cxx\&.cpp\&.
+.PP
+.nf
+94                                                        {
+95   Function message;
+96   if (!message\&.ParsePartialFromArray(data, size))
+97     return "#error invalid proto\n";
+98   return FunctionToString(message);
+99 }
+.fi
+.PP
+References FunctionToString()\&.
+.PP
+Referenced by main()\&.
+.SS "std::string clang_fuzzer::RvalueToString (std::ostream & os, const Rvalue & x)"
+
+.PP
+Definition at line 73 of file loop_proto_to_llvm\&.cpp\&.
+.PP
+.nf
+73                                                           {
+74   if(x\&.has_cons())
+75     return ConstToString(x\&.cons());
+76   if(x\&.has_binop())
+77     return BinopToString(os, x\&.binop());
+78   if(x\&.has_varref()) {
+79     std::string var_ref = VarRefToString(os, x\&.varref());
+80     std::string val_var = get_var();
+81     os << val_var << " = load i32, i32* " << var_ref << "\n";
+82     return val_var;
+83   }
+84   return "1";
+85 
+86 }
+.fi
+.PP
+References BinopToString(), ConstToString(), and VarRefToString()\&.
+.PP
+Referenced by BinopToString()\&.
+.SS "void clang_fuzzer::SingleLoopToString (std::ostream & os, const LoopFunction & x)"
+
+.PP
+Definition at line 132 of file loop_proto_to_cxx\&.cpp\&.
+.PP
+.nf
+132                                                                {
+133   os << "void foo(int *a, int *b, int *__restrict__ c, size_t s) {\n"
+134      << "for (int i=0; i<s; i++){\n"
+135      << x\&.outer_statements() << "}\n}\n";
+136 }
+.fi
+.PP
+Referenced by operator<<()\&.
+.SS "std::string clang_fuzzer::StateSeqToString (std::ostream & os, const StatementSeq & x)"
+
+.SS "std::string clang_fuzzer::VarRefToString (std::ostream & os, const VarRef & x)"
+
+.PP
+Definition at line 54 of file loop_proto_to_llvm\&.cpp\&.
+.PP
+.nf
+54                                                           {
+55   std::string which_loop = inner_loop ? "inner" : "outer";
+56   std::string arr;
+57   switch(x\&.arr()) {
+58   case VarRef::ARR_A:
+59     arr = "%a";
+60     break;
+61   case VarRef::ARR_B:
+62     arr = "%b";
+63     break;
+64   case VarRef::ARR_C:
+65     arr = "%c";
+66     break;
+67   }
+68   std::string ptr_var = get_var();
+69   os << ptr_var << " = getelementptr inbounds i32, i32* " << arr
+70      << ", i64 %" << which_loop << "_ct\n";
+71   return ptr_var;
+72 }
+.fi
+.PP
+Referenced by RvalueToString()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

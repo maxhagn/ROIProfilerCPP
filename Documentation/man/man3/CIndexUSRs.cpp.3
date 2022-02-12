@@ -1,0 +1,206 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexUSRs.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexUSRs.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Index/USRGeneration\&.h'\fP
+.br
+\fC#include 'clang/Lex/PreprocessingRecord\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallString\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXString \fBclang_getCursorUSR\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXString \fBclang_constructUSR_ObjCIvar\fP (const char *name, CXString classUSR)"
+.br
+.ti -1c
+.RI "CXString \fBclang_constructUSR_ObjCMethod\fP (const char *name, unsigned isInstanceMethod, CXString classUSR)"
+.br
+.ti -1c
+.RI "CXString \fBclang_constructUSR_ObjCClass\fP (const char *name)"
+.br
+.ti -1c
+.RI "CXString \fBclang_constructUSR_ObjCProtocol\fP (const char *name)"
+.br
+.ti -1c
+.RI "CXString \fBclang_constructUSR_ObjCCategory\fP (const char *class_name, const char *category_name)"
+.br
+.ti -1c
+.RI "CXString \fBclang_constructUSR_ObjCProperty\fP (const char *property, CXString classUSR)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXString clang_constructUSR_ObjCCategory (const char * class_name, const char * category_name)"
+
+.PP
+Definition at line 124 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+125                                                                     {
+126   SmallString<128> Buf(getUSRSpacePrefix());
+127   llvm::raw_svector_ostream OS(Buf);
+128   generateUSRForObjCCategory(class_name, category_name, OS);
+129   return cxstring::createDup(OS\&.str());
+130 }
+.fi
+.PP
+References clang::cxstring::createDup()\&.
+.SS "CXString clang_constructUSR_ObjCClass (const char * name)"
+
+.PP
+Definition at line 110 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+110                                                         {
+111   SmallString<128> Buf(getUSRSpacePrefix());
+112   llvm::raw_svector_ostream OS(Buf);
+113   generateUSRForObjCClass(name, OS);
+114   return cxstring::createDup(OS\&.str());
+115 }
+.fi
+.PP
+References clang::cxstring::createDup()\&.
+.SS "CXString clang_constructUSR_ObjCIvar (const char * name, CXString classUSR)"
+
+.PP
+Definition at line 92 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+92                                                                           {
+93   SmallString<128> Buf(getUSRSpacePrefix());
+94   llvm::raw_svector_ostream OS(Buf);
+95   OS << extractUSRSuffix(clang_getCString(classUSR));
+96   generateUSRForObjCIvar(name, OS);
+97   return cxstring::createDup(OS\&.str());
+98 }
+.fi
+.SS "CXString clang_constructUSR_ObjCMethod (const char * name, unsigned isInstanceMethod, CXString classUSR)"
+
+.PP
+Definition at line 100 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+102                                                           {
+103   SmallString<128> Buf(getUSRSpacePrefix());
+104   llvm::raw_svector_ostream OS(Buf);
+105   OS << extractUSRSuffix(clang_getCString(classUSR));
+106   generateUSRForObjCMethod(name, isInstanceMethod, OS);
+107   return cxstring::createDup(OS\&.str());
+108 }
+.fi
+.SS "CXString clang_constructUSR_ObjCProperty (const char * property, CXString classUSR)"
+
+.PP
+Definition at line 132 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+133                                                             {
+134   SmallString<128> Buf(getUSRSpacePrefix());
+135   llvm::raw_svector_ostream OS(Buf);
+136   OS << extractUSRSuffix(clang_getCString(classUSR));
+137   generateUSRForObjCProperty(property, /*isClassProp=*/false, OS);
+138   return cxstring::createDup(OS\&.str());
+139 }
+.fi
+.SS "CXString clang_constructUSR_ObjCProtocol (const char * name)"
+
+.PP
+Definition at line 117 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+117                                                            {
+118   SmallString<128> Buf(getUSRSpacePrefix());
+119   llvm::raw_svector_ostream OS(Buf);
+120   generateUSRForObjCProtocol(name, OS);
+121   return cxstring::createDup(OS\&.str());
+122 }
+.fi
+.PP
+References clang::cxstring::createDup()\&.
+.SS "CXString clang_getCursorUSR (CXCursor C)"
+
+.PP
+Definition at line 38 of file CIndexUSRs\&.cpp\&.
+.PP
+.nf
+38                                         {
+39   const CXCursorKind &K = clang_getCursorKind(C);
+40 
+41   if (clang_isDeclaration(K)) {
+42     const Decl *D = cxcursor::getCursorDecl(C);
+43     if (!D)
+44       return cxstring::createEmpty();
+45 
+46     CXTranslationUnit TU = cxcursor::getCursorTU(C);
+47     if (!TU)
+48       return cxstring::createEmpty();
+49 
+50     cxstring::CXStringBuf *buf = cxstring::getCXStringBuf(TU);
+51     if (!buf)
+52       return cxstring::createEmpty();
+53 
+54     bool Ignore = cxcursor::getDeclCursorUSR(D, buf->Data);
+55     if (Ignore) {
+56       buf->dispose();
+57       return cxstring::createEmpty();
+58     }
+59 
+60     // Return the C-string, but don't make a copy since it is already in
+61     // the string buffer\&.
+62     buf->Data\&.push_back('\0');
+63     return createCXString(buf);
+64   }
+65 
+66   if (K == CXCursor_MacroDefinition) {
+67     CXTranslationUnit TU = cxcursor::getCursorTU(C);
+68     if (!TU)
+69       return cxstring::createEmpty();
+70 
+71     cxstring::CXStringBuf *buf = cxstring::getCXStringBuf(TU);
+72     if (!buf)
+73       return cxstring::createEmpty();
+74 
+75     bool Ignore = generateUSRForMacro(cxcursor::getCursorMacroDefinition(C),
+76                                       cxtu::getASTUnit(TU)->getSourceManager(),
+77                                       buf->Data);
+78     if (Ignore) {
+79       buf->dispose();
+80       return cxstring::createEmpty();
+81     }
+82 
+83     // Return the C-string, but don't make a copy since it is already in
+84     // the string buffer\&.
+85     buf->Data\&.push_back('\0');
+86     return createCXString(buf);
+87   }
+88 
+89   return cxstring::createEmpty();
+90 }
+.fi
+.PP
+References clang_getCursorKind(), clang_isDeclaration(), clang::cxstring::createEmpty(), clang::cxstring::CXStringBuf::Data, clang::cxstring::CXStringBuf::dispose(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorTU(), clang::cxstring::getCXStringBuf(), and clang::cxcursor::getDeclCursorUSR()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,324 @@
+\hypertarget{_clang_offload_bundler_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/bundler/\+Clang\+Offload\+Bundler.cpp File Reference}
+\label{_clang_offload_bundler_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/bundler/ClangOffloadBundler.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/offload-\/bundler/ClangOffloadBundler.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Basic/\+Version.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Array\+Ref.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Small\+String.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Small\+Vector.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+String\+Map.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+String\+Ref.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+String\+Switch.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Triple.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Object/\+Archive.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Object/\+Archive\+Writer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Object/\+Binary.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Object/\+Object\+File.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Casting.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Debug.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Errc.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Error.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Error\+Or.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+System.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Host.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Memory\+Buffer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Path.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Program.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+String\+Saver.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+With\+Color.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/raw\+\_\+ostream.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$algorithm$>$}\newline
+{\ttfamily \#include $<$cassert$>$}\newline
+{\ttfamily \#include $<$cstddef$>$}\newline
+{\ttfamily \#include $<$cstdint$>$}\newline
+{\ttfamily \#include $<$forward\+\_\+list$>$}\newline
+{\ttfamily \#include $<$memory$>$}\newline
+{\ttfamily \#include $<$set$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$system\+\_\+error$>$}\newline
+{\ttfamily \#include $<$utility$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}}
+\item 
+class \mbox{\hyperlink{class_file_handler}{File\+Handler}}
+\begin{DoxyCompactList}\small\item\em Generic file handler interface. \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{struct_file_handler_1_1_bundle_info}{File\+Handler\+::\+Bundle\+Info}}
+\item 
+class \mbox{\hyperlink{class_binary_file_handler}{Binary\+File\+Handler}}
+\item 
+class \mbox{\hyperlink{class_object_file_handler}{Object\+File\+Handler}}
+\item 
+class \mbox{\hyperlink{class_text_file_handler}{Text\+File\+Handler}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{_clang_offload_bundler_8cpp_a8261baf2ddbb8a17f287149d5415eebf}{OFFLOAD\+\_\+\+BUNDLER\+\_\+\+MAGIC\+\_\+\+STR}}~\char`\"{}\+\_\+\+\_\+\+CLANG\+\_\+\+OFFLOAD\+\_\+\+BUNDLE\+\_\+\+\_\+\char`\"{}
+\begin{DoxyCompactList}\small\item\em Magic string that marks the existence of offloading data. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{_clang_offload_bundler_8cpp_a2e0e96a489012901de23db69a0d042d8}{is\+Code\+Object\+Compatible}} (\mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}} \&Code\+Object\+Info, \mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}} \&Target\+Info)
+\begin{DoxyCompactList}\small\item\em Checks if a code object {\ttfamily Code\+Object\+Info} is compatible with a given target {\ttfamily Target\+Info}. \mbox{\hyperlink{}{https\+://clang.\+llvm.\+org/docs/\+Clang\+Offload\+Bundler.\+html\#bundle-\/entry-\/id.}}\end{DoxyCompactList}\item 
+int \mbox{\hyperlink{_clang_offload_bundler_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file implements a clang-\/offload-\/bundler that bundles different files that relate with the same source code but different targets into a single one. Also the implements the opposite functionality, i.\+e. unbundle files previous created by this tool. 
+
+\doxysubsection{Macro Definition Documentation}
+\mbox{\Hypertarget{_clang_offload_bundler_8cpp_a8261baf2ddbb8a17f287149d5415eebf}\label{_clang_offload_bundler_8cpp_a8261baf2ddbb8a17f287149d5415eebf}} 
+\index{ClangOffloadBundler.cpp@{ClangOffloadBundler.cpp}!OFFLOAD\_BUNDLER\_MAGIC\_STR@{OFFLOAD\_BUNDLER\_MAGIC\_STR}}
+\index{OFFLOAD\_BUNDLER\_MAGIC\_STR@{OFFLOAD\_BUNDLER\_MAGIC\_STR}!ClangOffloadBundler.cpp@{ClangOffloadBundler.cpp}}
+\doxysubsubsection{\texorpdfstring{OFFLOAD\_BUNDLER\_MAGIC\_STR}{OFFLOAD\_BUNDLER\_MAGIC\_STR}}
+{\footnotesize\ttfamily \#define OFFLOAD\+\_\+\+BUNDLER\+\_\+\+MAGIC\+\_\+\+STR~\char`\"{}\+\_\+\+\_\+\+CLANG\+\_\+\+OFFLOAD\+\_\+\+BUNDLE\+\_\+\+\_\+\char`\"{}}
+
+
+
+Magic string that marks the existence of offloading data. 
+
+
+
+Definition at line 120 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_offload_bundler_8cpp_a2e0e96a489012901de23db69a0d042d8}\label{_clang_offload_bundler_8cpp_a2e0e96a489012901de23db69a0d042d8}} 
+\index{ClangOffloadBundler.cpp@{ClangOffloadBundler.cpp}!isCodeObjectCompatible@{isCodeObjectCompatible}}
+\index{isCodeObjectCompatible@{isCodeObjectCompatible}!ClangOffloadBundler.cpp@{ClangOffloadBundler.cpp}}
+\doxysubsubsection{\texorpdfstring{isCodeObjectCompatible()}{isCodeObjectCompatible()}}
+{\footnotesize\ttfamily bool is\+Code\+Object\+Compatible (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}} \&}]{Code\+Object\+Info,  }\item[{\mbox{\hyperlink{struct_offload_target_info}{Offload\+Target\+Info}} \&}]{Target\+Info }\end{DoxyParamCaption})}
+
+
+
+Checks if a code object {\ttfamily Code\+Object\+Info} is compatible with a given target {\ttfamily Target\+Info}. \mbox{\hyperlink{}{https\+://clang.\+llvm.\+org/docs/\+Clang\+Offload\+Bundler.\+html\#bundle-\/entry-\/id.}}
+
+
+
+Definition at line 1061 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1062                                                            \{}
+\DoxyCodeLine{1063 }
+\DoxyCodeLine{1064   \textcolor{comment}{// Compatible in case of exact match.}}
+\DoxyCodeLine{1065   \textcolor{keywordflow}{if} (CodeObjectInfo == TargetInfo) \{}
+\DoxyCodeLine{1066     DEBUG\_WITH\_TYPE(}
+\DoxyCodeLine{1067         \textcolor{stringliteral}{"{}CodeObjectCompatibility"{}},}
+\DoxyCodeLine{1068         dbgs() << \textcolor{stringliteral}{"{}Compatible: Exact match: "{}} << CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}() << \textcolor{stringliteral}{"{}\(\backslash\)n"{}});}
+\DoxyCodeLine{1069     \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{1070   \}}
+\DoxyCodeLine{1071 }
+\DoxyCodeLine{1072   \textcolor{comment}{// Incompatible if Kinds or Triples mismatch.}}
+\DoxyCodeLine{1073   \textcolor{keywordflow}{if} (CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} != TargetInfo.\mbox{\hyperlink{struct_offload_target_info_a3500cd32ca481f827bc251452563624b}{OffloadKind}} ||}
+\DoxyCodeLine{1074       !CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}}.isCompatibleWith(TargetInfo.\mbox{\hyperlink{struct_offload_target_info_abca120d4035beee4a3b0604008683fc4}{Triple}})) \{}
+\DoxyCodeLine{1075     DEBUG\_WITH\_TYPE(}
+\DoxyCodeLine{1076         \textcolor{stringliteral}{"{}CodeObjectCompatibility"{}},}
+\DoxyCodeLine{1077         dbgs() << \textcolor{stringliteral}{"{}Incompatible: Kind/Triple mismatch \(\backslash\)t[CodeObject: "{}}}
+\DoxyCodeLine{1078                << CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}() << \textcolor{stringliteral}{"{}]\(\backslash\)t:\(\backslash\)t[Target: "{}} << TargetInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}()}
+\DoxyCodeLine{1079                << \textcolor{stringliteral}{"{}]\(\backslash\)n"{}});}
+\DoxyCodeLine{1080     \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{1081   \}}
+\DoxyCodeLine{1082 }
+\DoxyCodeLine{1083   \textcolor{comment}{// Incompatible if GPUArch mismatch.}}
+\DoxyCodeLine{1084   \textcolor{keywordflow}{if} (CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}} != TargetInfo.\mbox{\hyperlink{struct_offload_target_info_a14d040744b4d59e6780bf54b26685739}{GPUArch}}) \{}
+\DoxyCodeLine{1085     DEBUG\_WITH\_TYPE(\textcolor{stringliteral}{"{}CodeObjectCompatibility"{}},}
+\DoxyCodeLine{1086                     dbgs() << \textcolor{stringliteral}{"{}Incompatible: GPU Arch mismatch \(\backslash\)t[CodeObject: "{}}}
+\DoxyCodeLine{1087                            << CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}()}
+\DoxyCodeLine{1088                            << \textcolor{stringliteral}{"{}]\(\backslash\)t:\(\backslash\)t[Target: "{}} << TargetInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}() << \textcolor{stringliteral}{"{}]\(\backslash\)n"{}});}
+\DoxyCodeLine{1089     \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{1090   \}}
+\DoxyCodeLine{1091 }
+\DoxyCodeLine{1092   DEBUG\_WITH\_TYPE(}
+\DoxyCodeLine{1093       \textcolor{stringliteral}{"{}CodeObjectCompatibility"{}},}
+\DoxyCodeLine{1094       dbgs() << \textcolor{stringliteral}{"{}Compatible: Code Objects are compatible \(\backslash\)t[CodeObject: "{}}}
+\DoxyCodeLine{1095              << CodeObjectInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}() << \textcolor{stringliteral}{"{}]\(\backslash\)t:\(\backslash\)t[Target: "{}} << TargetInfo.\mbox{\hyperlink{struct_offload_target_info_a3fc2f34e4f9bdb04326326811f5f3ad4}{str}}()}
+\DoxyCodeLine{1096              << \textcolor{stringliteral}{"{}]\(\backslash\)n"{}});}
+\DoxyCodeLine{1097   \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{1098 \}}
+
+\end{DoxyCode}
+
+
+References Offload\+Target\+Info\+::\+GPUArch, Offload\+Target\+Info\+::\+Offload\+Kind, Offload\+Target\+Info\+::str(), and Offload\+Target\+Info\+::\+Triple.
+
+\mbox{\Hypertarget{_clang_offload_bundler_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_offload_bundler_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangOffloadBundler.cpp@{ClangOffloadBundler.cpp}!main@{main}}
+\index{main@{main}!ClangOffloadBundler.cpp@{ClangOffloadBundler.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 1292 of file Clang\+Offload\+Bundler.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1292                                       \{}
+\DoxyCodeLine{1293   sys::PrintStackTraceOnErrorSignal(argv[0]);}
+\DoxyCodeLine{1294 }
+\DoxyCodeLine{1295   cl::HideUnrelatedOptions(ClangOffloadBundlerCategory);}
+\DoxyCodeLine{1296   cl::SetVersionPrinter(PrintVersion);}
+\DoxyCodeLine{1297   cl::ParseCommandLineOptions(}
+\DoxyCodeLine{1298       argc, argv,}
+\DoxyCodeLine{1299       \textcolor{stringliteral}{"{}A tool to bundle several input files of the specified type <type> \(\backslash\)n"{}}}
+\DoxyCodeLine{1300       \textcolor{stringliteral}{"{}referring to the same source file but different targets into a single \(\backslash\)n"{}}}
+\DoxyCodeLine{1301       \textcolor{stringliteral}{"{}one. The resulting file can also be unbundled into different files by \(\backslash\)n"{}}}
+\DoxyCodeLine{1302       \textcolor{stringliteral}{"{}this tool if -\/unbundle is provided.\(\backslash\)n"{}});}
+\DoxyCodeLine{1303 }
+\DoxyCodeLine{1304   \textcolor{keywordflow}{if} (Help) \{}
+\DoxyCodeLine{1305     cl::PrintHelpMessage();}
+\DoxyCodeLine{1306     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1307   \}}
+\DoxyCodeLine{1308 }
+\DoxyCodeLine{1309   \textcolor{keyword}{auto} reportError = [argv](Error E) \{}
+\DoxyCodeLine{1310     logAllUnhandledErrors(std::move(E), WithColor::error(errs(), argv[0]));}
+\DoxyCodeLine{1311     exit(1);}
+\DoxyCodeLine{1312   \};}
+\DoxyCodeLine{1313 }
+\DoxyCodeLine{1314   \textcolor{keyword}{auto} doWork = [\&](std::function<llvm::Error()> Work) \{}
+\DoxyCodeLine{1315     \textcolor{comment}{// Save the current executable directory as it will be useful to find other}}
+\DoxyCodeLine{1316     \textcolor{comment}{// tools.}}
+\DoxyCodeLine{1317     BundlerExecutable = argv[0];}
+\DoxyCodeLine{1318     \textcolor{keywordflow}{if} (!llvm::sys::fs::exists(BundlerExecutable))}
+\DoxyCodeLine{1319       BundlerExecutable =}
+\DoxyCodeLine{1320           sys::fs::getMainExecutable(argv[0], \&BundlerExecutable);}
+\DoxyCodeLine{1321 }
+\DoxyCodeLine{1322     \textcolor{keywordflow}{if} (llvm::Error Err = Work()) \{}
+\DoxyCodeLine{1323       reportError(std::move(Err));}
+\DoxyCodeLine{1324     \}}
+\DoxyCodeLine{1325   \};}
+\DoxyCodeLine{1326 }
+\DoxyCodeLine{1327   \textcolor{keywordflow}{if} (ListBundleIDs) \{}
+\DoxyCodeLine{1328     \textcolor{keywordflow}{if} (Unbundle) \{}
+\DoxyCodeLine{1329       reportError(}
+\DoxyCodeLine{1330           createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1331                             \textcolor{stringliteral}{"{}-\/unbundle and -\/list cannot be used together"{}}));}
+\DoxyCodeLine{1332     \}}
+\DoxyCodeLine{1333     \textcolor{keywordflow}{if} (InputFileNames.size() != 1) \{}
+\DoxyCodeLine{1334       reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1335                                     \textcolor{stringliteral}{"{}only one input file supported for -\/list"{}}));}
+\DoxyCodeLine{1336     \}}
+\DoxyCodeLine{1337     \textcolor{keywordflow}{if} (OutputFileNames.size()) \{}
+\DoxyCodeLine{1338       reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1339                                     \textcolor{stringliteral}{"{}-\/outputs option is invalid for -\/list"{}}));}
+\DoxyCodeLine{1340     \}}
+\DoxyCodeLine{1341     \textcolor{keywordflow}{if} (TargetNames.size()) \{}
+\DoxyCodeLine{1342       reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1343                                     \textcolor{stringliteral}{"{}-\/targets option is invalid for -\/list"{}}));}
+\DoxyCodeLine{1344     \}}
+\DoxyCodeLine{1345 }
+\DoxyCodeLine{1346     doWork([]() \{ \textcolor{keywordflow}{return} ListBundleIDsInFile(InputFileNames.front()); \});}
+\DoxyCodeLine{1347     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1348   \}}
+\DoxyCodeLine{1349 }
+\DoxyCodeLine{1350   \textcolor{keywordflow}{if} (OutputFileNames.getNumOccurrences() == 0) \{}
+\DoxyCodeLine{1351     reportError(createStringError(}
+\DoxyCodeLine{1352         errc::invalid\_argument,}
+\DoxyCodeLine{1353         \textcolor{stringliteral}{"{}for the -\/-\/outputs option: must be specified at least once!"{}}));}
+\DoxyCodeLine{1354   \}}
+\DoxyCodeLine{1355   \textcolor{keywordflow}{if} (TargetNames.getNumOccurrences() == 0) \{}
+\DoxyCodeLine{1356     reportError(createStringError(}
+\DoxyCodeLine{1357         errc::invalid\_argument,}
+\DoxyCodeLine{1358         \textcolor{stringliteral}{"{}for the -\/-\/targets option: must be specified at least once!"{}}));}
+\DoxyCodeLine{1359   \}}
+\DoxyCodeLine{1360   \textcolor{keywordflow}{if} (Unbundle) \{}
+\DoxyCodeLine{1361     \textcolor{keywordflow}{if} (InputFileNames.size() != 1) \{}
+\DoxyCodeLine{1362       reportError(createStringError(}
+\DoxyCodeLine{1363           errc::invalid\_argument,}
+\DoxyCodeLine{1364           \textcolor{stringliteral}{"{}only one input file supported in unbundling mode"{}}));}
+\DoxyCodeLine{1365     \}}
+\DoxyCodeLine{1366     \textcolor{keywordflow}{if} (OutputFileNames.size() != TargetNames.size()) \{}
+\DoxyCodeLine{1367       reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1368                                     \textcolor{stringliteral}{"{}number of output files and targets should "{}}}
+\DoxyCodeLine{1369                                     \textcolor{stringliteral}{"{}match in unbundling mode"{}}));}
+\DoxyCodeLine{1370     \}}
+\DoxyCodeLine{1371   \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{1372     \textcolor{keywordflow}{if} (FilesType == \textcolor{stringliteral}{"{}a"{}}) \{}
+\DoxyCodeLine{1373       reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1374                                     \textcolor{stringliteral}{"{}Archive files are only supported "{}}}
+\DoxyCodeLine{1375                                     \textcolor{stringliteral}{"{}for unbundling"{}}));}
+\DoxyCodeLine{1376     \}}
+\DoxyCodeLine{1377     \textcolor{keywordflow}{if} (OutputFileNames.size() != 1) \{}
+\DoxyCodeLine{1378       reportError(createStringError(}
+\DoxyCodeLine{1379           errc::invalid\_argument,}
+\DoxyCodeLine{1380           \textcolor{stringliteral}{"{}only one output file supported in bundling mode"{}}));}
+\DoxyCodeLine{1381     \}}
+\DoxyCodeLine{1382     \textcolor{keywordflow}{if} (InputFileNames.size() != TargetNames.size()) \{}
+\DoxyCodeLine{1383       reportError(createStringError(}
+\DoxyCodeLine{1384           errc::invalid\_argument,}
+\DoxyCodeLine{1385           \textcolor{stringliteral}{"{}number of input files and targets should match in bundling mode"{}}));}
+\DoxyCodeLine{1386     \}}
+\DoxyCodeLine{1387   \}}
+\DoxyCodeLine{1388 }
+\DoxyCodeLine{1389   \textcolor{comment}{// Verify that the offload kinds and triples are known. We also check that we}}
+\DoxyCodeLine{1390   \textcolor{comment}{// have exactly one host target.}}
+\DoxyCodeLine{1391   \textcolor{keywordtype}{unsigned} Index = 0u;}
+\DoxyCodeLine{1392   \textcolor{keywordtype}{unsigned} HostTargetNum = 0u;}
+\DoxyCodeLine{1393   \textcolor{keywordtype}{bool} HIPOnly = \textcolor{keyword}{true};}
+\DoxyCodeLine{1394   llvm::DenseSet<StringRef> ParsedTargets;}
+\DoxyCodeLine{1395   \textcolor{keywordflow}{for} (StringRef Target : TargetNames) \{}
+\DoxyCodeLine{1396     \textcolor{keywordflow}{if} (ParsedTargets.contains(Target)) \{}
+\DoxyCodeLine{1397       reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1398                                     \textcolor{stringliteral}{"{}Duplicate targets are not allowed"{}}));}
+\DoxyCodeLine{1399     \}}
+\DoxyCodeLine{1400     ParsedTargets.insert(Target);}
+\DoxyCodeLine{1401 }
+\DoxyCodeLine{1402     \textcolor{keyword}{auto} OffloadInfo = \mbox{\hyperlink{struct_offload_target_info}{OffloadTargetInfo}}(Target);}
+\DoxyCodeLine{1403     \textcolor{keywordtype}{bool} KindIsValid = OffloadInfo.isOffloadKindValid();}
+\DoxyCodeLine{1404     \textcolor{keywordtype}{bool} TripleIsValid = OffloadInfo.isTripleValid();}
+\DoxyCodeLine{1405 }
+\DoxyCodeLine{1406     \textcolor{keywordflow}{if} (!KindIsValid || !TripleIsValid) \{}
+\DoxyCodeLine{1407       SmallVector<char, 128u> Buf;}
+\DoxyCodeLine{1408       raw\_svector\_ostream Msg(Buf);}
+\DoxyCodeLine{1409       Msg << \textcolor{stringliteral}{"{}invalid target '"{}} << Target << \textcolor{stringliteral}{"{}'"{}};}
+\DoxyCodeLine{1410       \textcolor{keywordflow}{if} (!KindIsValid)}
+\DoxyCodeLine{1411         Msg << \textcolor{stringliteral}{"{}, unknown offloading kind '"{}} << OffloadInfo.OffloadKind << \textcolor{stringliteral}{"{}'"{}};}
+\DoxyCodeLine{1412       \textcolor{keywordflow}{if} (!TripleIsValid)}
+\DoxyCodeLine{1413         Msg << \textcolor{stringliteral}{"{}, unknown target triple '"{}} << OffloadInfo.Triple.str() << \textcolor{stringliteral}{"{}'"{}};}
+\DoxyCodeLine{1414       reportError(createStringError(errc::invalid\_argument, Msg.str()));}
+\DoxyCodeLine{1415     \}}
+\DoxyCodeLine{1416 }
+\DoxyCodeLine{1417     \textcolor{keywordflow}{if} (KindIsValid \&\& OffloadInfo.hasHostKind()) \{}
+\DoxyCodeLine{1418       ++HostTargetNum;}
+\DoxyCodeLine{1419       \textcolor{comment}{// Save the index of the input that refers to the host.}}
+\DoxyCodeLine{1420       HostInputIndex = Index;}
+\DoxyCodeLine{1421     \}}
+\DoxyCodeLine{1422 }
+\DoxyCodeLine{1423     \textcolor{keywordflow}{if} (OffloadInfo.OffloadKind != \textcolor{stringliteral}{"{}hip"{}} \&\& OffloadInfo.OffloadKind != \textcolor{stringliteral}{"{}hipv4"{}})}
+\DoxyCodeLine{1424       HIPOnly = \textcolor{keyword}{false};}
+\DoxyCodeLine{1425 }
+\DoxyCodeLine{1426     ++Index;}
+\DoxyCodeLine{1427   \}}
+\DoxyCodeLine{1428 }
+\DoxyCodeLine{1429   \textcolor{comment}{// HIP uses clang-\/offload-\/bundler to bundle device-\/only compilation results}}
+\DoxyCodeLine{1430   \textcolor{comment}{// for multiple GPU archs, therefore allow no host target if all entries}}
+\DoxyCodeLine{1431   \textcolor{comment}{// are for HIP.}}
+\DoxyCodeLine{1432   AllowNoHost = HIPOnly;}
+\DoxyCodeLine{1433 }
+\DoxyCodeLine{1434   \textcolor{comment}{// Host triple is not really needed for unbundling operation, so do not}}
+\DoxyCodeLine{1435   \textcolor{comment}{// treat missing host triple as error if we do unbundling.}}
+\DoxyCodeLine{1436   \textcolor{keywordflow}{if} ((Unbundle \&\& HostTargetNum > 1) ||}
+\DoxyCodeLine{1437       (!Unbundle \&\& HostTargetNum != 1 \&\& !AllowNoHost)) \{}
+\DoxyCodeLine{1438     reportError(createStringError(errc::invalid\_argument,}
+\DoxyCodeLine{1439                                   \textcolor{stringliteral}{"{}expecting exactly one host target but got "{}} +}
+\DoxyCodeLine{1440                                       Twine(HostTargetNum)));}
+\DoxyCodeLine{1441   \}}
+\DoxyCodeLine{1442 }
+\DoxyCodeLine{1443   doWork([]() \{}
+\DoxyCodeLine{1444     \textcolor{keywordflow}{if} (Unbundle) \{}
+\DoxyCodeLine{1445       \textcolor{keywordflow}{if} (FilesType == \textcolor{stringliteral}{"{}a"{}})}
+\DoxyCodeLine{1446         \textcolor{keywordflow}{return} UnbundleArchive();}
+\DoxyCodeLine{1447       \textcolor{keywordflow}{else}}
+\DoxyCodeLine{1448         \textcolor{keywordflow}{return} UnbundleFiles();}
+\DoxyCodeLine{1449     \} \textcolor{keywordflow}{else}}
+\DoxyCodeLine{1450       \textcolor{keywordflow}{return} BundleFiles();}
+\DoxyCodeLine{1451   \});}
+\DoxyCodeLine{1452   \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{1453 \}}
+
+\end{DoxyCode}

@@ -1,0 +1,186 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexHigh.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexHigh.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CursorVisitor\&.h'\fP
+.br
+\fC#include 'CLog\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclObjC\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'llvm/Support/Compiler\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXResult \fBclang_findReferencesInFile\fP (CXCursor cursor, CXFile file, CXCursorAndRangeVisitor visitor)"
+.br
+.ti -1c
+.RI "CXResult \fBclang_findIncludesInFile\fP (CXTranslationUnit TU, CXFile file, CXCursorAndRangeVisitor visitor)"
+.br
+.ti -1c
+.RI "CXResult \fBclang_findReferencesInFileWithBlock\fP (CXCursor cursor, CXFile file, \fBCXCursorAndRangeVisitorBlock\fP block)"
+.br
+.ti -1c
+.RI "CXResult \fBclang_findIncludesInFileWithBlock\fP (CXTranslationUnit TU, CXFile file, \fBCXCursorAndRangeVisitorBlock\fP block)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXResult clang_findIncludesInFile (CXTranslationUnit TU, CXFile file, CXCursorAndRangeVisitor visitor)"
+
+.PP
+Definition at line 478 of file CIndexHigh\&.cpp\&.
+.PP
+.nf
+479                                                               {
+480   if (cxtu::isNotUsableTU(TU)) {
+481     LOG_BAD_TU(TU);
+482     return CXResult_Invalid;
+483   }
+484 
+485   LogRef Log = Logger::make(__func__);
+486   if (!file) {
+487     if (Log)
+488       *Log << "Null file";
+489     return CXResult_Invalid;
+490   }
+491   if (!visitor\&.visit) {
+492     if (Log)
+493       *Log << "Null visitor";
+494     return CXResult_Invalid;
+495   }
+496 
+497   if (Log)
+498     *Log << TU << " @" << static_cast<const FileEntry *>(file);
+499 
+500   ASTUnit *CXXUnit = cxtu::getASTUnit(TU);
+501   if (!CXXUnit)
+502     return CXResult_Invalid;
+503 
+504   ASTUnit::ConcurrencyCheck Check(*CXXUnit);
+505 
+506   if (findIncludesInFile(TU, static_cast<const FileEntry *>(file), visitor))
+507     return CXResult_VisitBreak;
+508   return CXResult_Success;
+509 }
+.fi
+.PP
+References LOG_BAD_TU\&.
+.SS "CXResult clang_findIncludesInFileWithBlock (CXTranslationUnit TU, CXFile file, \fBCXCursorAndRangeVisitorBlock\fP block)"
+
+.PP
+Definition at line 526 of file CIndexHigh\&.cpp\&.
+.PP
+.nf
+528                                                                                {
+529   CXCursorAndRangeVisitor visitor = { block,
+530                                       block ? _visitCursorAndRange : nullptr };
+531   return clang_findIncludesInFile(TU, file, visitor);
+532 }
+.fi
+.SS "CXResult clang_findReferencesInFile (CXCursor cursor, CXFile file, CXCursorAndRangeVisitor visitor)"
+
+.PP
+Definition at line 409 of file CIndexHigh\&.cpp\&.
+.PP
+.nf
+410                                                                      {
+411   LogRef Log = Logger::make(__func__);
+412 
+413   if (clang_Cursor_isNull(cursor)) {
+414     if (Log)
+415       *Log << "Null cursor";
+416     return CXResult_Invalid;
+417   }
+418   if (cursor\&.kind == CXCursor_NoDeclFound) {
+419     if (Log)
+420       *Log << "Got CXCursor_NoDeclFound";
+421     return CXResult_Invalid;
+422   }
+423   if (!file) {
+424     if (Log)
+425       *Log << "Null file";
+426     return CXResult_Invalid;
+427   }
+428   if (!visitor\&.visit) {
+429     if (Log)
+430       *Log << "Null visitor";
+431     return CXResult_Invalid;
+432   }
+433 
+434   if (Log)
+435     *Log << cursor << " @" << static_cast<const FileEntry *>(file);
+436 
+437   ASTUnit *CXXUnit = cxcursor::getCursorASTUnit(cursor);
+438   if (!CXXUnit)
+439     return CXResult_Invalid;
+440 
+441   ASTUnit::ConcurrencyCheck Check(*CXXUnit);
+442 
+443   if (cursor\&.kind == CXCursor_MacroDefinition ||
+444       cursor\&.kind == CXCursor_MacroExpansion) {
+445     if (findMacroRefsInFile(cxcursor::getCursorTU(cursor),
+446                             cursor,
+447                             static_cast<const FileEntry *>(file),
+448                             visitor))
+449       return CXResult_VisitBreak;
+450     return CXResult_Success;
+451   }
+452 
+453   // We are interested in semantics of identifiers so for C++ constructor exprs
+454   // prefer type references, e\&.g\&.:
+455   //
+456   //  return MyStruct();
+457   //
+458   // for 'MyStruct' we'll have a cursor pointing at the constructor decl but
+459   // we are actually interested in the type declaration\&.
+460   cursor = cxcursor::getTypeRefCursor(cursor);
+461 
+462   CXCursor refCursor = clang_getCursorReferenced(cursor);
+463 
+464   if (!clang_isDeclaration(refCursor\&.kind)) {
+465     if (Log)
+466       *Log << "cursor is not referencing a declaration";
+467     return CXResult_Invalid;
+468   }
+469 
+470   if (findIdRefsInFile(cxcursor::getCursorTU(cursor),
+471                        refCursor,
+472                        static_cast<const FileEntry *>(file),
+473                        visitor))
+474     return CXResult_VisitBreak;
+475   return CXResult_Success;
+476 }
+.fi
+.PP
+References clang_Cursor_isNull(), and clang::cxcursor::getCursorASTUnit()\&.
+.SS "CXResult clang_findReferencesInFileWithBlock (CXCursor cursor, CXFile file, \fBCXCursorAndRangeVisitorBlock\fP block)"
+
+.PP
+Definition at line 518 of file CIndexHigh\&.cpp\&.
+.PP
+.nf
+520                                                                                {
+521   CXCursorAndRangeVisitor visitor = { block,
+522                                       block ? _visitCursorAndRange : nullptr };
+523   return clang_findReferencesInFile(cursor, file, visitor);
+524 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

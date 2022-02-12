@@ -1,0 +1,517 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/Indexing.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/Indexing.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexDiagnostic\&.h'\fP
+.br
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CLog\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXIndexDataConsumer\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'clang/AST/ASTConsumer\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInstance\&.h'\fP
+.br
+\fC#include 'clang/Frontend/CompilerInvocation\&.h'\fP
+.br
+\fC#include 'clang/Frontend/FrontendAction\&.h'\fP
+.br
+\fC#include 'clang/Frontend/MultiplexConsumer\&.h'\fP
+.br
+\fC#include 'clang/Frontend/Utils\&.h'\fP
+.br
+\fC#include 'clang/Index/IndexingAction\&.h'\fP
+.br
+\fC#include 'clang/Lex/HeaderSearch\&.h'\fP
+.br
+\fC#include 'clang/Lex/PPCallbacks\&.h'\fP
+.br
+\fC#include 'clang/Lex/PPConditionalDirectiveRecord\&.h'\fP
+.br
+\fC#include 'clang/Lex/Preprocessor\&.h'\fP
+.br
+\fC#include 'clang/Lex/PreprocessorOptions\&.h'\fP
+.br
+\fC#include 'llvm/Support/CrashRecoveryContext\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include <cstdio>\fP
+.br
+\fC#include <mutex>\fP
+.br
+\fC#include <utility>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBllvm::DenseMapInfo< PPRegion >\fP"
+.br
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBllvm\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBclang_index_isEntityObjCContainerKind\fP (CXIdxEntityKind K)"
+.br
+.ti -1c
+.RI "const CXIdxObjCContainerDeclInfo * \fBclang_index_getObjCContainerDeclInfo\fP (const CXIdxDeclInfo *DInfo)"
+.br
+.ti -1c
+.RI "const CXIdxObjCInterfaceDeclInfo * \fBclang_index_getObjCInterfaceDeclInfo\fP (const CXIdxDeclInfo *DInfo)"
+.br
+.ti -1c
+.RI "const CXIdxObjCCategoryDeclInfo * \fBclang_index_getObjCCategoryDeclInfo\fP (const CXIdxDeclInfo *DInfo)"
+.br
+.ti -1c
+.RI "const CXIdxObjCProtocolRefListInfo * \fBclang_index_getObjCProtocolRefListInfo\fP (const CXIdxDeclInfo *DInfo)"
+.br
+.ti -1c
+.RI "const CXIdxObjCPropertyDeclInfo * \fBclang_index_getObjCPropertyDeclInfo\fP (const CXIdxDeclInfo *DInfo)"
+.br
+.ti -1c
+.RI "const CXIdxIBOutletCollectionAttrInfo * \fBclang_index_getIBOutletCollectionAttrInfo\fP (const CXIdxAttrInfo *AInfo)"
+.br
+.ti -1c
+.RI "const CXIdxCXXClassDeclInfo * \fBclang_index_getCXXClassDeclInfo\fP (const CXIdxDeclInfo *DInfo)"
+.br
+.ti -1c
+.RI "CXIdxClientContainer \fBclang_index_getClientContainer\fP (const CXIdxContainerInfo *info)"
+.br
+.ti -1c
+.RI "void \fBclang_index_setClientContainer\fP (const CXIdxContainerInfo *info, CXIdxClientContainer client)"
+.br
+.ti -1c
+.RI "CXIdxClientEntity \fBclang_index_getClientEntity\fP (const CXIdxEntityInfo *info)"
+.br
+.ti -1c
+.RI "void \fBclang_index_setClientEntity\fP (const CXIdxEntityInfo *info, CXIdxClientEntity client)"
+.br
+.ti -1c
+.RI "CXIndexAction \fBclang_IndexAction_create\fP (CXIndex CIdx)"
+.br
+.ti -1c
+.RI "void \fBclang_IndexAction_dispose\fP (CXIndexAction idxAction)"
+.br
+.ti -1c
+.RI "int \fBclang_indexSourceFile\fP (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks *index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, CXTranslationUnit *out_TU, unsigned TU_options)"
+.br
+.ti -1c
+.RI "int \fBclang_indexSourceFileFullArgv\fP (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks *index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, CXTranslationUnit *out_TU, unsigned TU_options)"
+.br
+.ti -1c
+.RI "int \fBclang_indexTranslationUnit\fP (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks *index_callbacks, unsigned index_callbacks_size, unsigned index_options, CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "void \fBclang_indexLoc_getFileLocation\fP (CXIdxLoc location, CXIdxClientFile *indexFile, CXFile *file, unsigned *line, unsigned *column, unsigned *offset)"
+.br
+.ti -1c
+.RI "CXSourceLocation \fBclang_indexLoc_getCXSourceLocation\fP (CXIdxLoc location)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXIdxClientContainer clang_index_getClientContainer (const CXIdxContainerInfo * info)"
+
+.PP
+Definition at line 822 of file Indexing\&.cpp\&.
+.PP
+.nf
+822                                                                {
+823   if (!info)
+824     return nullptr;
+825   const ContainerInfo *Container = static_cast<const ContainerInfo *>(info);
+826   return Container->IndexCtx->getClientContainerForDC(Container->DC);
+827 }
+.fi
+.PP
+References clang::cxindex::ContainerInfo::DC, clang::cxindex::CXIndexDataConsumer::getClientContainerForDC(), and clang::cxindex::ContainerInfo::IndexCtx\&.
+.SS "CXIdxClientEntity clang_index_getClientEntity (const CXIdxEntityInfo * info)"
+
+.PP
+Definition at line 837 of file Indexing\&.cpp\&.
+.PP
+.nf
+837                                                                            {
+838   if (!info)
+839     return nullptr;
+840   const EntityInfo *Entity = static_cast<const EntityInfo *>(info);
+841   return Entity->IndexCtx->getClientEntity(Entity->Dcl);
+842 }
+.fi
+.PP
+References clang::cxindex::EntityInfo::Dcl, clang::cxindex::CXIndexDataConsumer::getClientEntity(), and clang::cxindex::EntityInfo::IndexCtx\&.
+.SS "const CXIdxCXXClassDeclInfo* clang_index_getCXXClassDeclInfo (const CXIdxDeclInfo * DInfo)"
+
+.PP
+Definition at line 810 of file Indexing\&.cpp\&.
+.PP
+.nf
+810                                                             {
+811   if (!DInfo)
+812     return nullptr;
+813 
+814   const DeclInfo *DI = static_cast<const DeclInfo *>(DInfo);
+815   if (const CXXClassDeclInfo *ClassInfo = dyn_cast<CXXClassDeclInfo>(DI))
+816     return &ClassInfo->CXXClassInfo;
+817 
+818   return nullptr;
+819 }
+.fi
+.SS "const CXIdxIBOutletCollectionAttrInfo* clang_index_getIBOutletCollectionAttrInfo (const CXIdxAttrInfo * AInfo)"
+
+.PP
+Definition at line 797 of file Indexing\&.cpp\&.
+.PP
+.nf
+797                                                                       {
+798   if (!AInfo)
+799     return nullptr;
+800 
+801   const AttrInfo *DI = static_cast<const AttrInfo *>(AInfo);
+802   if (const IBOutletCollectionInfo *
+803         IBInfo = dyn_cast<IBOutletCollectionInfo>(DI))
+804     return &IBInfo->IBCollInfo;
+805 
+806   return nullptr;
+807 }
+.fi
+.SS "const CXIdxObjCCategoryDeclInfo* clang_index_getObjCCategoryDeclInfo (const CXIdxDeclInfo * DInfo)"
+
+.PP
+Definition at line 751 of file Indexing\&.cpp\&.
+.PP
+.nf
+751                                                                {
+752   if (!DInfo)
+753     return nullptr;
+754 
+755   const DeclInfo *DI = static_cast<const DeclInfo *>(DInfo);
+756   if (const ObjCCategoryDeclInfo *
+757         CatInfo = dyn_cast<ObjCCategoryDeclInfo>(DI))
+758     return &CatInfo->ObjCCatDeclInfo;
+759 
+760   return nullptr;
+761 }
+.fi
+.SS "const CXIdxObjCContainerDeclInfo* clang_index_getObjCContainerDeclInfo (const CXIdxDeclInfo * DInfo)"
+
+.PP
+Definition at line 725 of file Indexing\&.cpp\&.
+.PP
+.nf
+725                                                                  {
+726   if (!DInfo)
+727     return nullptr;
+728 
+729   const DeclInfo *DI = static_cast<const DeclInfo *>(DInfo);
+730   if (const ObjCContainerDeclInfo *
+731         ContInfo = dyn_cast<ObjCContainerDeclInfo>(DI))
+732     return &ContInfo->ObjCContDeclInfo;
+733 
+734   return nullptr;
+735 }
+.fi
+.SS "const CXIdxObjCInterfaceDeclInfo* clang_index_getObjCInterfaceDeclInfo (const CXIdxDeclInfo * DInfo)"
+
+.PP
+Definition at line 738 of file Indexing\&.cpp\&.
+.PP
+.nf
+738                                                                  {
+739   if (!DInfo)
+740     return nullptr;
+741 
+742   const DeclInfo *DI = static_cast<const DeclInfo *>(DInfo);
+743   if (const ObjCInterfaceDeclInfo *
+744         InterInfo = dyn_cast<ObjCInterfaceDeclInfo>(DI))
+745     return &InterInfo->ObjCInterDeclInfo;
+746 
+747   return nullptr;
+748 }
+.fi
+.SS "const CXIdxObjCPropertyDeclInfo* clang_index_getObjCPropertyDeclInfo (const CXIdxDeclInfo * DInfo)"
+
+.PP
+Definition at line 785 of file Indexing\&.cpp\&.
+.PP
+.nf
+785                                                                 {
+786   if (!DInfo)
+787     return nullptr;
+788 
+789   const DeclInfo *DI = static_cast<const DeclInfo *>(DInfo);
+790   if (const ObjCPropertyDeclInfo *PropInfo = dyn_cast<ObjCPropertyDeclInfo>(DI))
+791     return &PropInfo->ObjCPropDeclInfo;
+792 
+793   return nullptr;
+794 }
+.fi
+.SS "const CXIdxObjCProtocolRefListInfo* clang_index_getObjCProtocolRefListInfo (const CXIdxDeclInfo * DInfo)"
+
+.PP
+Definition at line 764 of file Indexing\&.cpp\&.
+.PP
+.nf
+764                                                                    {
+765   if (!DInfo)
+766     return nullptr;
+767 
+768   const DeclInfo *DI = static_cast<const DeclInfo *>(DInfo);
+769   
+770   if (const ObjCInterfaceDeclInfo *
+771         InterInfo = dyn_cast<ObjCInterfaceDeclInfo>(DI))
+772     return InterInfo->ObjCInterDeclInfo\&.protocols;
+773   
+774   if (const ObjCProtocolDeclInfo *
+775         ProtInfo = dyn_cast<ObjCProtocolDeclInfo>(DI))
+776     return &ProtInfo->ObjCProtoRefListInfo;
+777 
+778   if (const ObjCCategoryDeclInfo *CatInfo = dyn_cast<ObjCCategoryDeclInfo>(DI))
+779     return CatInfo->ObjCCatDeclInfo\&.protocols;
+780 
+781   return nullptr;
+782 }
+.fi
+.SS "int clang_index_isEntityObjCContainerKind (CXIdxEntityKind K)"
+
+.PP
+Definition at line 720 of file Indexing\&.cpp\&.
+.PP
+.nf
+720                                                              {
+721   return CXIdxEntity_ObjCClass <= K && K <= CXIdxEntity_ObjCCategory;
+722 }
+.fi
+.SS "void clang_index_setClientContainer (const CXIdxContainerInfo * info, CXIdxClientContainer client)"
+
+.PP
+Definition at line 829 of file Indexing\&.cpp\&.
+.PP
+.nf
+830                                                                  {
+831   if (!info)
+832     return;
+833   const ContainerInfo *Container = static_cast<const ContainerInfo *>(info);
+834   Container->IndexCtx->addContainerInMap(Container->DC, client);
+835 }
+.fi
+.PP
+References clang::cxindex::CXIndexDataConsumer::addContainerInMap(), clang::cxindex::ContainerInfo::DC, and clang::cxindex::ContainerInfo::IndexCtx\&.
+.SS "void clang_index_setClientEntity (const CXIdxEntityInfo * info, CXIdxClientEntity client)"
+
+.PP
+Definition at line 844 of file Indexing\&.cpp\&.
+.PP
+.nf
+845                                                            {
+846   if (!info)
+847     return;
+848   const EntityInfo *Entity = static_cast<const EntityInfo *>(info);
+849   Entity->IndexCtx->setClientEntity(Entity->Dcl, client);
+850 }
+.fi
+.PP
+References clang::cxindex::EntityInfo::Dcl, clang::cxindex::EntityInfo::IndexCtx, and clang::cxindex::CXIndexDataConsumer::setClientEntity()\&.
+.SS "CXIndexAction clang_IndexAction_create (CXIndex CIdx)"
+
+.PP
+Definition at line 852 of file Indexing\&.cpp\&.
+.PP
+.nf
+852                                                      {
+853   return new IndexSessionData(CIdx);
+854 }
+.fi
+.SS "void clang_IndexAction_dispose (CXIndexAction idxAction)"
+
+.PP
+Definition at line 856 of file Indexing\&.cpp\&.
+.PP
+.nf
+856                                                         {
+857   if (idxAction)
+858     delete static_cast<IndexSessionData *>(idxAction);
+859 }
+.fi
+.SS "CXSourceLocation clang_indexLoc_getCXSourceLocation (CXIdxLoc location)"
+
+.PP
+Definition at line 989 of file Indexing\&.cpp\&.
+.PP
+.nf
+989                                                                        {
+990   SourceLocation Loc = SourceLocation::getFromRawEncoding(location\&.int_data);
+991   if (!location\&.ptr_data[0] || Loc\&.isInvalid())
+992     return clang_getNullLocation();
+993 
+994   CXIndexDataConsumer &DataConsumer =
+995       *static_cast<CXIndexDataConsumer*>(location\&.ptr_data[0]);
+996   return cxloc::translateSourceLocation(DataConsumer\&.getASTContext(), Loc);
+997 }
+.fi
+.PP
+References clang_getNullLocation(), and clang::cxindex::CXIndexDataConsumer::getASTContext()\&.
+.SS "void clang_indexLoc_getFileLocation (CXIdxLoc location, CXIdxClientFile * indexFile, CXFile * file, unsigned * line, unsigned * column, unsigned * offset)"
+
+.PP
+Definition at line 968 of file Indexing\&.cpp\&.
+.PP
+.nf
+973                                                       {
+974   if (indexFile) *indexFile = nullptr;
+975   if (file)   *file = nullptr;
+976   if (line)   *line = 0;
+977   if (column) *column = 0;
+978   if (offset) *offset = 0;
+979 
+980   SourceLocation Loc = SourceLocation::getFromRawEncoding(location\&.int_data);
+981   if (!location\&.ptr_data[0] || Loc\&.isInvalid())
+982     return;
+983 
+984   CXIndexDataConsumer &DataConsumer =
+985       *static_cast<CXIndexDataConsumer*>(location\&.ptr_data[0]);
+986   DataConsumer\&.translateLoc(Loc, indexFile, file, line, column, offset);
+987 }
+.fi
+.PP
+References clang::cxindex::CXIndexDataConsumer::translateLoc()\&.
+.SS "int clang_indexSourceFile (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks * index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, CXTranslationUnit * out_TU, unsigned TU_options)"
+
+.PP
+Definition at line 861 of file Indexing\&.cpp\&.
+.PP
+.nf
+872                                                {
+873   SmallVector<const char *, 4> Args;
+874   Args\&.push_back("clang");
+875   Args\&.append(command_line_args, command_line_args + num_command_line_args);
+876   return clang_indexSourceFileFullArgv(
+877       idxAction, client_data, index_callbacks, index_callbacks_size,
+878       index_options, source_filename, Args\&.data(), Args\&.size(), unsaved_files,
+879       num_unsaved_files, out_TU, TU_options);
+880 }
+.fi
+.PP
+References clang_indexSourceFileFullArgv()\&.
+.SS "int clang_indexSourceFileFullArgv (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks * index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, CXTranslationUnit * out_TU, unsigned TU_options)"
+
+.PP
+Definition at line 882 of file Indexing\&.cpp\&.
+.PP
+.nf
+888                                                     {
+889   LOG_FUNC_SECTION {
+890     *Log << source_filename << ": ";
+891     for (int i = 0; i != num_command_line_args; ++i)
+892       *Log << command_line_args[i] << " ";
+893   }
+894 
+895   if (num_unsaved_files && !unsaved_files)
+896     return CXError_InvalidArguments;
+897 
+898   CXErrorCode result = CXError_Failure;
+899   auto IndexSourceFileImpl = [=, &result]() {
+900     result = clang_indexSourceFile_Impl(
+901         idxAction, client_data, index_callbacks, index_callbacks_size,
+902         index_options, source_filename, command_line_args,
+903         num_command_line_args,
+904         llvm::makeArrayRef(unsaved_files, num_unsaved_files), out_TU,
+905         TU_options);
+906   };
+907 
+908   llvm::CrashRecoveryContext CRC;
+909 
+910   if (!RunSafely(CRC, IndexSourceFileImpl)) {
+911     fprintf(stderr, "libclang: crash detected during indexing source file: {\n");
+912     fprintf(stderr, "  'source_filename' : '%s'\n", source_filename);
+913     fprintf(stderr, "  'command_line_args' : [");
+914     for (int i = 0; i != num_command_line_args; ++i) {
+915       if (i)
+916         fprintf(stderr, ", ");
+917       fprintf(stderr, "'%s'", command_line_args[i]);
+918     }
+919     fprintf(stderr, "],\n");
+920     fprintf(stderr, "  'unsaved_files' : [");
+921     for (unsigned i = 0; i != num_unsaved_files; ++i) {
+922       if (i)
+923         fprintf(stderr, ", ");
+924       fprintf(stderr, "('%s', '\&.\&.\&.', %ld)", unsaved_files[i]\&.Filename,
+925               unsaved_files[i]\&.Length);
+926     }
+927     fprintf(stderr, "],\n");
+928     fprintf(stderr, "  'options' : %d,\n", TU_options);
+929     fprintf(stderr, "}\n");
+930     
+931     return 1;
+932   } else if (getenv("LIBCLANG_RESOURCE_USAGE")) {
+933     if (out_TU)
+934       PrintLibclangResourceUsage(*out_TU);
+935   }
+936 
+937   return result;
+938 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.PP
+Referenced by clang_indexSourceFile()\&.
+.SS "int clang_indexTranslationUnit (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks * index_callbacks, unsigned index_callbacks_size, unsigned index_options, CXTranslationUnit TU)"
+
+.PP
+Definition at line 940 of file Indexing\&.cpp\&.
+.PP
+.nf
+945                                                      {
+946   LOG_FUNC_SECTION {
+947     *Log << TU;
+948   }
+949 
+950   CXErrorCode result;
+951   auto IndexTranslationUnitImpl = [=, &result]() {
+952     result = clang_indexTranslationUnit_Impl(
+953         idxAction, client_data, index_callbacks, index_callbacks_size,
+954         index_options, TU);
+955   };
+956 
+957   llvm::CrashRecoveryContext CRC;
+958 
+959   if (!RunSafely(CRC, IndexTranslationUnitImpl)) {
+960     fprintf(stderr, "libclang: crash detected during indexing TU\n");
+961     
+962     return 1;
+963   }
+964 
+965   return result;
+966 }
+.fi
+.PP
+References LOG_FUNC_SECTION\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

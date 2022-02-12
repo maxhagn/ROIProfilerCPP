@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_class_reporter_1_1_email_reporter" xml:lang="en-US">
+<title>Reporter.EmailReporter Class Reference</title>
+<indexterm><primary>Reporter.EmailReporter</primary></indexterm>
+<para>Inheritance diagram for Reporter.EmailReporter:    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="class_reporter_1_1_email_reporter.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_class_reporter_1_1_email_reporter_1ab1313296199a21db32716abd36f74345">getName</link> (self)</para>
+</listitem>
+            <listitem><para>def <link linkend="_class_reporter_1_1_email_reporter_1a1f9cdf4c54b4308a553628033912cf56">getParameters</link> (self)</para>
+</listitem>
+            <listitem><para>def <link linkend="_class_reporter_1_1_email_reporter_1a9193d5c1612d210ee42b4db2787b68aa">attachFile</link> (self, outer, path)</para>
+</listitem>
+            <listitem><para>def <link linkend="_class_reporter_1_1_email_reporter_1a22246ff1d9cc2d82ecd63b453392de76">fileReport</link> (self, report, parameters)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Detailed Description</title>
+<para>
+Definition at line <link linkend="__reporter_8py_source_1l00078">78</link> of file <link linkend="__reporter_8py_source">Reporter.py</link>.</para>
+</section>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_class_reporter_1_1_email_reporter_1a9193d5c1612d210ee42b4db2787b68aa"/>    <section>
+    <title>attachFile()</title>
+<indexterm><primary>attachFile</primary><secondary>Reporter.EmailReporter</secondary></indexterm>
+<indexterm><primary>Reporter.EmailReporter</primary><secondary>attachFile</secondary></indexterm>
+<para><computeroutput>def Reporter.EmailReporter.attachFile ( self,  outer,  path)</computeroutput></para><para>
+Definition at line <link linkend="__reporter_8py_source_1l00086">86</link> of file <link linkend="__reporter_8py_source">Reporter.py</link>.</para>
+<programlisting>00086 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>attachFile(self,&#32;outer,&#32;path):
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Guess&#32;the&#32;content&#32;type&#32;based&#32;on&#32;the&#32;file&apos;s&#32;extension.&#32;&#32;Encoding</emphasis>
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;will&#32;be&#32;ignored,&#32;although&#32;we&#32;should&#32;check&#32;for&#32;simple&#32;things&#32;like</emphasis>
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;gzip&apos;d&#32;or&#32;compressed&#32;files.</emphasis>
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ctype,&#32;encoding&#32;=&#32;mimetypes.guess_type(path)
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;ctype&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>&#32;<emphasis role="keywordflow">or</emphasis>&#32;encoding&#32;<emphasis role="keywordflow">is</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;<emphasis role="keywordtype">None</emphasis>:
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;No&#32;guess&#32;could&#32;be&#32;made,&#32;or&#32;the&#32;file&#32;is&#32;encoded&#32;(compressed),&#32;so</emphasis>
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;use&#32;a&#32;generic&#32;bag-of-bits&#32;type.</emphasis>
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ctype&#32;=&#32;<emphasis role="stringliteral">&apos;application/octet-stream&apos;</emphasis>
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;maintype,&#32;subtype&#32;=&#32;ctype.split(<emphasis role="stringliteral">&apos;/&apos;</emphasis>,&#32;1)
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;maintype&#32;==&#32;<emphasis role="stringliteral">&apos;text&apos;</emphasis>:
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path)
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Note:&#32;we&#32;should&#32;handle&#32;calculating&#32;the&#32;charset</emphasis>
+00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg&#32;=&#32;MIMEText(fp.read(),&#32;_subtype=subtype)
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp.close()
+00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp&#32;=&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(path,&#32;<emphasis role="stringliteral">&apos;rb&apos;</emphasis>)
+00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg&#32;=&#32;MIMEBase(maintype,&#32;subtype)
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.set_payload(fp.read())
+00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fp.close()
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Encode&#32;the&#32;payload&#32;using&#32;Base64</emphasis>
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;encoders.encode_base64(msg)
+00108 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;Set&#32;the&#32;filename&#32;parameter</emphasis>
+00109 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.add_header(<emphasis role="stringliteral">&apos;Content-Disposition&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;attachment&apos;</emphasis>,&#32;filename=os.path.basename(path))
+00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;outer.attach(msg)
+00111 
+</programlisting><para>
+References <link linkend="_startfile_8py_source_1l00206">startfile.open()</link>.</para>
+<para>
+Referenced by <link linkend="__reporter_8py_source_1l00112">Reporter.EmailReporter.fileReport()</link>.</para>
+    </section><anchor xml:id="_class_reporter_1_1_email_reporter_1a22246ff1d9cc2d82ecd63b453392de76"/>    <section>
+    <title>fileReport()</title>
+<indexterm><primary>fileReport</primary><secondary>Reporter.EmailReporter</secondary></indexterm>
+<indexterm><primary>Reporter.EmailReporter</primary><secondary>fileReport</secondary></indexterm>
+<para><computeroutput>def Reporter.EmailReporter.fileReport ( self,  report,  parameters)</computeroutput></para><para>
+Definition at line <link linkend="__reporter_8py_source_1l00112">112</link> of file <link linkend="__reporter_8py_source">Reporter.py</link>.</para>
+<programlisting>00112 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>fileReport(self,&#32;report,&#32;parameters):
+00113 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;mainMsg&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;&quot;\</emphasis>
+00114 <emphasis role="stringliteral">BUG&#32;REPORT</emphasis>
+00115 <emphasis role="stringliteral">---</emphasis>
+00116 <emphasis role="stringliteral">Title:&#32;%s</emphasis>
+00117 <emphasis role="stringliteral">Description:&#32;%s</emphasis>
+00118 <emphasis role="stringliteral">&quot;&quot;&quot;</emphasis>%(report.title,&#32;report.description)
+00119 
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;parameters.get(<emphasis role="stringliteral">&apos;To&apos;</emphasis>):
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;ReportFailure(<emphasis role="stringliteral">&apos;No&#32;&quot;To&quot;&#32;address&#32;specified.&apos;</emphasis>)
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;<emphasis role="keywordflow">not</emphasis>&#32;parameters.get(<emphasis role="stringliteral">&apos;From&apos;</emphasis>):
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;ReportFailure(<emphasis role="stringliteral">&apos;No&#32;&quot;From&quot;&#32;address&#32;specified.&apos;</emphasis>)
+00124 
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg&#32;=&#32;MIMEMultipart()
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg[<emphasis role="stringliteral">&apos;Subject&apos;</emphasis>]&#32;=&#32;<emphasis role="stringliteral">&apos;BUG&#32;REPORT:&#32;%s&apos;</emphasis>%(report.title)
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">#&#32;FIXME:&#32;Get&#32;config&#32;parameters</emphasis>
+00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg[<emphasis role="stringliteral">&apos;To&apos;</emphasis>]&#32;=&#32;parameters.get(<emphasis role="stringliteral">&apos;To&apos;</emphasis>)
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg[<emphasis role="stringliteral">&apos;From&apos;</emphasis>]&#32;=&#32;parameters.get(<emphasis role="stringliteral">&apos;From&apos;</emphasis>)
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.preamble&#32;=&#32;mainMsg
+00131 
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;msg.attach(MIMEText(mainMsg,&#32;_subtype=<emphasis role="stringliteral">&apos;text/plain&apos;</emphasis>))
+00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;file&#32;<emphasis role="keywordflow">in</emphasis>&#32;report.files:
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;self.attachFile(msg,&#32;file)
+00135 
+00136 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">try</emphasis>:
+00137 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s&#32;=&#32;smtplib.SMTP(host=parameters.get(<emphasis role="stringliteral">&apos;SMTP&#32;Server&apos;</emphasis>),
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;port=parameters.get(<emphasis role="stringliteral">&apos;SMTP&#32;Port&apos;</emphasis>))
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s.sendmail(msg[<emphasis role="stringliteral">&apos;From&apos;</emphasis>],&#32;msg[<emphasis role="stringliteral">&apos;To&apos;</emphasis>],&#32;msg.as_string())
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s.close()
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">except</emphasis>:
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;ReportFailure(<emphasis role="stringliteral">&apos;Unable&#32;to&#32;send&#32;message&#32;via&#32;SMTP.&apos;</emphasis>)
+00143 
+00144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Message&#32;sent!&quot;</emphasis>
+00145 
+</programlisting><para>
+References <link linkend="__reporter_8py_source_1l00086">Reporter.EmailReporter.attachFile()</link>.</para>
+    </section><anchor xml:id="_class_reporter_1_1_email_reporter_1ab1313296199a21db32716abd36f74345"/>    <section>
+    <title>getName()</title>
+<indexterm><primary>getName</primary><secondary>Reporter.EmailReporter</secondary></indexterm>
+<indexterm><primary>Reporter.EmailReporter</primary><secondary>getName</secondary></indexterm>
+<para><computeroutput>def Reporter.EmailReporter.getName ( self)</computeroutput></para><para>
+Definition at line <link linkend="__reporter_8py_source_1l00079">79</link> of file <link linkend="__reporter_8py_source">Reporter.py</link>.</para>
+<programlisting>00079 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>getName(self):
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&apos;Email&apos;</emphasis>
+00081 
+</programlisting><para>
+Referenced by <link linkend="__reporter_8py_source_1l00051">Reporter.TextParameter.getHTML()</link>, <link linkend="__reporter_8py_source_1l00063">Reporter.SelectionParameter.getHTML()</link>, and <link linkend="__reporter_8py_source_1l00045">Reporter.ReporterParameter.getValue()</link>.</para>
+    </section><anchor xml:id="_class_reporter_1_1_email_reporter_1a1f9cdf4c54b4308a553628033912cf56"/>    <section>
+    <title>getParameters()</title>
+<indexterm><primary>getParameters</primary><secondary>Reporter.EmailReporter</secondary></indexterm>
+<indexterm><primary>Reporter.EmailReporter</primary><secondary>getParameters</secondary></indexterm>
+<para><computeroutput>def Reporter.EmailReporter.getParameters ( self)</computeroutput></para><para>
+Definition at line <link linkend="__reporter_8py_source_1l00082">82</link> of file <link linkend="__reporter_8py_source">Reporter.py</link>.</para>
+<programlisting>00082 &#32;&#32;&#32;&#32;<emphasis role="keyword">def&#32;</emphasis>getParameters(self):
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[TextParameter(x)&#32;<emphasis role="keywordflow">for</emphasis>&#32;x&#32;<emphasis role="keywordflow">in</emphasis>&#32;[<emphasis role="stringliteral">&apos;To&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;From&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;SMTP&#32;Server&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;SMTP&#32;Port&apos;</emphasis>]]
+00084 
+</programlisting></section>
+<para>
+The documentation for this class was generated from the following file:</para>
+/Users/maximilian/clang-llvm/clang/tools/scan-view/share/<link linkend="__reporter_8py">Reporter.py</link></section>
+</section>

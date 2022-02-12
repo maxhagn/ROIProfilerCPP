@@ -1,0 +1,196 @@
+\hypertarget{class_scan_view_1_1_reporter_thread}{}\doxysection{Scan\+View.\+Reporter\+Thread Class Reference}
+\label{class_scan_view_1_1_reporter_thread}\index{ScanView.ReporterThread@{ScanView.ReporterThread}}
+Inheritance diagram for Scan\+View.\+Reporter\+Thread\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_scan_view_1_1_reporter_thread}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{class_scan_view_1_1_reporter_thread_a512a24c695d24cfc3765e21179278753}{\+\_\+\+\_\+init\+\_\+\+\_\+}} (self, \mbox{\hyperlink{class_scan_view_1_1_reporter_thread_a0f62f0f31356df954341d605c89f2914}{report}}, \mbox{\hyperlink{class_scan_view_1_1_reporter_thread_af1a2be4439cf3d960c94af6107d3922e}{reporter}}, \mbox{\hyperlink{class_scan_view_1_1_reporter_thread_aae44c4bbaa0341d6eb1f18879ba068b3}{parameters}}, \mbox{\hyperlink{class_scan_view_1_1_reporter_thread_afe4223faf81a79aa5366948bd4b052e8}{server}})
+\item 
+def \mbox{\hyperlink{class_scan_view_1_1_reporter_thread_a4becee8413483962d5034105a91adec3}{run}} (self)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_scan_view_1_1_reporter_thread_a0f62f0f31356df954341d605c89f2914}{report}}
+\item 
+\mbox{\hyperlink{class_scan_view_1_1_reporter_thread_afe4223faf81a79aa5366948bd4b052e8}{server}}
+\item 
+\mbox{\hyperlink{class_scan_view_1_1_reporter_thread_af1a2be4439cf3d960c94af6107d3922e}{reporter}}
+\item 
+\mbox{\hyperlink{class_scan_view_1_1_reporter_thread_aae44c4bbaa0341d6eb1f18879ba068b3}{parameters}}
+\item 
+\mbox{\hyperlink{class_scan_view_1_1_reporter_thread_a1015354926f63802d78cdddaf743a86c}{success}}
+\item 
+\mbox{\hyperlink{class_scan_view_1_1_reporter_thread_a23e7dfe2492e19954b60de027b0e28e7}{status}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+Definition at line 102 of file Scan\+View.\+py.
+
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_a512a24c695d24cfc3765e21179278753}\label{class_scan_view_1_1_reporter_thread_a512a24c695d24cfc3765e21179278753}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!\_\_init\_\_@{\_\_init\_\_}}
+\index{\_\_init\_\_@{\_\_init\_\_}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{\_\_init\_\_()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def Scan\+View.\+Reporter\+Thread.\+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{report,  }\item[{}]{reporter,  }\item[{}]{parameters,  }\item[{}]{server }\end{DoxyParamCaption})}
+
+
+
+Definition at line 103 of file Scan\+View.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{103     \textcolor{keyword}{def }\_\_init\_\_(self, report, reporter, parameters, server):}
+\DoxyCodeLine{104         threading.Thread.\_\_init\_\_(self)}
+\DoxyCodeLine{105         self.report = report}
+\DoxyCodeLine{106         self.server = server}
+\DoxyCodeLine{107         self.reporter = reporter}
+\DoxyCodeLine{108         self.parameters = parameters}
+\DoxyCodeLine{109         self.success = \textcolor{keyword}{False}}
+\DoxyCodeLine{110         self.status = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{111 }
+
+\end{DoxyCode}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_a4becee8413483962d5034105a91adec3}\label{class_scan_view_1_1_reporter_thread_a4becee8413483962d5034105a91adec3}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!run@{run}}
+\index{run@{run}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{run()}{run()}}
+{\footnotesize\ttfamily def Scan\+View.\+Reporter\+Thread.\+run (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+Definition at line 112 of file Scan\+View.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{112     \textcolor{keyword}{def }\mbox{\hyperlink{namespacelibscanbuild_1_1analyze_a505fccfeb836b113101687366a231f5f}{run}}(self):}
+\DoxyCodeLine{113         result = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{114         \textcolor{keywordflow}{try}:}
+\DoxyCodeLine{115             \textcolor{keywordflow}{if} self.server.options.debug:}
+\DoxyCodeLine{116                 \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{"{}\%s: SERVER: submitting bug."{}}\%(sys.argv[0],), file=sys.stderr)}
+\DoxyCodeLine{117             self.status = self.reporter.fileReport(self.report, self.parameters)}
+\DoxyCodeLine{118             self.success = \textcolor{keyword}{True}}
+\DoxyCodeLine{119             time.sleep(3)}
+\DoxyCodeLine{120             \textcolor{keywordflow}{if} self.server.options.debug:}
+\DoxyCodeLine{121                 \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{"{}\%s: SERVER: submission complete."{}}\%(sys.argv[0],), file=sys.stderr)}
+\DoxyCodeLine{122         \textcolor{keywordflow}{except} \mbox{\hyperlink{class_reporter_1_1_report_failure}{Reporter.ReportFailure}} \textcolor{keyword}{as} e:}
+\DoxyCodeLine{123             self.status = e.value}
+\DoxyCodeLine{124         \textcolor{keywordflow}{except} Exception \textcolor{keyword}{as} e:}
+\DoxyCodeLine{125             s = StringIO()}
+\DoxyCodeLine{126             \textcolor{keyword}{import} traceback}
+\DoxyCodeLine{127             \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{'<b>Unhandled Exception</b><br><pre>'}, file=s)}
+\DoxyCodeLine{128             traceback.print\_exc(file=s)}
+\DoxyCodeLine{129             \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{'</pre>'}, file=s)}
+\DoxyCodeLine{130             self.status = s.getvalue()}
+\DoxyCodeLine{131 }
+
+\end{DoxyCode}
+
+
+References Scan\+View.\+Reporter\+Thread.\+parameters, print(), Scan\+View.\+Reporter\+Thread.\+report, Scan\+View.\+Reporter\+Thread.\+reporter, Scan\+View.\+Reporter\+Thread.\+server, Scan\+View.\+Reporter\+Thread.\+status, tests.\+unit.\+test\+\_\+analyze.\+Spy.\+success, and Scan\+View.\+Reporter\+Thread.\+success.
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_aae44c4bbaa0341d6eb1f18879ba068b3}\label{class_scan_view_1_1_reporter_thread_aae44c4bbaa0341d6eb1f18879ba068b3}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!parameters@{parameters}}
+\index{parameters@{parameters}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{parameters}{parameters}}
+{\footnotesize\ttfamily Scan\+View.\+Reporter\+Thread.\+parameters}
+
+
+
+Definition at line 108 of file Scan\+View.\+py.
+
+
+
+Referenced by Scan\+View.\+Reporter\+Thread.\+run().
+
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_a0f62f0f31356df954341d605c89f2914}\label{class_scan_view_1_1_reporter_thread_a0f62f0f31356df954341d605c89f2914}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!report@{report}}
+\index{report@{report}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{report}{report}}
+{\footnotesize\ttfamily Scan\+View.\+Reporter\+Thread.\+report}
+
+
+
+Definition at line 105 of file Scan\+View.\+py.
+
+
+
+Referenced by Scan\+View.\+Reporter\+Thread.\+run().
+
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_af1a2be4439cf3d960c94af6107d3922e}\label{class_scan_view_1_1_reporter_thread_af1a2be4439cf3d960c94af6107d3922e}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!reporter@{reporter}}
+\index{reporter@{reporter}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{reporter}{reporter}}
+{\footnotesize\ttfamily Scan\+View.\+Reporter\+Thread.\+reporter}
+
+
+
+Definition at line 107 of file Scan\+View.\+py.
+
+
+
+Referenced by Scan\+View.\+Reporter\+Thread.\+run().
+
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_afe4223faf81a79aa5366948bd4b052e8}\label{class_scan_view_1_1_reporter_thread_afe4223faf81a79aa5366948bd4b052e8}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!server@{server}}
+\index{server@{server}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{server}{server}}
+{\footnotesize\ttfamily Scan\+View.\+Reporter\+Thread.\+server}
+
+
+
+Definition at line 106 of file Scan\+View.\+py.
+
+
+
+Referenced by Scan\+View.\+Scan\+View\+Request\+Handler.\+load\+\_\+crashes(), Scan\+View.\+Scan\+View\+Request\+Handler.\+load\+\_\+report(), Scan\+View.\+Scan\+View\+Request\+Handler.\+log\+\_\+message(), Scan\+View.\+Reporter\+Thread.\+run(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+head(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+open\+\_\+report(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+path(), Scan\+View.\+Scan\+View\+Request\+Handler.\+send\+\_\+report(), and Scan\+View.\+Scan\+View\+Request\+Handler.\+submit\+\_\+bug().
+
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_a23e7dfe2492e19954b60de027b0e28e7}\label{class_scan_view_1_1_reporter_thread_a23e7dfe2492e19954b60de027b0e28e7}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!status@{status}}
+\index{status@{status}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{status}{status}}
+{\footnotesize\ttfamily Scan\+View.\+Reporter\+Thread.\+status}
+
+
+
+Definition at line 110 of file Scan\+View.\+py.
+
+
+
+Referenced by Scan\+View.\+Reporter\+Thread.\+run().
+
+\mbox{\Hypertarget{class_scan_view_1_1_reporter_thread_a1015354926f63802d78cdddaf743a86c}\label{class_scan_view_1_1_reporter_thread_a1015354926f63802d78cdddaf743a86c}} 
+\index{ScanView.ReporterThread@{ScanView.ReporterThread}!success@{success}}
+\index{success@{success}!ScanView.ReporterThread@{ScanView.ReporterThread}}
+\doxysubsubsection{\texorpdfstring{success}{success}}
+{\footnotesize\ttfamily Scan\+View.\+Reporter\+Thread.\+success}
+
+
+
+Definition at line 109 of file Scan\+View.\+py.
+
+
+
+Referenced by tests.\+unit.\+test\+\_\+analyze.\+Spy.\+call(), and Scan\+View.\+Reporter\+Thread.\+run().
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/scan-\/view/share/\mbox{\hyperlink{_scan_view_8py}{Scan\+View.\+py}}\end{DoxyCompactItemize}

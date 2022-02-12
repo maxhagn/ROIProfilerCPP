@@ -1,0 +1,159 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespacetests_1_1functional_1_1cases" xml:lang="en-US">
+<title>tests.functional.cases Namespace Reference</title>
+<indexterm><primary>tests.functional.cases</primary></indexterm>
+<simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespacetests_1_1functional_1_1cases_1_1test__create__cdb">test_create_cdb</link></para>
+</listitem>
+            <listitem><para> <link linkend="_namespacetests_1_1functional_1_1cases_1_1test__exec__anatomy">test_exec_anatomy</link></para>
+</listitem>
+            <listitem><para> <link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cdb">test_from_cdb</link></para>
+</listitem>
+            <listitem><para> <link linkend="_namespacetests_1_1functional_1_1cases_1_1test__from__cmd">test_from_cmd</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1ad2cfe420361c73119db59ae7fa4033fa">load_tests</link> (loader, <link linkend="_namespacetests_1a1f30378533d9e21fd60c83fe74648ee3">suite</link>, pattern)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1afdf479d8f581ada915c125fd94e837c9">make_args</link> (target)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1a7938ec1ad248e0480730d43397d6f3cd">silent_call</link> (cmd, *args, **kwargs)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1adc1114de8d38e60438160311d84c8d43">silent_check_call</link> (cmd, *args, **kwargs)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1a024c367354bf63e4c7f8d4bccec8e2f9">call_and_report</link> (analyzer_cmd, build_cmd)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1a8d11835cf833f6de4ac834c961dcb01e">check_call_and_report</link> (analyzer_cmd, build_cmd)</para>
+</listitem>
+            <listitem><para>def <link linkend="_namespacetests_1_1functional_1_1cases_1a329bfe4766e9dade55f5b4e0ece589e1">create_empty_file</link> (filename)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespacetests_1_1functional_1_1cases_1a024c367354bf63e4c7f8d4bccec8e2f9"/>    <section>
+    <title>call_and_report()</title>
+<indexterm><primary>call_and_report</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>call_and_report</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.call_and_report ( analyzer_cmd,  build_cmd)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00040">40</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00040 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1a024c367354bf63e4c7f8d4bccec8e2f9">call_and_report</link>(analyzer_cmd,&#32;build_cmd):
+00041 &#32;&#32;&#32;&#32;child&#32;=&#32;subprocess.Popen(analyzer_cmd&#32;+&#32;[<emphasis role="stringliteral">&apos;-v&apos;</emphasis>]&#32;+&#32;build_cmd,
+00042 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;universal_newlines=<emphasis role="keyword">True</emphasis>,
+00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stdout=subprocess.PIPE,
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;stderr=subprocess.STDOUT)
+00045 
+00046 &#32;&#32;&#32;&#32;pattern&#32;=&#32;re.compile(<emphasis role="stringliteral">&apos;Report&#32;directory&#32;created:&#32;(.+)&apos;</emphasis>)
+00047 &#32;&#32;&#32;&#32;directory&#32;=&#32;<emphasis role="keywordtype">None</emphasis>
+00048 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;line&#32;<emphasis role="keywordflow">in</emphasis>&#32;child.stdout.readlines():
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;match&#32;=&#32;pattern.search(line)
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;match&#32;<emphasis role="keywordflow">and</emphasis>&#32;match.lastindex&#32;==&#32;1:
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;directory&#32;=&#32;match.group(1)
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>
+00053 &#32;&#32;&#32;&#32;child.stdout.close()
+00054 &#32;&#32;&#32;&#32;child.wait()
+00055 
+00056 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;(child.returncode,&#32;directory)
+00057 
+00058 
+</programlisting><para>
+Referenced by <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00059">tests.functional.cases.check_call_and_report()</link>, and <link linkend="_test__from__cdb_8py_source_1l00030">tests.functional.cases.test_from_cdb.run_analyzer()</link>.</para>
+    </section><anchor xml:id="_namespacetests_1_1functional_1_1cases_1a8d11835cf833f6de4ac834c961dcb01e"/>    <section>
+    <title>check_call_and_report()</title>
+<indexterm><primary>check_call_and_report</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>check_call_and_report</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.check_call_and_report ( analyzer_cmd,  build_cmd)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00059">59</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00059 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1a8d11835cf833f6de4ac834c961dcb01e">check_call_and_report</link>(analyzer_cmd,&#32;build_cmd):
+00060 &#32;&#32;&#32;&#32;exit_code,&#32;result&#32;=&#32;<link linkend="_namespacetests_1_1functional_1_1cases_1a024c367354bf63e4c7f8d4bccec8e2f9">call_and_report</link>(analyzer_cmd,&#32;build_cmd)
+00061 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;exit_code&#32;!=&#32;0:
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">raise</emphasis>&#32;subprocess.CalledProcessError(
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;exit_code,&#32;analyzer_cmd&#32;+&#32;build_cmd,&#32;<emphasis role="keywordtype">None</emphasis>)
+00064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>:
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result
+00066 
+00067 
+</programlisting><para>
+References <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00040">tests.functional.cases.call_and_report()</link>.</para>
+<para>
+Referenced by <link linkend="_test__from__cmd_8py_source_1l00018">tests.functional.cases.test_from_cmd.OutputDirectoryTest.run_analyzer()</link>, <link linkend="_test__from__cmd_8py_source_1l00103">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_cc_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00111">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_cxx_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00069">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_library_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00058">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_wrapper_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00089">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_cc_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00096">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_cxx_works()</link>, and <link linkend="_test__from__cmd_8py_source_1l00048">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_works()</link>.</para>
+    </section><anchor xml:id="_namespacetests_1_1functional_1_1cases_1a329bfe4766e9dade55f5b4e0ece589e1"/>    <section>
+    <title>create_empty_file()</title>
+<indexterm><primary>create_empty_file</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>create_empty_file</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.create_empty_file ( filename)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00068">68</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00068 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1a329bfe4766e9dade55f5b4e0ece589e1">create_empty_file</link>(filename):
+00069 &#32;&#32;&#32;&#32;<emphasis role="keyword">with</emphasis>&#32;<link linkend="_namespacestartfile_1aa582f75134b683dc321c07d01ff8e501">open</link>(filename,&#32;<emphasis role="stringliteral">&apos;a&apos;</emphasis>)&#32;<emphasis role="keyword">as</emphasis>&#32;handle:
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">pass</emphasis>
+</programlisting><para>
+References <link linkend="_startfile_8py_source_1l00206">startfile.open()</link>.</para>
+<para>
+Referenced by <link linkend="_test__create__cdb_8py_source_1l00154">tests.functional.cases.test_create_cdb.ResultFormatingTest.assert_command_creates_entry()</link>, <link linkend="_test__create__cdb_8py_source_1l00139">tests.functional.cases.test_create_cdb.ResultFormatingTest.assert_creates_number_of_entries()</link>, and <link linkend="_test__from__cmd_8py_source_1l00080">tests.functional.cases.test_from_cmd.RunAnalyzerTest.compile_empty_source_file()</link>.</para>
+    </section><anchor xml:id="_namespacetests_1_1functional_1_1cases_1ad2cfe420361c73119db59ae7fa4033fa"/>    <section>
+    <title>load_tests()</title>
+<indexterm><primary>load_tests</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>load_tests</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.load_tests ( loader,  suite,  pattern)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00011">11</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00011 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1unit_1a83f1125d0c7d46b4a1c5b8c938dd4d9c">load_tests</link>(loader,&#32;suite,&#32;pattern):
+00012 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;.&#32;<emphasis role="keyword">import</emphasis>&#32;test_from_cdb
+00013 &#32;&#32;&#32;&#32;suite.addTests(loader.loadTestsFromModule(test_from_cdb))
+00014 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;.&#32;<emphasis role="keyword">import</emphasis>&#32;test_from_cmd
+00015 &#32;&#32;&#32;&#32;suite.addTests(loader.loadTestsFromModule(test_from_cmd))
+00016 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;.&#32;<emphasis role="keyword">import</emphasis>&#32;test_create_cdb
+00017 &#32;&#32;&#32;&#32;suite.addTests(loader.loadTestsFromModule(test_create_cdb))
+00018 &#32;&#32;&#32;&#32;<emphasis role="keyword">from</emphasis>&#32;.&#32;<emphasis role="keyword">import</emphasis>&#32;test_exec_anatomy
+00019 &#32;&#32;&#32;&#32;suite.addTests(loader.loadTestsFromModule(test_exec_anatomy))
+00020 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;suite
+00021 
+00022 
+</programlisting>    </section><anchor xml:id="_namespacetests_1_1functional_1_1cases_1afdf479d8f581ada915c125fd94e837c9"/>    <section>
+    <title>make_args()</title>
+<indexterm><primary>make_args</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>make_args</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.make_args ( target)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00023">23</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00023 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1afdf479d8f581ada915c125fd94e837c9">make_args</link>(target):
+00024 &#32;&#32;&#32;&#32;this_dir,&#32;_&#32;=&#32;os.path.split(__file__)
+00025 &#32;&#32;&#32;&#32;path&#32;=&#32;os.path.abspath(os.path.join(this_dir,&#32;<emphasis role="stringliteral">&apos;..&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;src&apos;</emphasis>))
+00026 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;[<emphasis role="stringliteral">&apos;make&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;SRCDIR={}&apos;</emphasis>.format(path),&#32;<emphasis role="stringliteral">&apos;OBJDIR={}&apos;</emphasis>.format(target),&#32;<emphasis role="stringliteral">&apos;-f&apos;</emphasis>,
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;os.path.join(path,&#32;<emphasis role="stringliteral">&apos;build&apos;</emphasis>,&#32;<emphasis role="stringliteral">&apos;Makefile&apos;</emphasis>)]
+00028 
+00029 
+</programlisting><para>
+Referenced by <link linkend="_test__create__cdb_8py_source_1l00016">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.run_intercept()</link>, <link linkend="_test__create__cdb_8py_source_1l00079">tests.functional.cases.test_create_cdb.ExitCodeTest.run_intercept()</link>, <link linkend="_test__create__cdb_8py_source_1l00098">tests.functional.cases.test_create_cdb.ResumeFeatureTest.run_intercept()</link>, <link linkend="_test__from__cmd_8py_source_1l00029">tests.functional.cases.test_from_cmd.OutputDirectoryTest.test_clear_deletes_report_dir()</link>, <link linkend="_test__from__cmd_8py_source_1l00035">tests.functional.cases.test_from_cmd.OutputDirectoryTest.test_clear_keeps_report_dir_when_asked()</link>, <link linkend="_test__from__cmd_8py_source_1l00069">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_library_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00058">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_intercept_wrapper_works()</link>, <link linkend="_test__from__cmd_8py_source_1l00048">tests.functional.cases.test_from_cmd.RunAnalyzerTest.test_interposition_works()</link>, <link linkend="_test__create__cdb_8py_source_1l00067">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_not_successful_build()</link>, <link linkend="_test__from__cmd_8py_source_1l00023">tests.functional.cases.test_from_cmd.OutputDirectoryTest.test_regular_keeps_report_dir()</link>, <link linkend="_test__create__cdb_8py_source_1l00052">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_on_empty_env()</link>, and <link linkend="_test__create__cdb_8py_source_1l00035">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_with_wrapper()</link>.</para>
+    </section><anchor xml:id="_namespacetests_1_1functional_1_1cases_1a7938ec1ad248e0480730d43397d6f3cd"/>    <section>
+    <title>silent_call()</title>
+<indexterm><primary>silent_call</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>silent_call</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.silent_call ( cmd, * args, ** kwargs)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00030">30</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00030 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1a7938ec1ad248e0480730d43397d6f3cd">silent_call</link>(cmd,&#32;*args,&#32;**kwargs):
+00031 &#32;&#32;&#32;&#32;kwargs.update({<emphasis role="stringliteral">&apos;stdout&apos;</emphasis>:&#32;subprocess.PIPE,&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>:&#32;subprocess.STDOUT})
+00032 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;subprocess.call(cmd,&#32;*args,&#32;**kwargs)
+00033 
+00034 
+</programlisting><para>
+Referenced by <link linkend="_test__create__cdb_8py_source_1l00079">tests.functional.cases.test_create_cdb.ExitCodeTest.run_intercept()</link>, and <link linkend="_test__create__cdb_8py_source_1l00067">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_not_successful_build()</link>.</para>
+    </section><anchor xml:id="_namespacetests_1_1functional_1_1cases_1adc1114de8d38e60438160311d84c8d43"/>    <section>
+    <title>silent_check_call()</title>
+<indexterm><primary>silent_check_call</primary><secondary>tests.functional.cases</secondary></indexterm>
+<indexterm><primary>tests.functional.cases</primary><secondary>silent_check_call</secondary></indexterm>
+<para><computeroutput>def tests.functional.cases.silent_check_call ( cmd, * args, ** kwargs)</computeroutput></para><para>
+Definition at line <link linkend="_tests_2functional_2cases_2____init_____8py_source_1l00035">35</link> of file <link linkend="_tests_2functional_2cases_2____init_____8py_source">__init__.py</link>.</para>
+<programlisting>00035 <emphasis role="keyword">def&#32;</emphasis><link linkend="_namespacetests_1_1functional_1_1cases_1adc1114de8d38e60438160311d84c8d43">silent_check_call</link>(cmd,&#32;*args,&#32;**kwargs):
+00036 &#32;&#32;&#32;&#32;kwargs.update({<emphasis role="stringliteral">&apos;stdout&apos;</emphasis>:&#32;subprocess.PIPE,&#32;<emphasis role="stringliteral">&apos;stderr&apos;</emphasis>:&#32;subprocess.STDOUT})
+00037 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;subprocess.check_call(cmd,&#32;*args,&#32;**kwargs)
+00038 
+00039 
+</programlisting><para>
+Referenced by <link linkend="_test__create__cdb_8py_source_1l00016">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.run_intercept()</link>, <link linkend="_test__create__cdb_8py_source_1l00130">tests.functional.cases.test_create_cdb.ResultFormatingTest.run_intercept()</link>, <link linkend="_test__create__cdb_8py_source_1l00098">tests.functional.cases.test_create_cdb.ResumeFeatureTest.run_intercept()</link>, <link linkend="_test__create__cdb_8py_source_1l00052">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_on_empty_env()</link>, and <link linkend="_test__create__cdb_8py_source_1l00035">tests.functional.cases.test_create_cdb.CompilationDatabaseTest.test_successful_build_with_wrapper()</link>.</para>
+</section>
+</section>
+</section>

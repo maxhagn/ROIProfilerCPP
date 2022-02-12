@@ -1,0 +1,200 @@
+\hypertarget{_clang_scan_deps_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/clang-\/scan-\/deps/\+Clang\+Scan\+Deps.cpp File Reference}
+\label{_clang_scan_deps_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/scan-\/deps/ClangScanDeps.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/clang-\/scan-\/deps/ClangScanDeps.cpp}}
+{\ttfamily \#include \char`\"{}clang/\+Frontend/\+Compiler\+Instance.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Common\+Options\+Parser.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Dependency\+Scanning/\+Dependency\+Scanning\+Service.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Dependency\+Scanning/\+Dependency\+Scanning\+Tool.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+Dependency\+Scanning/\+Dependency\+Scanning\+Worker.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+Tooling/\+JSONCompilation\+Database.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+STLExtras.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+ADT/\+Twine.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Command\+Line.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+File\+Utilities.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Init\+LLVM.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+JSON.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Program.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Signals.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Thread\+Pool.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}llvm/\+Support/\+Threading.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$mutex$>$}\newline
+{\ttfamily \#include $<$thread$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{class_single_command_compilation_database}{Single\+Command\+Compilation\+Database}}
+\item 
+class \mbox{\hyperlink{class_full_deps}{Full\+Deps}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{_clang_scan_deps_8cpp_a217dbf8b442f20279ea00b898af96f52}{main}} (int argc, const char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_clang_scan_deps_8cpp_a217dbf8b442f20279ea00b898af96f52}\label{_clang_scan_deps_8cpp_a217dbf8b442f20279ea00b898af96f52}} 
+\index{ClangScanDeps.cpp@{ClangScanDeps.cpp}!main@{main}}
+\index{main@{main}!ClangScanDeps.cpp@{ClangScanDeps.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{const char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+
+
+Definition at line 435 of file Clang\+Scan\+Deps.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{435                                       \{}
+\DoxyCodeLine{436   llvm::InitLLVM X(argc, argv);}
+\DoxyCodeLine{437   llvm::cl::HideUnrelatedOptions(DependencyScannerCategory);}
+\DoxyCodeLine{438   \textcolor{keywordflow}{if} (!llvm::cl::ParseCommandLineOptions(argc, argv))}
+\DoxyCodeLine{439     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{440 }
+\DoxyCodeLine{441   std::string ErrorMessage;}
+\DoxyCodeLine{442   std::unique\_ptr<tooling::JSONCompilationDatabase> Compilations =}
+\DoxyCodeLine{443       tooling::JSONCompilationDatabase::loadFromFile(}
+\DoxyCodeLine{444           CompilationDB, ErrorMessage,}
+\DoxyCodeLine{445           tooling::JSONCommandLineSyntax::AutoDetect);}
+\DoxyCodeLine{446   \textcolor{keywordflow}{if} (!Compilations) \{}
+\DoxyCodeLine{447     llvm::errs() << \textcolor{stringliteral}{"{}error: "{}} << ErrorMessage << \textcolor{stringliteral}{"{}\(\backslash\)n"{}};}
+\DoxyCodeLine{448     \textcolor{keywordflow}{return} 1;}
+\DoxyCodeLine{449   \}}
+\DoxyCodeLine{450 }
+\DoxyCodeLine{451   llvm::cl::PrintOptionValues();}
+\DoxyCodeLine{452 }
+\DoxyCodeLine{453   \textcolor{comment}{// The command options are rewritten to run Clang in preprocessor only mode.}}
+\DoxyCodeLine{454   \textcolor{keyword}{auto} AdjustingCompilations =}
+\DoxyCodeLine{455       std::make\_unique<tooling::ArgumentsAdjustingCompilations>(}
+\DoxyCodeLine{456           std::move(Compilations));}
+\DoxyCodeLine{457   ResourceDirectoryCache ResourceDirCache;}
+\DoxyCodeLine{458 }
+\DoxyCodeLine{459   AdjustingCompilations-\/>appendArgumentsAdjuster(}
+\DoxyCodeLine{460       [\&ResourceDirCache](\textcolor{keyword}{const} tooling::CommandLineArguments \&Args,}
+\DoxyCodeLine{461                           StringRef FileName) \{}
+\DoxyCodeLine{462         std::string LastO = \textcolor{stringliteral}{"{}"{}};}
+\DoxyCodeLine{463         \textcolor{keywordtype}{bool} HasResourceDir = \textcolor{keyword}{false};}
+\DoxyCodeLine{464         \textcolor{keywordtype}{bool} ClangCLMode = \textcolor{keyword}{false};}
+\DoxyCodeLine{465         \textcolor{keyword}{auto} FlagsEnd = llvm::find(Args, \textcolor{stringliteral}{"{}-\/-\/"{}});}
+\DoxyCodeLine{466         \textcolor{keywordflow}{if} (FlagsEnd != Args.begin()) \{}
+\DoxyCodeLine{467           ClangCLMode =}
+\DoxyCodeLine{468               llvm::sys::path::stem(Args[0]).contains\_insensitive(\textcolor{stringliteral}{"{}clang-\/cl"{}}) ||}
+\DoxyCodeLine{469               llvm::is\_contained(Args, \textcolor{stringliteral}{"{}-\/-\/driver-\/mode=cl"{}});}
+\DoxyCodeLine{470 }
+\DoxyCodeLine{471           \textcolor{comment}{// Reverse scan, starting at the end or at the element before "{}-\/-\/"{}.}}
+\DoxyCodeLine{472           \textcolor{keyword}{auto} R = llvm::make\_reverse\_iterator(FlagsEnd);}
+\DoxyCodeLine{473           \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} I = R, E = Args.rend(); I != E; ++I) \{}
+\DoxyCodeLine{474             StringRef Arg = *I;}
+\DoxyCodeLine{475             \textcolor{keywordflow}{if} (ClangCLMode) \{}
+\DoxyCodeLine{476               \textcolor{comment}{// Ignore arguments that are preceded by "{}-\/Xclang"{}.}}
+\DoxyCodeLine{477               \textcolor{keywordflow}{if} ((I + 1) != E \&\& I[1] == \textcolor{stringliteral}{"{}-\/Xclang"{}})}
+\DoxyCodeLine{478                 \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{479               \textcolor{keywordflow}{if} (LastO.empty()) \{}
+\DoxyCodeLine{480                 \textcolor{comment}{// With clang-\/cl, the output obj file can be specified with}}
+\DoxyCodeLine{481                 \textcolor{comment}{// "{}/opath"{}, "{}/o path"{}, "{}/Fopath"{}, and the dash counterparts.}}
+\DoxyCodeLine{482                 \textcolor{comment}{// Also, clang-\/cl adds "{}.obj"{} extension if none is found.}}
+\DoxyCodeLine{483                 \textcolor{keywordflow}{if} ((Arg == \textcolor{stringliteral}{"{}-\/o"{}} || Arg == \textcolor{stringliteral}{"{}/o"{}}) \&\& I != R)}
+\DoxyCodeLine{484                   LastO = I[-\/1]; \textcolor{comment}{// Next argument (reverse iterator)}}
+\DoxyCodeLine{485                 \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (Arg.startswith(\textcolor{stringliteral}{"{}/Fo"{}}) || Arg.startswith(\textcolor{stringliteral}{"{}-\/Fo"{}}))}
+\DoxyCodeLine{486                   LastO = Arg.drop\_front(3).str();}
+\DoxyCodeLine{487                 \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (Arg.startswith(\textcolor{stringliteral}{"{}/o"{}}) || Arg.startswith(\textcolor{stringliteral}{"{}-\/o"{}}))}
+\DoxyCodeLine{488                   LastO = Arg.drop\_front(2).str();}
+\DoxyCodeLine{489 }
+\DoxyCodeLine{490                 \textcolor{keywordflow}{if} (!LastO.empty() \&\& !llvm::sys::path::has\_extension(LastO))}
+\DoxyCodeLine{491                   LastO.append(\textcolor{stringliteral}{"{}.obj"{}});}
+\DoxyCodeLine{492               \}}
+\DoxyCodeLine{493             \}}
+\DoxyCodeLine{494             \textcolor{keywordflow}{if} (Arg == \textcolor{stringliteral}{"{}-\/resource-\/dir"{}})}
+\DoxyCodeLine{495               HasResourceDir = \textcolor{keyword}{true};}
+\DoxyCodeLine{496           \}}
+\DoxyCodeLine{497         \}}
+\DoxyCodeLine{498         tooling::CommandLineArguments AdjustedArgs(Args.begin(), FlagsEnd);}
+\DoxyCodeLine{499         \textcolor{comment}{// The clang-\/cl driver passes "{}-\/o -\/"{} to the frontend. Inject the real}}
+\DoxyCodeLine{500         \textcolor{comment}{// file here to ensure "{}-\/MT"{} can be deduced if need be.}}
+\DoxyCodeLine{501         \textcolor{keywordflow}{if} (ClangCLMode \&\& !LastO.empty()) \{}
+\DoxyCodeLine{502           AdjustedArgs.push\_back(\textcolor{stringliteral}{"{}/clang:-\/o"{}});}
+\DoxyCodeLine{503           AdjustedArgs.push\_back(\textcolor{stringliteral}{"{}/clang:"{}} + LastO);}
+\DoxyCodeLine{504         \}}
+\DoxyCodeLine{505 }
+\DoxyCodeLine{506         \textcolor{keywordflow}{if} (!HasResourceDir) \{}
+\DoxyCodeLine{507           StringRef ResourceDir =}
+\DoxyCodeLine{508               ResourceDirCache.findResourceDir(Args, ClangCLMode);}
+\DoxyCodeLine{509           \textcolor{keywordflow}{if} (!ResourceDir.empty()) \{}
+\DoxyCodeLine{510             AdjustedArgs.push\_back(\textcolor{stringliteral}{"{}-\/resource-\/dir"{}});}
+\DoxyCodeLine{511             AdjustedArgs.push\_back(std::string(ResourceDir));}
+\DoxyCodeLine{512           \}}
+\DoxyCodeLine{513         \}}
+\DoxyCodeLine{514         AdjustedArgs.insert(AdjustedArgs.end(), FlagsEnd, Args.end());}
+\DoxyCodeLine{515         \textcolor{keywordflow}{return} AdjustedArgs;}
+\DoxyCodeLine{516       \});}
+\DoxyCodeLine{517 }
+\DoxyCodeLine{518   SharedStream Errs(llvm::errs());}
+\DoxyCodeLine{519   \textcolor{comment}{// Print out the dependency results to STDOUT by default.}}
+\DoxyCodeLine{520   SharedStream DependencyOS(llvm::outs());}
+\DoxyCodeLine{521 }
+\DoxyCodeLine{522   DependencyScanningService Service(ScanMode, Format, ReuseFileManager,}
+\DoxyCodeLine{523                                     SkipExcludedPPRanges);}
+\DoxyCodeLine{524   llvm::ThreadPool Pool(llvm::hardware\_concurrency(NumThreads));}
+\DoxyCodeLine{525   std::vector<std::unique\_ptr<DependencyScanningTool>> WorkerTools;}
+\DoxyCodeLine{526   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} I = 0; I < Pool.getThreadCount(); ++I)}
+\DoxyCodeLine{527     WorkerTools.push\_back(std::make\_unique<DependencyScanningTool>(Service));}
+\DoxyCodeLine{528 }
+\DoxyCodeLine{529   std::vector<SingleCommandCompilationDatabase> Inputs;}
+\DoxyCodeLine{530   \textcolor{keywordflow}{for} (tooling::CompileCommand Cmd :}
+\DoxyCodeLine{531        AdjustingCompilations-\/>getAllCompileCommands())}
+\DoxyCodeLine{532     Inputs.emplace\_back(Cmd);}
+\DoxyCodeLine{533 }
+\DoxyCodeLine{534   std::atomic<bool> HadErrors(\textcolor{keyword}{false});}
+\DoxyCodeLine{535   \mbox{\hyperlink{class_full_deps}{FullDeps}} FD;}
+\DoxyCodeLine{536   std::mutex Lock;}
+\DoxyCodeLine{537   \textcolor{keywordtype}{size\_t} Index = 0;}
+\DoxyCodeLine{538 }
+\DoxyCodeLine{539   \textcolor{keywordflow}{if} (Verbose) \{}
+\DoxyCodeLine{540     llvm::outs() << \textcolor{stringliteral}{"{}Running clang-\/scan-\/deps on "{}} << Inputs.size()}
+\DoxyCodeLine{541                  << \textcolor{stringliteral}{"{} files using "{}} << Pool.getThreadCount() << \textcolor{stringliteral}{"{} workers\(\backslash\)n"{}};}
+\DoxyCodeLine{542   \}}
+\DoxyCodeLine{543   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} I = 0; I < Pool.getThreadCount(); ++I) \{}
+\DoxyCodeLine{544     Pool.async([I, \&Lock, \&Index, \&Inputs, \&HadErrors, \&FD, \&WorkerTools,}
+\DoxyCodeLine{545                 \&DependencyOS, \&Errs]() \{}
+\DoxyCodeLine{546       llvm::StringSet<> AlreadySeenModules;}
+\DoxyCodeLine{547       \textcolor{keywordflow}{while} (\textcolor{keyword}{true}) \{}
+\DoxyCodeLine{548         \textcolor{keyword}{const} \mbox{\hyperlink{class_single_command_compilation_database}{SingleCommandCompilationDatabase}} *Input;}
+\DoxyCodeLine{549         std::string Filename;}
+\DoxyCodeLine{550         std::string CWD;}
+\DoxyCodeLine{551         \textcolor{keywordtype}{size\_t} LocalIndex;}
+\DoxyCodeLine{552         \textcolor{comment}{// Take the next input.}}
+\DoxyCodeLine{553         \{}
+\DoxyCodeLine{554           std::unique\_lock<std::mutex> LockGuard(Lock);}
+\DoxyCodeLine{555           \textcolor{keywordflow}{if} (Index >= Inputs.size())}
+\DoxyCodeLine{556             \textcolor{keywordflow}{return};}
+\DoxyCodeLine{557           LocalIndex = Index;}
+\DoxyCodeLine{558           Input = \&Inputs[Index++];}
+\DoxyCodeLine{559           tooling::CompileCommand Cmd = Input-\/>\mbox{\hyperlink{class_single_command_compilation_database_a50bfa7b1b199d95741fa4c6515e773df}{getAllCompileCommands}}()[0];}
+\DoxyCodeLine{560           Filename = std::move(Cmd.Filename);}
+\DoxyCodeLine{561           CWD = std::move(Cmd.Directory);}
+\DoxyCodeLine{562         \}}
+\DoxyCodeLine{563         \textcolor{comment}{// Run the tool on it.}}
+\DoxyCodeLine{564         \textcolor{keywordflow}{if} (Format == ScanningOutputFormat::Make) \{}
+\DoxyCodeLine{565           \textcolor{keyword}{auto} MaybeFile = WorkerTools[I]-\/>getDependencyFile(*Input, CWD);}
+\DoxyCodeLine{566           \textcolor{keywordflow}{if} (handleMakeDependencyToolResult(Filename, MaybeFile, DependencyOS,}
+\DoxyCodeLine{567                                              Errs))}
+\DoxyCodeLine{568             HadErrors = \textcolor{keyword}{true};}
+\DoxyCodeLine{569         \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{570           \textcolor{keyword}{auto} MaybeFullDeps = WorkerTools[I]-\/>getFullDependencies(}
+\DoxyCodeLine{571               *Input, CWD, AlreadySeenModules);}
+\DoxyCodeLine{572           \textcolor{keywordflow}{if} (handleFullDependencyToolResult(Filename, MaybeFullDeps, FD,}
+\DoxyCodeLine{573                                              LocalIndex, DependencyOS, Errs))}
+\DoxyCodeLine{574             HadErrors = \textcolor{keyword}{true};}
+\DoxyCodeLine{575         \}}
+\DoxyCodeLine{576       \}}
+\DoxyCodeLine{577     \});}
+\DoxyCodeLine{578   \}}
+\DoxyCodeLine{579   Pool.wait();}
+\DoxyCodeLine{580 }
+\DoxyCodeLine{581   \textcolor{keywordflow}{if} (Format == ScanningOutputFormat::Full)}
+\DoxyCodeLine{582     FD.\mbox{\hyperlink{class_full_deps_a3a42a88ad1367c97148feb477792e39d}{printFullOutput}}(llvm::outs());}
+\DoxyCodeLine{583 }
+\DoxyCodeLine{584   \textcolor{keywordflow}{return} HadErrors;}
+\DoxyCodeLine{585 \}}
+
+\end{DoxyCode}

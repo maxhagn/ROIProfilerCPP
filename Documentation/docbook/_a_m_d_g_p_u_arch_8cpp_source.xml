@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__a_m_d_g_p_u_arch_8cpp_source" xml:lang="en-US">
+<title>AMDGPUArch.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/amdgpu-arch/AMDGPUArch.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;AMDGPUArch.cpp&#32;-&#32;list&#32;AMDGPU&#32;installed&#32;----------*-&#32;C++&#32;-*---------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;implements&#32;a&#32;tool&#32;for&#32;detecting&#32;name&#32;of&#32;AMDGPU&#32;installed&#32;in&#32;system</emphasis>
+00010 <emphasis role="comment">//&#32;using&#32;HSA.&#32;This&#32;tool&#32;is&#32;used&#32;by&#32;AMDGPU&#32;OpenMP&#32;driver.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#if&#32;defined(__has_include)</emphasis>
+00015 <emphasis role="preprocessor">#if&#32;__has_include(&quot;hsa.h&quot;</emphasis>)
+00016 <emphasis role="preprocessor">#define&#32;HSA_HEADER_FOUND&#32;1</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;hsa.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#elif&#32;__has_include(&quot;hsa/hsa.h&quot;</emphasis>)
+00019 <emphasis role="preprocessor">#define&#32;HSA_HEADER_FOUND&#32;1</emphasis>
+00020 <emphasis role="preprocessor">#include&#32;&quot;hsa/hsa.h&quot;</emphasis>
+00021 <emphasis role="preprocessor">#else</emphasis>
+00022 <emphasis role="preprocessor">#define&#32;HSA_HEADER_FOUND&#32;0</emphasis>
+00023 <emphasis role="preprocessor">#endif</emphasis>
+00024 <emphasis role="preprocessor">#else</emphasis>
+<anchor xml:id="__a_m_d_g_p_u_arch_8cpp_source_1l00025"/><link linkend="__a_m_d_g_p_u_arch_8cpp_1a103334c1790e1e6c86a33eaeb29515db">00025</link> <emphasis role="preprocessor">#define&#32;HSA_HEADER_FOUND&#32;0</emphasis>
+00026 <emphasis role="preprocessor">#endif</emphasis>
+00027 
+00028 <emphasis role="preprocessor">#if&#32;!HSA_HEADER_FOUND</emphasis>
+<anchor xml:id="__a_m_d_g_p_u_arch_8cpp_source_1l00029"/><link linkend="__a_m_d_g_p_u_arch_8cpp_1ae66f6b31b5ad750f1fe042a706a4e3d4">00029</link> <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__a_m_d_g_p_u_arch_8cpp_1ae66f6b31b5ad750f1fe042a706a4e3d4">main</link>()&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;&#32;}
+00030 <emphasis role="preprocessor">#else</emphasis>
+00031 
+00032 <emphasis role="preprocessor">#include&#32;&lt;string&gt;</emphasis>
+00033 <emphasis role="preprocessor">#include&#32;&lt;vector&gt;</emphasis>
+00034 
+00035 <emphasis role="keyword">static</emphasis>&#32;hsa_status_t&#32;iterateAgentsCallback(hsa_agent_t&#32;Agent,&#32;<emphasis role="keywordtype">void</emphasis>&#32;*Data)&#32;{
+00036 &#32;&#32;hsa_device_type_t&#32;DeviceType;
+00037 &#32;&#32;hsa_status_t&#32;Status&#32;=
+00038 &#32;&#32;&#32;&#32;&#32;&#32;hsa_agent_get_info(Agent,&#32;HSA_AGENT_INFO_DEVICE,&#32;&amp;DeviceType);
+00039 
+00040 &#32;&#32;<emphasis role="comment">//&#32;continue&#32;only&#32;if&#32;device&#32;type&#32;if&#32;GPU</emphasis>
+00041 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Status&#32;!=&#32;HSA_STATUS_SUCCESS&#32;||&#32;DeviceType&#32;!=&#32;HSA_DEVICE_TYPE_GPU)&#32;{
+00042 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Status;
+00043 &#32;&#32;}
+00044 
+00045 &#32;&#32;std::vector&lt;std::string&gt;&#32;*GPUs&#32;=
+00046 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">static_cast&lt;</emphasis>std::vector&lt;std::string&gt;&#32;*<emphasis role="keyword">&gt;</emphasis>(Data);
+00047 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;GPUName[64];
+00048 &#32;&#32;Status&#32;=&#32;hsa_agent_get_info(Agent,&#32;HSA_AGENT_INFO_NAME,&#32;GPUName);
+00049 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Status&#32;!=&#32;HSA_STATUS_SUCCESS)&#32;{
+00050 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Status;
+00051 &#32;&#32;}
+00052 &#32;&#32;GPUs-&gt;push_back(GPUName);
+00053 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;HSA_STATUS_SUCCESS;
+00054 }
+00055 
+00056 <emphasis role="keywordtype">int</emphasis>&#32;<link linkend="__a_m_d_g_p_u_arch_8cpp_1ae66f6b31b5ad750f1fe042a706a4e3d4">main</link>()&#32;{
+00057 &#32;&#32;hsa_status_t&#32;Status&#32;=&#32;hsa_init();
+00058 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Status&#32;!=&#32;HSA_STATUS_SUCCESS)&#32;{
+00059 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00060 &#32;&#32;}
+00061 
+00062 &#32;&#32;std::vector&lt;std::string&gt;&#32;GPUs;
+00063 &#32;&#32;Status&#32;=&#32;hsa_iterate_agents(iterateAgentsCallback,&#32;&amp;GPUs);
+00064 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Status&#32;!=&#32;HSA_STATUS_SUCCESS)&#32;{
+00065 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00066 &#32;&#32;}
+00067 
+00068 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keyword">auto</emphasis>&#32;&amp;GPU&#32;:&#32;GPUs)
+00069 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;%s\n&quot;</emphasis>,&#32;GPU.c_str());
+00070 
+00071 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(GPUs.size()&#32;&lt;&#32;1)
+00072 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00073 
+00074 &#32;&#32;hsa_shut_down();
+00075 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00076 }
+00077 
+00078 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

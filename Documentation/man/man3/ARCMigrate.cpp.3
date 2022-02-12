@@ -1,0 +1,180 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/ARCMigrate.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/ARCMigrate.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang\-c/Index\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'clang/ARCMigrate/ARCMT\&.h'\fP
+.br
+\fC#include 'clang/Config/config\&.h'\fP
+.br
+\fC#include 'clang/Frontend/TextDiagnosticBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXRemapping \fBclang_getRemappings\fP (const char *migrate_dir_path)"
+.br
+.ti -1c
+.RI "CXRemapping \fBclang_getRemappingsFromFileList\fP (const char **filePaths, unsigned numFiles)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_remap_getNumFiles\fP (CXRemapping map)"
+.br
+.ti -1c
+.RI "void \fBclang_remap_getFilenames\fP (CXRemapping map, unsigned index, CXString *original, CXString *transformed)"
+.br
+.ti -1c
+.RI "void \fBclang_remap_dispose\fP (CXRemapping map)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXRemapping clang_getRemappings (const char * migrate_dir_path)"
+
+.PP
+Definition at line 35 of file ARCMigrate\&.cpp\&.
+.PP
+.nf
+35                                                               {
+36 #if !CLANG_ENABLE_ARCMT
+37   llvm::errs() << "error: feature not enabled in this build\n";
+38   return nullptr;
+39 #else
+40   bool Logging = ::getenv("LIBCLANG_LOGGING");
+41 
+42   if (!migrate_dir_path) {
+43     if (Logging)
+44       llvm::errs() << "clang_getRemappings was called with NULL parameter\n";
+45     return nullptr;
+46   }
+47 
+48   if (!llvm::sys::fs::exists(migrate_dir_path)) {
+49     if (Logging) {
+50       llvm::errs() << "Error by clang_getRemappings(\"" << migrate_dir_path
+51                    << "\")\n";
+52       llvm::errs() << "\"" << migrate_dir_path << "\" does not exist\n";
+53     }
+54     return nullptr;
+55   }
+56 
+57   TextDiagnosticBuffer diagBuffer;
+58   std::unique_ptr<Remap> remap(new Remap());
+59 
+60   bool err = arcmt::getFileRemappings(remap->Vec, migrate_dir_path,&diagBuffer);
+61 
+62   if (err) {
+63     if (Logging) {
+64       llvm::errs() << "Error by clang_getRemappings(\"" << migrate_dir_path
+65                    << "\")\n";
+66       for (TextDiagnosticBuffer::const_iterator
+67              I = diagBuffer\&.err_begin(), E = diagBuffer\&.err_end(); I != E; ++I)
+68         llvm::errs() << I->second << '\n';
+69     }
+70     return nullptr;
+71   }
+72 
+73   return remap\&.release();
+74 #endif
+75 }
+.fi
+.SS "CXRemapping clang_getRemappingsFromFileList (const char ** filePaths, unsigned numFiles)"
+
+.PP
+Definition at line 77 of file ARCMigrate\&.cpp\&.
+.PP
+.nf
+78                                                                {
+79 #if !CLANG_ENABLE_ARCMT
+80   llvm::errs() << "error: feature not enabled in this build\n";
+81   return nullptr;
+82 #else
+83   bool Logging = ::getenv("LIBCLANG_LOGGING");
+84 
+85   std::unique_ptr<Remap> remap(new Remap());
+86 
+87   if (numFiles == 0) {
+88     if (Logging)
+89       llvm::errs() << "clang_getRemappingsFromFileList was called with "
+90                       "numFiles=0\n";
+91     return remap\&.release();
+92   }
+93 
+94   if (!filePaths) {
+95     if (Logging)
+96       llvm::errs() << "clang_getRemappingsFromFileList was called with "
+97                       "NULL filePaths\n";
+98     return nullptr;
+99   }
+100 
+101   TextDiagnosticBuffer diagBuffer;
+102   SmallVector<StringRef, 32> Files(filePaths, filePaths + numFiles);
+103 
+104   bool err = arcmt::getFileRemappingsFromFileList(remap->Vec, Files,
+105                                                   &diagBuffer);
+106 
+107   if (err) {
+108     if (Logging) {
+109       llvm::errs() << "Error by clang_getRemappingsFromFileList\n";
+110       for (TextDiagnosticBuffer::const_iterator
+111              I = diagBuffer\&.err_begin(), E = diagBuffer\&.err_end(); I != E; ++I)
+112         llvm::errs() << I->second << '\n';
+113     }
+114     return remap\&.release();
+115   }
+116 
+117   return remap\&.release();
+118 #endif
+119 }
+.fi
+.SS "void clang_remap_dispose (CXRemapping map)"
+
+.PP
+Definition at line 136 of file ARCMigrate\&.cpp\&.
+.PP
+.nf
+136                                           {
+137   delete static_cast<Remap *>(map);
+138 }
+.fi
+.SS "void clang_remap_getFilenames (CXRemapping map, unsigned index, CXString * original, CXString * transformed)"
+
+.PP
+Definition at line 126 of file ARCMigrate\&.cpp\&.
+.PP
+.nf
+127                                                                          {
+128   if (original)
+129     *original = cxstring::createDup(
+130                     static_cast<Remap *>(map)->Vec[index]\&.first);
+131   if (transformed)
+132     *transformed = cxstring::createDup(
+133                     static_cast<Remap *>(map)->Vec[index]\&.second);
+134 }
+.fi
+.PP
+References clang::cxstring::createDup()\&.
+.SS "unsigned clang_remap_getNumFiles (CXRemapping map)"
+
+.PP
+Definition at line 121 of file ARCMigrate\&.cpp\&.
+.PP
+.nf
+121                                                   {
+122   return static_cast<Remap *>(map)->Vec\&.size();
+123   
+124 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

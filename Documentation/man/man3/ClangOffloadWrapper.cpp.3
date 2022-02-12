@@ -1,0 +1,144 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/clang-offload-wrapper/ClangOffloadWrapper.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/clang-offload-wrapper/ClangOffloadWrapper.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/Basic/Version\&.h'\fP
+.br
+\fC#include 'llvm/ADT/ArrayRef\&.h'\fP
+.br
+\fC#include 'llvm/ADT/Triple\&.h'\fP
+.br
+\fC#include 'llvm/Bitcode/BitcodeWriter\&.h'\fP
+.br
+\fC#include 'llvm/IR/Constants\&.h'\fP
+.br
+\fC#include 'llvm/IR/GlobalVariable\&.h'\fP
+.br
+\fC#include 'llvm/IR/IRBuilder\&.h'\fP
+.br
+\fC#include 'llvm/IR/LLVMContext\&.h'\fP
+.br
+\fC#include 'llvm/IR/Module\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/Errc\&.h'\fP
+.br
+\fC#include 'llvm/Support/Error\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorOr\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/ToolOutputFile\&.h'\fP
+.br
+\fC#include 'llvm/Support/WithColor\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+\fC#include 'llvm/Transforms/Utils/ModuleUtils\&.h'\fP
+.br
+\fC#include <cassert>\fP
+.br
+\fC#include <cstdint>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Implementation of the offload wrapper tool\&. It takes offload target binaries as input and creates wrapper bitcode file containing target binaries packaged as data\&. Wrapper bitcode also includes initialization code which registers target binaries in offloading runtime at program startup\&. 
+.PP
+Definition in file \fBClangOffloadWrapper\&.cpp\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 312 of file ClangOffloadWrapper\&.cpp\&.
+.PP
+.nf
+312                                       {
+313   sys::PrintStackTraceOnErrorSignal(argv[0]);
+314 
+315   cl::HideUnrelatedOptions(ClangOffloadWrapperCategory);
+316   cl::SetVersionPrinter([](raw_ostream &OS) {
+317     OS << clang::getClangToolFullVersion("clang-offload-wrapper") << '\n';
+318   });
+319   cl::ParseCommandLineOptions(
+320       argc, argv,
+321       "A tool to create a wrapper bitcode for offload target binaries\&. Takes "
+322       "offload\ntarget binaries as input and produces bitcode file containing "
+323       "target binaries packaged\nas data and initialization code which "
+324       "registers target binaries in offload runtime\&.\n");
+325 
+326   if (Help) {
+327     cl::PrintHelpMessage();
+328     return 0;
+329   }
+330 
+331   auto reportError = [argv](Error E) {
+332     logAllUnhandledErrors(std::move(E), WithColor::error(errs(), argv[0]));
+333   };
+334 
+335   if (Triple(Target)\&.getArch() == Triple::UnknownArch) {
+336     reportError(createStringError(
+337         errc::invalid_argument, "'" + Target + "': unsupported target triple"));
+338     return 1;
+339   }
+340 
+341   // Read device binaries\&.
+342   SmallVector<std::unique_ptr<MemoryBuffer>, 4u> Buffers;
+343   SmallVector<ArrayRef<char>, 4u> Images;
+344   Buffers\&.reserve(Inputs\&.size());
+345   Images\&.reserve(Inputs\&.size());
+346   for (const std::string &File : Inputs) {
+347     ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr =
+348         MemoryBuffer::getFileOrSTDIN(File);
+349     if (!BufOrErr) {
+350       reportError(createFileError(File, BufOrErr\&.getError()));
+351       return 1;
+352     }
+353     const std::unique_ptr<MemoryBuffer> &Buf =
+354         Buffers\&.emplace_back(std::move(*BufOrErr));
+355     Images\&.emplace_back(Buf->getBufferStart(), Buf->getBufferSize());
+356   }
+357 
+358   // Create the output file to write the resulting bitcode to\&.
+359   std::error_code EC;
+360   ToolOutputFile Out(Output, EC, sys::fs::OF_None);
+361   if (EC) {
+362     reportError(createFileError(Output, EC));
+363     return 1;
+364   }
+365 
+366   // Create a wrapper for device binaries and write its bitcode to the file\&.
+367   WriteBitcodeToFile(BinaryWrapper(Target)\&.wrapBinaries(
+368                          makeArrayRef(Images\&.data(), Images\&.size())),
+369                      Out\&.os());
+370   if (Out\&.os()\&.has_error()) {
+371     reportError(createFileError(Output, Out\&.os()\&.error()));
+372     return 1;
+373   }
+374 
+375   // Success\&.
+376   Out\&.keep();
+377   return 0;
+378 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,147 @@
+.TH "Reporter.RadarClassificationParameter" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Reporter.RadarClassificationParameter
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBReporter\&.SelectionParameter\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fB__init__\fP (self)"
+.br
+.ti -1c
+.RI "def \fBsaveConfigValue\fP (self)"
+.br
+.ti -1c
+.RI "def \fBgetValue\fP (self, r, bugtype, getConfigOption)"
+.br
+.ti -1c
+.RI "def \fBgetHTML\fP (self, r, bugtype, getConfigOption)"
+.br
+.ti -1c
+.RI "def \fBgetName\fP (self)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBvalues\fP"
+.br
+.ti -1c
+.RI "\fBname\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 157 of file Reporter\&.py\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "def Reporter\&.RadarClassificationParameter\&.__init__ ( self)"
+
+.PP
+Definition at line 158 of file Reporter\&.py\&.
+.PP
+.nf
+158   def __init__(self):
+159     SelectionParameter\&.__init__(self,"Classification",
+160             [['1', 'Security'], ['2', 'Crash/Hang/Data Loss'],
+161              ['3', 'Performance'], ['4', 'UI/Usability'], 
+162              ['6', 'Serious Bug'], ['7', 'Other']])
+163 
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "def Reporter\&.SelectionParameter\&.getHTML ( self,  r,  bugtype,  getConfigOption)\fC [inherited]\fP"
+
+.PP
+Definition at line 63 of file Reporter\&.py\&.
+.PP
+.nf
+63   def getHTML(self,r,bugtype,getConfigOption):
+64     default = self\&.getValue(r,bugtype,getConfigOption)
+65     return """\
+66 <tr>
+67 <td class="form_clabel">%s:</td><td class="form_value"><select name="%s_%s">
+68 %s
+69 </select></td>"""%(self\&.getName(),r\&.getName(),self\&.getName(),'\n'\&.join(["""\
+70 <option value="%s"%s>%s</option>"""%(o[0],
+71                                      o[0] == default and ' selected="selected"' or '',
+72                                      o[1]) for o in self\&.values]))
+73 
+74 #===------------------------------------------------------------------------===#
+75 # Reporters
+76 #===------------------------------------------------------------------------===#
+77 
+.fi
+.PP
+References diagtool::DiagnosticRecord\&.getName(), diagtool::GroupRecord\&.getName(), diagtool::DiagTool\&.getName(), clang::cxcursor::MacroExpansionCursor\&.getName(), Reporter\&.ReporterParameter\&.getName(), Reporter\&.EmailReporter\&.getName(), Reporter\&.BugzillaReporter\&.getName(), Reporter\&.ReporterParameter\&.getValue(), Reporter\&.RadarClassificationParameter\&.getValue(), LLVM\&.ClangFormat\&.OptionPageGrid\&.StyleConverter\&.values, and Reporter\&.SelectionParameter\&.values\&.
+.SS "def Reporter\&.ReporterParameter\&.getName ( self)\fC [inherited]\fP"
+
+.PP
+Definition at line 43 of file Reporter\&.py\&.
+.PP
+.nf
+43   def getName(self):
+44     return self\&.name
+.fi
+.PP
+References libear\&.SharedLibrary\&.name, Reporter\&.ReporterParameter\&.name, and startfile\&.BaseController\&.name\&.
+.PP
+Referenced by Reporter\&.TextParameter\&.getHTML(), Reporter\&.SelectionParameter\&.getHTML(), and Reporter\&.ReporterParameter\&.getValue()\&.
+.SS "def Reporter\&.RadarClassificationParameter\&.getValue ( self,  r,  bugtype,  getConfigOption)"
+
+.PP
+Reimplemented from \fBReporter\&.ReporterParameter\fP\&.
+.PP
+Definition at line 167 of file Reporter\&.py\&.
+.PP
+.nf
+167   def getValue(self,r,bugtype,getConfigOption):
+168     if bugtype\&.find("leak") != -1:
+169       return '3'
+170     elif bugtype\&.find("dereference") != -1:
+171       return '2'
+172     elif bugtype\&.find("missing ivar release") != -1:
+173       return '3'
+174     else:
+175       return '7'
+176 
+.fi
+.PP
+Referenced by Reporter\&.TextParameter\&.getHTML(), and Reporter\&.SelectionParameter\&.getHTML()\&.
+.SS "def Reporter\&.RadarClassificationParameter\&.saveConfigValue ( self)"
+
+.PP
+Reimplemented from \fBReporter\&.ReporterParameter\fP\&.
+.PP
+Definition at line 164 of file Reporter\&.py\&.
+.PP
+.nf
+164   def saveConfigValue(self):
+165     return False
+166     
+.fi
+.SH "Member Data Documentation"
+.PP 
+.SS "Reporter\&.ReporterParameter\&.name\fC [inherited]\fP"
+
+.PP
+Definition at line 42 of file Reporter\&.py\&.
+.PP
+Referenced by libear\&.SharedLibrary\&.build_release(), and Reporter\&.ReporterParameter\&.getName()\&.
+.SS "Reporter\&.SelectionParameter\&.values\fC [inherited]\fP"
+
+.PP
+Definition at line 61 of file Reporter\&.py\&.
+.PP
+Referenced by Reporter\&.SelectionParameter\&.getHTML()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

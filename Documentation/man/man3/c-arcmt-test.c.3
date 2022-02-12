@@ -1,0 +1,116 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/c-arcmt-test/c-arcmt-test.c" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/c-arcmt-test/c-arcmt-test.c
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang\-c/Index\&.h'\fP
+.br
+\fC#include <stdlib\&.h>\fP
+.br
+\fC#include <stdio\&.h>\fP
+.br
+\fC#include <string\&.h>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBthread_info\fP"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBthread_info\fP \fBthread_info\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBcarcmttest_main\fP (int argc, const char **argv)"
+.br
+.ti -1c
+.RI "void \fBthread_runner\fP (void *client_data_v)"
+.br
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fBthread_info\fP \fBthread_info\fP"
+
+.SH "Function Documentation"
+.PP 
+.SS "int carcmttest_main (int argc, const char ** argv)"
+
+.PP
+Definition at line 74 of file c\-arcmt\-test\&.c\&.
+.PP
+.nf
+74                                                  {
+75   clang_enableStackTraces();
+76   if (argc == 3 && strncmp(argv[1], "-mt-migrate-directory", 21) == 0)
+77     return print_remappings(argv[2]);
+78 
+79   if (argc > 1)
+80     return print_remappings_filelist(argv+1, argc-1);
+81   
+82   print_usage();
+83   return 1;
+84 }
+.fi
+.PP
+References clang_enableStackTraces()\&.
+.PP
+Referenced by thread_runner()\&.
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 109 of file c\-arcmt\-test\&.c\&.
+.PP
+.nf
+109                                       {
+110   thread_info client_data;
+111 
+112   atexit(flush_atexit);
+113 
+114 #if defined(_WIN32)
+115   if (getenv("LIBCLANG_LOGGING") == NULL)
+116     putenv("LIBCLANG_LOGGING=1");
+117   _setmode( _fileno(stdout), _O_BINARY );
+118 #else
+119   setenv("LIBCLANG_LOGGING", "1", /*overwrite=*/0);
+120 #endif
+121 
+122   if (getenv("CINDEXTEST_NOTHREADS"))
+123     return carcmttest_main(argc, argv);
+124 
+125   client_data\&.argc = argc;
+126   client_data\&.argv = argv;
+127   clang_executeOnThread(thread_runner, &client_data, 0);
+128   return client_data\&.result;
+129 }
+.fi
+.SS "void thread_runner (void * client_data_v)"
+
+.PP
+Definition at line 97 of file c\-arcmt\-test\&.c\&.
+.PP
+.nf
+97                                         {
+98   thread_info *client_data = client_data_v;
+99   client_data->result = carcmttest_main(client_data->argc, client_data->argv);
+100 }
+.fi
+.PP
+References thread_info::argc, thread_info::argv, carcmttest_main(), and thread_info::result\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

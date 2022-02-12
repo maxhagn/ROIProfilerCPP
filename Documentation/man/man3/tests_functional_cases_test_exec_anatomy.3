@@ -1,0 +1,55 @@
+.TH "tests.functional.cases.test_exec_anatomy" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tests.functional.cases.test_exec_anatomy
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBExecAnatomyTest\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "def \fBrun\fP (source_dir, target_dir)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "def tests\&.functional\&.cases\&.test_exec_anatomy\&.run ( source_dir,  target_dir)"
+
+.PP
+Definition at line 14 of file test_exec_anatomy\&.py\&.
+.PP
+.nf
+14 def run(source_dir, target_dir):
+15     def execute(cmd):
+16         return subprocess\&.check_call(cmd,
+17                                      cwd=target_dir,
+18                                      stdout=subprocess\&.PIPE,
+19                                      stderr=subprocess\&.STDOUT)
+20 
+21     execute(['cmake', source_dir])
+22     execute(['make'])
+23 
+24     result_file = os\&.path\&.join(target_dir, 'result\&.json')
+25     expected_file = os\&.path\&.join(target_dir, 'expected\&.json')
+26     execute(['intercept-build', '--cdb', result_file, '\&./exec',
+27              expected_file])
+28     return (expected_file, result_file)
+29 
+30 
+.fi
+.PP
+References libear\&.execute()\&.
+.PP
+Referenced by tests\&.functional\&.cases\&.test_exec_anatomy\&.ExecAnatomyTest\&.test_all_exec_calls()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

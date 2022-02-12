@@ -1,0 +1,76 @@
+.TH "clang::refactor::ClangRefactorToolConsumerInterface" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::refactor::ClangRefactorToolConsumerInterface
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ToolRefactoringResultConsumer\&.h>\fP
+.PP
+Inherits tooling::RefactoringResultConsumer\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBbeginTU\fP (ASTContext &Context)"
+.br
+.RI "Called when a TU is entered\&. "
+.ti -1c
+.RI "void \fBendTU\fP ()"
+.br
+.RI "Called when the tool is done with a TU\&. "
+.ti -1c
+.RI "DiagnosticsEngine & \fBgetDiags\fP () const"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+An interface that subclasses the \fCRefactoringResultConsumer\fP interface that stores the reference to the TU-specific diagnostics engine\&. 
+.PP
+Definition at line 20 of file ToolRefactoringResultConsumer\&.h\&.
+.SH "Member Function Documentation"
+.PP 
+.SS "void clang::refactor::ClangRefactorToolConsumerInterface::beginTU (ASTContext & Context)\fC [inline]\fP"
+
+.PP
+Called when a TU is entered\&. 
+.PP
+Definition at line 24 of file ToolRefactoringResultConsumer\&.h\&.
+.PP
+.nf
+24                                     {
+25     assert(!Diags && "Diags has been set");
+26     Diags = &Context\&.getDiagnostics();
+27   }
+.fi
+.SS "void clang::refactor::ClangRefactorToolConsumerInterface::endTU ()\fC [inline]\fP"
+
+.PP
+Called when the tool is done with a TU\&. 
+.PP
+Definition at line 30 of file ToolRefactoringResultConsumer\&.h\&.
+.PP
+.nf
+30                {
+31     assert(Diags && "Diags unset");
+32     Diags = nullptr;
+33   }
+.fi
+.SS "DiagnosticsEngine& clang::refactor::ClangRefactorToolConsumerInterface::getDiags () const\fC [inline]\fP"
+
+.PP
+Definition at line 35 of file ToolRefactoringResultConsumer\&.h\&.
+.PP
+.nf
+35                                       {
+36     assert(Diags && "no diags");
+37     return *Diags;
+38   }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

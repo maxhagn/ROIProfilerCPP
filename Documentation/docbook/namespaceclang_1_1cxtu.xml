@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_namespaceclang_1_1cxtu" xml:lang="en-US">
+<title>clang::cxtu Namespace Reference</title>
+<indexterm><primary>clang::cxtu</primary></indexterm>
+<simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>class <link linkend="_classclang_1_1cxtu_1_1_c_x_t_u_owner">CXTUOwner</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para><link linkend="_struct_c_x_translation_unit_impl">CXTranslationUnitImpl</link> * <link linkend="_namespaceclang_1_1cxtu_1a00c98a9560b39abf66fa58c2059de48e">MakeCXTranslationUnit</link> (<link linkend="_classclang_1_1_c_indexer">CIndexer</link> *CIdx, std::unique_ptr&lt; ASTUnit &gt; AU)</para>
+</listitem>
+            <listitem><para>bool <link linkend="_namespaceclang_1_1cxtu_1a780a13d3a9c39b2898045b05ff18c05e">isASTReadError</link> (ASTUnit *AU)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_namespaceclang_1_1cxtu_1a780a13d3a9c39b2898045b05ff18c05e"/>    <section>
+    <title>isASTReadError()</title>
+<indexterm><primary>isASTReadError</primary><secondary>clang::cxtu</secondary></indexterm>
+<indexterm><primary>clang::cxtu</primary><secondary>isASTReadError</secondary></indexterm>
+<para><computeroutput>bool clang::cxtu::isASTReadError (ASTUnit * AU)</computeroutput></para>
+<para><formalpara><title>Returns</title>
+
+<para>true if the ASTUnit has a diagnostic about the AST file being corrupted. </para>
+</formalpara>
+</para>
+<para>
+Definition at line <link linkend="__c_index_8cpp_source_1l00090">90</link> of file <link linkend="__c_index_8cpp_source">CIndex.cpp</link>.</para>
+<programlisting>00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00091 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(ASTUnit::stored_diag_iterator&#32;D&#32;=&#32;AU-&gt;stored_diag_begin(),
+00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DEnd&#32;=&#32;AU-&gt;stored_diag_end();
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;D&#32;!=&#32;DEnd;&#32;++D)&#32;{
+00094 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(D-&gt;getLevel()&#32;&gt;=&#32;DiagnosticsEngine::Error&#32;&amp;&amp;
+00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;DiagnosticIDs::getCategoryNumberForDiag(D-&gt;getID())&#32;==
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;diag::DiagCat_AST_Deserialization_Issue)
+00097 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">true</emphasis>;
+00098 &#32;&#32;}
+00099 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">false</emphasis>;
+00100 }
+</programlisting>    </section><anchor xml:id="_namespaceclang_1_1cxtu_1a00c98a9560b39abf66fa58c2059de48e"/>    <section>
+    <title>MakeCXTranslationUnit()</title>
+<indexterm><primary>MakeCXTranslationUnit</primary><secondary>clang::cxtu</secondary></indexterm>
+<indexterm><primary>clang::cxtu</primary><secondary>MakeCXTranslationUnit</secondary></indexterm>
+<para><computeroutput>CXTranslationUnit clang::cxtu::MakeCXTranslationUnit (<link linkend="_classclang_1_1_c_indexer">CIndexer</link> * CIdx, std::unique_ptr&lt; ASTUnit &gt; AU)</computeroutput></para><para>
+Definition at line <link linkend="__c_index_8cpp_source_1l00073">73</link> of file <link linkend="__c_index_8cpp_source">CIndex.cpp</link>.</para>
+<programlisting>00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00075 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AU)
+00076 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00077 &#32;&#32;assert(CIdx);
+00078 &#32;&#32;CXTranslationUnit&#32;D&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_struct_c_x_translation_unit_impl">CXTranslationUnitImpl</link>();
+00079 &#32;&#32;D-&gt;CIdx&#32;=&#32;CIdx;
+00080 &#32;&#32;D-&gt;TheASTUnit&#32;=&#32;AU.release();
+00081 &#32;&#32;D-&gt;StringPool&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;<link linkend="_classclang_1_1cxstring_1_1_c_x_string_pool">cxstring::CXStringPool</link>();
+00082 &#32;&#32;D-&gt;Diagnostics&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00083 &#32;&#32;D-&gt;OverridenCursorsPool&#32;=&#32;<link linkend="_namespaceclang_1_1cxcursor_1af71b6ad00df82de093f378557ee93240">createOverridenCXCursorsPool</link>();
+00084 &#32;&#32;D-&gt;CommentToXML&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00085 &#32;&#32;D-&gt;ParsingOptions&#32;=&#32;0;
+00086 &#32;&#32;D-&gt;Arguments&#32;=&#32;{};
+00087 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;D;
+00088 }
+</programlisting><para>
+References <link linkend="__c_x_cursor_8cpp_source_1l01565">clang::cxcursor::createOverridenCXCursorsPool()</link>.</para>
+</section>
+</section>
+</section>

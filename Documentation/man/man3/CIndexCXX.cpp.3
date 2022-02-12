@@ -1,0 +1,170 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCXX.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexCXX.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXType\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclCXX\&.h'\fP
+.br
+\fC#include 'clang/AST/DeclTemplate\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "unsigned \fBclang_isVirtualBase\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "enum CX_CXXAccessSpecifier \fBclang_getCXXAccessSpecifier\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "enum CXCursorKind \fBclang_getTemplateCursorKind\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "CXCursor \fBclang_getSpecializedCursorTemplate\fP (CXCursor C)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "enum CX_CXXAccessSpecifier clang_getCXXAccessSpecifier (CXCursor C)"
+
+.PP
+Definition at line 22 of file CIndexCXX\&.cpp\&.
+.PP
+.nf
+30                                                                    {
+31   AccessSpecifier spec = AS_none;
+32 
+33   if (C\&.kind == CXCursor_CXXAccessSpecifier || clang_isDeclaration(C\&.kind))
+34     spec = getCursorDecl(C)->getAccess();
+35   else if (C\&.kind == CXCursor_CXXBaseSpecifier)
+36     spec = getCursorCXXBaseSpecifier(C)->getAccessSpecifier();
+37   else
+38     return CX_CXXInvalidAccessSpecifier;
+39   
+40   switch (spec) {
+41     case AS_public: return CX_CXXPublic;
+42     case AS_protected: return CX_CXXProtected;
+43     case AS_private: return CX_CXXPrivate;
+44     case AS_none: return CX_CXXInvalidAccessSpecifier;
+45   }
+46 
+47   llvm_unreachable("Invalid AccessSpecifier!");
+48 }
+.fi
+.PP
+References clang::cxcursor::getCursorCXXBaseSpecifier()\&.
+.SS "CXCursor clang_getSpecializedCursorTemplate (CXCursor C)"
+
+.PP
+Definition at line 82 of file CIndexCXX\&.cpp\&.
+.PP
+.nf
+82                                                         {
+83   if (!clang_isDeclaration(C\&.kind))
+84     return clang_getNullCursor();
+85     
+86   const Decl *D = getCursorDecl(C);
+87   if (!D)
+88     return clang_getNullCursor();
+89 
+90   Decl *Template = nullptr;
+91   if (const CXXRecordDecl *CXXRecord = dyn_cast<CXXRecordDecl>(D)) {
+92     if (const ClassTemplatePartialSpecializationDecl *PartialSpec
+93           = dyn_cast<ClassTemplatePartialSpecializationDecl>(CXXRecord))
+94       Template = PartialSpec->getSpecializedTemplate();
+95     else if (const ClassTemplateSpecializationDecl *ClassSpec 
+96                = dyn_cast<ClassTemplateSpecializationDecl>(CXXRecord)) {
+97       llvm::PointerUnion<ClassTemplateDecl *,
+98                          ClassTemplatePartialSpecializationDecl *> Result
+99         = ClassSpec->getSpecializedTemplateOrPartial();
+100       if (Result\&.is<ClassTemplateDecl *>())
+101         Template = Result\&.get<ClassTemplateDecl *>();
+102       else
+103         Template = Result\&.get<ClassTemplatePartialSpecializationDecl *>();
+104       
+105     } else 
+106       Template = CXXRecord->getInstantiatedFromMemberClass();
+107   } else if (const FunctionDecl *Function = dyn_cast<FunctionDecl>(D)) {
+108     Template = Function->getPrimaryTemplate();
+109     if (!Template)
+110       Template = Function->getInstantiatedFromMemberFunction();
+111   } else if (const VarDecl *Var = dyn_cast<VarDecl>(D)) {
+112     if (Var->isStaticDataMember())
+113       Template = Var->getInstantiatedFromStaticDataMember();
+114   } else if (const RedeclarableTemplateDecl *Tmpl
+115                                         = dyn_cast<RedeclarableTemplateDecl>(D))
+116     Template = Tmpl->getInstantiatedFromMemberTemplate();
+117   
+118   if (!Template)
+119     return clang_getNullCursor();
+120   
+121   return MakeCXCursor(Template, getCursorTU(C));
+122 }
+.fi
+.PP
+References clang_getNullCursor(), clang_isDeclaration(), clang::cxcursor::getCursorDecl(), clang::cxcursor::getCursorTU(), and clang::cxcursor::MakeCXCursor()\&.
+.SS "enum CXCursorKind clang_getTemplateCursorKind (CXCursor C)"
+
+.PP
+Definition at line 22 of file CIndexCXX\&.cpp\&.
+.PP
+.nf
+50                                                           {
+51   using namespace clang::cxcursor;
+52   
+53   switch (C\&.kind) {
+54   case CXCursor_ClassTemplate: 
+55   case CXCursor_FunctionTemplate:
+56     if (const TemplateDecl *Template
+57                            = dyn_cast_or_null<TemplateDecl>(getCursorDecl(C)))
+58       return MakeCXCursor(Template->getTemplatedDecl(), getCursorTU(C))\&.kind;
+59     break;
+60       
+61   case CXCursor_ClassTemplatePartialSpecialization:
+62     if (const ClassTemplateSpecializationDecl *PartialSpec
+63           = dyn_cast_or_null<ClassTemplatePartialSpecializationDecl>(
+64                                                             getCursorDecl(C))) {
+65       switch (PartialSpec->getTagKind()) {
+66       case TTK_Interface:
+67       case TTK_Struct: return CXCursor_StructDecl;
+68       case TTK_Class: return CXCursor_ClassDecl;
+69       case TTK_Union: return CXCursor_UnionDecl;
+70       case TTK_Enum: return CXCursor_NoDeclFound;
+71       }
+72     }
+73     break;
+74       
+75   default:
+76     break;
+77   }
+78   
+79   return CXCursor_NoDeclFound;
+80 }
+.fi
+.SS "unsigned clang_isVirtualBase (CXCursor C)"
+
+.PP
+Definition at line 22 of file CIndexCXX\&.cpp\&.
+.PP
+.nf
+22                                          {
+23   if (C\&.kind != CXCursor_CXXBaseSpecifier)
+24     return 0;
+25   
+26   const CXXBaseSpecifier *B = getCursorCXXBaseSpecifier(C);
+27   return B->isVirtual();
+28 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

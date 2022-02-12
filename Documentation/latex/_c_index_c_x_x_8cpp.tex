@@ -1,0 +1,183 @@
+\hypertarget{_c_index_c_x_x_8cpp}{}\doxysection{/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\+CIndex\+CXX.cpp File Reference}
+\label{_c_index_c_x_x_8cpp}\index{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexCXX.cpp@{/Users/maximilian/clang-\/llvm/clang/tools/libclang/CIndexCXX.cpp}}
+{\ttfamily \#include \char`\"{}CIndexer.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXCursor.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}CXType.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+CXX.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}clang/\+AST/\+Decl\+Template.\+h\char`\"{}}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+unsigned \mbox{\hyperlink{_c_index_c_x_x_8cpp_abdcc0d170ceac8f26fb6974b08471ae2}{clang\+\_\+is\+Virtual\+Base}} (CXCursor C)
+\item 
+enum CX\+\_\+\+CXXAccess\+Specifier \mbox{\hyperlink{_c_index_c_x_x_8cpp_aaf7993362c5af9475b57fa2e577c2112}{clang\+\_\+get\+CXXAccess\+Specifier}} (CXCursor C)
+\item 
+enum CXCursor\+Kind \mbox{\hyperlink{_c_index_c_x_x_8cpp_a0cd4d29291d3ab2471553122ed855599}{clang\+\_\+get\+Template\+Cursor\+Kind}} (CXCursor C)
+\item 
+CXCursor \mbox{\hyperlink{_c_index_c_x_x_8cpp_a53aeb792021508f8ef3810927064b136}{clang\+\_\+get\+Specialized\+Cursor\+Template}} (CXCursor C)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_c_index_c_x_x_8cpp_aaf7993362c5af9475b57fa2e577c2112}\label{_c_index_c_x_x_8cpp_aaf7993362c5af9475b57fa2e577c2112}} 
+\index{CIndexCXX.cpp@{CIndexCXX.cpp}!clang\_getCXXAccessSpecifier@{clang\_getCXXAccessSpecifier}}
+\index{clang\_getCXXAccessSpecifier@{clang\_getCXXAccessSpecifier}!CIndexCXX.cpp@{CIndexCXX.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getCXXAccessSpecifier()}{clang\_getCXXAccessSpecifier()}}
+{\footnotesize\ttfamily enum CX\+\_\+\+CXXAccess\+Specifier clang\+\_\+get\+CXXAccess\+Specifier (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 22 of file CIndex\+CXX.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{30                                                                    \{}
+\DoxyCodeLine{31   AccessSpecifier spec = AS\_none;}
+\DoxyCodeLine{32 }
+\DoxyCodeLine{33   \textcolor{keywordflow}{if} (C.kind == CXCursor\_CXXAccessSpecifier || \mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{34     spec = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{getCursorDecl}}(C)-\/>getAccess();}
+\DoxyCodeLine{35   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (C.kind == CXCursor\_CXXBaseSpecifier)}
+\DoxyCodeLine{36     spec = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a05b387c1d9aeb75b3de539f8622e0964}{getCursorCXXBaseSpecifier}}(C)-\/>getAccessSpecifier();}
+\DoxyCodeLine{37   \textcolor{keywordflow}{else}}
+\DoxyCodeLine{38     \textcolor{keywordflow}{return} CX\_CXXInvalidAccessSpecifier;}
+\DoxyCodeLine{39   }
+\DoxyCodeLine{40   \textcolor{keywordflow}{switch} (spec) \{}
+\DoxyCodeLine{41     \textcolor{keywordflow}{case} AS\_public: \textcolor{keywordflow}{return} CX\_CXXPublic;}
+\DoxyCodeLine{42     \textcolor{keywordflow}{case} AS\_protected: \textcolor{keywordflow}{return} CX\_CXXProtected;}
+\DoxyCodeLine{43     \textcolor{keywordflow}{case} AS\_private: \textcolor{keywordflow}{return} CX\_CXXPrivate;}
+\DoxyCodeLine{44     \textcolor{keywordflow}{case} AS\_none: \textcolor{keywordflow}{return} CX\_CXXInvalidAccessSpecifier;}
+\DoxyCodeLine{45   \}}
+\DoxyCodeLine{46 }
+\DoxyCodeLine{47   llvm\_unreachable(\textcolor{stringliteral}{"{}Invalid AccessSpecifier!"{}});}
+\DoxyCodeLine{48 \}}
+
+\end{DoxyCode}
+
+
+References clang\+::cxcursor\+::get\+Cursor\+CXXBase\+Specifier().
+
+\mbox{\Hypertarget{_c_index_c_x_x_8cpp_a53aeb792021508f8ef3810927064b136}\label{_c_index_c_x_x_8cpp_a53aeb792021508f8ef3810927064b136}} 
+\index{CIndexCXX.cpp@{CIndexCXX.cpp}!clang\_getSpecializedCursorTemplate@{clang\_getSpecializedCursorTemplate}}
+\index{clang\_getSpecializedCursorTemplate@{clang\_getSpecializedCursorTemplate}!CIndexCXX.cpp@{CIndexCXX.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getSpecializedCursorTemplate()}{clang\_getSpecializedCursorTemplate()}}
+{\footnotesize\ttfamily CXCursor clang\+\_\+get\+Specialized\+Cursor\+Template (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 82 of file CIndex\+CXX.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{82                                                         \{}
+\DoxyCodeLine{83   \textcolor{keywordflow}{if} (!\mbox{\hyperlink{_c_index_8cpp_a5d47db8f608ae0c266d6551875d46b80}{clang\_isDeclaration}}(C.kind))}
+\DoxyCodeLine{84     \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_index_8cpp_aa22233466eaf91f6f3cf6b84255c3b68}{clang\_getNullCursor}}();}
+\DoxyCodeLine{85     }
+\DoxyCodeLine{86   \textcolor{keyword}{const} Decl *D = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{getCursorDecl}}(C);}
+\DoxyCodeLine{87   \textcolor{keywordflow}{if} (!D)}
+\DoxyCodeLine{88     \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_index_8cpp_aa22233466eaf91f6f3cf6b84255c3b68}{clang\_getNullCursor}}();}
+\DoxyCodeLine{89 }
+\DoxyCodeLine{90   Decl *Template = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{91   \textcolor{keywordflow}{if} (\textcolor{keyword}{const} CXXRecordDecl *CXXRecord = dyn\_cast<CXXRecordDecl>(D)) \{}
+\DoxyCodeLine{92     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ClassTemplatePartialSpecializationDecl *PartialSpec}
+\DoxyCodeLine{93           = dyn\_cast<ClassTemplatePartialSpecializationDecl>(CXXRecord))}
+\DoxyCodeLine{94       Template = PartialSpec-\/>getSpecializedTemplate();}
+\DoxyCodeLine{95     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ClassTemplateSpecializationDecl *ClassSpec }
+\DoxyCodeLine{96                = dyn\_cast<ClassTemplateSpecializationDecl>(CXXRecord)) \{}
+\DoxyCodeLine{97       llvm::PointerUnion<ClassTemplateDecl *,}
+\DoxyCodeLine{98                          ClassTemplatePartialSpecializationDecl *> Result}
+\DoxyCodeLine{99         = ClassSpec-\/>getSpecializedTemplateOrPartial();}
+\DoxyCodeLine{100       \textcolor{keywordflow}{if} (Result.is<ClassTemplateDecl *>())}
+\DoxyCodeLine{101         Template = Result.get<ClassTemplateDecl *>();}
+\DoxyCodeLine{102       \textcolor{keywordflow}{else}}
+\DoxyCodeLine{103         Template = Result.get<ClassTemplatePartialSpecializationDecl *>();}
+\DoxyCodeLine{104       }
+\DoxyCodeLine{105     \} \textcolor{keywordflow}{else} }
+\DoxyCodeLine{106       Template = CXXRecord-\/>getInstantiatedFromMemberClass();}
+\DoxyCodeLine{107   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} FunctionDecl *Function = dyn\_cast<FunctionDecl>(D)) \{}
+\DoxyCodeLine{108     Template = Function-\/>getPrimaryTemplate();}
+\DoxyCodeLine{109     \textcolor{keywordflow}{if} (!Template)}
+\DoxyCodeLine{110       Template = Function-\/>getInstantiatedFromMemberFunction();}
+\DoxyCodeLine{111   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} VarDecl *Var = dyn\_cast<VarDecl>(D)) \{}
+\DoxyCodeLine{112     \textcolor{keywordflow}{if} (Var-\/>isStaticDataMember())}
+\DoxyCodeLine{113       Template = Var-\/>getInstantiatedFromStaticDataMember();}
+\DoxyCodeLine{114   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\textcolor{keyword}{const} RedeclarableTemplateDecl *Tmpl}
+\DoxyCodeLine{115                                         = dyn\_cast<RedeclarableTemplateDecl>(D))}
+\DoxyCodeLine{116     Template = Tmpl-\/>getInstantiatedFromMemberTemplate();}
+\DoxyCodeLine{117   }
+\DoxyCodeLine{118   \textcolor{keywordflow}{if} (!Template)}
+\DoxyCodeLine{119     \textcolor{keywordflow}{return} \mbox{\hyperlink{_c_index_8cpp_aa22233466eaf91f6f3cf6b84255c3b68}{clang\_getNullCursor}}();}
+\DoxyCodeLine{120   }
+\DoxyCodeLine{121   \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_ab61ec2059175833672e8e78a376bb218}{MakeCXCursor}}(Template, \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{getCursorTU}}(C));}
+\DoxyCodeLine{122 \}}
+
+\end{DoxyCode}
+
+
+References clang\+\_\+get\+Null\+Cursor(), clang\+\_\+is\+Declaration(), clang\+::cxcursor\+::get\+Cursor\+Decl(), clang\+::cxcursor\+::get\+Cursor\+TU(), and clang\+::cxcursor\+::\+Make\+CXCursor().
+
+\mbox{\Hypertarget{_c_index_c_x_x_8cpp_a0cd4d29291d3ab2471553122ed855599}\label{_c_index_c_x_x_8cpp_a0cd4d29291d3ab2471553122ed855599}} 
+\index{CIndexCXX.cpp@{CIndexCXX.cpp}!clang\_getTemplateCursorKind@{clang\_getTemplateCursorKind}}
+\index{clang\_getTemplateCursorKind@{clang\_getTemplateCursorKind}!CIndexCXX.cpp@{CIndexCXX.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_getTemplateCursorKind()}{clang\_getTemplateCursorKind()}}
+{\footnotesize\ttfamily enum CXCursor\+Kind clang\+\_\+get\+Template\+Cursor\+Kind (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 22 of file CIndex\+CXX.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{50                                                           \{}
+\DoxyCodeLine{51   \textcolor{keyword}{using namespace }\mbox{\hyperlink{namespaceclang_1_1cxcursor}{clang::cxcursor}};}
+\DoxyCodeLine{52   }
+\DoxyCodeLine{53   \textcolor{keywordflow}{switch} (C.kind) \{}
+\DoxyCodeLine{54   \textcolor{keywordflow}{case} CXCursor\_ClassTemplate: }
+\DoxyCodeLine{55   \textcolor{keywordflow}{case} CXCursor\_FunctionTemplate:}
+\DoxyCodeLine{56     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} TemplateDecl *Template}
+\DoxyCodeLine{57                            = dyn\_cast\_or\_null<TemplateDecl>(\mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{getCursorDecl}}(C)))}
+\DoxyCodeLine{58       \textcolor{keywordflow}{return} \mbox{\hyperlink{namespaceclang_1_1cxcursor_ab61ec2059175833672e8e78a376bb218}{MakeCXCursor}}(Template-\/>getTemplatedDecl(), \mbox{\hyperlink{namespaceclang_1_1cxcursor_a23a495df22339e8289ae6d2421f493b6}{getCursorTU}}(C)).kind;}
+\DoxyCodeLine{59     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{60       }
+\DoxyCodeLine{61   \textcolor{keywordflow}{case} CXCursor\_ClassTemplatePartialSpecialization:}
+\DoxyCodeLine{62     \textcolor{keywordflow}{if} (\textcolor{keyword}{const} ClassTemplateSpecializationDecl *PartialSpec}
+\DoxyCodeLine{63           = dyn\_cast\_or\_null<ClassTemplatePartialSpecializationDecl>(}
+\DoxyCodeLine{64                                                             \mbox{\hyperlink{namespaceclang_1_1cxcursor_a1f702246831c96afd990e457613dc642}{getCursorDecl}}(C))) \{}
+\DoxyCodeLine{65       \textcolor{keywordflow}{switch} (PartialSpec-\/>getTagKind()) \{}
+\DoxyCodeLine{66       \textcolor{keywordflow}{case} TTK\_Interface:}
+\DoxyCodeLine{67       \textcolor{keywordflow}{case} TTK\_Struct: \textcolor{keywordflow}{return} CXCursor\_StructDecl;}
+\DoxyCodeLine{68       \textcolor{keywordflow}{case} TTK\_Class: \textcolor{keywordflow}{return} CXCursor\_ClassDecl;}
+\DoxyCodeLine{69       \textcolor{keywordflow}{case} TTK\_Union: \textcolor{keywordflow}{return} CXCursor\_UnionDecl;}
+\DoxyCodeLine{70       \textcolor{keywordflow}{case} TTK\_Enum: \textcolor{keywordflow}{return} CXCursor\_NoDeclFound;}
+\DoxyCodeLine{71       \}}
+\DoxyCodeLine{72     \}}
+\DoxyCodeLine{73     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{74       }
+\DoxyCodeLine{75   \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{76     \textcolor{keywordflow}{break};}
+\DoxyCodeLine{77   \}}
+\DoxyCodeLine{78   }
+\DoxyCodeLine{79   \textcolor{keywordflow}{return} CXCursor\_NoDeclFound;}
+\DoxyCodeLine{80 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{_c_index_c_x_x_8cpp_abdcc0d170ceac8f26fb6974b08471ae2}\label{_c_index_c_x_x_8cpp_abdcc0d170ceac8f26fb6974b08471ae2}} 
+\index{CIndexCXX.cpp@{CIndexCXX.cpp}!clang\_isVirtualBase@{clang\_isVirtualBase}}
+\index{clang\_isVirtualBase@{clang\_isVirtualBase}!CIndexCXX.cpp@{CIndexCXX.cpp}}
+\doxysubsubsection{\texorpdfstring{clang\_isVirtualBase()}{clang\_isVirtualBase()}}
+{\footnotesize\ttfamily unsigned clang\+\_\+is\+Virtual\+Base (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})}
+
+
+
+Definition at line 22 of file CIndex\+CXX.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{22                                          \{}
+\DoxyCodeLine{23   \textcolor{keywordflow}{if} (C.kind != CXCursor\_CXXBaseSpecifier)}
+\DoxyCodeLine{24     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{25   }
+\DoxyCodeLine{26   \textcolor{keyword}{const} CXXBaseSpecifier *B = \mbox{\hyperlink{namespaceclang_1_1cxcursor_a05b387c1d9aeb75b3de539f8622e0964}{getCursorCXXBaseSpecifier}}(C);}
+\DoxyCodeLine{27   \textcolor{keywordflow}{return} B-\/>isVirtual();}
+\DoxyCodeLine{28 \}}
+
+\end{DoxyCode}

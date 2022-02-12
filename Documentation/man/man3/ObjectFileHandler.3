@@ -1,0 +1,344 @@
+.TH "ObjectFileHandler" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+ObjectFileHandler
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBFileHandler\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBObjectFileHandler\fP (std::unique_ptr< ObjectFile > ObjIn)"
+.br
+.ti -1c
+.RI "\fB~ObjectFileHandler\fP () final"
+.br
+.ti -1c
+.RI "Error \fBReadHeader\fP (MemoryBuffer &Input) final"
+.br
+.ti -1c
+.RI "Expected< Optional< StringRef > > \fBReadBundleStart\fP (MemoryBuffer &Input) final"
+.br
+.ti -1c
+.RI "Error \fBReadBundleEnd\fP (MemoryBuffer &Input) final"
+.br
+.RI "Read the marker that closes the current bundle\&. "
+.ti -1c
+.RI "Error \fBReadBundle\fP (raw_ostream &OS, MemoryBuffer &Input) final"
+.br
+.RI "Read the current bundle and write the result into the stream \fIOS\fP\&. "
+.ti -1c
+.RI "Error \fBWriteHeader\fP (raw_fd_ostream &OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundleStart\fP (raw_fd_ostream &OS, StringRef TargetTriple) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundleEnd\fP (raw_fd_ostream &OS, StringRef TargetTriple) final"
+.br
+.ti -1c
+.RI "Error \fBWriteBundle\fP (raw_fd_ostream &OS, MemoryBuffer &Input) final"
+.br
+.RI "Write the bundle from \fIInput\fP into \fIOS\fP\&. "
+.ti -1c
+.RI "virtual Error \fBlistBundleIDs\fP (MemoryBuffer &Input)"
+.br
+.RI "List bundle IDs in \fIInput\fP\&. "
+.ti -1c
+.RI "Error \fBforEachBundle\fP (MemoryBuffer &Input, std::function< Error(const \fBBundleInfo\fP &)> Func)"
+.br
+.RI "For each bundle in \fIInput\fP, do \fIFunc\fP\&. "
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "virtual Error \fBlistBundleIDsCallback\fP (MemoryBuffer &Input, const \fBBundleInfo\fP &Info)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Handler for object files\&. The bundles are organized by sections with a designated name\&.
+.PP
+To unbundle, we just copy the contents of the designated section\&. 
+.PP
+Definition at line 515 of file ClangOffloadBundler\&.cpp\&.
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "ObjectFileHandler::ObjectFileHandler (std::unique_ptr< ObjectFile > ObjIn)\fC [inline]\fP"
+
+.PP
+Definition at line 550 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+551       : FileHandler(), Obj(std::move(ObjIn)),
+552         CurrentSection(Obj->section_begin()),
+553         NextSection(Obj->section_begin()) {}
+.fi
+.SS "ObjectFileHandler::~ObjectFileHandler ()\fC [inline]\fP, \fC [final]\fP"
+
+.PP
+Definition at line 555 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+555 {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "Error FileHandler::forEachBundle (MemoryBuffer & Input, std::function< Error(const \fBBundleInfo\fP &)> Func)\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+For each bundle in \fIInput\fP, do \fIFunc\fP\&. 
+.PP
+Definition at line 234 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+235                                                                    {
+236     while (true) {
+237       Expected<Optional<StringRef>> CurTripleOrErr = ReadBundleStart(Input);
+238       if (!CurTripleOrErr)
+239         return CurTripleOrErr\&.takeError();
+240 
+241       // No more bundles\&.
+242       if (!*CurTripleOrErr)
+243         break;
+244 
+245       StringRef CurTriple = **CurTripleOrErr;
+246       assert(!CurTriple\&.empty());
+247 
+248       BundleInfo Info{CurTriple};
+249       if (Error Err = Func(Info))
+250         return Err;
+251     }
+252     return Error::success();
+253   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDs (MemoryBuffer & Input)\fC [inline]\fP, \fC [virtual]\fP, \fC [inherited]\fP"
+
+.PP
+List bundle IDs in \fIInput\fP\&. 
+.PP
+Definition at line 220 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+220                                                    {
+221     if (Error Err = ReadHeader(Input))
+222       return Err;
+223 
+224     return forEachBundle(Input, [&](const BundleInfo &Info) -> Error {
+225       llvm::outs() << Info\&.BundleID << '\n';
+226       Error Err = listBundleIDsCallback(Input, Info);
+227       if (Err)
+228         return Err;
+229       return Error::success();
+230     });
+231   }
+.fi
+.SS "virtual Error FileHandler::listBundleIDsCallback (MemoryBuffer & Input, const \fBBundleInfo\fP & Info)\fC [inline]\fP, \fC [protected]\fP, \fC [virtual]\fP, \fC [inherited]\fP"
+
+.PP
+Reimplemented in \fBTextFileHandler\fP\&.
+.PP
+Definition at line 256 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+257                                                               {
+258     return Error::success();
+259   }
+.fi
+.SS "Error ObjectFileHandler::ReadBundle (raw_ostream & OS, MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Read the current bundle and write the result into the stream \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 578 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+578                                                                {
+579     Expected<StringRef> ContentOrErr = CurrentSection->getContents();
+580     if (!ContentOrErr)
+581       return ContentOrErr\&.takeError();
+582     StringRef Content = *ContentOrErr;
+583 
+584     // Copy fat object contents to the output when extracting host bundle\&.
+585     if (Content\&.size() == 1u && Content\&.front() == 0)
+586       Content = StringRef(Input\&.getBufferStart(), Input\&.getBufferSize());
+587 
+588     OS\&.write(Content\&.data(), Content\&.size());
+589     return Error::success();
+590   }
+.fi
+.SS "Error ObjectFileHandler::ReadBundleEnd (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Read the marker that closes the current bundle\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 576 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+576 { return Error::success(); }
+.fi
+.SS "Expected<Optional<StringRef> > ObjectFileHandler::ReadBundleStart (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Read the marker of the next bundled to be read in the file\&. The bundle name is returned if there is one in the file, or \fCNone\fP if there are no more bundles to be read\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 559 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+559                                                                            {
+560     while (NextSection != Obj->section_end()) {
+561       CurrentSection = NextSection;
+562       ++NextSection;
+563 
+564       // Check if the current section name starts with the reserved prefix\&. If
+565       // so, return the triple\&.
+566       Expected<Optional<StringRef>> TripleOrErr =
+567           IsOffloadSection(*CurrentSection);
+568       if (!TripleOrErr)
+569         return TripleOrErr\&.takeError();
+570       if (*TripleOrErr)
+571         return **TripleOrErr;
+572     }
+573     return None;
+574   }
+.fi
+.SS "Error ObjectFileHandler::ReadHeader (MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Update the file handler with information from the header of the bundled file\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 557 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+557 { return Error::success(); }
+.fi
+.SS "Error ObjectFileHandler::WriteBundle (raw_fd_ostream & OS, MemoryBuffer & Input)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+
+.PP
+Write the bundle from \fIInput\fP into \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 671 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+671                                                                    {
+672     return Error::success();
+673   }
+.fi
+.SS "Error ObjectFileHandler::WriteBundleEnd (raw_fd_ostream & OS, StringRef TargetTriple)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Write the marker that closes a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 606 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+606                                                                          {
+607     assert(NumberOfProcessedInputs <= NumberOfInputs &&
+608            "Processing more inputs that actually exist!");
+609     assert(HostInputIndex != ~0u && "Host input index not defined\&.");
+610 
+611     // If this is not the last output, we don't have to do anything\&.
+612     if (NumberOfProcessedInputs != NumberOfInputs)
+613       return Error::success();
+614 
+615     // We will use llvm-objcopy to add target objects sections to the output
+616     // fat object\&. These sections should have 'exclude' flag set which tells
+617     // link editor to remove them from linker inputs when linking executable or
+618     // shared library\&.
+619 
+620     // Find llvm-objcopy in order to create the bundle binary\&.
+621     ErrorOr<std::string> Objcopy = sys::findProgramByName(
+622         "llvm-objcopy", sys::path::parent_path(BundlerExecutable));
+623     if (!Objcopy)
+624       Objcopy = sys::findProgramByName("llvm-objcopy");
+625     if (!Objcopy)
+626       return createStringError(Objcopy\&.getError(),
+627                                "unable to find 'llvm-objcopy' in path");
+628 
+629     // We write to the output file directly\&. So, we close it and use the name
+630     // to pass down to llvm-objcopy\&.
+631     OS\&.close();
+632 
+633     // Temporary files that need to be removed\&.
+634     TempFileHandlerRAII TempFiles;
+635 
+636     // Compose llvm-objcopy command line for add target objects' sections with
+637     // appropriate flags\&.
+638     BumpPtrAllocator Alloc;
+639     StringSaver SS{Alloc};
+640     SmallVector<StringRef, 8u> ObjcopyArgs{"llvm-objcopy"};
+641     for (unsigned I = 0; I < NumberOfInputs; ++I) {
+642       StringRef InputFile = InputFileNames[I];
+643       if (I == HostInputIndex) {
+644         // Special handling for the host bundle\&. We do not need to add a
+645         // standard bundle for the host object since we are going to use fat
+646         // object as a host object\&. Therefore use dummy contents (one zero byte)
+647         // when creating section for the host bundle\&.
+648         Expected<StringRef> TempFileOrErr = TempFiles\&.Create(ArrayRef<char>(0));
+649         if (!TempFileOrErr)
+650           return TempFileOrErr\&.takeError();
+651         InputFile = *TempFileOrErr;
+652       }
+653 
+654       ObjcopyArgs\&.push_back(SS\&.save(Twine("--add-section=") +
+655                                     OFFLOAD_BUNDLER_MAGIC_STR + TargetNames[I] +
+656                                     "=" + InputFile));
+657       ObjcopyArgs\&.push_back(SS\&.save(Twine("--set-section-flags=") +
+658                                     OFFLOAD_BUNDLER_MAGIC_STR + TargetNames[I] +
+659                                     "=readonly,exclude"));
+660     }
+661     ObjcopyArgs\&.push_back("--");
+662     ObjcopyArgs\&.push_back(InputFileNames[HostInputIndex]);
+663     ObjcopyArgs\&.push_back(OutputFileNames\&.front());
+664 
+665     if (Error Err = executeObjcopy(*Objcopy, ObjcopyArgs))
+666       return Err;
+667 
+668     return Error::success();
+669   }
+.fi
+.SS "Error ObjectFileHandler::WriteBundleStart (raw_fd_ostream & OS, StringRef TargetTriple)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Write the marker that initiates a bundle for the triple \fITargetTriple\fP to \fIOS\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 601 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+601                                                                            {
+602     ++NumberOfProcessedInputs;
+603     return Error::success();
+604   }
+.fi
+.SS "Error ObjectFileHandler::WriteHeader (raw_fd_ostream & OS, ArrayRef< std::unique_ptr< MemoryBuffer >> Inputs)\fC [inline]\fP, \fC [final]\fP, \fC [virtual]\fP"
+Write the header of the bundled file to \fIOS\fP based on the information gathered from \fIInputs\fP\&. 
+.PP
+Implements \fBFileHandler\fP\&.
+.PP
+Definition at line 592 of file ClangOffloadBundler\&.cpp\&.
+.PP
+.nf
+593                                                                         {
+594     assert(HostInputIndex != ~0u && "Host input index not defined\&.");
+595 
+596     // Record number of inputs\&.
+597     NumberOfInputs = Inputs\&.size();
+598     return Error::success();
+599   }
+.fi
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

@@ -1,0 +1,76 @@
+\hypertarget{namespaceclang_1_1cxloc}{}\doxysection{clang\+::cxloc Namespace Reference}
+\label{namespaceclang_1_1cxloc}\index{clang::cxloc@{clang::cxloc}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+CXSource\+Range \mbox{\hyperlink{namespaceclang_1_1cxloc_a39d02b462b1f3233518f01951d83d035}{translate\+Source\+Range}} (const Source\+Manager \&SM, const Lang\+Options \&Lang\+Opts, const Char\+Source\+Range \&R)
+\item 
+Char\+Source\+Range \mbox{\hyperlink{namespaceclang_1_1cxloc_aa8c3cee435c88a9e8a61f79cc8a0c0da}{translate\+CXRange\+To\+Char\+Range}} (CXSource\+Range R)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang_1_1cxloc_aa8c3cee435c88a9e8a61f79cc8a0c0da}\label{namespaceclang_1_1cxloc_aa8c3cee435c88a9e8a61f79cc8a0c0da}} 
+\index{clang::cxloc@{clang::cxloc}!translateCXRangeToCharRange@{translateCXRangeToCharRange}}
+\index{translateCXRangeToCharRange@{translateCXRangeToCharRange}!clang::cxloc@{clang::cxloc}}
+\doxysubsubsection{\texorpdfstring{translateCXRangeToCharRange()}{translateCXRangeToCharRange()}}
+{\footnotesize\ttfamily Char\+Source\+Range clang\+::cxloc\+::translate\+CXRange\+To\+Char\+Range (\begin{DoxyParamCaption}\item[{CXSource\+Range}]{R }\end{DoxyParamCaption})}
+
+Translates CXSource\+Range to Char\+Source\+Range. The semantics of {\ttfamily R} are\+: R.\+begin\+\_\+int\+\_\+data is first character of the range. R.\+end\+\_\+int\+\_\+data is one character past the end of the range. 
+
+Definition at line 167 of file CIndex.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{167                                                                   \{}
+\DoxyCodeLine{168   \textcolor{keywordflow}{return} CharSourceRange::getCharRange(}
+\DoxyCodeLine{169       SourceLocation::getFromRawEncoding(R.begin\_int\_data),}
+\DoxyCodeLine{170       SourceLocation::getFromRawEncoding(R.end\_int\_data));}
+\DoxyCodeLine{171 \}}
+
+\end{DoxyCode}
+
+
+Referenced by clang\+\_\+\+CXRewriter\+\_\+remove\+Text(), and clang\+\_\+\+CXRewriter\+\_\+replace\+Text().
+
+\mbox{\Hypertarget{namespaceclang_1_1cxloc_a39d02b462b1f3233518f01951d83d035}\label{namespaceclang_1_1cxloc_a39d02b462b1f3233518f01951d83d035}} 
+\index{clang::cxloc@{clang::cxloc}!translateSourceRange@{translateSourceRange}}
+\index{translateSourceRange@{translateSourceRange}!clang::cxloc@{clang::cxloc}}
+\doxysubsubsection{\texorpdfstring{translateSourceRange()}{translateSourceRange()}}
+{\footnotesize\ttfamily CXSource\+Range clang\+::cxloc\+::translate\+Source\+Range (\begin{DoxyParamCaption}\item[{const Source\+Manager \&}]{SM,  }\item[{const Lang\+Options \&}]{Lang\+Opts,  }\item[{const Char\+Source\+Range \&}]{R }\end{DoxyParamCaption})}
+
+Translate a Clang source range into a CIndex source range.
+
+Clang internally represents ranges where the end location points to the start of the token at the end. However, for external clients it is more useful to have a CXSource\+Range be a proper half-\/open interval. This routine does the appropriate translation. 
+
+Definition at line 143 of file CIndex.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{145                                                                     \{}
+\DoxyCodeLine{146   \textcolor{comment}{// We want the last character in this location, so we will adjust the}}
+\DoxyCodeLine{147   \textcolor{comment}{// location accordingly.}}
+\DoxyCodeLine{148   SourceLocation EndLoc = R.getEnd();}
+\DoxyCodeLine{149   \textcolor{keywordtype}{bool} IsTokenRange = R.isTokenRange();}
+\DoxyCodeLine{150   \textcolor{keywordflow}{if} (EndLoc.isValid() \&\& EndLoc.isMacroID() \&\&}
+\DoxyCodeLine{151       !SM.isMacroArgExpansion(EndLoc)) \{}
+\DoxyCodeLine{152     CharSourceRange Expansion = SM.getExpansionRange(EndLoc);}
+\DoxyCodeLine{153     EndLoc = Expansion.getEnd();}
+\DoxyCodeLine{154     IsTokenRange = Expansion.isTokenRange();}
+\DoxyCodeLine{155   \}}
+\DoxyCodeLine{156   \textcolor{keywordflow}{if} (IsTokenRange \&\& EndLoc.isValid()) \{}
+\DoxyCodeLine{157     \textcolor{keywordtype}{unsigned} Length =}
+\DoxyCodeLine{158         Lexer::MeasureTokenLength(SM.getSpellingLoc(EndLoc), SM, LangOpts);}
+\DoxyCodeLine{159     EndLoc = EndLoc.getLocWithOffset(Length);}
+\DoxyCodeLine{160   \}}
+\DoxyCodeLine{161 }
+\DoxyCodeLine{162   CXSourceRange Result = \{}
+\DoxyCodeLine{163       \{\&SM, \&LangOpts\}, R.getBegin().getRawEncoding(), EndLoc.getRawEncoding()\};}
+\DoxyCodeLine{164   \textcolor{keywordflow}{return} Result;}
+\DoxyCodeLine{165 \}}
+
+\end{DoxyCode}
+
+
+Referenced by clang\+\_\+\+Cursor\+\_\+get\+Comment\+Range(), clang\+\_\+\+Cursor\+\_\+get\+Spelling\+Name\+Range(), clang\+\_\+get\+Completion\+Fix\+It(), clang\+\_\+get\+Cursor\+Reference\+Name\+Range(), clang\+::\+CXStored\+Diagnostic\+::get\+Fix\+It(), and clang\+::\+CXStored\+Diagnostic\+::get\+Range().
+

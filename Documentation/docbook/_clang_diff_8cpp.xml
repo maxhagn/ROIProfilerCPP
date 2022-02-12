@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__clang_diff_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/clang-diff/ClangDiff.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/clang-diff/ClangDiff.cpp</primary></indexterm>
+<programlisting>#include &quot;clang/Tooling/ASTDiff/ASTDiff.h&quot;
+#include &quot;clang/Tooling/CommonOptionsParser.h&quot;
+#include &quot;clang/Tooling/Tooling.h&quot;
+#include &quot;llvm/Support/CommandLine.h&quot;
+</programlisting><simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__clang_diff_8cpp_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__clang_diff_8cpp_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>ClangDiff.cpp</secondary></indexterm>
+<indexterm><primary>ClangDiff.cpp</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="__clang_diff_8cpp_source_1l00443">443</link> of file <link linkend="__clang_diff_8cpp_source">ClangDiff.cpp</link>.</para>
+<programlisting>00443 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00444 &#32;&#32;std::string&#32;ErrorMessage;
+00445 &#32;&#32;std::unique_ptr&lt;CompilationDatabase&gt;&#32;CommonCompilations&#32;=
+00446 &#32;&#32;&#32;&#32;&#32;&#32;FixedCompilationDatabase::loadFromCommandLine(argc,&#32;argv,&#32;ErrorMessage);
+00447 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CommonCompilations&#32;&amp;&amp;&#32;!ErrorMessage.empty())
+00448 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;ErrorMessage;
+00449 &#32;&#32;cl::HideUnrelatedOptions(ClangDiffCategory);
+00450 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!cl::ParseCommandLineOptions(argc,&#32;argv))&#32;{
+00451 &#32;&#32;&#32;&#32;cl::PrintOptionValues();
+00452 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00453 &#32;&#32;}
+00454 
+00455 &#32;&#32;addExtraArgs(CommonCompilations);
+00456 
+00457 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTDump&#32;||&#32;ASTDumpJson)&#32;{
+00458 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DestinationPath.empty())&#32;{
+00459 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error:&#32;Please&#32;specify&#32;exactly&#32;one&#32;filename.\n&quot;</emphasis>;
+00460 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00461 &#32;&#32;&#32;&#32;}
+00462 &#32;&#32;&#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;AST&#32;=&#32;getAST(CommonCompilations,&#32;SourcePath);
+00463 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AST)
+00464 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00465 &#32;&#32;&#32;&#32;diff::SyntaxTree&#32;Tree(AST-&gt;getASTContext());
+00466 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ASTDump)&#32;{
+00467 &#32;&#32;&#32;&#32;&#32;&#32;printTree(llvm::outs(),&#32;Tree);
+00468 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00469 &#32;&#32;&#32;&#32;}
+00470 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;R<emphasis role="stringliteral">&quot;({&quot;filename&quot;:&quot;)&quot;;</emphasis>
+00471 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;printJsonString(llvm::outs(),&#32;SourcePath);</emphasis>
+00472 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;R</emphasis><emphasis role="stringliteral">&quot;(&quot;,&quot;root&quot;:)&quot;;</emphasis>
+00473 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;printNodeAsJson(llvm::outs(),&#32;Tree,&#32;Tree.getRootId());</emphasis>
+00474 <emphasis role="stringliteral">&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;</emphasis><emphasis role="stringliteral">&quot;}\n&quot;</emphasis>;
+00475 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00476 &#32;&#32;}
+00477 
+00478 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DestinationPath.empty())&#32;{
+00479 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error:&#32;Exactly&#32;two&#32;paths&#32;are&#32;required.\n&quot;</emphasis>;
+00480 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00481 &#32;&#32;}
+00482 
+00483 &#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;Src&#32;=&#32;getAST(CommonCompilations,&#32;SourcePath);
+00484 &#32;&#32;std::unique_ptr&lt;ASTUnit&gt;&#32;Dst&#32;=&#32;getAST(CommonCompilations,&#32;DestinationPath);
+00485 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Src&#32;||&#32;!Dst)
+00486 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00487 
+00488 &#32;&#32;diff::ComparisonOptions&#32;Options;
+00489 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(MaxSize&#32;!=&#32;-1)
+00490 &#32;&#32;&#32;&#32;Options.MaxSize&#32;=&#32;MaxSize;
+00491 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!StopAfter.empty())&#32;{
+00492 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StopAfter&#32;==&#32;<emphasis role="stringliteral">&quot;topdown&quot;</emphasis>)
+00493 &#32;&#32;&#32;&#32;&#32;&#32;Options.StopAfterTopDown&#32;=&#32;<emphasis role="keyword">true</emphasis>;
+00494 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(StopAfter&#32;!=&#32;<emphasis role="stringliteral">&quot;bottomup&quot;</emphasis>)&#32;{
+00495 &#32;&#32;&#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Error:&#32;Invalid&#32;argument&#32;for&#32;-stop-after\n&quot;</emphasis>;
+00496 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00497 &#32;&#32;&#32;&#32;}
+00498 &#32;&#32;}
+00499 &#32;&#32;diff::SyntaxTree&#32;SrcTree(Src-&gt;getASTContext());
+00500 &#32;&#32;diff::SyntaxTree&#32;DstTree(Dst-&gt;getASTContext());
+00501 &#32;&#32;diff::ASTDiff&#32;Diff(SrcTree,&#32;DstTree,&#32;Options);
+00502 
+00503 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HtmlDiff)&#32;{
+00504 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;HtmlDiffHeader&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;pre&gt;&quot;</emphasis>;
+00505 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;div&#32;id=&apos;L&apos;&#32;class=&apos;code&apos;&gt;&quot;</emphasis>;
+00506 &#32;&#32;&#32;&#32;printHtmlForNode(llvm::outs(),&#32;Diff,&#32;SrcTree,&#32;<emphasis role="keyword">true</emphasis>,&#32;SrcTree.getRootId(),&#32;0);
+00507 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/div&gt;&quot;</emphasis>;
+00508 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;div&#32;id=&apos;R&apos;&#32;class=&apos;code&apos;&gt;&quot;</emphasis>;
+00509 &#32;&#32;&#32;&#32;printHtmlForNode(llvm::outs(),&#32;Diff,&#32;DstTree,&#32;<emphasis role="keyword">false</emphasis>,&#32;DstTree.getRootId(),
+00510 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0);
+00511 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/div&gt;&quot;</emphasis>;
+00512 &#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;/pre&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;\n&quot;</emphasis>;
+00513 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00514 &#32;&#32;}
+00515 
+00516 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(diff::NodeId&#32;Dst&#32;:&#32;DstTree)&#32;{
+00517 &#32;&#32;&#32;&#32;diff::NodeId&#32;Src&#32;=&#32;Diff.getMapped(DstTree,&#32;Dst);
+00518 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(PrintMatches&#32;&amp;&amp;&#32;Src.isValid())&#32;{
+00519 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Match&#32;&quot;</emphasis>;
+00520 &#32;&#32;&#32;&#32;&#32;&#32;printNode(llvm::outs(),&#32;SrcTree,&#32;Src);
+00521 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;to&#32;&quot;</emphasis>;
+00522 &#32;&#32;&#32;&#32;&#32;&#32;printNode(llvm::outs(),&#32;DstTree,&#32;Dst);
+00523 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00524 &#32;&#32;&#32;&#32;}
+00525 &#32;&#32;&#32;&#32;printDstChange(llvm::outs(),&#32;Diff,&#32;SrcTree,&#32;DstTree,&#32;Dst);
+00526 &#32;&#32;}
+00527 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(diff::NodeId&#32;Src&#32;:&#32;SrcTree)&#32;{
+00528 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Diff.getMapped(SrcTree,&#32;Src).isInvalid())&#32;{
+00529 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Delete&#32;&quot;</emphasis>;
+00530 &#32;&#32;&#32;&#32;&#32;&#32;printNode(llvm::outs(),&#32;SrcTree,&#32;Src);
+00531 &#32;&#32;&#32;&#32;&#32;&#32;llvm::outs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00532 &#32;&#32;&#32;&#32;}
+00533 &#32;&#32;}
+00534 
+00535 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00536 }
+</programlisting></section>
+</section>
+</section>

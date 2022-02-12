@@ -1,0 +1,259 @@
+.TH "clang::cxstring" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::cxstring
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBCXStringPool\fP"
+.br
+.RI "A string pool used for fast allocation/deallocation of strings\&. "
+.ti -1c
+.RI "struct \fBCXStringBuf\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXString \fBcreateEmpty\fP ()"
+.br
+.RI "Create a CXString object for an empty '' string\&. "
+.ti -1c
+.RI "CXString \fBcreateNull\fP ()"
+.br
+.ti -1c
+.RI "CXString \fBcreateRef\fP (const char *String)"
+.br
+.ti -1c
+.RI "CXString \fBcreateDup\fP (const char *String)"
+.br
+.ti -1c
+.RI "CXString \fBcreateRef\fP (StringRef String)"
+.br
+.ti -1c
+.RI "CXString \fBcreateDup\fP (StringRef String)"
+.br
+.ti -1c
+.RI "CXString \fBcreateCXString\fP (\fBCXStringBuf\fP *buf)"
+.br
+.RI "Create a CXString object that is backed by a string buffer\&. "
+.ti -1c
+.RI "CXStringSet * \fBcreateSet\fP (const std::vector< std::string > &\fBStrings\fP)"
+.br
+.ti -1c
+.RI "\fBCXStringBuf\fP * \fBgetCXStringBuf\fP (CXTranslationUnit TU)"
+.br
+.ti -1c
+.RI "bool \fBisManagedByPool\fP (CXString str)"
+.br
+.RI "Returns true if the CXString data is managed by a pool\&. "
+.ti -1c
+.RI "CXString \fBcreateRef\fP (std::string String)=delete"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXString clang::cxstring::createCXString (\fBCXStringBuf\fP * buf)"
+
+.PP
+Create a CXString object that is backed by a string buffer\&. 
+.PP
+Definition at line 106 of file CXString\&.cpp\&.
+.PP
+.nf
+106                                           {
+107   CXString Str;
+108   Str\&.data = buf;
+109   Str\&.private_flags = (unsigned) CXS_StringBuf;
+110   return Str;
+111 }
+.fi
+.PP
+References CXS_StringBuf\&.
+.SS "CXString clang::cxstring::createDup (const char * String)"
+Create a CXString object from a nul-terminated C string\&. New CXString will contain a copy of \fCString\fP\&.
+.PP
+\fCString\fP can be changed or freed by the caller\&. 
+.PP
+Definition at line 67 of file CXString\&.cpp\&.
+.PP
+.nf
+67                                        {
+68   if (!String)
+69     return createNull();
+70 
+71   if (String[0] == '\0')
+72     return createEmpty();
+73 
+74   CXString Str;
+75   Str\&.data = strdup(String);
+76   Str\&.private_flags = CXS_Malloc;
+77   return Str;
+78 }
+.fi
+.PP
+References createEmpty(), createNull(), and CXS_Malloc\&.
+.PP
+Referenced by clang_constructUSR_ObjCCategory(), clang_constructUSR_ObjCClass(), clang_constructUSR_ObjCProtocol(), clang_Cursor_getMangling(), clang_Cursor_getObjCPropertyGetterName(), clang_Cursor_getObjCPropertySetterName(), clang_Cursor_isExternalSymbol(), clang_getClangVersion(), clang_getCursorDisplayName(), clang_getCursorPrettyPrinted(), clang_getCursorSpelling(), clang_getDeclObjCTypeEncoding(), clang_getTokenSpelling(), clang_Module_getFullName(), clang_Module_getName(), clang_remap_getFilenames(), createRef(), createSet(), clang::CXLoadedDiagnostic::getCategoryText(), clang::CXStoredDiagnostic::getDiagnosticOption(), clang::CXLoadedDiagnostic::getDiagnosticOption(), and clang::CXStoredDiagnostic::getFixIt()\&.
+.SS "CXString clang::cxstring::createDup (StringRef String)"
+Create a CXString object from a StringRef\&. New CXString will contain a copy of \fCString\fP\&.
+.PP
+\fCString\fP can be changed or freed by the caller\&. 
+.PP
+Definition at line 96 of file CXString\&.cpp\&.
+.PP
+.nf
+96                                      {
+97   CXString Result;
+98   char *Spelling = static_cast<char *>(llvm::safe_malloc(String\&.size() + 1));
+99   memmove(Spelling, String\&.data(), String\&.size());
+100   Spelling[String\&.size()] = 0;
+101   Result\&.data = Spelling;
+102   Result\&.private_flags = (unsigned) CXS_Malloc;
+103   return Result;
+104 }
+.fi
+.PP
+References CXS_Malloc\&.
+.SS "CXString clang::cxstring::createEmpty ()"
+
+.PP
+Create a CXString object for an empty '' string\&. 
+.PP
+Definition at line 43 of file CXString\&.cpp\&.
+.PP
+.nf
+43                        {
+44   CXString Str;
+45   Str\&.data = "";
+46   Str\&.private_flags = CXS_Unmanaged;
+47   return Str;
+48 }
+.fi
+.PP
+References CXS_Unmanaged\&.
+.PP
+Referenced by clang_Cursor_getMangling(), clang_getCompletionChunkText(), clang_getCursorDisplayName(), clang_getCursorPlatformAvailability(), clang_getCursorPrettyPrinted(), clang_getCursorSpelling(), clang_getCursorUSR(), clang_getDeclObjCTypeEncoding(), clang_getDiagnosticCategoryText(), clang_getDiagnosticFixIt(), clang_getDiagnosticOption(), clang_getDiagnosticSpelling(), clang_Module_getFullName(), clang_Module_getName(), clang_TargetInfo_getTriple(), createDup(), createRef(), clang::CXStoredDiagnostic::getDiagnosticOption(), and clang::CXLoadedDiagnostic::getDiagnosticOption()\&.
+.SS "CXString clang::cxstring::createNull ()"
+Create a CXString object for an NULL string\&.
+.PP
+A NULL string should be used as an 'invalid' value in case of errors\&. 
+.PP
+Definition at line 50 of file CXString\&.cpp\&.
+.PP
+.nf
+50                       {
+51   CXString Str;
+52   Str\&.data = nullptr;
+53   Str\&.private_flags = CXS_Unmanaged;
+54   return Str;
+55 }
+.fi
+.PP
+References CXS_Unmanaged\&.
+.PP
+Referenced by clang_BlockCommandComment_getArgText(), clang_BlockCommandComment_getCommandName(), clang_CompileCommand_getArg(), clang_CompileCommand_getDirectory(), clang_CompileCommand_getFilename(), clang_CompileCommand_getMappedSourceContent(), clang_CompileCommand_getMappedSourcePath(), clang_Cursor_getBriefCommentText(), clang_Cursor_getObjCPropertyGetterName(), clang_Cursor_getObjCPropertySetterName(), clang_Cursor_getRawCommentText(), clang_File_tryGetRealPathName(), clang_FullComment_getAsHTML(), clang_FullComment_getAsXML(), clang_getCompletionAnnotation(), clang_getCompletionBriefComment(), clang_getCompletionChunkText(), clang_getCompletionFixIt(), clang_getCompletionParent(), clang_getFileName(), clang_HTMLStartTag_getAttrName(), clang_HTMLStartTag_getAttrValue(), clang_HTMLTagComment_getAsString(), clang_HTMLTagComment_getTagName(), clang_InlineCommandComment_getArgText(), clang_InlineCommandComment_getCommandName(), clang_ParamCommandComment_getParamName(), clang_TextComment_getText(), clang_TParamCommandComment_getParamName(), clang_VerbatimBlockLineComment_getText(), clang_VerbatimLineComment_getText(), and createDup()\&.
+.SS "CXString clang::cxstring::createRef (const char * String)"
+Create a CXString object from a nul-terminated C string\&. New CXString may contain a pointer to \fCString\fP\&.
+.PP
+\fCString\fP should not be changed by the caller afterwards\&. 
+.PP
+Definition at line 57 of file CXString\&.cpp\&.
+.PP
+.nf
+57                                        {
+58   if (String && String[0] == '\0')
+59     return createEmpty();
+60 
+61   CXString Str;
+62   Str\&.data = String;
+63   Str\&.private_flags = CXS_Unmanaged;
+64   return Str;
+65 }
+.fi
+.PP
+References createEmpty(), and CXS_Unmanaged\&.
+.PP
+Referenced by clang_BlockCommandComment_getArgText(), clang_CompileCommand_getArg(), clang_CompileCommand_getDirectory(), clang_CompileCommand_getFilename(), clang_Cursor_getBriefCommentText(), clang_Cursor_getRawCommentText(), clang_File_tryGetRealPathName(), clang_getCompletionAnnotation(), clang_getCompletionBriefComment(), clang_getCompletionChunkText(), clang_getCompletionFixIt(), clang_getCompletionParent(), clang_getCursorKindSpelling(), clang_getCursorSpelling(), clang_getDeclObjCTypeEncoding(), clang_getDiagnosticCategoryName(), clang_getFileName(), clang_getTokenSpelling(), clang_getTypeKindSpelling(), clang_HTMLStartTag_getAttrName(), clang_HTMLStartTag_getAttrValue(), clang_HTMLTagComment_getTagName(), clang_InlineCommandComment_getArgText(), clang_ParamCommandComment_getParamName(), clang_TextComment_getText(), clang_TParamCommandComment_getParamName(), clang_VerbatimBlockLineComment_getText(), clang_VerbatimLineComment_getText(), clang::CXStoredDiagnostic::getCategoryText(), clang::CXStoredDiagnostic::getDiagnosticOption(), clang::CXLoadedDiagnostic::getFixIt(), clang::CXStoredDiagnostic::getSpelling(), and clang::CXLoadedDiagnostic::getSpelling()\&.
+.SS "CXString clang::cxstring::createRef (std::string String)\fC [delete]\fP"
+
+.SS "CXString clang::cxstring::createRef (StringRef String)"
+Create a CXString object from a StringRef\&. New CXString may contain a pointer to the undrelying data of \fCString\fP\&.
+.PP
+\fCString\fP should not be changed by the caller afterwards\&. 
+.PP
+Definition at line 80 of file CXString\&.cpp\&.
+.PP
+.nf
+80                                      {
+81   // If the string is not nul-terminated, we have to make a copy\&.
+82 
+83   // FIXME: This is doing a one past end read, and should be removed! For memory
+84   // we don't manage, the API string can become unterminated at any time outside
+85   // our control\&.
+86 
+87   if (!String\&.empty() && String\&.data()[String\&.size()] != 0)
+88     return createDup(String);
+89 
+90   CXString Result;
+91   Result\&.data = String\&.data();
+92   Result\&.private_flags = (unsigned) CXS_Unmanaged;
+93   return Result;
+94 }
+.fi
+.PP
+References createDup(), and CXS_Unmanaged\&.
+.SS "CXStringSet * clang::cxstring::createSet (const std::vector< std::string > & Strings)"
+
+.PP
+Definition at line 113 of file CXString\&.cpp\&.
+.PP
+.nf
+113                                                             {
+114   CXStringSet *Set = new CXStringSet;
+115   Set->Count = Strings\&.size();
+116   Set->Strings = new CXString[Set->Count];
+117   for (unsigned SI = 0, SE = Set->Count; SI < SE; ++SI)
+118     Set->Strings[SI] = createDup(Strings[SI]);
+119   return Set;
+120 }
+.fi
+.PP
+References createDup()\&.
+.PP
+Referenced by clang_Cursor_getCXXManglings(), and clang_Cursor_getObjCManglings()\&.
+.SS "\fBCXStringBuf\fP * clang::cxstring::getCXStringBuf (CXTranslationUnit TU)"
+
+.PP
+Definition at line 144 of file CXString\&.cpp\&.
+.PP
+.nf
+144                                                   {
+145   return TU->StringPool->getCXStringBuf(TU);
+146 }
+.fi
+.PP
+Referenced by clang_getCursorUSR()\&.
+.SS "bool clang::cxstring::isManagedByPool (CXString str)"
+
+.PP
+Returns true if the CXString data is managed by a pool\&. 
+.PP
+Definition at line 152 of file CXString\&.cpp\&.
+.PP
+.nf
+152                                    {
+153   return ((CXStringFlag) str\&.private_flags) == CXS_StringBuf;
+154 }
+.fi
+.PP
+References CXS_StringBuf\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

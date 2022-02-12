@@ -1,0 +1,749 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CXComment.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CXComment.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CXComment\&.h'\fP
+.br
+\fC#include 'CXCursor\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'clang\-c/Documentation\&.h'\fP
+.br
+\fC#include 'clang\-c/Index\&.h'\fP
+.br
+\fC#include 'clang/AST/Decl\&.h'\fP
+.br
+\fC#include 'clang/Index/CommentToXML\&.h'\fP
+.br
+\fC#include 'llvm/ADT/StringExtras\&.h'\fP
+.br
+\fC#include 'llvm/Support/ErrorHandling\&.h'\fP
+.br
+\fC#include <climits>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "CXComment \fBclang_Cursor_getParsedComment\fP (CXCursor C)"
+.br
+.ti -1c
+.RI "enum CXCommentKind \fBclang_Comment_getKind\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Comment_getNumChildren\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXComment \fBclang_Comment_getChild\fP (CXComment CXC, unsigned ChildIdx)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_Comment_isWhitespace\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_InlineContentComment_hasTrailingNewline\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_TextComment_getText\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_InlineCommandComment_getCommandName\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "enum CXCommentInlineCommandRenderKind \fBclang_InlineCommandComment_getRenderKind\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_InlineCommandComment_getNumArgs\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_InlineCommandComment_getArgText\fP (CXComment CXC, unsigned ArgIdx)"
+.br
+.ti -1c
+.RI "CXString \fBclang_HTMLTagComment_getTagName\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_HTMLStartTagComment_isSelfClosing\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_HTMLStartTag_getNumAttrs\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_HTMLStartTag_getAttrName\fP (CXComment CXC, unsigned AttrIdx)"
+.br
+.ti -1c
+.RI "CXString \fBclang_HTMLStartTag_getAttrValue\fP (CXComment CXC, unsigned AttrIdx)"
+.br
+.ti -1c
+.RI "CXString \fBclang_BlockCommandComment_getCommandName\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_BlockCommandComment_getNumArgs\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_BlockCommandComment_getArgText\fP (CXComment CXC, unsigned ArgIdx)"
+.br
+.ti -1c
+.RI "CXComment \fBclang_BlockCommandComment_getParagraph\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_ParamCommandComment_getParamName\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_ParamCommandComment_isParamIndexValid\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_ParamCommandComment_getParamIndex\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_ParamCommandComment_isDirectionExplicit\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "enum CXCommentParamPassDirection \fBclang_ParamCommandComment_getDirection\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_TParamCommandComment_getParamName\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_TParamCommandComment_isParamPositionValid\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_TParamCommandComment_getDepth\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_TParamCommandComment_getIndex\fP (CXComment CXC, unsigned Depth)"
+.br
+.ti -1c
+.RI "CXString \fBclang_VerbatimBlockLineComment_getText\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_VerbatimLineComment_getText\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_HTMLTagComment_getAsString\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_FullComment_getAsHTML\fP (CXComment CXC)"
+.br
+.ti -1c
+.RI "CXString \fBclang_FullComment_getAsXML\fP (CXComment CXC)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "CXString clang_BlockCommandComment_getArgText (CXComment CXC, unsigned ArgIdx)"
+
+.PP
+Definition at line 243 of file CXComment\&.cpp\&.
+.PP
+.nf
+244                                                                {
+245   const BlockCommandComment *BCC = getASTNodeAs<BlockCommandComment>(CXC);
+246   if (!BCC || ArgIdx >= BCC->getNumArgs())
+247     return cxstring::createNull();
+248 
+249   return cxstring::createRef(BCC->getArgText(ArgIdx));
+250 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_BlockCommandComment_getCommandName (CXComment CXC)"
+
+.PP
+Definition at line 226 of file CXComment\&.cpp\&.
+.PP
+.nf
+226                                                                  {
+227   const BlockCommandComment *BCC = getASTNodeAs<BlockCommandComment>(CXC);
+228   if (!BCC)
+229     return cxstring::createNull();
+230 
+231   const CommandTraits &Traits = getCommandTraits(CXC);
+232   return cxstring::createRef(BCC->getCommandName(Traits));
+233 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "unsigned clang_BlockCommandComment_getNumArgs (CXComment CXC)"
+
+.PP
+Definition at line 235 of file CXComment\&.cpp\&.
+.PP
+.nf
+235                                                              {
+236   const BlockCommandComment *BCC = getASTNodeAs<BlockCommandComment>(CXC);
+237   if (!BCC)
+238     return 0;
+239 
+240   return BCC->getNumArgs();
+241 }
+.fi
+.SS "CXComment clang_BlockCommandComment_getParagraph (CXComment CXC)"
+
+.PP
+Definition at line 252 of file CXComment\&.cpp\&.
+.PP
+.nf
+252                                                                 {
+253   const BlockCommandComment *BCC = getASTNodeAs<BlockCommandComment>(CXC);
+254   if (!BCC)
+255     return createCXComment(nullptr, nullptr);
+256 
+257   return createCXComment(BCC->getParagraph(), CXC\&.TranslationUnit);
+258 }
+.fi
+.SS "CXComment clang_Comment_getChild (CXComment CXC, unsigned ChildIdx)"
+
+.PP
+Definition at line 97 of file CXComment\&.cpp\&.
+.PP
+.nf
+97                                                                    {
+98   const Comment *C = getASTNode(CXC);
+99   if (!C || ChildIdx >= C->child_count())
+100     return createCXComment(nullptr, nullptr);
+101 
+102   return createCXComment(*(C->child_begin() + ChildIdx), CXC\&.TranslationUnit);
+103 }
+.fi
+.SS "enum CXCommentKind clang_Comment_getKind (CXComment CXC)"
+
+.PP
+Definition at line 28 of file CXComment\&.cpp\&.
+.PP
+.nf
+41                                                         {
+42   const Comment *C = getASTNode(CXC);
+43   if (!C)
+44     return CXComment_Null;
+45 
+46   switch (C->getCommentKind()) {
+47   case Comment::NoCommentKind:
+48     return CXComment_Null;
+49 
+50   case Comment::TextCommentKind:
+51     return CXComment_Text;
+52 
+53   case Comment::InlineCommandCommentKind:
+54     return CXComment_InlineCommand;
+55 
+56   case Comment::HTMLStartTagCommentKind:
+57     return CXComment_HTMLStartTag;
+58 
+59   case Comment::HTMLEndTagCommentKind:
+60     return CXComment_HTMLEndTag;
+61 
+62   case Comment::ParagraphCommentKind:
+63     return CXComment_Paragraph;
+64 
+65   case Comment::BlockCommandCommentKind:
+66     return CXComment_BlockCommand;
+67 
+68   case Comment::ParamCommandCommentKind:
+69     return CXComment_ParamCommand;
+70 
+71   case Comment::TParamCommandCommentKind:
+72     return CXComment_TParamCommand;
+73 
+74   case Comment::VerbatimBlockCommentKind:
+75     return CXComment_VerbatimBlockCommand;
+76 
+77   case Comment::VerbatimBlockLineCommentKind:
+78     return CXComment_VerbatimBlockLine;
+79 
+80   case Comment::VerbatimLineCommentKind:
+81     return CXComment_VerbatimLine;
+82 
+83   case Comment::FullCommentKind:
+84     return CXComment_FullComment;
+85   }
+86   llvm_unreachable("unknown CommentKind");
+87 }
+.fi
+.PP
+References clang_isDeclaration()\&.
+.SS "unsigned clang_Comment_getNumChildren (CXComment CXC)"
+
+.PP
+Definition at line 89 of file CXComment\&.cpp\&.
+.PP
+.nf
+89                                                      {
+90   const Comment *C = getASTNode(CXC);
+91   if (!C)
+92     return 0;
+93 
+94   return C->child_count();
+95 }
+.fi
+.SS "unsigned clang_Comment_isWhitespace (CXComment CXC)"
+
+.PP
+Definition at line 105 of file CXComment\&.cpp\&.
+.PP
+.nf
+105                                                    {
+106   const Comment *C = getASTNode(CXC);
+107   if (!C)
+108     return false;
+109 
+110   if (const TextComment *TC = dyn_cast<TextComment>(C))
+111     return TC->isWhitespace();
+112 
+113   if (const ParagraphComment *PC = dyn_cast<ParagraphComment>(C))
+114     return PC->isWhitespace();
+115 
+116   return false;
+117 }
+.fi
+.SS "CXComment clang_Cursor_getParsedComment (CXCursor C)"
+
+.PP
+Definition at line 28 of file CXComment\&.cpp\&.
+.PP
+.nf
+28                                                     {
+29   using namespace clang::cxcursor;
+30 
+31   if (!clang_isDeclaration(C\&.kind))
+32     return createCXComment(nullptr, nullptr);
+33 
+34   const Decl *D = getCursorDecl(C);
+35   const ASTContext &Context = getCursorContext(C);
+36   const FullComment *FC = Context\&.getCommentForDecl(D, /*PP=*/nullptr);
+37 
+38   return createCXComment(FC, getCursorTU(C));
+39 }
+.fi
+.SS "CXString clang_FullComment_getAsHTML (CXComment CXC)"
+
+.PP
+Definition at line 379 of file CXComment\&.cpp\&.
+.PP
+.nf
+379                                                     {
+380   const FullComment *FC = getASTNodeAs<FullComment>(CXC);
+381   if (!FC)
+382     return cxstring::createNull();
+383 
+384   CXTranslationUnit TU = CXC\&.TranslationUnit;
+385   if (!TU->CommentToXML)
+386     TU->CommentToXML = new clang::index::CommentToXMLConverter();
+387 
+388   SmallString<1024> HTML;
+389   TU->CommentToXML
+390       ->convertCommentToHTML(FC, HTML, cxtu::getASTUnit(TU)->getASTContext());
+391   return cxstring::createDup(HTML\&.str());
+392 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "CXString clang_FullComment_getAsXML (CXComment CXC)"
+
+.PP
+Definition at line 394 of file CXComment\&.cpp\&.
+.PP
+.nf
+394                                                    {
+395   const FullComment *FC = getASTNodeAs<FullComment>(CXC);
+396   if (!FC)
+397     return cxstring::createNull();
+398 
+399   CXTranslationUnit TU = CXC\&.TranslationUnit;
+400   if (!TU->CommentToXML)
+401     TU->CommentToXML = new clang::index::CommentToXMLConverter();
+402 
+403   SmallString<1024> XML;
+404   TU->CommentToXML
+405       ->convertCommentToXML(FC, XML, cxtu::getASTUnit(TU)->getASTContext());
+406   return cxstring::createDup(XML\&.str());
+407 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "CXString clang_HTMLStartTag_getAttrName (CXComment CXC, unsigned AttrIdx)"
+
+.PP
+Definition at line 210 of file CXComment\&.cpp\&.
+.PP
+.nf
+210                                                                          {
+211   const HTMLStartTagComment *HST = getASTNodeAs<HTMLStartTagComment>(CXC);
+212   if (!HST || AttrIdx >= HST->getNumAttrs())
+213     return cxstring::createNull();
+214 
+215   return cxstring::createRef(HST->getAttr(AttrIdx)\&.Name);
+216 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_HTMLStartTag_getAttrValue (CXComment CXC, unsigned AttrIdx)"
+
+.PP
+Definition at line 218 of file CXComment\&.cpp\&.
+.PP
+.nf
+218                                                                           {
+219   const HTMLStartTagComment *HST = getASTNodeAs<HTMLStartTagComment>(CXC);
+220   if (!HST || AttrIdx >= HST->getNumAttrs())
+221     return cxstring::createNull();
+222 
+223   return cxstring::createRef(HST->getAttr(AttrIdx)\&.Value);
+224 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "unsigned clang_HTMLStartTag_getNumAttrs (CXComment CXC)"
+
+.PP
+Definition at line 202 of file CXComment\&.cpp\&.
+.PP
+.nf
+202                                                        {
+203   const HTMLStartTagComment *HST = getASTNodeAs<HTMLStartTagComment>(CXC);
+204   if (!HST)
+205     return 0;
+206 
+207   return HST->getNumAttrs();
+208 }
+.fi
+.SS "unsigned clang_HTMLStartTagComment_isSelfClosing (CXComment CXC)"
+
+.PP
+Definition at line 194 of file CXComment\&.cpp\&.
+.PP
+.nf
+194                                                                 {
+195   const HTMLStartTagComment *HST = getASTNodeAs<HTMLStartTagComment>(CXC);
+196   if (!HST)
+197     return false;
+198 
+199   return HST->isSelfClosing();
+200 }
+.fi
+.SS "CXString clang_HTMLTagComment_getAsString (CXComment CXC)"
+
+.PP
+Definition at line 364 of file CXComment\&.cpp\&.
+.PP
+.nf
+364                                                          {
+365   const HTMLTagComment *HTC = getASTNodeAs<HTMLTagComment>(CXC);
+366   if (!HTC)
+367     return cxstring::createNull();
+368 
+369   CXTranslationUnit TU = CXC\&.TranslationUnit;
+370   if (!TU->CommentToXML)
+371     TU->CommentToXML = new clang::index::CommentToXMLConverter();
+372 
+373   SmallString<128> Text;
+374   TU->CommentToXML->convertHTMLTagNodeToText(
+375       HTC, Text, cxtu::getASTUnit(TU)->getASTContext());
+376   return cxstring::createDup(Text\&.str());
+377 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "CXString clang_HTMLTagComment_getTagName (CXComment CXC)"
+
+.PP
+Definition at line 186 of file CXComment\&.cpp\&.
+.PP
+.nf
+186                                                         {
+187   const HTMLTagComment *HTC = getASTNodeAs<HTMLTagComment>(CXC);
+188   if (!HTC)
+189     return cxstring::createNull();
+190 
+191   return cxstring::createRef(HTC->getTagName());
+192 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_InlineCommandComment_getArgText (CXComment CXC, unsigned ArgIdx)"
+
+.PP
+Definition at line 177 of file CXComment\&.cpp\&.
+.PP
+.nf
+178                                                                 {
+179   const InlineCommandComment *ICC = getASTNodeAs<InlineCommandComment>(CXC);
+180   if (!ICC || ArgIdx >= ICC->getNumArgs())
+181     return cxstring::createNull();
+182 
+183   return cxstring::createRef(ICC->getArgText(ArgIdx));
+184 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_InlineCommandComment_getCommandName (CXComment CXC)"
+
+.PP
+Definition at line 135 of file CXComment\&.cpp\&.
+.PP
+.nf
+135                                                                   {
+136   const InlineCommandComment *ICC = getASTNodeAs<InlineCommandComment>(CXC);
+137   if (!ICC)
+138     return cxstring::createNull();
+139 
+140   const CommandTraits &Traits = getCommandTraits(CXC);
+141   return cxstring::createRef(ICC->getCommandName(Traits));
+142 }
+.fi
+.PP
+References clang::cxstring::createNull()\&.
+.SS "unsigned clang_InlineCommandComment_getNumArgs (CXComment CXC)"
+
+.PP
+Definition at line 169 of file CXComment\&.cpp\&.
+.PP
+.nf
+169                                                               {
+170   const InlineCommandComment *ICC = getASTNodeAs<InlineCommandComment>(CXC);
+171   if (!ICC)
+172     return 0;
+173 
+174   return ICC->getNumArgs();
+175 }
+.fi
+.SS "enum CXCommentInlineCommandRenderKind clang_InlineCommandComment_getRenderKind (CXComment CXC)"
+
+.PP
+Definition at line 135 of file CXComment\&.cpp\&.
+.PP
+.nf
+145                                                         {
+146   const InlineCommandComment *ICC = getASTNodeAs<InlineCommandComment>(CXC);
+147   if (!ICC)
+148     return CXCommentInlineCommandRenderKind_Normal;
+149 
+150   switch (ICC->getRenderKind()) {
+151   case InlineCommandComment::RenderNormal:
+152     return CXCommentInlineCommandRenderKind_Normal;
+153 
+154   case InlineCommandComment::RenderBold:
+155     return CXCommentInlineCommandRenderKind_Bold;
+156 
+157   case InlineCommandComment::RenderMonospaced:
+158     return CXCommentInlineCommandRenderKind_Monospaced;
+159 
+160   case InlineCommandComment::RenderEmphasized:
+161     return CXCommentInlineCommandRenderKind_Emphasized;
+162 
+163   case InlineCommandComment::RenderAnchor:
+164     return CXCommentInlineCommandRenderKind_Anchor;
+165   }
+166   llvm_unreachable("unknown InlineCommandComment::RenderKind");
+167 }
+.fi
+.SS "unsigned clang_InlineContentComment_hasTrailingNewline (CXComment CXC)"
+
+.PP
+Definition at line 119 of file CXComment\&.cpp\&.
+.PP
+.nf
+119                                                                       {
+120   const InlineContentComment *ICC = getASTNodeAs<InlineContentComment>(CXC);
+121   if (!ICC)
+122     return false;
+123 
+124   return ICC->hasTrailingNewline();
+125 }
+.fi
+.SS "enum CXCommentParamPassDirection clang_ParamCommandComment_getDirection (CXComment CXC)"
+
+.PP
+Definition at line 284 of file CXComment\&.cpp\&.
+.PP
+.nf
+293                                                                            {
+294   const ParamCommandComment *PCC = getASTNodeAs<ParamCommandComment>(CXC);
+295   if (!PCC)
+296     return CXCommentParamPassDirection_In;
+297 
+298   switch (PCC->getDirection()) {
+299   case ParamCommandComment::In:
+300     return CXCommentParamPassDirection_In;
+301 
+302   case ParamCommandComment::Out:
+303     return CXCommentParamPassDirection_Out;
+304 
+305   case ParamCommandComment::InOut:
+306     return CXCommentParamPassDirection_InOut;
+307   }
+308   llvm_unreachable("unknown ParamCommandComment::PassDirection");
+309 }
+.fi
+.SS "unsigned clang_ParamCommandComment_getParamIndex (CXComment CXC)"
+
+.PP
+Definition at line 276 of file CXComment\&.cpp\&.
+.PP
+.nf
+276                                                                 {
+277   const ParamCommandComment *PCC = getASTNodeAs<ParamCommandComment>(CXC);
+278   if (!PCC || !PCC->isParamIndexValid() || PCC->isVarArgParam())
+279     return ParamCommandComment::InvalidParamIndex;
+280 
+281   return PCC->getParamIndex();
+282 }
+.fi
+.SS "CXString clang_ParamCommandComment_getParamName (CXComment CXC)"
+
+.PP
+Definition at line 260 of file CXComment\&.cpp\&.
+.PP
+.nf
+260                                                                {
+261   const ParamCommandComment *PCC = getASTNodeAs<ParamCommandComment>(CXC);
+262   if (!PCC || !PCC->hasParamName())
+263     return cxstring::createNull();
+264 
+265   return cxstring::createRef(PCC->getParamNameAsWritten());
+266 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "unsigned clang_ParamCommandComment_isDirectionExplicit (CXComment CXC)"
+
+.PP
+Definition at line 284 of file CXComment\&.cpp\&.
+.PP
+.nf
+284                                                                       {
+285   const ParamCommandComment *PCC = getASTNodeAs<ParamCommandComment>(CXC);
+286   if (!PCC)
+287     return false;
+288 
+289   return PCC->isDirectionExplicit();
+290 }
+.fi
+.SS "unsigned clang_ParamCommandComment_isParamIndexValid (CXComment CXC)"
+
+.PP
+Definition at line 268 of file CXComment\&.cpp\&.
+.PP
+.nf
+268                                                                     {
+269   const ParamCommandComment *PCC = getASTNodeAs<ParamCommandComment>(CXC);
+270   if (!PCC)
+271     return false;
+272 
+273   return PCC->isParamIndexValid();
+274 }
+.fi
+.SS "CXString clang_TextComment_getText (CXComment CXC)"
+
+.PP
+Definition at line 127 of file CXComment\&.cpp\&.
+.PP
+.nf
+127                                                   {
+128   const TextComment *TC = getASTNodeAs<TextComment>(CXC);
+129   if (!TC)
+130     return cxstring::createNull();
+131 
+132   return cxstring::createRef(TC->getText());
+133 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "unsigned clang_TParamCommandComment_getDepth (CXComment CXC)"
+
+.PP
+Definition at line 327 of file CXComment\&.cpp\&.
+.PP
+.nf
+327                                                             {
+328   const TParamCommandComment *TPCC = getASTNodeAs<TParamCommandComment>(CXC);
+329   if (!TPCC || !TPCC->isPositionValid())
+330     return 0;
+331 
+332   return TPCC->getDepth();
+333 }
+.fi
+.SS "unsigned clang_TParamCommandComment_getIndex (CXComment CXC, unsigned Depth)"
+
+.PP
+Definition at line 335 of file CXComment\&.cpp\&.
+.PP
+.nf
+335                                                                             {
+336   const TParamCommandComment *TPCC = getASTNodeAs<TParamCommandComment>(CXC);
+337   if (!TPCC || !TPCC->isPositionValid() || Depth >= TPCC->getDepth())
+338     return 0;
+339 
+340   return TPCC->getIndex(Depth);
+341 }
+.fi
+.SS "CXString clang_TParamCommandComment_getParamName (CXComment CXC)"
+
+.PP
+Definition at line 311 of file CXComment\&.cpp\&.
+.PP
+.nf
+311                                                                 {
+312   const TParamCommandComment *TPCC = getASTNodeAs<TParamCommandComment>(CXC);
+313   if (!TPCC || !TPCC->hasParamName())
+314     return cxstring::createNull();
+315 
+316   return cxstring::createRef(TPCC->getParamNameAsWritten());
+317 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "unsigned clang_TParamCommandComment_isParamPositionValid (CXComment CXC)"
+
+.PP
+Definition at line 319 of file CXComment\&.cpp\&.
+.PP
+.nf
+319                                                                         {
+320   const TParamCommandComment *TPCC = getASTNodeAs<TParamCommandComment>(CXC);
+321   if (!TPCC)
+322     return false;
+323 
+324   return TPCC->isPositionValid();
+325 }
+.fi
+.SS "CXString clang_VerbatimBlockLineComment_getText (CXComment CXC)"
+
+.PP
+Definition at line 343 of file CXComment\&.cpp\&.
+.PP
+.nf
+343                                                                {
+344   const VerbatimBlockLineComment *VBL =
+345       getASTNodeAs<VerbatimBlockLineComment>(CXC);
+346   if (!VBL)
+347     return cxstring::createNull();
+348 
+349   return cxstring::createRef(VBL->getText());
+350 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SS "CXString clang_VerbatimLineComment_getText (CXComment CXC)"
+
+.PP
+Definition at line 352 of file CXComment\&.cpp\&.
+.PP
+.nf
+352                                                           {
+353   const VerbatimLineComment *VLC = getASTNodeAs<VerbatimLineComment>(CXC);
+354   if (!VLC)
+355     return cxstring::createNull();
+356 
+357   return cxstring::createRef(VLC->getText());
+358 }
+.fi
+.PP
+References clang::cxstring::createNull(), and clang::cxstring::createRef()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

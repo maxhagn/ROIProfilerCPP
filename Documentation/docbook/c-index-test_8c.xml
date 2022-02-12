@@ -1,0 +1,1616 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_c-index-test_8c" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/c-index-test/c-index-test.c File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/c-index-test/c-index-test.c</primary></indexterm>
+<programlisting>#include &quot;clang/Config/config.h&quot;
+#include &quot;clang-c/Index.h&quot;
+#include &quot;clang-c/CXCompilationDatabase.h&quot;
+#include &quot;clang-c/BuildSystem.h&quot;
+#include &quot;clang-c/Documentation.h&quot;
+#include &lt;ctype.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;assert.h&gt;
+#include &lt;unistd.h&gt;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>struct <link linkend="_struct_comment_a_s_t_dumping_context">CommentASTDumpingContext</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_struct_line_col">LineCol</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_struct_visitor_data">VisitorData</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_struct_cursor_source_location">CursorSourceLocation</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_struct_imported_a_s_t_files_data">ImportedASTFilesData</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_struct_index_data_string_list__">IndexDataStringList_</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_struct_index_data">IndexData</link></para>
+</listitem>
+            <listitem><para>struct <link linkend="_structthread__info">thread_info</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Macros    </title>
+        <itemizedlist>
+            <listitem><para>#define <link linkend="_c-index-test_8c_1a37b2be89ffcac55a11a29368f7d4765b">PRINT_PROP_ATTR</link>(A)             if (PropAttrs &amp; CXObjCPropertyAttr_##A) printf(#A &quot;,&quot;)</para>
+</listitem>
+            <listitem><para>#define <link linkend="_c-index-test_8c_1a4a9849afcef2f49ffddd89cc8ec05e31">PRINT_OBJC_QUAL</link>(A)             if (QT &amp; CXObjCDeclQualifier_##A) printf(#A &quot;,&quot;)</para>
+</listitem>
+            <listitem><para>#define <link linkend="_c-index-test_8c_1ad4351eaabb7b57e21fdd4a4cca2c1a1f">MAX_IMPORTED_ASTFILES</link>   200</para>
+</listitem>
+            <listitem><para>#define <link linkend="_c-index-test_8c_1a5e91649440af4abff47f1915d471b2b3">MAX_COMPILE_ARGS</link>   512</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Typedefs    </title>
+        <itemizedlist>
+            <listitem><para>typedef void(* <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link>) (CXTranslationUnit)</para>
+</listitem>
+            <listitem><para>typedef void(* <link linkend="_c-index-test_8c_1ab782a8229793b5f9556f76a9e94200bb">cursor_handler_t</link>) (CXCursor cursor)</para>
+</listitem>
+            <listitem><para>typedef struct <link linkend="_struct_index_data_string_list__">IndexDataStringList_</link> <link linkend="_c-index-test_8c_1a002cdb688da1d4e1d6c9d7b9fb053e23">IndexDataStringList</link></para>
+</listitem>
+            <listitem><para>typedef struct <link linkend="_structthread__info">thread_info</link> <link linkend="_c-index-test_8c_1a6b1e111eeb327ab917852dfcd8ba3f72">thread_info</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Enumerations    </title>
+        <itemizedlist>
+            <listitem><para>enum <link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50">DisplayType</link> { <link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e">DisplayType_Spelling</link>
+, <link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc">DisplayType_DisplayName</link>
+, <link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f">DisplayType_Pretty</link>
+ }</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link> (int argc, const char **argv)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1abf8b8cca4d3659c057fd2ab49afb69be">indextest_perform_shell_execution</link> (const char *command_line)</para>
+</listitem>
+            <listitem><para>char * <link linkend="_c-index-test_8c_1a8c42f4a0046f13eff609604e4e6dd88a">basename</link> (const char *)</para>
+</listitem>
+            <listitem><para>char * <link linkend="_c-index-test_8c_1abdf3701655fccfd6ebb29a597d66f371">dirname</link> (char *)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link> (struct CXUnsavedFile *unsaved_files, int num_unsaved_files)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1a6163717d21d3db3edb29824ce554d190">PrintDiagnostic</link> (CXDiagnostic Diagnostic)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1a1edb92a2047f535a1f1407b9557cd10d">PrintDiagnosticSet</link> (CXDiagnosticSet Set)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1a40fceb7e4c2e16f5bce47bae394b973a">PrintDiagnostics</link> (CXTranslationUnit TU)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1ad807e8418e9685a5284b2bbb776ade49">PrintMemoryUsage</link> (CXTranslationUnit TU)</para>
+</listitem>
+            <listitem><para>enum CXChildVisitResult <link linkend="_c-index-test_8c_1a592066faf85d73bd5a13ca28d5aca47d">FilteredPrintingVisitor</link> (CXCursor Cursor, CXCursor Parent, CXClientData ClientData)</para>
+</listitem>
+            <listitem><para>enum CXChildVisitResult <link linkend="_c-index-test_8c_1a0511093879dc5155579f47448dc7f35a">USRVisitor</link> (CXCursor C, CXCursor parent, CXClientData ClientData)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1aeec77843d6ef3e3e453289ec2018c83d">InclusionVisitor</link> (CXFile includedFile, CXSourceLocation *includeStack, unsigned includeStackLen, CXClientData data)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1a271f309ab673d301e539e00164b71483">PrintInclusionStack</link> (CXTranslationUnit TU)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a8f72d274bbe0d8215085af669b08c72d">perform_test_load_tu</link> (const char *file, const char *filter, const char *prefix, CXCursorVisitor Visitor, <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link> PV)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link> (int argc, const char **argv, const char *filter, CXCursorVisitor Visitor, <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link> PV)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1aea3df772c772b8ca80d93c100b3de16f">perform_test_reparse_source</link> (int argc, const char **argv, int trials, const char *filter, CXCursorVisitor Visitor, <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link> PV)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a86d7b0a04b2271451b84a97a62081480">parse_file_line_column</link> (const char *input, char **filename, unsigned *line, unsigned *column, unsigned *second_line, unsigned *second_column)</para>
+</listitem>
+            <listitem><para>const char * <link linkend="_c-index-test_8c_1a5f98074f0f9c94d14afc634481d9e037">clang_getCompletionChunkKindSpelling</link> (enum CXCompletionChunkKind Kind)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1ae302b130b55b146b76be601a70212b8a">print_completion_contexts</link> (unsigned long long contexts, FILE *file)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a6cfa2a8406fea0e71a2700d8f58b8553">perform_code_completion</link> (int argc, const char **argv, int timing_only)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a8c63bc40ab1b76f5abf55eb8aad9a6d2">perform_token_annotation</link> (int argc, const char **argv)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a846a90dd895ad8ab4948dfd8b42e88c1">print_usrs</link> (const char **I, const char **E)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a0847878e5ec5c011f566e2571cba418e">print_usrs_file</link> (const char *file_name)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1ab187a790df1b433ed87b4e13209297d6">write_pch_file</link> (const char *filename, int argc, const char *argv[])</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1ae86978c3ec30e6ca2db06880dd4bfc26">cindextest_main</link> (int argc, const char **argv)</para>
+</listitem>
+            <listitem><para>void <link linkend="_c-index-test_8c_1a91e96908610b154b9dfe897de0e12b79">thread_runner</link> (void *client_data_v)</para>
+</listitem>
+            <listitem><para>int <link linkend="_c-index-test_8c_1a217dbf8b442f20279ea00b898af96f52">main</link> (int argc, const char **argv)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Macro Definition Documentation</title>
+<anchor xml:id="_c-index-test_8c_1a5e91649440af4abff47f1915d471b2b3"/>    <section>
+    <title>MAX_COMPILE_ARGS</title>
+<indexterm><primary>MAX_COMPILE_ARGS</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>MAX_COMPILE_ARGS</secondary></indexterm>
+<para><computeroutput>#define MAX_COMPILE_ARGS   512</computeroutput></para>    </section><anchor xml:id="_c-index-test_8c_1ad4351eaabb7b57e21fdd4a4cca2c1a1f"/>    <section>
+    <title>MAX_IMPORTED_ASTFILES</title>
+<indexterm><primary>MAX_IMPORTED_ASTFILES</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>MAX_IMPORTED_ASTFILES</secondary></indexterm>
+<para><computeroutput>#define MAX_IMPORTED_ASTFILES   200</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l03312">3312</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a4a9849afcef2f49ffddd89cc8ec05e31"/>    <section>
+    <title>PRINT_OBJC_QUAL</title>
+<indexterm><primary>PRINT_OBJC_QUAL</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PRINT_OBJC_QUAL</secondary></indexterm>
+<para><computeroutput>#define PRINT_OBJC_QUAL( A)             if (QT &amp; CXObjCDeclQualifier_##A) printf(#A &quot;,&quot;)</computeroutput></para>    </section><anchor xml:id="_c-index-test_8c_1a37b2be89ffcac55a11a29368f7d4765b"/>    <section>
+    <title>PRINT_PROP_ATTR</title>
+<indexterm><primary>PRINT_PROP_ATTR</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PRINT_PROP_ATTR</secondary></indexterm>
+<para><computeroutput>#define PRINT_PROP_ATTR( A)             if (PropAttrs &amp; CXObjCPropertyAttr_##A) printf(#A &quot;,&quot;)</computeroutput></para></section>
+</section>
+<section>
+<title>Typedef Documentation</title>
+<anchor xml:id="_c-index-test_8c_1ab782a8229793b5f9556f76a9e94200bb"/>    <section>
+    <title>cursor_handler_t</title>
+<indexterm><primary>cursor_handler_t</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>cursor_handler_t</secondary></indexterm>
+<para><computeroutput>typedef void(* cursor_handler_t) (CXCursor cursor)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02811">2811</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a002cdb688da1d4e1d6c9d7b9fb053e23"/>    <section>
+    <title>IndexDataStringList</title>
+<indexterm><primary>IndexDataStringList</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>IndexDataStringList</secondary></indexterm>
+<para><computeroutput>typedef struct <link linkend="_struct_index_data_string_list__">IndexDataStringList_</link> <link linkend="_c-index-test_8c_1a002cdb688da1d4e1d6c9d7b9fb053e23">IndexDataStringList</link></computeroutput></para>    </section><anchor xml:id="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669"/>    <section>
+    <title>PostVisitTU</title>
+<indexterm><primary>PostVisitTU</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PostVisitTU</secondary></indexterm>
+<para><computeroutput>typedef void(* PostVisitTU) (CXTranslationUnit)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01187">1187</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a6b1e111eeb327ab917852dfcd8ba3f72"/>    <section>
+    <title>thread_info</title>
+<indexterm><primary>thread_info</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>thread_info</secondary></indexterm>
+<para><computeroutput>typedef struct <link linkend="_structthread__info">thread_info</link> <link linkend="_structthread__info">thread_info</link></computeroutput></para></section>
+</section>
+<section>
+<title>Enumeration Type Documentation</title>
+<anchor xml:id="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50"/>    <section>
+    <title>DisplayType</title>
+<indexterm><primary>DisplayType</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>DisplayType</secondary></indexterm>
+<para><computeroutput>enum <link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50">DisplayType</link></computeroutput></para><informaltable frame="all">
+<title>Enumerator</title>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <colspec colname='c1'/>
+      <colspec colname='c2'/>
+<tbody>
+<row><entry><indexterm><primary>DisplayType_Spelling</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>DisplayType_Spelling</secondary></indexterm>
+<anchor xml:id="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e"/>DisplayType_Spelling</entry><entry></entry></row><row><entry><indexterm><primary>DisplayType_DisplayName</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>DisplayType_DisplayName</secondary></indexterm>
+<anchor xml:id="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc"/>DisplayType_DisplayName</entry><entry></entry></row><row><entry><indexterm><primary>DisplayType_Pretty</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>DisplayType_Pretty</secondary></indexterm>
+<anchor xml:id="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f"/>DisplayType_Pretty</entry><entry></entry></row>    </tbody>
+    </tgroup>
+</informaltable>
+<para>
+Definition at line <link linkend="_c-index-test_8c_source_1l00435">435</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>00435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00436 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e">DisplayType_Spelling</link>,
+00437 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a49959c0ca74d6b4e0570bc1d5affeffc">DisplayType_DisplayName</link>,
+00438 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a5960c8f71e87439216a25cee44967d6f">DisplayType_Pretty</link>
+00439 }&#32;wanted_display_type&#32;=&#32;<link linkend="_c-index-test_8c_1a18c0cbeece6bcb1c64d7463ce253ff50a9f5f9b93a4060a3cddd7f015277c0c8e">DisplayType_Spelling</link>;
+</programlisting></section>
+</section>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="_c-index-test_8c_1a8c42f4a0046f13eff609604e4e6dd88a"/>    <section>
+    <title>basename()</title>
+<indexterm><primary>basename</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>basename</secondary></indexterm>
+<para><computeroutput>char* basename (const char * )</computeroutput></para>    </section><anchor xml:id="_c-index-test_8c_1ae86978c3ec30e6ca2db06880dd4bfc26"/>    <section>
+    <title>cindextest_main()</title>
+<indexterm><primary>cindextest_main</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>cindextest_main</secondary></indexterm>
+<para><computeroutput>int cindextest_main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l04861">4861</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>04861 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+04862 &#32;&#32;<link linkend="__c_index_8cpp_1a459c002cff4b09901ca37e1ad44d3df3">clang_enableStackTraces</link>();
+04863 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-read-diagnostics&quot;</emphasis>)&#32;==&#32;0)
+04864 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;read_diagnostics(argv[2]);
+04865 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-code-completion-at=&quot;</emphasis>)&#32;==&#32;argv[1])
+04866 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a6cfa2a8406fea0e71a2700d8f58b8553">perform_code_completion</link>(argc,&#32;argv,&#32;0);
+04867 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-code-completion-timing=&quot;</emphasis>)&#32;==&#32;argv[1])
+04868 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a6cfa2a8406fea0e71a2700d8f58b8553">perform_code_completion</link>(argc,&#32;argv,&#32;1);
+04869 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-cursor-at=&quot;</emphasis>)&#32;==&#32;argv[1])
+04870 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;inspect_cursor_at(argc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;-cursor-at=&quot;</emphasis>,&#32;inspect_print_cursor);
+04871 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-evaluate-cursor-at=&quot;</emphasis>)&#32;==&#32;argv[1])
+04872 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;inspect_cursor_at(argc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;-evaluate-cursor-at=&quot;</emphasis>,
+04873 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;inspect_evaluate_cursor);
+04874 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-get-macro-info-cursor-at=&quot;</emphasis>)&#32;==&#32;argv[1])
+04875 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;inspect_cursor_at(argc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;-get-macro-info-cursor-at=&quot;</emphasis>,
+04876 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;inspect_macroinfo_cursor);
+04877 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-file-refs-at=&quot;</emphasis>)&#32;==&#32;argv[1])
+04878 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;find_file_refs_at(argc,&#32;argv);
+04879 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-file-includes-in=&quot;</emphasis>)&#32;==&#32;argv[1])
+04880 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;find_file_includes_in(argc,&#32;argv);
+04881 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-index-file&quot;</emphasis>)&#32;==&#32;0)
+04882 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;index_file(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="comment">/*full=*/</emphasis>0);
+04883 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-index-file-full&quot;</emphasis>)&#32;==&#32;0)
+04884 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;index_file(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="comment">/*full=*/</emphasis>1);
+04885 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-index-tu&quot;</emphasis>)&#32;==&#32;0)
+04886 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;index_tu(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2);
+04887 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-index-compile-db&quot;</emphasis>)&#32;==&#32;0)
+04888 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;index_compile_db(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2);
+04889 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;=&#32;4&#32;&amp;&amp;&#32;strncmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-load-tu&quot;</emphasis>,&#32;13)&#32;==&#32;0)&#32;{
+04890 &#32;&#32;&#32;&#32;CXCursorVisitor&#32;I&#32;=&#32;GetVisitor(argv[1]&#32;+&#32;13);
+04891 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I)
+04892 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a8f72d274bbe0d8215085af669b08c72d">perform_test_load_tu</link>(argv[2],&#32;argv[3],&#32;argc&#32;&gt;=&#32;5&#32;?&#32;argv[4]&#32;:&#32;0,&#32;I,
+04893 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NULL);
+04894 &#32;&#32;}
+04895 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;=&#32;5&#32;&amp;&amp;&#32;strncmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-load-source-reparse&quot;</emphasis>,&#32;25)&#32;==&#32;0){
+04896 &#32;&#32;&#32;&#32;CXCursorVisitor&#32;I&#32;=&#32;GetVisitor(argv[1]&#32;+&#32;25);
+04897 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I)&#32;{
+04898 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;trials&#32;=&#32;atoi(argv[2]);
+04899 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1aea3df772c772b8ca80d93c100b3de16f">perform_test_reparse_source</link>(argc&#32;-&#32;4,&#32;argv&#32;+&#32;4,&#32;trials,&#32;argv[3],&#32;I,&#32;
+04900 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NULL);
+04901 &#32;&#32;&#32;&#32;}
+04902 &#32;&#32;}
+04903 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;=&#32;4&#32;&amp;&amp;&#32;strncmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-load-source&quot;</emphasis>,&#32;17)&#32;==&#32;0)&#32;{
+04904 &#32;&#32;&#32;&#32;CXCursorVisitor&#32;I&#32;=&#32;GetVisitor(argv[1]&#32;+&#32;17);
+04905 &#32;&#32;&#32;&#32;
+04906 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link>&#32;postVisit&#32;=&#32;0;
+04907 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-memory-usage&quot;</emphasis>))
+04908 &#32;&#32;&#32;&#32;&#32;&#32;postVisit&#32;=&#32;<link linkend="_c-index-test_8c_1ad807e8418e9685a5284b2bbb776ade49">PrintMemoryUsage</link>;
+04909 &#32;&#32;&#32;&#32;
+04910 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I)
+04911 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;3,&#32;argv&#32;+&#32;3,&#32;argv[2],&#32;I,
+04912 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;postVisit);
+04913 &#32;&#32;}
+04914 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;=&#32;3&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-single-file-parse&quot;</emphasis>)&#32;==&#32;0)
+04915 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;perform_single_file_parse(argv[2]);
+04916 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;=&#32;3&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-retain-excluded-conditional-blocks&quot;</emphasis>)&#32;==&#32;0)
+04917 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;perform_file_retain_excluded_cb(argv[2]);
+04918 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;=&#32;4&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-file-scan&quot;</emphasis>)&#32;==&#32;0)
+04919 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;perform_file_scan(argv[2],&#32;argv[3],
+04920 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argc&#32;&gt;=&#32;5&#32;?&#32;argv[4]&#32;:&#32;0);
+04921 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strstr(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-annotate-tokens=&quot;</emphasis>)&#32;==&#32;argv[1])
+04922 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a8c63bc40ab1b76f5abf55eb8aad9a6d2">perform_token_annotation</link>(argc,&#32;argv);
+04923 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-inclusion-stack-source&quot;</emphasis>)&#32;==&#32;0)
+04924 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,&#32;NULL,
+04925 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a271f309ab673d301e539e00164b71483">PrintInclusionStack</link>);
+04926 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-inclusion-stack-tu&quot;</emphasis>)&#32;==&#32;0)
+04927 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a8f72d274bbe0d8215085af669b08c72d">perform_test_load_tu</link>(argv[2],&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,&#32;NULL,&#32;NULL,
+04928 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a271f309ab673d301e539e00164b71483">PrintInclusionStack</link>);
+04929 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-linkage-source&quot;</emphasis>)&#32;==&#32;0)
+04930 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,&#32;PrintLinkage,
+04931 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NULL);
+04932 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-visibility&quot;</emphasis>)&#32;==&#32;0)
+04933 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,&#32;PrintVisibility,
+04934 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;NULL);
+04935 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-type&quot;</emphasis>)&#32;==&#32;0)
+04936 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,
+04937 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintType,&#32;0);
+04938 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-type-size&quot;</emphasis>)&#32;==&#32;0)
+04939 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,
+04940 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintTypeSize,&#32;0);
+04941 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-type-declaration&quot;</emphasis>)&#32;==&#32;0)
+04942 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,
+04943 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintTypeDeclaration,&#32;0);
+04944 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-decl-attributes&quot;</emphasis>)&#32;==&#32;0)
+04945 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,
+04946 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintDeclAttributes,&#32;0);
+04947 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-bitwidth&quot;</emphasis>)&#32;==&#32;0)
+04948 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1adae363afaf561553359800991169ce1c">perform_test_load_source</link>(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2,&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,
+04949 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintBitWidth,&#32;0);
+04950 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-mangle&quot;</emphasis>)&#32;==&#32;0)
+04951 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a8f72d274bbe0d8215085af669b08c72d">perform_test_load_tu</link>(argv[2],&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,&#32;NULL,&#32;PrintMangledName,&#32;NULL);
+04952 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-manglings&quot;</emphasis>)&#32;==&#32;0)
+04953 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a8f72d274bbe0d8215085af669b08c72d">perform_test_load_tu</link>(argv[2],&#32;<emphasis role="stringliteral">&quot;all&quot;</emphasis>,&#32;NULL,&#32;PrintManglings,&#32;NULL);
+04954 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-test-print-target-info&quot;</emphasis>)&#32;==&#32;0)
+04955 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;print_target_info(argc&#32;-&#32;2,&#32;argv&#32;+&#32;2);
+04956 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;1&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-print-usr&quot;</emphasis>)&#32;==&#32;0)&#32;{
+04957 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2)
+04958 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a846a90dd895ad8ab4948dfd8b42e88c1">print_usrs</link>(argv&#32;+&#32;2,&#32;argv&#32;+&#32;argc);
+04959 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+04960 &#32;&#32;&#32;&#32;&#32;&#32;display_usrs();
+04961 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+04962 &#32;&#32;&#32;&#32;}
+04963 &#32;&#32;}
+04964 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-print-usr-file&quot;</emphasis>)&#32;==&#32;0)
+04965 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a0847878e5ec5c011f566e2571cba418e">print_usrs_file</link>(argv[2]);
+04966 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-write-pch&quot;</emphasis>)&#32;==&#32;0)
+04967 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1ab187a790df1b433ed87b4e13209297d6">write_pch_file</link>(argv[2],&#32;argc&#32;-&#32;3,&#32;argv&#32;+&#32;3);
+04968 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-compilation-db&quot;</emphasis>)&#32;==&#32;0)
+04969 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;perform_test_compilation_db(argv[argc-1],&#32;argc&#32;-&#32;3,&#32;argv&#32;+&#32;2);
+04970 &#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;==&#32;2&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;-print-build-session-timestamp&quot;</emphasis>)&#32;==&#32;0)
+04971 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;perform_print_build_session_timestamp();
+04972 
+04973 &#32;&#32;print_usage();
+04974 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+04975 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l06781">clang_enableStackTraces()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a5f98074f0f9c94d14afc634481d9e037"/>    <section>
+    <title>clang_getCompletionChunkKindSpelling()</title>
+<indexterm><primary>clang_getCompletionChunkKindSpelling</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>clang_getCompletionChunkKindSpelling</secondary></indexterm>
+<para><computeroutput>const char* clang_getCompletionChunkKindSpelling (enum CXCompletionChunkKind Kind)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02393">2393</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>02393 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+02394 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(Kind)&#32;{
+02395 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Optional:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Optional&quot;</emphasis>;
+02396 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_TypedText:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;TypedText&quot;</emphasis>;
+02397 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Text:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Text&quot;</emphasis>;
+02398 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Placeholder:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Placeholder&quot;</emphasis>;
+02399 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Informative:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Informative&quot;</emphasis>;
+02400 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_CurrentParameter:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;CurrentParameter&quot;</emphasis>;
+02401 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_LeftParen:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;LeftParen&quot;</emphasis>;
+02402 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_RightParen:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;RightParen&quot;</emphasis>;
+02403 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_LeftBracket:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;LeftBracket&quot;</emphasis>;
+02404 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_RightBracket:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;RightBracket&quot;</emphasis>;
+02405 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_LeftBrace:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;LeftBrace&quot;</emphasis>;
+02406 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_RightBrace:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;RightBrace&quot;</emphasis>;
+02407 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_LeftAngle:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;LeftAngle&quot;</emphasis>;
+02408 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_RightAngle:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;RightAngle&quot;</emphasis>;
+02409 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Comma:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Comma&quot;</emphasis>;
+02410 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_ResultType:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;ResultType&quot;</emphasis>;
+02411 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Colon:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Colon&quot;</emphasis>;
+02412 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_SemiColon:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;SemiColon&quot;</emphasis>;
+02413 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_Equal:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Equal&quot;</emphasis>;
+02414 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_HorizontalSpace:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;HorizontalSpace&quot;</emphasis>;
+02415 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXCompletionChunk_VerticalSpace:&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;VerticalSpace&quot;</emphasis>;
+02416 &#32;&#32;}
+02417 
+02418 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;Unknown&quot;</emphasis>;
+02419 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1abdf3701655fccfd6ebb29a597d66f371"/>    <section>
+    <title>dirname()</title>
+<indexterm><primary>dirname</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>dirname</secondary></indexterm>
+<para><computeroutput>char* dirname (char * )</computeroutput></para>    </section><anchor xml:id="_c-index-test_8c_1a592066faf85d73bd5a13ca28d5aca47d"/>    <section>
+    <title>FilteredPrintingVisitor()</title>
+<indexterm><primary>FilteredPrintingVisitor</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>FilteredPrintingVisitor</secondary></indexterm>
+<para><computeroutput>enum CXChildVisitResult FilteredPrintingVisitor (CXCursor Cursor, CXCursor Parent, CXClientData ClientData)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01284">1284</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01299 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01300 &#32;&#32;<link linkend="_struct_visitor_data">VisitorData</link>&#32;*Data&#32;=&#32;(<link linkend="_struct_visitor_data">VisitorData</link>&#32;*)ClientData;
+01301 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Data-&gt;<link linkend="_struct_visitor_data_1a2adae660b33ba2270dd98ecffbec5fb7">Filter</link>&#32;||&#32;(Cursor.kind&#32;==&#32;*(<emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;*)Data-&gt;<link linkend="_struct_visitor_data_1a2adae660b33ba2270dd98ecffbec5fb7">Filter</link>))&#32;{
+01302 &#32;&#32;&#32;&#32;CXSourceLocation&#32;Loc&#32;=&#32;<link linkend="__c_index_8cpp_1a98001a3f8eb3a76d9c12821c45ef3708">clang_getCursorLocation</link>(Cursor);
+01303 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;line,&#32;column;
+01304 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(Loc,&#32;0,&#32;&amp;line,&#32;&amp;column,&#32;0);
+01305 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;//&#32;%s:&#32;%s:%d:%d:&#32;&quot;</emphasis>,&#32;FileCheckPrefix,
+01306 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;GetCursorSource(Cursor),&#32;line,&#32;column);
+01307 &#32;&#32;&#32;&#32;PrintCursor(Cursor,&#32;Data-&gt;<link linkend="_struct_visitor_data_1a6a459e19a9daaa88b22a8fcdbe6041db">CommentSchemaFile</link>);
+01308 &#32;&#32;&#32;&#32;PrintCursorExtent(Cursor);
+01309 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_8cpp_1a5d47db8f608ae0c266d6551875d46b80">clang_isDeclaration</link>(Cursor.kind))&#32;{
+01310 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CX_CXXAccessSpecifier&#32;access&#32;=&#32;<link linkend="__c_index_c_x_x_8cpp_1aaf7993362c5af9475b57fa2e577c2112">clang_getCXXAccessSpecifier</link>(Cursor);
+01311 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*accessStr&#32;=&#32;0;
+01312 
+01313 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(access)&#32;{
+01314 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CX_CXXInvalidAccessSpecifier:&#32;<emphasis role="keywordflow">break</emphasis>;
+01315 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CX_CXXPublic:
+01316 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;accessStr&#32;=&#32;<emphasis role="stringliteral">&quot;public&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+01317 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CX_CXXProtected:
+01318 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;accessStr&#32;=&#32;<emphasis role="stringliteral">&quot;protected&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+01319 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CX_CXXPrivate:
+01320 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;accessStr&#32;=&#32;<emphasis role="stringliteral">&quot;private&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+01321 &#32;&#32;&#32;&#32;&#32;&#32;}
+01322 
+01323 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(accessStr)
+01324 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;&#32;[access=%s]&quot;</emphasis>,&#32;accessStr);
+01325 &#32;&#32;&#32;&#32;}
+01326 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+01327 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+01328 &#32;&#32;}
+01329 
+01330 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+01331 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379"/>    <section>
+    <title>free_remapped_files()</title>
+<indexterm><primary>free_remapped_files</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>free_remapped_files</secondary></indexterm>
+<para><computeroutput>void free_remapped_files (struct CXUnsavedFile * unsaved_files, int num_unsaved_files)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l00206">206</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>00207 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00208 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;i;
+00209 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;num_unsaved_files;&#32;++i)&#32;{
+00210 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">char</emphasis>&#32;*)unsaved_files[i].Filename);
+00211 &#32;&#32;&#32;&#32;free((<emphasis role="keywordtype">char</emphasis>&#32;*)unsaved_files[i].Contents);
+00212 &#32;&#32;}
+00213 &#32;&#32;free(unsaved_files);
+00214 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1aeec77843d6ef3e3e453289ec2018c83d"/>    <section>
+    <title>InclusionVisitor()</title>
+<indexterm><primary>InclusionVisitor</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>InclusionVisitor</secondary></indexterm>
+<para><computeroutput>void InclusionVisitor (CXFile includedFile, CXSourceLocation * includeStack, unsigned includeStackLen, CXClientData data)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01418">1418</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01419 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01420 
+01421 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i;
+01422 &#32;&#32;CXString&#32;fname;
+01423 
+01424 &#32;&#32;fname&#32;=&#32;<link linkend="__c_index_8cpp_1a263c34f5782353186990b2c990d648fc">clang_getFileName</link>(includedFile);
+01425 &#32;&#32;printf(<emphasis role="stringliteral">&quot;file:&#32;%s\nincluded&#32;by:\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(fname));
+01426 &#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(fname);
+01427 
+01428 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;&lt;&#32;includeStackLen;&#32;++i)&#32;{
+01429 &#32;&#32;&#32;&#32;CXFile&#32;includingFile;
+01430 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;line,&#32;column;
+01431 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(includeStack[i],&#32;&amp;includingFile,&#32;&amp;line,
+01432 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;column,&#32;0);
+01433 &#32;&#32;&#32;&#32;fname&#32;=&#32;<link linkend="__c_index_8cpp_1a263c34f5782353186990b2c990d648fc">clang_getFileName</link>(includingFile);
+01434 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;&#32;&#32;%s:%d:%d\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(fname),&#32;line,&#32;column);
+01435 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(fname);
+01436 &#32;&#32;}
+01437 &#32;&#32;printf(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+01438 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00170">clang_disposeString()</link>, <link linkend="__c_x_string_8cpp_source_1l00163">clang_getCString()</link>, <link linkend="__c_index_8cpp_source_1l04379">clang_getFileName()</link>, and <link linkend="__c_x_source_location_8cpp_source_1l00303">clang_getSpellingLocation()</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01440">PrintInclusionStack()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a246a1675ed106163b7d4f141406d3005"/>    <section>
+    <title>indextest_core_main()</title>
+<indexterm><primary>indextest_core_main</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>indextest_core_main</secondary></indexterm>
+<para><computeroutput>int indextest_core_main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_core__main_8cpp_source_1l00330">330</link> of file <link linkend="_core__main_8cpp_source">core_main.cpp</link>.</para>
+<programlisting>00330 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00331 &#32;&#32;sys::PrintStackTraceOnErrorSignal(argv[0]);
+00332 &#32;&#32;PrettyStackTraceProgram&#32;X(argc,&#32;argv);
+00333 &#32;&#32;<emphasis role="keywordtype">void</emphasis>&#32;*MainAddr&#32;=&#32;(<emphasis role="keywordtype">void</emphasis>*)&#32;(intptr_t)&#32;<link linkend="_core__main_8cpp_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link>;
+00334 &#32;&#32;std::string&#32;Executable&#32;=&#32;llvm::sys::fs::getMainExecutable(argv[0],&#32;MainAddr);
+00335 
+00336 &#32;&#32;assert(argv[1]&#32;==&#32;StringRef(<emphasis role="stringliteral">&quot;core&quot;</emphasis>));
+00337 &#32;&#32;++argv;
+00338 &#32;&#32;--argc;
+00339 
+00340 &#32;&#32;std::vector&lt;const&#32;char&#32;*&gt;&#32;CompArgs;
+00341 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;**DoubleDash&#32;=&#32;std::find(argv,&#32;argv&#32;+&#32;argc,&#32;StringRef(<emphasis role="stringliteral">&quot;--&quot;</emphasis>));
+00342 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(DoubleDash&#32;!=&#32;argv&#32;+&#32;argc)&#32;{
+00343 &#32;&#32;&#32;&#32;CompArgs&#32;=&#32;std::vector&lt;const&#32;char&#32;*&gt;(DoubleDash&#32;+&#32;1,&#32;argv&#32;+&#32;argc);
+00344 &#32;&#32;&#32;&#32;argc&#32;=&#32;DoubleDash&#32;-&#32;argv;
+00345 &#32;&#32;}
+00346 
+00347 &#32;&#32;cl::HideUnrelatedOptions(options::IndexTestCoreCategory);
+00348 &#32;&#32;cl::ParseCommandLineOptions(argc,&#32;argv,&#32;<emphasis role="stringliteral">&quot;index-test-core&quot;</emphasis>);
+00349 
+00350 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(options::Action&#32;==&#32;ActionType::None)&#32;{
+00351 &#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;action&#32;required;&#32;pass&#32;&apos;-help&apos;&#32;for&#32;options\n&quot;</emphasis>;
+00352 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00353 &#32;&#32;}
+00354 
+00355 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(options::Action&#32;==&#32;ActionType::PrintSourceSymbols)&#32;{
+00356 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!options::ModuleFilePath.empty())&#32;{
+00357 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;printSourceSymbolsFromModule(options::ModuleFilePath,
+00358 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::ModuleFormat);
+00359 &#32;&#32;&#32;&#32;}
+00360 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(CompArgs.empty())&#32;{
+00361 &#32;&#32;&#32;&#32;&#32;&#32;errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;error:&#32;missing&#32;compiler&#32;args;&#32;pass&#32;&apos;--&#32;&lt;compiler&#32;arguments&gt;&apos;\n&quot;</emphasis>;
+00362 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00363 &#32;&#32;&#32;&#32;}
+00364 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;printSourceSymbols(Executable.c_str(),&#32;CompArgs,
+00365 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::DumpModuleImports,
+00366 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;options::IncludeLocals,&#32;options::IgnoreMacros);
+00367 &#32;&#32;}
+00368 
+00369 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+00370 }
+</programlisting><para>
+References <link linkend="_core__main_8cpp_source_1l00330">indextest_core_main()</link>.</para>
+<para>
+Referenced by <link linkend="_core__main_8cpp_source_1l00330">indextest_core_main()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1abf8b8cca4d3659c057fd2ab49afb69be"/>    <section>
+    <title>indextest_perform_shell_execution()</title>
+<indexterm><primary>indextest_perform_shell_execution</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>indextest_perform_shell_execution</secondary></indexterm>
+<para><computeroutput>int indextest_perform_shell_execution (const char * command_line)</computeroutput></para><para>
+Definition at line <link linkend="_core__main_8cpp_source_1l00376">376</link> of file <link linkend="_core__main_8cpp_source">core_main.cpp</link>.</para>
+<programlisting>00376 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00377 &#32;&#32;BumpPtrAllocator&#32;Alloc;
+00378 &#32;&#32;llvm::StringSaver&#32;Saver(Alloc);
+00379 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;Args;
+00380 &#32;&#32;llvm::cl::TokenizeGNUCommandLine(command_line,&#32;Saver,&#32;Args);
+00381 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;Program&#32;=&#32;llvm::sys::findProgramByName(Args[0]);
+00382 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(std::error_code&#32;ec&#32;=&#32;Program.getError())&#32;{
+00383 &#32;&#32;&#32;&#32;llvm::errs()&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;command&#32;not&#32;found:&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;Args[0]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00384 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;ec.value();
+00385 &#32;&#32;}
+00386 &#32;&#32;SmallVector&lt;StringRef,&#32;8&gt;&#32;execArgs(Args.begin(),&#32;Args.end());
+00387 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;llvm::sys::ExecuteAndWait(*Program,&#32;execArgs);
+00388 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1a217dbf8b442f20279ea00b898af96f52"/>    <section>
+    <title>main()</title>
+<indexterm><primary>main</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>main</secondary></indexterm>
+<para><computeroutput>int main (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l05002">5002</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>05002 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+05003 &#32;&#32;<link linkend="_structthread__info">thread_info</link>&#32;client_data;
+05004 
+05005 &#32;&#32;atexit(flush_atexit);
+05006 
+05007 <emphasis role="preprocessor">#ifdef&#32;CLANG_HAVE_LIBXML</emphasis>
+05008 &#32;&#32;LIBXML_TEST_VERSION
+05009 <emphasis role="preprocessor">#endif</emphasis>
+05010 
+05011 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(argc&#32;&gt;&#32;1&#32;&amp;&amp;&#32;strcmp(argv[1],&#32;<emphasis role="stringliteral">&quot;core&quot;</emphasis>)&#32;==&#32;0)
+05012 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_c-index-test_8c_1a246a1675ed106163b7d4f141406d3005">indextest_core_main</link>(argc,&#32;argv);
+05013 
+05014 &#32;&#32;client_data.<link linkend="_structthread__info_1adc28060776617282f0c5a76431aec532">main_func</link>&#32;=&#32;<link linkend="_c-index-test_8c_1ae86978c3ec30e6ca2db06880dd4bfc26">cindextest_main</link>;
+05015 &#32;&#32;client_data.<link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">argc</link>&#32;=&#32;argc;
+05016 &#32;&#32;client_data.<link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">argv</link>&#32;=&#32;argv;
+05017 
+05018 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_NOTHREADS&quot;</emphasis>))
+05019 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;client_data.<link linkend="_structthread__info_1adc28060776617282f0c5a76431aec532">main_func</link>(client_data.<link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">argc</link>,&#32;client_data.<link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">argv</link>);
+05020 
+05021 &#32;&#32;<link linkend="__c_index_8cpp_1aeb6cae453fe08d2720436c24d4629e8e">clang_executeOnThread</link>(<link linkend="_c-index-test_8c_1a91e96908610b154b9dfe897de0e12b79">thread_runner</link>,&#32;&amp;client_data,&#32;0);
+05022 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;client_data.<link linkend="_structthread__info_1ad2caaa988d61b6beba0b6d681a6589ae">result</link>;
+05023 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1a86d7b0a04b2271451b84a97a62081480"/>    <section>
+    <title>parse_file_line_column()</title>
+<indexterm><primary>parse_file_line_column</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>parse_file_line_column</secondary></indexterm>
+<para><computeroutput>int parse_file_line_column (const char * input, char ** filename, unsigned * line, unsigned * column, unsigned * second_line, unsigned * second_column)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02331">2331</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>02333 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+02334 &#32;&#32;<emphasis role="comment">/*&#32;Find&#32;the&#32;second&#32;colon.&#32;*/</emphasis>
+02335 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*last_colon&#32;=&#32;strrchr(input,&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>);
+02336 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;values[4],&#32;i;
+02337 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;num_values&#32;=&#32;(second_line&#32;&amp;&amp;&#32;second_column)?&#32;4&#32;:&#32;2;
+02338 
+02339 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*endptr&#32;=&#32;0;
+02340 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!last_colon&#32;||&#32;last_colon&#32;==&#32;input)&#32;{
+02341 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_values&#32;==&#32;4)
+02342 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;could&#32;not&#32;parse&#32;filename:line:column:line:column&#32;in&#32;&quot;</emphasis>
+02343 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;&apos;%s&apos;\n&quot;</emphasis>,&#32;input);
+02344 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+02345 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;could&#32;not&#32;parse&#32;filename:line:column&#32;in&#32;&apos;%s&apos;\n&quot;</emphasis>,&#32;input);
+02346 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02347 &#32;&#32;}
+02348 
+02349 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;num_values;&#32;++i)&#32;{
+02350 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*prev_colon;
+02351 
+02352 &#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Parse&#32;the&#32;next&#32;line&#32;or&#32;column.&#32;*/</emphasis>
+02353 &#32;&#32;&#32;&#32;values[num_values&#32;-&#32;i&#32;-&#32;1]&#32;=&#32;strtol(last_colon&#32;+&#32;1,&#32;&amp;endptr,&#32;10);
+02354 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(*endptr&#32;!=&#32;0&#32;&amp;&amp;&#32;*endptr&#32;!=&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>)&#32;{
+02355 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;could&#32;not&#32;parse&#32;%s&#32;in&#32;&apos;%s&apos;\n&quot;</emphasis>,
+02356 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(i&#32;%&#32;2&#32;?&#32;<emphasis role="stringliteral">&quot;column&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;line&quot;</emphasis>),&#32;input);
+02357 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02358 &#32;&#32;&#32;&#32;}
+02359 
+02360 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;+&#32;1&#32;==&#32;num_values)
+02361 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+02362 
+02363 &#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Find&#32;the&#32;previous&#32;colon.&#32;*/</emphasis>
+02364 &#32;&#32;&#32;&#32;prev_colon&#32;=&#32;last_colon&#32;-&#32;1;
+02365 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(prev_colon&#32;!=&#32;input&#32;&amp;&amp;&#32;*prev_colon&#32;!=&#32;<emphasis role="charliteral">&apos;:&apos;</emphasis>)
+02366 &#32;&#32;&#32;&#32;&#32;&#32;--prev_colon;
+02367 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(prev_colon&#32;==&#32;input)&#32;{
+02368 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;could&#32;not&#32;parse&#32;%s&#32;in&#32;&apos;%s&apos;\n&quot;</emphasis>,
+02369 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(i&#32;%&#32;2&#32;==&#32;0?&#32;<emphasis role="stringliteral">&quot;column&quot;</emphasis>&#32;:&#32;<emphasis role="stringliteral">&quot;line&quot;</emphasis>),&#32;input);
+02370 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02371 &#32;&#32;&#32;&#32;}
+02372 
+02373 &#32;&#32;&#32;&#32;last_colon&#32;=&#32;prev_colon;
+02374 &#32;&#32;}
+02375 
+02376 &#32;&#32;*line&#32;=&#32;values[0];
+02377 &#32;&#32;*column&#32;=&#32;values[1];
+02378 
+02379 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(second_line&#32;&amp;&amp;&#32;second_column)&#32;{
+02380 &#32;&#32;&#32;&#32;*second_line&#32;=&#32;values[2];
+02381 &#32;&#32;&#32;&#32;*second_column&#32;=&#32;values[3];
+02382 &#32;&#32;}
+02383 
+02384 &#32;&#32;<emphasis role="comment">/*&#32;Copy&#32;the&#32;file&#32;name.&#32;*/</emphasis>
+02385 &#32;&#32;*filename&#32;=&#32;(<emphasis role="keywordtype">char</emphasis>*)malloc(last_colon&#32;-&#32;input&#32;+&#32;1);
+02386 &#32;&#32;assert(*filename);
+02387 &#32;&#32;memcpy(*filename,&#32;input,&#32;last_colon&#32;-&#32;input);
+02388 &#32;&#32;(*filename)[last_colon&#32;-&#32;input]&#32;=&#32;0;
+02389 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+02390 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l02665">perform_code_completion()</link>, and <link linkend="_c-index-test_8c_source_1l04141">perform_token_annotation()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a6cfa2a8406fea0e71a2700d8f58b8553"/>    <section>
+    <title>perform_code_completion()</title>
+<indexterm><primary>perform_code_completion</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>perform_code_completion</secondary></indexterm>
+<para><computeroutput>int perform_code_completion (int argc, const char ** argv, int timing_only)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02665">2665</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>02665 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+02666 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*input&#32;=&#32;argv[1];
+02667 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*filename&#32;=&#32;0;
+02668 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;line;
+02669 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;column;
+02670 &#32;&#32;CXIndex&#32;CIdx;
+02671 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;errorCode;
+02672 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>CXUnsavedFile&#32;*unsaved_files&#32;=&#32;0;
+02673 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_unsaved_files&#32;=&#32;0;
+02674 &#32;&#32;CXCodeCompleteResults&#32;*results&#32;=&#32;0;
+02675 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXErrorCode&#32;Err;
+02676 &#32;&#32;CXTranslationUnit&#32;TU;
+02677 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I,&#32;Repeats&#32;=&#32;1;
+02678 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;completionOptions&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1a6cf74c52d33527eeee0b2bd27ef69044">clang_defaultCodeCompleteOptions</link>();
+02679 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*InvocationPath;
+02680 
+02681 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_CODE_COMPLETE_PATTERNS&quot;</emphasis>))
+02682 &#32;&#32;&#32;&#32;completionOptions&#32;|=&#32;CXCodeComplete_IncludeCodePatterns;
+02683 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_COMPLETION_BRIEF_COMMENTS&quot;</emphasis>))
+02684 &#32;&#32;&#32;&#32;completionOptions&#32;|=&#32;CXCodeComplete_IncludeBriefComments;
+02685 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_COMPLETION_SKIP_PREAMBLE&quot;</emphasis>))
+02686 &#32;&#32;&#32;&#32;completionOptions&#32;|=&#32;CXCodeComplete_SkipPreamble;
+02687 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_COMPLETION_INCLUDE_FIXITS&quot;</emphasis>))
+02688 &#32;&#32;&#32;&#32;completionOptions&#32;|=&#32;CXCodeComplete_IncludeCompletionsWithFixIts;
+02689 &#32;&#32;
+02690 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(timing_only)
+02691 &#32;&#32;&#32;&#32;input&#32;+=&#32;strlen(<emphasis role="stringliteral">&quot;-code-completion-timing=&quot;</emphasis>);
+02692 &#32;&#32;<emphasis role="keywordflow">else</emphasis>
+02693 &#32;&#32;&#32;&#32;input&#32;+=&#32;strlen(<emphasis role="stringliteral">&quot;-code-completion-at=&quot;</emphasis>);
+02694 
+02695 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((errorCode&#32;=&#32;<link linkend="_c-index-test_8c_1a86d7b0a04b2271451b84a97a62081480">parse_file_line_column</link>(input,&#32;&amp;filename,&#32;&amp;line,&#32;&amp;column,
+02696 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;0)))
+02697 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;errorCode;
+02698 
+02699 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parse_remapped_files(argc,&#32;argv,&#32;2,&#32;&amp;unsaved_files,&#32;&amp;num_unsaved_files))
+02700 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02701 
+02702 &#32;&#32;CIdx&#32;=&#32;<link linkend="__c_index_8cpp_1a3420c8e7e10a7ff7906130b207cbb763">clang_createIndex</link>(0,&#32;0);
+02703 &#32;&#32;InvocationPath&#32;=&#32;getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_INVOCATION_EMISSION_PATH&quot;</emphasis>);
+02704 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InvocationPath)
+02705 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a97a15ecfe8f0c017cbcc5c45f558123c">clang_CXIndex_setInvocationEmissionPathOption</link>(CIdx,&#32;InvocationPath);
+02706 
+02707 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EDITING&quot;</emphasis>))
+02708 &#32;&#32;&#32;&#32;Repeats&#32;=&#32;5;
+02709 
+02710 &#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a3ddd508cc891d95a82b747955738249a">clang_parseTranslationUnit2</link>(CIdx,&#32;0,
+02711 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argv&#32;+&#32;num_unsaved_files&#32;+&#32;2,
+02712 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argc&#32;-&#32;num_unsaved_files&#32;-&#32;2,
+02713 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;0,&#32;getDefaultParsingOptions(),&#32;&amp;TU);
+02714 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+02715 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;load&#32;translation&#32;unit!\n&quot;</emphasis>);
+02716 &#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+02717 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02718 &#32;&#32;}
+02719 
+02720 &#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a2befc445c3dde1e89f6900c67892ceaa">clang_reparseTranslationUnit</link>(TU,&#32;0,&#32;0,
+02721 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a2f79bdd29d8f799a3943c6a5254eb789">clang_defaultReparseOptions</link>(TU));
+02722 
+02723 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+02724 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;reparse&#32;translation&#32;unit!\n&quot;</emphasis>);
+02725 &#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+02726 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+02727 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02728 &#32;&#32;}
+02729 
+02730 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(I&#32;=&#32;0;&#32;I&#32;!=&#32;Repeats;&#32;++I)&#32;{
+02731 &#32;&#32;&#32;&#32;results&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1aa00452b93a381eacef696b538f19ca6e">clang_codeCompleteAt</link>(TU,&#32;filename,&#32;line,&#32;column,
+02732 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unsaved_files,&#32;num_unsaved_files,
+02733 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;completionOptions);
+02734 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!results)&#32;{
+02735 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;perform&#32;code&#32;completion!\n&quot;</emphasis>);
+02736 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02737 &#32;&#32;&#32;&#32;}
+02738 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;!=&#32;Repeats-1)
+02739 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_code_completion_8cpp_1ab33453b1d11a0d7c68ccf5c2f3f55bb3">clang_disposeCodeCompleteResults</link>(results);
+02740 &#32;&#32;}
+02741 
+02742 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(results)&#32;{
+02743 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i,&#32;n&#32;=&#32;results-&gt;NumResults,&#32;containerIsIncomplete&#32;=&#32;0;
+02744 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;contexts;
+02745 &#32;&#32;&#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;containerKind;
+02746 &#32;&#32;&#32;&#32;CXString&#32;objCSelector;
+02747 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*selectorString;
+02748 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!timing_only)&#32;{&#32;&#32;&#32;&#32;&#32;&#32;
+02749 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Sort&#32;the&#32;code-completion&#32;results&#32;based&#32;on&#32;the&#32;typed&#32;text.&#32;*/</emphasis>
+02750 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_code_completion_8cpp_1a15ff3b3f6b97479e2516f3e4993a9baa">clang_sortCodeCompletionResults</link>(results-&gt;Results,&#32;results-&gt;NumResults);
+02751 
+02752 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;n;&#32;++i)
+02753 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_completion_result(TU,&#32;results,&#32;i,&#32;stdout);
+02754 &#32;&#32;&#32;&#32;}
+02755 &#32;&#32;&#32;&#32;n&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1aaa0ec260d3ad875615930d0c009e5dba">clang_codeCompleteGetNumDiagnostics</link>(results);
+02756 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;n;&#32;++i)&#32;{
+02757 &#32;&#32;&#32;&#32;&#32;&#32;CXDiagnostic&#32;diag&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1a2889b7f63ecab662d464c9c64921f4de">clang_codeCompleteGetDiagnostic</link>(results,&#32;i);
+02758 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a6163717d21d3db3edb29824ce554d190">PrintDiagnostic</link>(diag);
+02759 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_diagnostic_8cpp_1a11aa4e77bf15f80d846a2216afbe8726">clang_disposeDiagnostic</link>(diag);
+02760 &#32;&#32;&#32;&#32;}
+02761 &#32;&#32;&#32;&#32;
+02762 &#32;&#32;&#32;&#32;contexts&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1afc1d7645383b816cb5e62253b85f9b7c">clang_codeCompleteGetContexts</link>(results);
+02763 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1ae302b130b55b146b76be601a70212b8a">print_completion_contexts</link>(contexts,&#32;stdout);
+02764 &#32;&#32;&#32;&#32;
+02765 &#32;&#32;&#32;&#32;containerKind&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1a6d5d24395b436aaedf13984af8f19afa">clang_codeCompleteGetContainerKind</link>(results,
+02766 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;containerIsIncomplete);
+02767 &#32;&#32;&#32;&#32;
+02768 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(containerKind&#32;!=&#32;CXCursor_InvalidCode)&#32;{
+02769 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;We&#32;have&#32;found&#32;a&#32;container&#32;*/</emphasis>
+02770 &#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;containerUSR,&#32;containerKindSpelling;
+02771 &#32;&#32;&#32;&#32;&#32;&#32;containerKindSpelling&#32;=&#32;<link linkend="__c_index_8cpp_1a667cf97e111be828ff2c36e23d583fce">clang_getCursorKindSpelling</link>(containerKind);
+02772 &#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;Container&#32;Kind:&#32;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(containerKindSpelling));
+02773 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(containerKindSpelling);
+02774 &#32;&#32;&#32;&#32;&#32;&#32;
+02775 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(containerIsIncomplete)&#32;{
+02776 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;Container&#32;is&#32;incomplete\n&quot;</emphasis>);
+02777 &#32;&#32;&#32;&#32;&#32;&#32;}
+02778 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+02779 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;Container&#32;is&#32;complete\n&quot;</emphasis>);
+02780 &#32;&#32;&#32;&#32;&#32;&#32;}
+02781 &#32;&#32;&#32;&#32;&#32;&#32;
+02782 &#32;&#32;&#32;&#32;&#32;&#32;containerUSR&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1aa7fdf1ceb18aed68b458ebd05f5aa6c5">clang_codeCompleteGetContainerUSR</link>(results);
+02783 &#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;Container&#32;USR:&#32;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(containerUSR));
+02784 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(containerUSR);
+02785 &#32;&#32;&#32;&#32;}
+02786 &#32;&#32;&#32;&#32;
+02787 &#32;&#32;&#32;&#32;objCSelector&#32;=&#32;<link linkend="__c_index_code_completion_8cpp_1a1cee18661b755d3b0b6ee3b44630033f">clang_codeCompleteGetObjCSelector</link>(results);
+02788 &#32;&#32;&#32;&#32;selectorString&#32;=&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(objCSelector);
+02789 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(selectorString&#32;&amp;&amp;&#32;strlen(selectorString)&#32;&gt;&#32;0)&#32;{
+02790 &#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;Objective-C&#32;selector:&#32;%s\n&quot;</emphasis>,&#32;selectorString);
+02791 &#32;&#32;&#32;&#32;}
+02792 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(objCSelector);
+02793 &#32;&#32;&#32;&#32;
+02794 &#32;&#32;&#32;&#32;<link linkend="__c_index_code_completion_8cpp_1ab33453b1d11a0d7c68ccf5c2f3f55bb3">clang_disposeCodeCompleteResults</link>(results);
+02795 &#32;&#32;}
+02796 &#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+02797 &#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(CIdx);
+02798 &#32;&#32;free(filename);
+02799 
+02800 &#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02801 
+02802 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+02803 }
+</programlisting><para>
+References <link linkend="__c_index_code_completion_8cpp_source_1l00885">clang_defaultCodeCompleteOptions()</link>, and <link linkend="_c-index-test_8c_source_1l02331">parse_file_line_column()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1adae363afaf561553359800991169ce1c"/>    <section>
+    <title>perform_test_load_source()</title>
+<indexterm><primary>perform_test_load_source</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>perform_test_load_source</secondary></indexterm>
+<para><computeroutput>int perform_test_load_source (int argc, const char ** argv, const char * filter, CXCursorVisitor Visitor, <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link> PV)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02012">2012</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>02014 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+02015 &#32;&#32;CXIndex&#32;Idx;
+02016 &#32;&#32;CXTranslationUnit&#32;TU;
+02017 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*CommentSchemaFile;
+02018 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>CXUnsavedFile&#32;*unsaved_files&#32;=&#32;0;
+02019 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_unsaved_files&#32;=&#32;0;
+02020 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXErrorCode&#32;Err;
+02021 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;result;
+02022 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;Repeats&#32;=&#32;0;
+02023 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;I;
+02024 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*InvocationPath;
+02025 
+02026 &#32;&#32;Idx&#32;=&#32;<link linkend="__c_index_8cpp_1a3420c8e7e10a7ff7906130b207cbb763">clang_createIndex</link>(<emphasis role="comment">/*&#32;excludeDeclsFromPCH&#32;*/</emphasis>
+02027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;(!strcmp(filter,&#32;<emphasis role="stringliteral">&quot;local&quot;</emphasis>)&#32;||
+02028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;!strcmp(filter,&#32;<emphasis role="stringliteral">&quot;local-display&quot;</emphasis>)&#32;||
+02029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;!strcmp(filter,&#32;<emphasis role="stringliteral">&quot;local-pretty&quot;</emphasis>))
+02030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;?&#32;1
+02031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;:&#32;0,
+02032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;displayDiagnostics=*/</emphasis>1);
+02033 &#32;&#32;InvocationPath&#32;=&#32;getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_INVOCATION_EMISSION_PATH&quot;</emphasis>);
+02034 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(InvocationPath)
+02035 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a97a15ecfe8f0c017cbcc5c45f558123c">clang_CXIndex_setInvocationEmissionPathOption</link>(Idx,&#32;InvocationPath);
+02036 
+02037 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((CommentSchemaFile&#32;=&#32;parse_comments_schema(argc,&#32;argv)))&#32;{
+02038 &#32;&#32;&#32;&#32;argc--;
+02039 &#32;&#32;&#32;&#32;argv++;
+02040 &#32;&#32;}
+02041 
+02042 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parse_remapped_files(argc,&#32;argv,&#32;0,&#32;&amp;unsaved_files,&#32;&amp;num_unsaved_files))&#32;{
+02043 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02045 &#32;&#32;}
+02046 
+02047 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EDITING&quot;</emphasis>))
+02048 &#32;&#32;&#32;&#32;Repeats&#32;=&#32;5;
+02049 
+02050 &#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a3ddd508cc891d95a82b747955738249a">clang_parseTranslationUnit2</link>(Idx,&#32;0,
+02051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argv&#32;+&#32;num_unsaved_files,
+02052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argc&#32;-&#32;num_unsaved_files,
+02053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unsaved_files,&#32;num_unsaved_files,
+02054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getDefaultParsingOptions(),&#32;&amp;TU);
+02055 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+02056 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;load&#32;translation&#32;unit!\n&quot;</emphasis>);
+02057 &#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+02058 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02059 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02060 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02061 &#32;&#32;}
+02062 
+02063 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(I&#32;=&#32;0;&#32;I&#32;!=&#32;Repeats;&#32;++I)&#32;{
+02064 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)
+02065 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02066 
+02067 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Repeats&#32;&gt;&#32;1)&#32;{
+02068 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a496961baac6bdcc6be5e7ceac9b2273d">clang_suspendTranslationUnit</link>(TU);
+02069 
+02070 &#32;&#32;&#32;&#32;&#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a2befc445c3dde1e89f6900c67892ceaa">clang_reparseTranslationUnit</link>(TU,&#32;num_unsaved_files,&#32;unsaved_files,
+02071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a2f79bdd29d8f799a3943c6a5254eb789">clang_defaultReparseOptions</link>(TU));
+02072 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+02073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+02074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02077 &#32;&#32;&#32;&#32;&#32;&#32;}
+02078 &#32;&#32;&#32;&#32;}
+02079 &#32;&#32;}
+02080 
+02081 &#32;&#32;result&#32;=&#32;perform_test_load(Idx,&#32;TU,&#32;filter,&#32;NULL,&#32;Visitor,&#32;PV,
+02082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CommentSchemaFile);
+02083 &#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02084 &#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02085 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+02086 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l03436">clang_createIndex()</link>, and <link linkend="__c_index_8cpp_source_1l03487">clang_CXIndex_setInvocationEmissionPathOption()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a8f72d274bbe0d8215085af669b08c72d"/>    <section>
+    <title>perform_test_load_tu()</title>
+<indexterm><primary>perform_test_load_tu</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>perform_test_load_tu</secondary></indexterm>
+<para><computeroutput>int perform_test_load_tu (const char * file, const char * filter, const char * prefix, CXCursorVisitor Visitor, <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link> PV)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01992">1992</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01994 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01995 &#32;&#32;CXIndex&#32;Idx;
+01996 &#32;&#32;CXTranslationUnit&#32;TU;
+01997 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;result;
+01998 &#32;&#32;Idx&#32;=&#32;<link linkend="__c_index_8cpp_1a3420c8e7e10a7ff7906130b207cbb763">clang_createIndex</link>(<emphasis role="comment">/*&#32;excludeDeclsFromPCH&#32;*/</emphasis>
+01999 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;!strcmp(filter,&#32;<emphasis role="stringliteral">&quot;local&quot;</emphasis>)&#32;?&#32;1&#32;:&#32;0,
+02000 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;displayDiagnostics=*/</emphasis>1);
+02001 
+02002 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!CreateTranslationUnit(Idx,&#32;file,&#32;&amp;TU))&#32;{
+02003 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02004 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02005 &#32;&#32;}
+02006 
+02007 &#32;&#32;result&#32;=&#32;perform_test_load(Idx,&#32;TU,&#32;filter,&#32;prefix,&#32;Visitor,&#32;PV,&#32;NULL);
+02008 &#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02009 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+02010 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l03436">clang_createIndex()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1aea3df772c772b8ca80d93c100b3de16f"/>    <section>
+    <title>perform_test_reparse_source()</title>
+<indexterm><primary>perform_test_reparse_source</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>perform_test_reparse_source</secondary></indexterm>
+<para><computeroutput>int perform_test_reparse_source (int argc, const char ** argv, int trials, const char * filter, CXCursorVisitor Visitor, <link linkend="_c-index-test_8c_1a66dfbd9b90aeaaa39988cd8ea0bbc669">PostVisitTU</link> PV)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02088">2088</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>02090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+02091 &#32;&#32;CXIndex&#32;Idx;
+02092 &#32;&#32;CXTranslationUnit&#32;TU;
+02093 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>CXUnsavedFile&#32;*unsaved_files&#32;=&#32;0;
+02094 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_unsaved_files&#32;=&#32;0;
+02095 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;compiler_arg_idx&#32;=&#32;0;
+02096 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXErrorCode&#32;Err;
+02097 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;result,&#32;i;
+02098 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;trial;
+02099 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;execute_after_trial&#32;=&#32;0;
+02100 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*execute_command&#32;=&#32;NULL;
+02101 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;remap_after_trial&#32;=&#32;0;
+02102 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*endptr&#32;=&#32;0;
+02103 &#32;&#32;
+02104 &#32;&#32;Idx&#32;=&#32;<link linkend="__c_index_8cpp_1a3420c8e7e10a7ff7906130b207cbb763">clang_createIndex</link>(<emphasis role="comment">/*&#32;excludeDeclsFromPCH&#32;*/</emphasis>
+02105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;!strcmp(filter,&#32;<emphasis role="stringliteral">&quot;local&quot;</emphasis>)&#32;?&#32;1&#32;:&#32;0,
+02106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;displayDiagnostics=*/</emphasis>1);
+02107 &#32;&#32;
+02108 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parse_remapped_files(argc,&#32;argv,&#32;0,&#32;&amp;unsaved_files,&#32;&amp;num_unsaved_files))&#32;{
+02109 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02110 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02111 &#32;&#32;}
+02112 
+02113 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;&lt;&#32;argc;&#32;++i)&#32;{
+02114 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp(argv[i],&#32;<emphasis role="stringliteral">&quot;--&quot;</emphasis>)&#32;==&#32;0)
+02115 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+02116 &#32;&#32;}
+02117 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i&#32;&lt;&#32;argc)
+02118 &#32;&#32;&#32;&#32;compiler_arg_idx&#32;=&#32;i+1;
+02119 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_unsaved_files&#32;&gt;&#32;compiler_arg_idx)
+02120 &#32;&#32;&#32;&#32;compiler_arg_idx&#32;=&#32;num_unsaved_files;
+02121 &#32;&#32;
+02122 &#32;&#32;<emphasis role="comment">/*&#32;Load&#32;the&#32;initial&#32;translation&#32;unit&#32;--&#32;we&#32;do&#32;this&#32;without&#32;honoring&#32;remapped</emphasis>
+02123 <emphasis role="comment">&#32;&#32;&#32;*&#32;files,&#32;so&#32;that&#32;we&#32;have&#32;a&#32;way&#32;to&#32;test&#32;results&#32;after&#32;changing&#32;the&#32;source.&#32;*/</emphasis>
+02124 &#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a3ddd508cc891d95a82b747955738249a">clang_parseTranslationUnit2</link>(Idx,&#32;0,
+02125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argv&#32;+&#32;compiler_arg_idx,
+02126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argc&#32;-&#32;compiler_arg_idx,
+02127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;0,&#32;getDefaultParsingOptions(),&#32;&amp;TU);
+02128 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+02129 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;load&#32;translation&#32;unit!\n&quot;</emphasis>);
+02130 &#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+02131 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02132 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02133 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+02134 &#32;&#32;}
+02135 &#32;&#32;
+02136 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)
+02137 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02138 
+02139 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EXECUTE_COMMAND&quot;</emphasis>))&#32;{
+02140 &#32;&#32;&#32;&#32;execute_command&#32;=&#32;getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EXECUTE_COMMAND&quot;</emphasis>);
+02141 &#32;&#32;}
+02142 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EXECUTE_AFTER_TRIAL&quot;</emphasis>))&#32;{
+02143 &#32;&#32;&#32;&#32;execute_after_trial&#32;=
+02144 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;strtol(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EXECUTE_AFTER_TRIAL&quot;</emphasis>),&#32;&amp;endptr,&#32;10);
+02145 &#32;&#32;}
+02146 
+02147 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_REMAP_AFTER_TRIAL&quot;</emphasis>))&#32;{
+02148 &#32;&#32;&#32;&#32;remap_after_trial&#32;=
+02149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;strtol(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_REMAP_AFTER_TRIAL&quot;</emphasis>),&#32;&amp;endptr,&#32;10);
+02150 &#32;&#32;}
+02151 
+02152 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(trial&#32;=&#32;0;&#32;trial&#32;&lt;&#32;trials;&#32;++trial)&#32;{
+02153 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(execute_command&#32;&amp;&amp;&#32;trial&#32;==&#32;execute_after_trial)&#32;{
+02154 &#32;&#32;&#32;&#32;&#32;&#32;result&#32;=&#32;<link linkend="_c-index-test_8c_1abf8b8cca4d3659c057fd2ab49afb69be">indextest_perform_shell_execution</link>(execute_command);
+02155 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(result&#32;!=&#32;0)
+02156 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+02157 &#32;&#32;&#32;&#32;}
+02158 
+02159 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02160 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parse_remapped_files_with_try(trial,&#32;argc,&#32;argv,&#32;0,
+02161 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;unsaved_files,&#32;&amp;num_unsaved_files))&#32;{
+02162 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+02163 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02164 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02165 &#32;&#32;&#32;&#32;}
+02166 
+02167 &#32;&#32;&#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a2befc445c3dde1e89f6900c67892ceaa">clang_reparseTranslationUnit</link>(
+02168 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU,
+02169 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;trial&#32;&gt;=&#32;remap_after_trial&#32;?&#32;num_unsaved_files&#32;:&#32;0,
+02170 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;trial&#32;&gt;=&#32;remap_after_trial&#32;?&#32;unsaved_files&#32;:&#32;0,
+02171 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a2f79bdd29d8f799a3943c6a5254eb789">clang_defaultReparseOptions</link>(TU));
+02172 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+02173 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;reparse&#32;translation&#32;unit!\n&quot;</emphasis>);
+02174 &#32;&#32;&#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+02175 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+02176 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02177 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02178 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;&#32;&#32;&#32;&#32;&#32;&#32;
+02179 &#32;&#32;&#32;&#32;}
+02180 
+02181 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)
+02182 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+02183 &#32;&#32;}
+02184 &#32;&#32;
+02185 &#32;&#32;result&#32;=&#32;perform_test_load(Idx,&#32;TU,&#32;filter,&#32;NULL,&#32;Visitor,&#32;PV,&#32;NULL);
+02186 
+02187 &#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+02188 &#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+02189 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+02190 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l03436">clang_createIndex()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a8c63bc40ab1b76f5abf55eb8aad9a6d2"/>    <section>
+    <title>perform_token_annotation()</title>
+<indexterm><primary>perform_token_annotation</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>perform_token_annotation</secondary></indexterm>
+<para><computeroutput>int perform_token_annotation (int argc, const char ** argv)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l04141">4141</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>04141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+04142 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*input&#32;=&#32;argv[1];
+04143 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;*filename&#32;=&#32;0;
+04144 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;line,&#32;second_line;
+04145 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;column,&#32;second_column;
+04146 &#32;&#32;CXIndex&#32;CIdx;
+04147 &#32;&#32;CXTranslationUnit&#32;TU&#32;=&#32;0;
+04148 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;errorCode;
+04149 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>CXUnsavedFile&#32;*unsaved_files&#32;=&#32;0;
+04150 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_unsaved_files&#32;=&#32;0;
+04151 &#32;&#32;CXToken&#32;*tokens;
+04152 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;num_tokens;
+04153 &#32;&#32;CXSourceRange&#32;range;
+04154 &#32;&#32;CXSourceLocation&#32;startLoc,&#32;endLoc;
+04155 &#32;&#32;CXFile&#32;file&#32;=&#32;0;
+04156 &#32;&#32;CXCursor&#32;*cursors&#32;=&#32;0;
+04157 &#32;&#32;CXSourceRangeList&#32;*skipped_ranges&#32;=&#32;0;
+04158 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXErrorCode&#32;Err;
+04159 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i;
+04160 
+04161 &#32;&#32;input&#32;+=&#32;strlen(<emphasis role="stringliteral">&quot;-test-annotate-tokens=&quot;</emphasis>);
+04162 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;((errorCode&#32;=&#32;<link linkend="_c-index-test_8c_1a86d7b0a04b2271451b84a97a62081480">parse_file_line_column</link>(input,&#32;&amp;filename,&#32;&amp;line,&#32;&amp;column,
+04163 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;second_line,&#32;&amp;second_column)))
+04164 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;errorCode;
+04165 
+04166 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parse_remapped_files(argc,&#32;argv,&#32;2,&#32;&amp;unsaved_files,&#32;&amp;num_unsaved_files))&#32;{
+04167 &#32;&#32;&#32;&#32;free(filename);
+04168 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+04169 &#32;&#32;}
+04170 
+04171 &#32;&#32;CIdx&#32;=&#32;<link linkend="__c_index_8cpp_1a3420c8e7e10a7ff7906130b207cbb763">clang_createIndex</link>(0,&#32;1);
+04172 &#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a3ddd508cc891d95a82b747955738249a">clang_parseTranslationUnit2</link>(CIdx,&#32;argv[argc&#32;-&#32;1],
+04173 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argv&#32;+&#32;num_unsaved_files&#32;+&#32;2,
+04174 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;argc&#32;-&#32;num_unsaved_files&#32;-&#32;3,
+04175 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unsaved_files,
+04176 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;num_unsaved_files,
+04177 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;getDefaultParsingOptions(),&#32;&amp;TU);
+04178 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+04179 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;unable&#32;to&#32;parse&#32;input\n&quot;</emphasis>);
+04180 &#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+04181 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(CIdx);
+04182 &#32;&#32;&#32;&#32;free(filename);
+04183 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+04184 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+04185 &#32;&#32;}
+04186 &#32;&#32;errorCode&#32;=&#32;0;
+04187 
+04188 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)&#32;{
+04189 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04190 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04191 &#32;&#32;}
+04192 
+04193 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;CINDEXTEST_EDITING&quot;</emphasis>))&#32;{
+04194 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;&lt;&#32;5;&#32;++i)&#32;{
+04195 &#32;&#32;&#32;&#32;&#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a2befc445c3dde1e89f6900c67892ceaa">clang_reparseTranslationUnit</link>(TU,&#32;num_unsaved_files,&#32;unsaved_files,
+04196 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a2f79bdd29d8f799a3943c6a5254eb789">clang_defaultReparseOptions</link>(TU));
+04197 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+04198 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;reparse&#32;translation&#32;unit!\n&quot;</emphasis>);
+04199 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+04200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04201 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04202 &#32;&#32;&#32;&#32;&#32;&#32;}
+04203 &#32;&#32;&#32;&#32;}
+04204 &#32;&#32;}
+04205 
+04206 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)&#32;{
+04207 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04208 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04209 &#32;&#32;}
+04210 
+04211 &#32;&#32;file&#32;=&#32;<link linkend="__c_index_8cpp_1a7c72c3450d02a5d985f152cc0dee1785">clang_getFile</link>(TU,&#32;filename);
+04212 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!file)&#32;{
+04213 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;file&#32;%s&#32;is&#32;not&#32;in&#32;this&#32;translation&#32;unit\n&quot;</emphasis>,&#32;filename);
+04214 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04215 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04216 &#32;&#32;}
+04217 
+04218 &#32;&#32;startLoc&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1a3da1e96662794609af6bec3dc345dd9a">clang_getLocation</link>(TU,&#32;file,&#32;line,&#32;column);
+04219 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_x_source_location_8cpp_1aa18c665664a0dd6ebf8eae9954a3a696">clang_equalLocations</link>(<link linkend="__c_x_source_location_8cpp_1a20bb1e9a72e2c16fbcb21958f0648947">clang_getNullLocation</link>(),&#32;startLoc))&#32;{
+04220 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;invalid&#32;source&#32;location&#32;%s:%d:%d\n&quot;</emphasis>,&#32;filename,&#32;line,
+04221 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;column);
+04222 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04223 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04224 &#32;&#32;}
+04225 
+04226 &#32;&#32;endLoc&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1a3da1e96662794609af6bec3dc345dd9a">clang_getLocation</link>(TU,&#32;file,&#32;second_line,&#32;second_column);
+04227 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_x_source_location_8cpp_1aa18c665664a0dd6ebf8eae9954a3a696">clang_equalLocations</link>(<link linkend="__c_x_source_location_8cpp_1a20bb1e9a72e2c16fbcb21958f0648947">clang_getNullLocation</link>(),&#32;endLoc))&#32;{
+04228 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;invalid&#32;source&#32;location&#32;%s:%d:%d\n&quot;</emphasis>,&#32;filename,
+04229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;second_line,&#32;second_column);
+04230 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04231 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04232 &#32;&#32;}
+04233 
+04234 &#32;&#32;range&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1a6d436a40e815644209860de3f1416210">clang_getRange</link>(startLoc,&#32;endLoc);
+04235 &#32;&#32;<link linkend="__c_index_8cpp_1acb7d078bea44691adbb99cd63ce7e556">clang_tokenize</link>(TU,&#32;range,&#32;&amp;tokens,&#32;&amp;num_tokens);
+04236 
+04237 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)&#32;{
+04238 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04239 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04240 &#32;&#32;}
+04241 
+04242 &#32;&#32;cursors&#32;=&#32;(CXCursor&#32;*)malloc(num_tokens&#32;*&#32;<emphasis role="keyword">sizeof</emphasis>(CXCursor));
+04243 &#32;&#32;assert(cursors);
+04244 &#32;&#32;<link linkend="__c_index_8cpp_1aa53f8643daa75a0e72407ab0cee225f3">clang_annotateTokens</link>(TU,&#32;tokens,&#32;num_tokens,&#32;cursors);
+04245 
+04246 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(checkForErrors(TU)&#32;!=&#32;0)&#32;{
+04247 &#32;&#32;&#32;&#32;errorCode&#32;=&#32;-1;
+04248 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">goto</emphasis>&#32;teardown;
+04249 &#32;&#32;}
+04250 
+04251 &#32;&#32;skipped_ranges&#32;=&#32;<link linkend="__c_index_8cpp_1add341497e44da969ce07c7fbc174d38a">clang_getSkippedRanges</link>(TU,&#32;file);
+04252 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;skipped_ranges-&gt;count;&#32;++i)&#32;{
+04253 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column;
+04254 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_x_source_location_8cpp_1a14a10dd8d9a4069c4fc1a7be62f58874">clang_getRangeStart</link>(skipped_ranges-&gt;ranges[i]),
+04255 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;&amp;start_line,&#32;&amp;start_column,&#32;0);
+04256 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_x_source_location_8cpp_1a146c4bda0251ee320dc6e4b1b3fbb919">clang_getRangeEnd</link>(skipped_ranges-&gt;ranges[i]),
+04257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;&amp;end_line,&#32;&amp;end_column,&#32;0);
+04258 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;Skipping:&#32;&quot;</emphasis>);
+04259 &#32;&#32;&#32;&#32;PrintExtent(stdout,&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column);
+04260 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+04261 &#32;&#32;}
+04262 &#32;&#32;<link linkend="__c_index_8cpp_1acfc7c338d3c08e516bf0773f4fa1180e">clang_disposeSourceRangeList</link>(skipped_ranges);
+04263 
+04264 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;num_tokens;&#32;++i)&#32;{
+04265 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*kind&#32;=&#32;<emphasis role="stringliteral">&quot;&lt;unknown&gt;&quot;</emphasis>;
+04266 &#32;&#32;&#32;&#32;CXString&#32;spelling&#32;=&#32;<link linkend="__c_index_8cpp_1ac54c8685910211b22533b6aea1e5793f">clang_getTokenSpelling</link>(TU,&#32;tokens[i]);
+04267 &#32;&#32;&#32;&#32;CXSourceRange&#32;extent&#32;=&#32;<link linkend="__c_index_8cpp_1a216d4670f967e3bd9f9c977691282047">clang_getTokenExtent</link>(TU,&#32;tokens[i]);
+04268 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column;
+04269 
+04270 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(<link linkend="__c_index_8cpp_1a656e3a514ed80a5f265fba4e2cbe6ab3">clang_getTokenKind</link>(tokens[i]))&#32;{
+04271 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXToken_Punctuation:&#32;kind&#32;=&#32;<emphasis role="stringliteral">&quot;Punctuation&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+04272 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXToken_Keyword:&#32;kind&#32;=&#32;<emphasis role="stringliteral">&quot;Keyword&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+04273 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXToken_Identifier:&#32;kind&#32;=&#32;<emphasis role="stringliteral">&quot;Identifier&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+04274 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXToken_Literal:&#32;kind&#32;=&#32;<emphasis role="stringliteral">&quot;Literal&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+04275 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXToken_Comment:&#32;kind&#32;=&#32;<emphasis role="stringliteral">&quot;Comment&quot;</emphasis>;&#32;<emphasis role="keywordflow">break</emphasis>;
+04276 &#32;&#32;&#32;&#32;}
+04277 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_x_source_location_8cpp_1a14a10dd8d9a4069c4fc1a7be62f58874">clang_getRangeStart</link>(extent),
+04278 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;&amp;start_line,&#32;&amp;start_column,&#32;0);
+04279 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_x_source_location_8cpp_1a146c4bda0251ee320dc6e4b1b3fbb919">clang_getRangeEnd</link>(extent),
+04280 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;0,&#32;&amp;end_line,&#32;&amp;end_column,&#32;0);
+04281 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;%s:&#32;\&quot;%s\&quot;&#32;&quot;</emphasis>,&#32;kind,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(spelling));
+04282 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(spelling);
+04283 &#32;&#32;&#32;&#32;PrintExtent(stdout,&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column);
+04284 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="__c_index_8cpp_1a0c5b391d8bca745084fb8906cce6f66c">clang_isInvalid</link>(cursors[i].kind))&#32;{
+04285 &#32;&#32;&#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>);
+04286 &#32;&#32;&#32;&#32;&#32;&#32;PrintCursor(cursors[i],&#32;NULL);
+04287 &#32;&#32;&#32;&#32;}
+04288 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+04289 &#32;&#32;}
+04290 &#32;&#32;free(cursors);
+04291 &#32;&#32;<link linkend="__c_index_8cpp_1a69a3b1b393fd8cd3cf50802b2a5b08af">clang_disposeTokens</link>(TU,&#32;tokens,&#32;num_tokens);
+04292 
+04293 &#32;teardown:
+04294 &#32;&#32;<link linkend="_c-index-test_8c_1a40fceb7e4c2e16f5bce47bae394b973a">PrintDiagnostics</link>(TU);
+04295 &#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+04296 &#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(CIdx);
+04297 &#32;&#32;free(filename);
+04298 &#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+04299 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;errorCode;
+04300 }
+</programlisting><para>
+References <link linkend="_c-index-test_8c_source_1l02331">parse_file_line_column()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1ae302b130b55b146b76be601a70212b8a"/>    <section>
+    <title>print_completion_contexts()</title>
+<indexterm><primary>print_completion_contexts</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>print_completion_contexts</secondary></indexterm>
+<para><computeroutput>void print_completion_contexts (unsigned long long contexts, FILE * file)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l02592">2592</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>02592 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+02593 &#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Completion&#32;contexts:\n&quot;</emphasis>);
+02594 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;==&#32;CXCompletionContext_Unknown)&#32;{
+02595 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Unknown\n&quot;</emphasis>);
+02596 &#32;&#32;}
+02597 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_AnyType)&#32;{
+02598 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Any&#32;type\n&quot;</emphasis>);
+02599 &#32;&#32;}
+02600 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_AnyValue)&#32;{
+02601 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Any&#32;value\n&quot;</emphasis>);
+02602 &#32;&#32;}
+02603 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCObjectValue)&#32;{
+02604 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;object&#32;value\n&quot;</emphasis>);
+02605 &#32;&#32;}
+02606 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCSelectorValue)&#32;{
+02607 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;selector&#32;value\n&quot;</emphasis>);
+02608 &#32;&#32;}
+02609 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_CXXClassTypeValue)&#32;{
+02610 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;C++&#32;class&#32;type&#32;value\n&quot;</emphasis>);
+02611 &#32;&#32;}
+02612 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_DotMemberAccess)&#32;{
+02613 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Dot&#32;member&#32;access\n&quot;</emphasis>);
+02614 &#32;&#32;}
+02615 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ArrowMemberAccess)&#32;{
+02616 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Arrow&#32;member&#32;access\n&quot;</emphasis>);
+02617 &#32;&#32;}
+02618 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCPropertyAccess)&#32;{
+02619 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;property&#32;access\n&quot;</emphasis>);
+02620 &#32;&#32;}
+02621 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_EnumTag)&#32;{
+02622 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Enum&#32;tag\n&quot;</emphasis>);
+02623 &#32;&#32;}
+02624 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_UnionTag)&#32;{
+02625 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Union&#32;tag\n&quot;</emphasis>);
+02626 &#32;&#32;}
+02627 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_StructTag)&#32;{
+02628 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Struct&#32;tag\n&quot;</emphasis>);
+02629 &#32;&#32;}
+02630 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ClassTag)&#32;{
+02631 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Class&#32;name\n&quot;</emphasis>);
+02632 &#32;&#32;}
+02633 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_Namespace)&#32;{
+02634 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Namespace&#32;or&#32;namespace&#32;alias\n&quot;</emphasis>);
+02635 &#32;&#32;}
+02636 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_NestedNameSpecifier)&#32;{
+02637 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Nested&#32;name&#32;specifier\n&quot;</emphasis>);
+02638 &#32;&#32;}
+02639 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCInterface)&#32;{
+02640 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;interface\n&quot;</emphasis>);
+02641 &#32;&#32;}
+02642 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCProtocol)&#32;{
+02643 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;protocol\n&quot;</emphasis>);
+02644 &#32;&#32;}
+02645 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCCategory)&#32;{
+02646 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;category\n&quot;</emphasis>);
+02647 &#32;&#32;}
+02648 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCInstanceMessage)&#32;{
+02649 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;instance&#32;method\n&quot;</emphasis>);
+02650 &#32;&#32;}
+02651 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCClassMessage)&#32;{
+02652 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;class&#32;method\n&quot;</emphasis>);
+02653 &#32;&#32;}
+02654 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_ObjCSelectorName)&#32;{
+02655 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Objective-C&#32;selector&#32;name\n&quot;</emphasis>);
+02656 &#32;&#32;}
+02657 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_MacroName)&#32;{
+02658 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Macro&#32;name\n&quot;</emphasis>);
+02659 &#32;&#32;}
+02660 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(contexts&#32;&amp;&#32;CXCompletionContext_NaturalLanguage)&#32;{
+02661 &#32;&#32;&#32;&#32;fprintf(file,&#32;<emphasis role="stringliteral">&quot;Natural&#32;language\n&quot;</emphasis>);
+02662 &#32;&#32;}
+02663 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1a846a90dd895ad8ab4948dfd8b42e88c1"/>    <section>
+    <title>print_usrs()</title>
+<indexterm><primary>print_usrs</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>print_usrs</secondary></indexterm>
+<para><computeroutput>int print_usrs (const char ** I, const char ** E)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l04421">4421</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>04421 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+04422 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(I&#32;!=&#32;E)&#32;{
+04423 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*kind&#32;=&#32;*I;
+04424 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;len&#32;=&#32;strlen(kind);
+04425 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(len)&#32;{
+04426 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;8:
+04427 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(memcmp(kind,&#32;<emphasis role="stringliteral">&quot;ObjCIvar&quot;</emphasis>,&#32;8)&#32;==&#32;0)&#32;{
+04428 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;2&#32;&gt;=&#32;E)
+04429 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;insufficient_usr(kind,&#32;<emphasis role="stringliteral">&quot;&lt;ivar&#32;name&gt;&#32;&lt;class&#32;USR&gt;&quot;</emphasis>);
+04430 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!isUSR(I[2]))
+04431 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;not_usr(<emphasis role="stringliteral">&quot;&lt;class&#32;USR&gt;&quot;</emphasis>,&#32;I[2]);
+04432 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+04433 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;x&#32;=&#32;createCXString(I[2]);
+04434 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_usr(<link linkend="__c_index_u_s_rs_8cpp_1a0a694bd3222726fa935bec5d6c6ffa74">clang_constructUSR_ObjCIvar</link>(I[1],&#32;x));
+04435 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04436 
+04437 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;+=&#32;3;
+04438 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04439 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04440 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04441 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;9:
+04442 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(memcmp(kind,&#32;<emphasis role="stringliteral">&quot;ObjCClass&quot;</emphasis>,&#32;9)&#32;==&#32;0)&#32;{
+04443 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;1&#32;&gt;=&#32;E)
+04444 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;insufficient_usr(kind,&#32;<emphasis role="stringliteral">&quot;&lt;class&#32;name&gt;&quot;</emphasis>);
+04445 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_usr(<link linkend="__c_index_u_s_rs_8cpp_1afa75d3cdc7f1246aa196336006b6b17e">clang_constructUSR_ObjCClass</link>(I[1]));
+04446 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;+=&#32;2;
+04447 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04448 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04449 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04450 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;10:
+04451 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(memcmp(kind,&#32;<emphasis role="stringliteral">&quot;ObjCMethod&quot;</emphasis>,&#32;10)&#32;==&#32;0)&#32;{
+04452 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;3&#32;&gt;=&#32;E)
+04453 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;insufficient_usr(kind,&#32;<emphasis role="stringliteral">&quot;&lt;method&#32;selector&gt;&#32;&quot;</emphasis>
+04454 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="stringliteral">&quot;[0=class&#32;method|1=instance&#32;method]&#32;&lt;class&#32;USR&gt;&quot;</emphasis>);
+04455 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!isUSR(I[3]))
+04456 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;not_usr(<emphasis role="stringliteral">&quot;&lt;class&#32;USR&gt;&quot;</emphasis>,&#32;I[3]);
+04457 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+04458 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;x&#32;=&#32;createCXString(I[3]);
+04459 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_usr(<link linkend="__c_index_u_s_rs_8cpp_1a57441154398db67af15555136489c8da">clang_constructUSR_ObjCMethod</link>(I[1],&#32;atoi(I[2]),&#32;x));
+04460 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04461 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;+=&#32;4;
+04462 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04463 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04464 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04465 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;12:
+04466 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(memcmp(kind,&#32;<emphasis role="stringliteral">&quot;ObjCCategory&quot;</emphasis>,&#32;12)&#32;==&#32;0)&#32;{
+04467 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;2&#32;&gt;=&#32;E)
+04468 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;insufficient_usr(kind,&#32;<emphasis role="stringliteral">&quot;&lt;class&#32;name&gt;&#32;&lt;category&#32;name&gt;&quot;</emphasis>);
+04469 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_usr(<link linkend="__c_index_u_s_rs_8cpp_1a100f21ca740fca2384413c0e8fbb26ba">clang_constructUSR_ObjCCategory</link>(I[1],&#32;I[2]));
+04470 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;+=&#32;3;
+04471 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04472 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04473 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(memcmp(kind,&#32;<emphasis role="stringliteral">&quot;ObjCProtocol&quot;</emphasis>,&#32;12)&#32;==&#32;0)&#32;{
+04474 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;1&#32;&gt;=&#32;E)
+04475 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;insufficient_usr(kind,&#32;<emphasis role="stringliteral">&quot;&lt;protocol&#32;name&gt;&quot;</emphasis>);
+04476 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_usr(<link linkend="__c_index_u_s_rs_8cpp_1ad9eadd6627e168000a1d8a0a487f04ec">clang_constructUSR_ObjCProtocol</link>(I[1]));
+04477 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;+=&#32;2;
+04478 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04479 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04480 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(memcmp(kind,&#32;<emphasis role="stringliteral">&quot;ObjCProperty&quot;</emphasis>,&#32;12)&#32;==&#32;0)&#32;{
+04481 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;+&#32;2&#32;&gt;=&#32;E)
+04482 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;insufficient_usr(kind,&#32;<emphasis role="stringliteral">&quot;&lt;property&#32;name&gt;&#32;&lt;class&#32;USR&gt;&quot;</emphasis>);
+04483 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!isUSR(I[2]))
+04484 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;not_usr(<emphasis role="stringliteral">&quot;&lt;class&#32;USR&gt;&quot;</emphasis>,&#32;I[2]);
+04485 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+04486 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXString&#32;x&#32;=&#32;createCXString(I[2]);
+04487 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;print_usr(<link linkend="__c_index_u_s_rs_8cpp_1a06209d1976eb61cf961c047c4ceb0ee4">clang_constructUSR_ObjCProperty</link>(I[1],&#32;x));
+04488 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04489 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;I&#32;+=&#32;3;
+04490 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04491 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+04492 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04493 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+04494 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04495 &#32;&#32;&#32;&#32;}
+04496 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04497 &#32;&#32;}
+04498 
+04499 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(I&#32;!=&#32;E)&#32;{
+04500 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Invalid&#32;USR&#32;kind:&#32;%s\n&quot;</emphasis>,&#32;*I);
+04501 &#32;&#32;&#32;&#32;display_usrs();
+04502 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+04503 &#32;&#32;}
+04504 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+04505 }
+</programlisting><para>
+Referenced by <link linkend="_c-index-test_8c_source_1l04507">print_usrs_file()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a0847878e5ec5c011f566e2571cba418e"/>    <section>
+    <title>print_usrs_file()</title>
+<indexterm><primary>print_usrs_file</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>print_usrs_file</secondary></indexterm>
+<para><computeroutput>int print_usrs_file (const char * file_name)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l04507">4507</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>04507 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+04508 &#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;line[2048];
+04509 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*args[128];
+04510 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;numChars&#32;=&#32;0;
+04511 
+04512 &#32;&#32;FILE&#32;*fp&#32;=&#32;fopen(file_name,&#32;<emphasis role="stringliteral">&quot;r&quot;</emphasis>);
+04513 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!fp)&#32;{
+04514 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;error:&#32;cannot&#32;open&#32;&apos;%s&apos;\n&quot;</emphasis>,&#32;file_name);
+04515 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+04516 &#32;&#32;}
+04517 
+04518 &#32;&#32;<emphasis role="comment">/*&#32;This&#32;code&#32;is&#32;not&#32;really&#32;all&#32;that&#32;safe,&#32;but&#32;it&#32;works&#32;fine&#32;for&#32;testing.&#32;*/</emphasis>
+04519 &#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(!feof(fp))&#32;{
+04520 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">char</emphasis>&#32;c&#32;=&#32;fgetc(fp);
+04521 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(c&#32;==&#32;<emphasis role="charliteral">&apos;\n&apos;</emphasis>)&#32;{
+04522 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;
+04523 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*s&#32;=&#32;0;
+04524 
+04525 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(numChars&#32;==&#32;0)
+04526 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04527 
+04528 &#32;&#32;&#32;&#32;&#32;&#32;line[numChars]&#32;=&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>;
+04529 &#32;&#32;&#32;&#32;&#32;&#32;numChars&#32;=&#32;0;
+04530 
+04531 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(line[0]&#32;==&#32;<emphasis role="charliteral">&apos;/&apos;</emphasis>&#32;&amp;&amp;&#32;line[1]&#32;==&#32;<emphasis role="charliteral">&apos;/&apos;</emphasis>)
+04532 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+04533 
+04534 &#32;&#32;&#32;&#32;&#32;&#32;s&#32;=&#32;strtok(line,&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>);
+04535 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(s)&#32;{
+04536 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;args[i]&#32;=&#32;s;
+04537 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;++i;
+04538 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;s&#32;=&#32;strtok(0,&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>);
+04539 &#32;&#32;&#32;&#32;&#32;&#32;}
+04540 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="_c-index-test_8c_1a846a90dd895ad8ab4948dfd8b42e88c1">print_usrs</link>(&amp;args[0],&#32;&amp;args[i]))
+04541 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+04542 &#32;&#32;&#32;&#32;}
+04543 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">else</emphasis>
+04544 &#32;&#32;&#32;&#32;&#32;&#32;line[numChars++]&#32;=&#32;c;
+04545 &#32;&#32;}
+04546 
+04547 &#32;&#32;fclose(fp);
+04548 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;0;
+04549 }
+</programlisting><para>
+References <link linkend="_c-index-test_8c_source_1l04421">print_usrs()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a6163717d21d3db3edb29824ce554d190"/>    <section>
+    <title>PrintDiagnostic()</title>
+<indexterm><primary>PrintDiagnostic</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PrintDiagnostic</secondary></indexterm>
+<para><computeroutput>void PrintDiagnostic (CXDiagnostic Diagnostic)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01189">1189</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01189 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01190 &#32;&#32;FILE&#32;*out&#32;=&#32;stderr;
+01191 &#32;&#32;CXFile&#32;file;
+01192 &#32;&#32;CXString&#32;Msg;
+01193 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;display_opts&#32;=&#32;CXDiagnostic_DisplaySourceLocation
+01194 &#32;&#32;&#32;&#32;|&#32;CXDiagnostic_DisplayColumn&#32;|&#32;CXDiagnostic_DisplaySourceRanges
+01195 &#32;&#32;&#32;&#32;|&#32;CXDiagnostic_DisplayOption;
+01196 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i,&#32;num_fixits;
+01197 
+01198 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_index_diagnostic_8cpp_1a4acc9ff12cb403c96d56e87359dfc7c7">clang_getDiagnosticSeverity</link>(Diagnostic)&#32;==&#32;CXDiagnostic_Ignored)
+01199 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01200 
+01201 &#32;&#32;Msg&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a3ed169ee4a472764c11724cc7768e6eb">clang_formatDiagnostic</link>(Diagnostic,&#32;display_opts);
+01202 &#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;%s\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(Msg));
+01203 &#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(Msg);
+01204 
+01205 &#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(<link linkend="__c_index_diagnostic_8cpp_1a1e0502917ec39f222133358991a1dd0a">clang_getDiagnosticLocation</link>(Diagnostic),
+01206 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;file,&#32;0,&#32;0,&#32;0);
+01207 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!file)
+01208 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+01209 
+01210 &#32;&#32;num_fixits&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a328fab9bb901e108adb1b5ec5f3ed748">clang_getDiagnosticNumFixIts</link>(Diagnostic);
+01211 &#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Number&#32;FIX-ITs&#32;=&#32;%d\n&quot;</emphasis>,&#32;num_fixits);
+01212 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0;&#32;i&#32;!=&#32;num_fixits;&#32;++i)&#32;{
+01213 &#32;&#32;&#32;&#32;CXSourceRange&#32;range;
+01214 &#32;&#32;&#32;&#32;CXString&#32;insertion_text&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a3038a0534d19be1e8f0adc11373b3c69">clang_getDiagnosticFixIt</link>(Diagnostic,&#32;i,&#32;&amp;range);
+01215 &#32;&#32;&#32;&#32;CXSourceLocation&#32;start&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1a14a10dd8d9a4069c4fc1a7be62f58874">clang_getRangeStart</link>(range);
+01216 &#32;&#32;&#32;&#32;CXSourceLocation&#32;end&#32;=&#32;<link linkend="__c_x_source_location_8cpp_1a146c4bda0251ee320dc6e4b1b3fbb919">clang_getRangeEnd</link>(range);
+01217 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column;
+01218 &#32;&#32;&#32;&#32;CXFile&#32;start_file,&#32;end_file;
+01219 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(start,&#32;&amp;start_file,&#32;&amp;start_line,
+01220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&amp;start_column,&#32;0);
+01221 &#32;&#32;&#32;&#32;<link linkend="__c_x_source_location_8cpp_1ae2d805527135aac587ca5c8017bde0ef">clang_getSpellingLocation</link>(end,&#32;&amp;end_file,&#32;&amp;end_line,&#32;&amp;end_column,&#32;0);
+01222 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<link linkend="__c_x_source_location_8cpp_1aa18c665664a0dd6ebf8eae9954a3a696">clang_equalLocations</link>(start,&#32;end))&#32;{
+01223 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Insertion.&#32;*/</emphasis>
+01224 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(start_file&#32;==&#32;file)
+01225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(out,&#32;<emphasis role="stringliteral">&quot;FIX-IT:&#32;Insert&#32;\&quot;%s\&quot;&#32;at&#32;%d:%d\n&quot;</emphasis>,
+01226 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(insertion_text),&#32;start_line,&#32;start_column);
+01227 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(strcmp(<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(insertion_text),&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>)&#32;==&#32;0)&#32;{
+01228 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Removal.&#32;*/</emphasis>
+01229 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(start_file&#32;==&#32;file&#32;&amp;&amp;&#32;end_file&#32;==&#32;file)&#32;{
+01230 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(out,&#32;<emphasis role="stringliteral">&quot;FIX-IT:&#32;Remove&#32;&quot;</emphasis>);
+01231 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintExtent(out,&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column);
+01232 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(out,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+01233 &#32;&#32;&#32;&#32;&#32;&#32;}
+01234 &#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+01235 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="comment">/*&#32;Replacement.&#32;*/</emphasis>
+01236 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(start_file&#32;==&#32;end_file)&#32;{
+01237 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(out,&#32;<emphasis role="stringliteral">&quot;FIX-IT:&#32;Replace&#32;&quot;</emphasis>);
+01238 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;PrintExtent(out,&#32;start_line,&#32;start_column,&#32;end_line,&#32;end_column);
+01239 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(out,&#32;<emphasis role="stringliteral">&quot;&#32;with&#32;\&quot;%s\&quot;\n&quot;</emphasis>,&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(insertion_text));
+01240 &#32;&#32;&#32;&#32;&#32;&#32;}
+01241 &#32;&#32;&#32;&#32;}
+01242 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(insertion_text);
+01243 &#32;&#32;}
+01244 }
+</programlisting><para>
+References <link linkend="__c_x_string_8cpp_source_1l00170">clang_disposeString()</link>, <link linkend="__c_x_source_location_8cpp_source_1l00046">clang_equalLocations()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00241">clang_formatDiagnostic()</link>, <link linkend="__c_x_string_8cpp_source_1l00163">clang_getCString()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00430">clang_getDiagnosticFixIt()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00372">clang_getDiagnosticLocation()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00424">clang_getDiagnosticNumFixIts()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00366">clang_getDiagnosticSeverity()</link>, <link linkend="__c_x_source_location_8cpp_source_1l00099">clang_getRangeEnd()</link>, <link linkend="__c_x_source_location_8cpp_source_1l00087">clang_getRangeStart()</link>, and <link linkend="__c_x_source_location_8cpp_source_1l00303">clang_getSpellingLocation()</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01246">PrintDiagnosticSet()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a40fceb7e4c2e16f5bce47bae394b973a"/>    <section>
+    <title>PrintDiagnostics()</title>
+<indexterm><primary>PrintDiagnostics</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PrintDiagnostics</secondary></indexterm>
+<para><computeroutput>void PrintDiagnostics (CXTranslationUnit TU)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01257">1257</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01257 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01258 &#32;&#32;CXDiagnosticSet&#32;TUSet&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a01fef60398b711267499e2eabd58806e">clang_getDiagnosticSetFromTU</link>(TU);
+01259 &#32;&#32;<link linkend="_c-index-test_8c_1a1edb92a2047f535a1f1407b9557cd10d">PrintDiagnosticSet</link>(TUSet);
+01260 &#32;&#32;<link linkend="__c_index_diagnostic_8cpp_1a0b2786b08bcfa94c6aebdb68249fcd85">clang_disposeDiagnosticSet</link>(TUSet);
+01261 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8cpp_source_1l00441">clang_disposeDiagnosticSet()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00226">clang_getDiagnosticSetFromTU()</link>, and <link linkend="_c-index-test_8c_source_1l01246">PrintDiagnosticSet()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a1edb92a2047f535a1f1407b9557cd10d"/>    <section>
+    <title>PrintDiagnosticSet()</title>
+<indexterm><primary>PrintDiagnosticSet</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PrintDiagnosticSet</secondary></indexterm>
+<para><computeroutput>void PrintDiagnosticSet (CXDiagnosticSet Set)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01246">1246</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01246 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01247 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0,&#32;n&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1a9861abba19ec80dae4db68998828261d">clang_getNumDiagnosticsInSet</link>(Set);
+01248 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(&#32;;&#32;i&#32;!=&#32;n&#32;;&#32;++i)&#32;{
+01249 &#32;&#32;&#32;&#32;CXDiagnostic&#32;Diag&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1acc45fefa1e17eade2d10177d4ff77851">clang_getDiagnosticInSet</link>(Set,&#32;i);
+01250 &#32;&#32;&#32;&#32;CXDiagnosticSet&#32;ChildDiags&#32;=&#32;<link linkend="__c_index_diagnostic_8cpp_1abca973dc6f01b106edd47a39f480dd8f">clang_getChildDiagnostics</link>(Diag);
+01251 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a6163717d21d3db3edb29824ce554d190">PrintDiagnostic</link>(Diag);
+01252 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(ChildDiags)
+01253 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1a1edb92a2047f535a1f1407b9557cd10d">PrintDiagnosticSet</link>(ChildDiags);
+01254 &#32;&#32;}&#32;&#32;
+01255 }
+</programlisting><para>
+References <link linkend="__c_index_diagnostic_8cpp_source_1l00456">clang_getChildDiagnostics()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00448">clang_getDiagnosticInSet()</link>, <link linkend="__c_index_diagnostic_8cpp_source_1l00464">clang_getNumDiagnosticsInSet()</link>, and <link linkend="_c-index-test_8c_source_1l01189">PrintDiagnostic()</link>.</para>
+<para>
+Referenced by <link linkend="_c-index-test_8c_source_1l01257">PrintDiagnostics()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a271f309ab673d301e539e00164b71483"/>    <section>
+    <title>PrintInclusionStack()</title>
+<indexterm><primary>PrintInclusionStack</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PrintInclusionStack</secondary></indexterm>
+<para><computeroutput>void PrintInclusionStack (CXTranslationUnit TU)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01440">1440</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01440 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01441 &#32;&#32;<link linkend="__c_index_inclusion_stack_8cpp_1a46a93eb16ff8f277bb63cbbe5d70d3ae">clang_getInclusions</link>(TU,&#32;<link linkend="_c-index-test_8c_1aeec77843d6ef3e3e453289ec2018c83d">InclusionVisitor</link>,&#32;NULL);
+01442 }
+</programlisting><para>
+References <link linkend="__c_index_inclusion_stack_8cpp_source_1l00069">clang_getInclusions()</link>, and <link linkend="_c-index-test_8c_source_1l01418">InclusionVisitor()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1ad807e8418e9685a5284b2bbb776ade49"/>    <section>
+    <title>PrintMemoryUsage()</title>
+<indexterm><primary>PrintMemoryUsage</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>PrintMemoryUsage</secondary></indexterm>
+<para><computeroutput>void PrintMemoryUsage (CXTranslationUnit TU)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01263">1263</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01263 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01264 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;total&#32;=&#32;0;
+01265 &#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;
+01266 &#32;&#32;CXTUResourceUsage&#32;usage&#32;=&#32;<link linkend="__c_index_8cpp_1a72299455a328faf612d238bf6aee6eb6">clang_getCXTUResourceUsage</link>(TU);
+01267 &#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Memory&#32;usage:\n&quot;</emphasis>);
+01268 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(i&#32;=&#32;0&#32;;&#32;i&#32;!=&#32;usage.numEntries;&#32;++i)&#32;{
+01269 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*name&#32;=&#32;<link linkend="__c_index_8cpp_1aeba9f6263fe5dbde18abb55b2f321a34">clang_getTUResourceUsageName</link>(usage.entries[i].kind);
+01270 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;<emphasis role="keywordtype">long</emphasis>&#32;amount&#32;=&#32;usage.entries[i].amount;
+01271 &#32;&#32;&#32;&#32;total&#32;+=&#32;amount;
+01272 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;%s&#32;:&#32;%ld&#32;bytes&#32;(%f&#32;MBytes)\n&quot;</emphasis>,&#32;name,&#32;amount,
+01273 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;((<emphasis role="keywordtype">double</emphasis>)&#32;amount)/(1024*1024));
+01274 &#32;&#32;}
+01275 &#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;TOTAL&#32;=&#32;%ld&#32;bytes&#32;(%f&#32;MBytes)\n&quot;</emphasis>,&#32;total,
+01276 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;((<emphasis role="keywordtype">double</emphasis>)&#32;total)/(1024*1024));
+01277 &#32;&#32;<link linkend="__c_index_8cpp_1a3e9a2455e3253920304adc26c1084a6f">clang_disposeCXTUResourceUsage</link>(usage);&#32;&#32;
+01278 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l08829">clang_disposeCXTUResourceUsage()</link>, <link linkend="__c_index_8cpp_source_1l08736">clang_getCXTUResourceUsage()</link>, and <link linkend="__c_index_8cpp_source_1l08687">clang_getTUResourceUsageName()</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a91e96908610b154b9dfe897de0e12b79"/>    <section>
+    <title>thread_runner()</title>
+<indexterm><primary>thread_runner</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>thread_runner</secondary></indexterm>
+<para><computeroutput>void thread_runner (void * client_data_v)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l04989">4989</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>04989 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+04990 &#32;&#32;<link linkend="_structthread__info">thread_info</link>&#32;*client_data&#32;=&#32;client_data_v;
+04991 &#32;&#32;client_data-&gt;<link linkend="_structthread__info_1ad2caaa988d61b6beba0b6d681a6589ae">result</link>&#32;=&#32;client_data-&gt;<link linkend="_structthread__info_1adc28060776617282f0c5a76431aec532">main_func</link>(client_data-&gt;<link linkend="_structthread__info_1a78ff8f016b665b19193b194f8a659f96">argc</link>,
+04992 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;client_data-&gt;<link linkend="_structthread__info_1a734b6a1187acc993b18983573234e93f">argv</link>);
+04993 }
+</programlisting><para>
+References <link linkend="_c-arcmt-test_8c_source_1l00093">thread_info::argc</link>, <link linkend="_c-arcmt-test_8c_source_1l00094">thread_info::argv</link>, <link linkend="_c-index-test_8c_source_1l04984">thread_info::main_func</link>, and <link linkend="_c-arcmt-test_8c_source_1l00095">thread_info::result</link>.</para>
+    </section><anchor xml:id="_c-index-test_8c_1a0511093879dc5155579f47448dc7f35a"/>    <section>
+    <title>USRVisitor()</title>
+<indexterm><primary>USRVisitor</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>USRVisitor</secondary></indexterm>
+<para><computeroutput>enum CXChildVisitResult USRVisitor (CXCursor C, CXCursor parent, CXClientData ClientData)</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l01284">1284</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>01393 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+01394 &#32;&#32;<link linkend="_struct_visitor_data">VisitorData</link>&#32;*Data&#32;=&#32;(<link linkend="_struct_visitor_data">VisitorData</link>&#32;*)ClientData;
+01395 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!Data-&gt;<link linkend="_struct_visitor_data_1a2adae660b33ba2270dd98ecffbec5fb7">Filter</link>&#32;||&#32;(C.kind&#32;==&#32;*(<emphasis role="keyword">enum</emphasis>&#32;CXCursorKind&#32;*)Data-&gt;<link linkend="_struct_visitor_data_1a2adae660b33ba2270dd98ecffbec5fb7">Filter</link>))&#32;{
+01396 &#32;&#32;&#32;&#32;CXString&#32;USR&#32;=&#32;<link linkend="__c_index_u_s_rs_8cpp_1ae603480d6cea9e6b8e4a3bc927c1f43b">clang_getCursorUSR</link>(C);
+01397 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">char</emphasis>&#32;*cstr&#32;=&#32;<link linkend="__c_x_string_8cpp_1acd478c1b1785e17c0fe377bd70a2195f">clang_getCString</link>(USR);
+01398 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!cstr&#32;||&#32;cstr[0]&#32;==&#32;<emphasis role="charliteral">&apos;\0&apos;</emphasis>)&#32;{
+01399 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(USR);
+01400 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+01401 &#32;&#32;&#32;&#32;}
+01402 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;//&#32;%s:&#32;%s&#32;%s&quot;</emphasis>,&#32;FileCheckPrefix,&#32;GetCursorSource(C),&#32;cstr);
+01403 
+01404 &#32;&#32;&#32;&#32;PrintCursorExtent(C);
+01405 &#32;&#32;&#32;&#32;printf(<emphasis role="stringliteral">&quot;\n&quot;</emphasis>);
+01406 &#32;&#32;&#32;&#32;<link linkend="__c_x_string_8cpp_1a46c85f1255580ed186aa6f7380a06883">clang_disposeString</link>(USR);
+01407 
+01408 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Recurse;
+01409 &#32;&#32;}
+01410 
+01411 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXChildVisit_Continue;
+01412 }
+</programlisting>    </section><anchor xml:id="_c-index-test_8c_1ab187a790df1b433ed87b4e13209297d6"/>    <section>
+    <title>write_pch_file()</title>
+<indexterm><primary>write_pch_file</primary><secondary>c-index-test.c</secondary></indexterm>
+<indexterm><primary>c-index-test.c</primary><secondary>write_pch_file</secondary></indexterm>
+<para><computeroutput>int write_pch_file (const char * filename, int argc, const char * argv[])</computeroutput></para><para>
+Definition at line <link linkend="_c-index-test_8c_source_1l04554">4554</link> of file <link linkend="_c-index-test_8c_source">c-index-test.c</link>.</para>
+<programlisting>04554 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+04555 &#32;&#32;CXIndex&#32;Idx;
+04556 &#32;&#32;CXTranslationUnit&#32;TU;
+04557 &#32;&#32;<emphasis role="keyword">struct&#32;</emphasis>CXUnsavedFile&#32;*unsaved_files&#32;=&#32;0;
+04558 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;num_unsaved_files&#32;=&#32;0;
+04559 &#32;&#32;<emphasis role="keyword">enum</emphasis>&#32;CXErrorCode&#32;Err;
+04560 &#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;result&#32;=&#32;0;
+04561 &#32;&#32;
+04562 &#32;&#32;Idx&#32;=&#32;<link linkend="__c_index_8cpp_1a3420c8e7e10a7ff7906130b207cbb763">clang_createIndex</link>(<emphasis role="comment">/*&#32;excludeDeclsFromPCH&#32;*/</emphasis>1,&#32;<emphasis role="comment">/*&#32;displayDiagnostics=*/</emphasis>1);
+04563 &#32;&#32;
+04564 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(parse_remapped_files(argc,&#32;argv,&#32;0,&#32;&amp;unsaved_files,&#32;&amp;num_unsaved_files))&#32;{
+04565 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+04566 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;-1;
+04567 &#32;&#32;}
+04568 
+04569 &#32;&#32;Err&#32;=&#32;<link linkend="__c_index_8cpp_1a3ddd508cc891d95a82b747955738249a">clang_parseTranslationUnit2</link>(
+04570 &#32;&#32;&#32;&#32;&#32;&#32;Idx,&#32;0,&#32;argv&#32;+&#32;num_unsaved_files,&#32;argc&#32;-&#32;num_unsaved_files,
+04571 &#32;&#32;&#32;&#32;&#32;&#32;unsaved_files,&#32;num_unsaved_files,
+04572 &#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit_Incomplete&#32;|
+04573 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit_DetailedPreprocessingRecord&#32;|
+04574 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit_ForSerialization,
+04575 &#32;&#32;&#32;&#32;&#32;&#32;&amp;TU);
+04576 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(Err&#32;!=&#32;CXError_Success)&#32;{
+04577 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;load&#32;translation&#32;unit!\n&quot;</emphasis>);
+04578 &#32;&#32;&#32;&#32;describeLibclangFailure(Err);
+04579 &#32;&#32;&#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+04580 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+04581 &#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+04582 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+04583 &#32;&#32;}
+04584 
+04585 &#32;&#32;<emphasis role="keywordflow">switch</emphasis>&#32;(<link linkend="__c_index_8cpp_1a1be3baac9f48e48ba4119cbcdaf35391">clang_saveTranslationUnit</link>(TU,&#32;filename,&#32;
+04586 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="__c_index_8cpp_1af7f47ec6ccc9f05c092f813102672290">clang_defaultSaveOptions</link>(TU)))&#32;{
+04587 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXSaveError_None:
+04588 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04589 
+04590 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXSaveError_TranslationErrors:
+04591 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;write&#32;PCH&#32;file&#32;%s:&#32;translation&#32;errors\n&quot;</emphasis>,&#32;
+04592 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename);
+04593 &#32;&#32;&#32;&#32;result&#32;=&#32;2;&#32;&#32;&#32;&#32;
+04594 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04595 
+04596 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXSaveError_InvalidTU:
+04597 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;write&#32;PCH&#32;file&#32;%s:&#32;invalid&#32;translation&#32;unit\n&quot;</emphasis>,&#32;
+04598 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;filename);
+04599 &#32;&#32;&#32;&#32;result&#32;=&#32;3;&#32;&#32;&#32;&#32;
+04600 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04601 
+04602 &#32;&#32;<emphasis role="keywordflow">case</emphasis>&#32;CXSaveError_Unknown:
+04603 &#32;&#32;<emphasis role="keywordflow">default</emphasis>:
+04604 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;Unable&#32;to&#32;write&#32;PCH&#32;file&#32;%s:&#32;unknown&#32;error&#32;\n&quot;</emphasis>,&#32;filename);
+04605 &#32;&#32;&#32;&#32;result&#32;=&#32;1;
+04606 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">break</emphasis>;
+04607 &#32;&#32;}
+04608 &#32;&#32;
+04609 &#32;&#32;<link linkend="__c_index_8cpp_1a3af88c13004a1954abd6dc956faff3be">clang_disposeTranslationUnit</link>(TU);
+04610 &#32;&#32;<link linkend="_c-index-test_8c_1af28d9933e8a8fd14e8394a1e7f9f6379">free_remapped_files</link>(unsaved_files,&#32;num_unsaved_files);
+04611 &#32;&#32;<link linkend="__c_index_8cpp_1aea91ddf5e996cba0de2f781cb17db1d5">clang_disposeIndex</link>(Idx);
+04612 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+04613 }
+</programlisting><para>
+References <link linkend="__c_index_8cpp_source_1l03436">clang_createIndex()</link>.</para>
+</section>
+</section>
+</section>

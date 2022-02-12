@@ -1,0 +1,116 @@
+\hypertarget{classclang_1_1cxcursor_1_1_macro_expansion_cursor}{}\doxysection{clang\+::cxcursor\+::Macro\+Expansion\+Cursor Class Reference}
+\label{classclang_1_1cxcursor_1_1_macro_expansion_cursor}\index{clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}}
+
+
+{\ttfamily \#include $<$CXCursor.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a21870ac53120694276ccf4fe5a6e4e47}{Macro\+Expansion\+Cursor}} (CXCursor C)
+\item 
+const Identifier\+Info $\ast$ \mbox{\hyperlink{classclang_1_1cxcursor_1_1_macro_expansion_cursor_aab31344cd77f9da9c4ea0fc96017270e}{get\+Name}} () const
+\item 
+const Macro\+Definition\+Record $\ast$ \mbox{\hyperlink{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a489d2d3b3d09eeef19d31d051001d8e0}{get\+Definition}} () const
+\item 
+Source\+Range \mbox{\hyperlink{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a7f3033c8d9ba9947b24ba0f3d0056f21}{get\+Source\+Range}} () const
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Wraps a macro expansion cursor and provides a common interface for a normal macro expansion cursor or a \char`\"{}pseudo\char`\"{} one.
+
+\char`\"{}\+Pseudo\char`\"{} macro expansion cursors (essentially a macro definition along with a source location) are created in special cases, for example they can be created for identifiers inside macro definitions, if these identifiers are macro names. 
+
+Definition at line 166 of file CXCursor.\+h.
+
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a21870ac53120694276ccf4fe5a6e4e47}\label{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a21870ac53120694276ccf4fe5a6e4e47}} 
+\index{clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}!MacroExpansionCursor@{MacroExpansionCursor}}
+\index{MacroExpansionCursor@{MacroExpansionCursor}!clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}}
+\doxysubsubsection{\texorpdfstring{MacroExpansionCursor()}{MacroExpansionCursor()}}
+{\footnotesize\ttfamily clang\+::cxcursor\+::\+Macro\+Expansion\+Cursor\+::\+Macro\+Expansion\+Cursor (\begin{DoxyParamCaption}\item[{CXCursor}]{C }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 184 of file CXCursor.\+h.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{184                                    : C(C) \{}
+\DoxyCodeLine{185     assert(C.kind == CXCursor\_MacroExpansion);}
+\DoxyCodeLine{186   \}}
+
+\end{DoxyCode}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a489d2d3b3d09eeef19d31d051001d8e0}\label{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a489d2d3b3d09eeef19d31d051001d8e0}} 
+\index{clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}!getDefinition@{getDefinition}}
+\index{getDefinition@{getDefinition}!clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}}
+\doxysubsubsection{\texorpdfstring{getDefinition()}{getDefinition()}}
+{\footnotesize\ttfamily const Macro\+Definition\+Record $\ast$ cxcursor\+::\+Macro\+Expansion\+Cursor\+::get\+Definition (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+
+
+Definition at line 1023 of file CXCursor.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1023                                                   \{}
+\DoxyCodeLine{1024   \textcolor{keywordflow}{if} (isPseudo())}
+\DoxyCodeLine{1025     \textcolor{keywordflow}{return} getAsMacroDefinition();}
+\DoxyCodeLine{1026   \textcolor{keywordflow}{return} getAsMacroExpansion()-\/>getDefinition();}
+\DoxyCodeLine{1027 \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classclang_1_1cxcursor_1_1_macro_expansion_cursor_aab31344cd77f9da9c4ea0fc96017270e}\label{classclang_1_1cxcursor_1_1_macro_expansion_cursor_aab31344cd77f9da9c4ea0fc96017270e}} 
+\index{clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}!getName@{getName}}
+\index{getName@{getName}!clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}}
+\doxysubsubsection{\texorpdfstring{getName()}{getName()}}
+{\footnotesize\ttfamily const Identifier\+Info $\ast$ cxcursor\+::\+Macro\+Expansion\+Cursor\+::get\+Name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+
+
+Definition at line 1017 of file CXCursor.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1017                                                                   \{}
+\DoxyCodeLine{1018   \textcolor{keywordflow}{if} (isPseudo())}
+\DoxyCodeLine{1019     \textcolor{keywordflow}{return} getAsMacroDefinition()-\/>getName();}
+\DoxyCodeLine{1020   \textcolor{keywordflow}{return} getAsMacroExpansion()-\/>getName();}
+\DoxyCodeLine{1021 \}}
+
+\end{DoxyCode}
+
+
+Referenced by Reporter.\+Text\+Parameter\+::get\+HTML(), Reporter.\+Selection\+Parameter\+::get\+HTML(), and Reporter.\+Reporter\+Parameter\+::get\+Value().
+
+\mbox{\Hypertarget{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a7f3033c8d9ba9947b24ba0f3d0056f21}\label{classclang_1_1cxcursor_1_1_macro_expansion_cursor_a7f3033c8d9ba9947b24ba0f3d0056f21}} 
+\index{clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}!getSourceRange@{getSourceRange}}
+\index{getSourceRange@{getSourceRange}!clang::cxcursor::MacroExpansionCursor@{clang::cxcursor::MacroExpansionCursor}}
+\doxysubsubsection{\texorpdfstring{getSourceRange()}{getSourceRange()}}
+{\footnotesize\ttfamily Source\+Range cxcursor\+::\+Macro\+Expansion\+Cursor\+::get\+Source\+Range (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+
+
+Definition at line 1028 of file CXCursor.\+cpp.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1028                                                                \{}
+\DoxyCodeLine{1029   \textcolor{keywordflow}{if} (isPseudo())}
+\DoxyCodeLine{1030     \textcolor{keywordflow}{return} getPseudoLoc();}
+\DoxyCodeLine{1031   \textcolor{keywordflow}{return} getAsMacroExpansion()-\/>getSourceRange();}
+\DoxyCodeLine{1032 \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_c_x_cursor_8h}{CXCursor.\+h}}\item 
+/\+Users/maximilian/clang-\/llvm/clang/tools/libclang/\mbox{\hyperlink{_c_x_cursor_8cpp}{CXCursor.\+cpp}}\end{DoxyCompactItemize}

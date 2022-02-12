@@ -1,0 +1,73 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/apinotes-test/APINotesTest.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/apinotes-test/APINotesTest.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'clang/APINotes/APINotesYAMLCompiler\&.h'\fP
+.br
+\fC#include 'llvm/Support/CommandLine\&.h'\fP
+.br
+\fC#include 'llvm/Support/FileSystem\&.h'\fP
+.br
+\fC#include 'llvm/Support/MemoryBuffer\&.h'\fP
+.br
+\fC#include 'llvm/Support/Signals\&.h'\fP
+.br
+\fC#include 'llvm/Support/ToolOutputFile\&.h'\fP
+.br
+\fC#include 'llvm/Support/WithColor\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, const char **argv)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, const char ** argv)"
+
+.PP
+Definition at line 25 of file APINotesTest\&.cpp\&.
+.PP
+.nf
+25                                       {
+26   const bool DisableCrashReporting = true;
+27   llvm::sys::PrintStackTraceOnErrorSignal(argv[0], DisableCrashReporting);
+28   llvm::cl::ParseCommandLineOptions(argc, argv);
+29 
+30   auto Error = [](const llvm::Twine &Msg) {
+31     llvm::WithColor::error(llvm::errs(), "apinotes-test") << Msg << '\n';
+32   };
+33 
+34   std::error_code EC;
+35   auto Out = std::make_unique<llvm::ToolOutputFile>(OutputFileName, EC,
+36                                                     llvm::sys::fs::OF_None);
+37   if (EC) {
+38     Error("failed to open '" + OutputFileName + "': " + EC\&.message());
+39     return EXIT_FAILURE;
+40   }
+41 
+42   for (const std::string &Notes : APINotes) {
+43     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> NotesOrError =
+44         llvm::MemoryBuffer::getFileOrSTDIN(Notes);
+45     if (std::error_code EC = NotesOrError\&.getError()) {
+46       llvm::errs() << EC\&.message() << '\n';
+47       return EXIT_FAILURE;
+48     }
+49 
+50     clang::api_notes::parseAndDumpAPINotes((*NotesOrError)->getBuffer(),
+51                                            Out->os());
+52   }
+53 
+54   return EXIT_SUCCESS;
+55 }
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

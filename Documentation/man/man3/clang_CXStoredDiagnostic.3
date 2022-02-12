@@ -1,0 +1,416 @@
+.TH "clang::CXStoredDiagnostic" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+clang::CXStoredDiagnostic \- The storage behind a CXDiagnostic\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <CIndexDiagnostic\&.h>\fP
+.PP
+Inherits \fBclang::CXDiagnosticImpl\fP\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBKind\fP { \fBStoredDiagnosticKind\fP, \fBLoadedDiagnosticKind\fP, \fBCustomNoteDiagnosticKind\fP }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBCXStoredDiagnostic\fP (const StoredDiagnostic &\fBDiag\fP, const LangOptions &\fBLangOpts\fP)"
+.br
+.ti -1c
+.RI "\fB~CXStoredDiagnostic\fP () override"
+.br
+.ti -1c
+.RI "CXDiagnosticSeverity \fBgetSeverity\fP () const override"
+.br
+.RI "Return the severity of the diagnostic\&. "
+.ti -1c
+.RI "CXSourceLocation \fBgetLocation\fP () const override"
+.br
+.RI "Return the location of the diagnostic\&. "
+.ti -1c
+.RI "CXString \fBgetSpelling\fP () const override"
+.br
+.RI "Return the spelling of the diagnostic\&. "
+.ti -1c
+.RI "CXString \fBgetDiagnosticOption\fP (CXString *Disable) const override"
+.br
+.RI "Return the text for the diagnostic option\&. "
+.ti -1c
+.RI "unsigned \fBgetCategory\fP () const override"
+.br
+.RI "Return the category of the diagnostic\&. "
+.ti -1c
+.RI "CXString \fBgetCategoryText\fP () const override"
+.br
+.RI "Return the category string of the diagnostic\&. "
+.ti -1c
+.RI "unsigned \fBgetNumRanges\fP () const override"
+.br
+.RI "Return the number of source ranges for the diagnostic\&. "
+.ti -1c
+.RI "CXSourceRange \fBgetRange\fP (unsigned Range) const override"
+.br
+.RI "Return the source ranges for the diagnostic\&. "
+.ti -1c
+.RI "unsigned \fBgetNumFixIts\fP () const override"
+.br
+.RI "Return the number of FixIts\&. "
+.ti -1c
+.RI "CXString \fBgetFixIt\fP (unsigned FixIt, CXSourceRange *ReplacementRange) const override"
+.br
+.RI "Return the FixIt information (source range and inserted text)\&. "
+.ti -1c
+.RI "\fBKind\fP \fBgetKind\fP () const"
+.br
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP & \fBgetChildDiagnostics\fP ()"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static bool \fBclassof\fP (const \fBCXDiagnosticImpl\fP *D)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "const StoredDiagnostic & \fBDiag\fP"
+.br
+.ti -1c
+.RI "const LangOptions & \fBLangOpts\fP"
+.br
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBappend\fP (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)"
+.br
+.in -1c
+.SS "Protected Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBCXDiagnosticSetImpl\fP \fBChildDiags\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The storage behind a CXDiagnostic\&. 
+.PP
+Definition at line 111 of file CIndexDiagnostic\&.h\&.
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBclang::CXDiagnosticImpl::Kind\fP\fC [inherited]\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIStoredDiagnosticKind \fP\fP
+.TP
+\fB\fILoadedDiagnosticKind \fP\fP
+.TP
+\fB\fICustomNoteDiagnosticKind \fP\fP
+.PP
+Definition at line 56 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+56             { StoredDiagnosticKind, LoadedDiagnosticKind,
+57               CustomNoteDiagnosticKind };
+.fi
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "clang::CXStoredDiagnostic::CXStoredDiagnostic (const StoredDiagnostic & Diag, const LangOptions & LangOpts)\fC [inline]\fP"
+
+.PP
+Definition at line 115 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+117     : CXDiagnosticImpl(StoredDiagnosticKind),
+118       Diag(Diag), LangOpts(LangOpts) { }
+.fi
+.SS "clang::CXStoredDiagnostic::~CXStoredDiagnostic ()\fC [inline]\fP, \fC [override]\fP"
+
+.PP
+Definition at line 120 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+120 {}
+.fi
+.SH "Member Function Documentation"
+.PP 
+.SS "void clang::CXDiagnosticImpl::append (std::unique_ptr< \fBCXDiagnosticImpl\fP > D)\fC [inline]\fP, \fC [protected]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 102 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+102                                                  {
+103     ChildDiags\&.appendDiagnostic(std::move(D));
+104   }
+.fi
+.PP
+References clang::CXDiagnosticSetImpl::appendDiagnostic(), and clang::CXDiagnosticImpl::ChildDiags\&.
+.SS "static bool clang::CXStoredDiagnostic::classof (const \fBCXDiagnosticImpl\fP * D)\fC [inline]\fP, \fC [static]\fP"
+
+.PP
+Definition at line 153 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+153                                                  {
+154     return D->getKind() == StoredDiagnosticKind;
+155   }
+.fi
+.PP
+References clang::CXDiagnosticImpl::getKind(), and clang::CXDiagnosticImpl::StoredDiagnosticKind\&.
+.SS "unsigned CXStoredDiagnostic::getCategory () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the category of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 70 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+70                                                {
+71   return DiagnosticIDs::getCategoryNumberForDiag(Diag\&.getID());
+72 }
+.fi
+.SS "CXString CXStoredDiagnostic::getCategoryText () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the category string of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 74 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+74                                                    {
+75   unsigned catID = DiagnosticIDs::getCategoryNumberForDiag(Diag\&.getID());
+76   return cxstring::createRef(DiagnosticIDs::getCategoryNameFromID(catID));
+77 }
+.fi
+.PP
+References clang::cxstring::createRef()\&.
+.SS "\fBCXDiagnosticSetImpl\fP& clang::CXDiagnosticImpl::getChildDiagnostics ()\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 94 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+94                                              {
+95     return ChildDiags;
+96   }
+.fi
+.PP
+References clang::CXDiagnosticImpl::ChildDiags\&.
+.SS "CXString CXStoredDiagnostic::getDiagnosticOption (CXString * Disable) const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the text for the diagnostic option\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 52 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+52                                                                         {
+53   unsigned ID = Diag\&.getID();
+54   StringRef Option = DiagnosticIDs::getWarningOptionForDiag(ID);
+55   if (!Option\&.empty()) {
+56     if (Disable)
+57       *Disable = cxstring::createDup((Twine("-Wno-") + Option)\&.str());
+58     return cxstring::createDup((Twine("-W") + Option)\&.str());
+59   }
+60   
+61   if (ID == diag::fatal_too_many_errors) {
+62     if (Disable)
+63       *Disable = cxstring::createRef("-ferror-limit=0");
+64     return cxstring::createRef("-ferror-limit=");
+65   }
+66 
+67   return cxstring::createEmpty();
+68 }
+.fi
+.PP
+References clang::cxstring::createDup(), clang::cxstring::createEmpty(), and clang::cxstring::createRef()\&.
+.SS "CXString CXStoredDiagnostic::getFixIt (unsigned FixIt, CXSourceRange * ReplacementRange) const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the FixIt information (source range and inserted text)\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 99 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+100                                                                              {  
+101   const FixItHint &Hint = Diag\&.fixit_begin()[FixIt];
+102   if (ReplacementRange) {
+103     // Create a range that covers the entire replacement (or
+104     // removal) range, adjusting the end of the range to point to
+105     // the end of the token\&.
+106     *ReplacementRange = translateSourceRange(Diag\&.getLocation()\&.getManager(),
+107                                              LangOpts, Hint\&.RemoveRange);
+108   }
+109   return cxstring::createDup(Hint\&.CodeToInsert);
+110 }
+.fi
+.PP
+References clang::cxstring::createDup(), and clang::cxloc::translateSourceRange()\&.
+.SS "\fBKind\fP clang::CXDiagnosticImpl::getKind () const\fC [inline]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 92 of file CIndexDiagnostic\&.h\&.
+.PP
+.nf
+92 { return K; }
+.fi
+.PP
+Referenced by classof(), and clang::CXLoadedDiagnostic::classof()\&.
+.SS "CXSourceLocation CXStoredDiagnostic::getLocation () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the location of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 40 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+40                                                        {
+41   if (Diag\&.getLocation()\&.isInvalid())
+42     return clang_getNullLocation();
+43   
+44   return translateSourceLocation(Diag\&.getLocation()\&.getManager(),
+45                                  LangOpts, Diag\&.getLocation());
+46 }
+.fi
+.PP
+References clang_getNullLocation()\&.
+.SS "unsigned CXStoredDiagnostic::getNumFixIts () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the number of FixIts\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 93 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+93                                                 {
+94   if (Diag\&.getLocation()\&.isInvalid())
+95     return 0;    
+96   return Diag\&.fixit_size();
+97 }
+.fi
+.SS "unsigned CXStoredDiagnostic::getNumRanges () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the number of source ranges for the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 79 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+79                                                 {
+80   if (Diag\&.getLocation()\&.isInvalid())
+81     return 0;
+82   
+83   return Diag\&.range_size();
+84 }
+.fi
+.SS "CXSourceRange CXStoredDiagnostic::getRange (unsigned Range) const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the source ranges for the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 86 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+86                                                                    {
+87   assert(Diag\&.getLocation()\&.isValid());
+88   return translateSourceRange(Diag\&.getLocation()\&.getManager(),
+89                               LangOpts,
+90                               Diag\&.range_begin()[Range]);
+91 }
+.fi
+.PP
+References clang::cxloc::translateSourceRange()\&.
+.SS "CXDiagnosticSeverity CXStoredDiagnostic::getSeverity () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the severity of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 26 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+26                                                            {
+27   switch (Diag\&.getLevel()) {
+28     case DiagnosticsEngine::Ignored: return CXDiagnostic_Ignored;
+29     case DiagnosticsEngine::Note:    return CXDiagnostic_Note;
+30     case DiagnosticsEngine::Remark:
+31     // The 'Remark' level isn't represented in the stable API\&.
+32     case DiagnosticsEngine::Warning: return CXDiagnostic_Warning;
+33     case DiagnosticsEngine::Error:   return CXDiagnostic_Error;
+34     case DiagnosticsEngine::Fatal:   return CXDiagnostic_Fatal;
+35   }
+36   
+37   llvm_unreachable("Invalid diagnostic level");
+38 }
+.fi
+.SS "CXString CXStoredDiagnostic::getSpelling () const\fC [override]\fP, \fC [virtual]\fP"
+
+.PP
+Return the spelling of the diagnostic\&. 
+.PP
+Implements \fBclang::CXDiagnosticImpl\fP\&.
+.PP
+Definition at line 48 of file CXStoredDiagnostic\&.cpp\&.
+.PP
+.nf
+48                                                {
+49   return cxstring::createRef(Diag\&.getMessage());
+50 }
+.fi
+.PP
+References clang::cxstring::createRef()\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "\fBCXDiagnosticSetImpl\fP clang::CXDiagnosticImpl::ChildDiags\fC [protected]\fP, \fC [inherited]\fP"
+
+.PP
+Definition at line 100 of file CIndexDiagnostic\&.h\&.
+.PP
+Referenced by clang::CXDiagnosticImpl::append(), and clang::CXDiagnosticImpl::getChildDiagnostics()\&.
+.SS "const StoredDiagnostic& clang::CXStoredDiagnostic::Diag"
+
+.PP
+Definition at line 112 of file CIndexDiagnostic\&.h\&.
+.SS "const LangOptions& clang::CXStoredDiagnostic::LangOpts"
+
+.PP
+Definition at line 113 of file CIndexDiagnostic\&.h\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

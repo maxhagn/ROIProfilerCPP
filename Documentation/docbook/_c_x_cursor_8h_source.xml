@@ -1,0 +1,233 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_x_cursor_8h_source" xml:lang="en-US">
+<title>CXCursor.h</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CXCursor.h</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CXCursor.h&#32;-&#32;Routines&#32;for&#32;manipulating&#32;CXCursors&#32;-------------------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;routines&#32;for&#32;manipulating&#32;CXCursors.</emphasis>
+00010 <emphasis role="comment">//</emphasis>
+00011 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00012 
+00013 <emphasis role="preprocessor">#ifndef&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXCURSOR_H</emphasis>
+00014 <emphasis role="preprocessor">#define&#32;LLVM_CLANG_TOOLS_LIBCLANG_CXCURSOR_H</emphasis>
+00015 
+00016 <emphasis role="preprocessor">#include&#32;&quot;clang-c/Index.h&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/Basic/SourceLocation.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;llvm/ADT/PointerUnion.h&quot;</emphasis>
+00019 <emphasis role="preprocessor">#include&#32;&lt;utility&gt;</emphasis>
+00020 
+00021 <emphasis role="keyword">namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>&#32;{
+00022 
+00023 <emphasis role="keyword">class&#32;</emphasis>ASTContext;
+00024 <emphasis role="keyword">class&#32;</emphasis>ASTUnit;
+00025 <emphasis role="keyword">class&#32;</emphasis>Attr;
+00026 <emphasis role="keyword">class&#32;</emphasis>CXXBaseSpecifier;
+00027 <emphasis role="keyword">class&#32;</emphasis>Decl;
+00028 <emphasis role="keyword">class&#32;</emphasis>Expr;
+00029 <emphasis role="keyword">class&#32;</emphasis>FieldDecl;
+00030 <emphasis role="keyword">class&#32;</emphasis>InclusionDirective;
+00031 <emphasis role="keyword">class&#32;</emphasis>LabelStmt;
+00032 <emphasis role="keyword">class&#32;</emphasis>MacroDefinitionRecord;
+00033 <emphasis role="keyword">class&#32;</emphasis>MacroExpansion;
+00034 <emphasis role="keyword">class&#32;</emphasis>NamedDecl;
+00035 <emphasis role="keyword">class&#32;</emphasis>ObjCInterfaceDecl;
+00036 <emphasis role="keyword">class&#32;</emphasis>ObjCProtocolDecl;
+00037 <emphasis role="keyword">class&#32;</emphasis>OverloadedTemplateStorage;
+00038 <emphasis role="keyword">class&#32;</emphasis>OverloadExpr;
+00039 <emphasis role="keyword">class&#32;</emphasis>Stmt;
+00040 <emphasis role="keyword">class&#32;</emphasis>TemplateDecl;
+00041 <emphasis role="keyword">class&#32;</emphasis>TemplateName;
+00042 <emphasis role="keyword">class&#32;</emphasis>TypeDecl;
+00043 <emphasis role="keyword">class&#32;</emphasis>VarDecl;
+00044 <emphasis role="keyword">class&#32;</emphasis>IdentifierInfo;
+00045 
+00046 <emphasis role="keyword">namespace&#32;</emphasis>cxcursor&#32;{
+00047 
+00048 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a17dbc7b3a465bf9e70491f77a9a4f63b">getCursor</link>(CXTranslationUnit,&#32;SourceLocation);
+00049 
+<anchor xml:id="__c_x_cursor_8h_source_1l00050"/><link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">00050</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(<emphasis role="keyword">const</emphasis>&#32;clang::Attr&#32;*A,&#32;<emphasis role="keyword">const</emphasis>&#32;clang::Decl&#32;*Parent,
+00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+<anchor xml:id="__c_x_cursor_8h_source_1l00052"/><link linkend="_namespaceclang_1_1cxcursor_1afb6735904aa885f268ed7ac96cd7d62c">00052</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(<emphasis role="keyword">const</emphasis>&#32;clang::Decl&#32;*D,&#32;CXTranslationUnit&#32;TU,
+00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;RegionOfInterest&#32;=&#32;SourceRange(),
+00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;FirstInDeclGroup&#32;=&#32;<emphasis role="keyword">true</emphasis>);
+<anchor xml:id="__c_x_cursor_8h_source_1l00055"/><link linkend="_namespaceclang_1_1cxcursor_1a6821c2068a78ae14f1f106a8dc777101">00055</link> CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab61ec2059175833672e8e78a376bb218">MakeCXCursor</link>(<emphasis role="keyword">const</emphasis>&#32;clang::Stmt&#32;*S,&#32;<emphasis role="keyword">const</emphasis>&#32;clang::Decl&#32;*Parent,
+00056 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU,
+00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceRange&#32;RegionOfInterest&#32;=&#32;SourceRange());
+00058 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa8325b990acde766ecd9276d7d9df53a">MakeCXCursorInvalid</link>(CXCursorKind&#32;K,&#32;CXTranslationUnit&#32;TU&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>);
+00059 
+00061 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a81d6b09cb8995b57d394a8372437902a">MakeCursorObjCSuperClassRef</link>(ObjCInterfaceDecl&#32;*Super,
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXTranslationUnit&#32;TU);
+00063 
+00066 std::pair&lt;const&#32;ObjCInterfaceDecl&#32;*,&#32;SourceLocation&gt;
+00067 <link linkend="_namespaceclang_1_1cxcursor_1a071683bc881399c3bcadba5a4da408b2">getCursorObjCSuperClassRef</link>(CXCursor&#32;C);
+00068 
+00070 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac238ecc9f974783b9d0c2129f5aa675f">MakeCursorObjCProtocolRef</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCProtocolDecl&#32;*Proto,
+00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXTranslationUnit&#32;TU);
+00072 
+00075 std::pair&lt;const&#32;ObjCProtocolDecl&#32;*,&#32;SourceLocation&gt;
+00076 <link linkend="_namespaceclang_1_1cxcursor_1a1675d17bfec653da314fa2beff772829">getCursorObjCProtocolRef</link>(CXCursor&#32;C);
+00077 
+00079 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa0bea074dd325615cb85819eac47264e">MakeCursorObjCClassRef</link>(<emphasis role="keyword">const</emphasis>&#32;ObjCInterfaceDecl&#32;*Class,
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Loc,&#32;CXTranslationUnit&#32;TU);
+00081 
+00084 std::pair&lt;const&#32;ObjCInterfaceDecl&#32;*,&#32;SourceLocation&gt;
+00085 <link linkend="_namespaceclang_1_1cxcursor_1ad21fba4a3d5f6bdc63a19303b1cb42a3">getCursorObjCClassRef</link>(CXCursor&#32;C);
+00086 
+00088 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3534c264c1431ec3d09c975fcafa263d">MakeCursorTypeRef</link>(<emphasis role="keyword">const</emphasis>&#32;TypeDecl&#32;*Type,&#32;SourceLocation&#32;Loc,
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00090 
+00093 std::pair&lt;const&#32;TypeDecl&#32;*,&#32;SourceLocation&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ab0284c10c2cfeb2ffe43b99ec3e9dd9f">getCursorTypeRef</link>(CXCursor&#32;C);
+00094 
+00096 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac63e4fd5fdbaf88d0632a7682afbf744">MakeCursorTemplateRef</link>(<emphasis role="keyword">const</emphasis>&#32;TemplateDecl&#32;*Template,&#32;SourceLocation&#32;Loc,
+00097 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00098 
+00101 std::pair&lt;const&#32;TemplateDecl&#32;*,&#32;SourceLocation&gt;
+00102 <link linkend="_namespaceclang_1_1cxcursor_1aacf77fc4aabf02cfa865e6fe19e55d08">getCursorTemplateRef</link>(CXCursor&#32;C);
+00103 
+00106 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eadc019bbae1f61434528c197111b0e">MakeCursorNamespaceRef</link>(<emphasis role="keyword">const</emphasis>&#32;NamedDecl&#32;*NS,&#32;SourceLocation&#32;Loc,
+00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00108 
+00111 std::pair&lt;const&#32;NamedDecl&#32;*,&#32;SourceLocation&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac87835a4525ca9f54e4666e7b76ec6f6">getCursorNamespaceRef</link>(CXCursor&#32;C);
+00112 
+00114 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1abb9724d664f29289d46fb5b34eaf94e9">MakeCursorVariableRef</link>(<emphasis role="keyword">const</emphasis>&#32;VarDecl&#32;*Var,&#32;SourceLocation&#32;Loc,
+00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00116 
+00119 std::pair&lt;const&#32;VarDecl&#32;*,&#32;SourceLocation&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a53fa4c4c92a2fbaded59ad51eeed6e47">getCursorVariableRef</link>(CXCursor&#32;C);
+00120 
+00122 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1ad70c49c226f87377bc26fba7a4dbe973">MakeCursorMemberRef</link>(<emphasis role="keyword">const</emphasis>&#32;FieldDecl&#32;*Field,&#32;SourceLocation&#32;Loc,
+00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00124 
+00127 std::pair&lt;const&#32;FieldDecl&#32;*,&#32;SourceLocation&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1af3f3d2390bed39285f0b3313c1fab84b">getCursorMemberRef</link>(CXCursor&#32;C);
+00128 
+00130 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a13176d36398baf45f34e16a34ec04793">MakeCursorCXXBaseSpecifier</link>(<emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;*B,
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00132 
+00134 <emphasis role="keyword">const</emphasis>&#32;CXXBaseSpecifier&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a05b387c1d9aeb75b3de539f8622e0964">getCursorCXXBaseSpecifier</link>(CXCursor&#32;C);
+00135 
+00137 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1fb1c1775cb1f7e194f860c8e5903a71">MakePreprocessingDirectiveCursor</link>(SourceRange&#32;Range,
+00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00139 
+00141 SourceRange&#32;<link linkend="_namespaceclang_1_1cxcursor_1ad23bd48471b18d4d196d9777f3943e25">getCursorPreprocessingDirective</link>(CXCursor&#32;C);
+00142 
+00144 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a62e05b7f28b894bf90226918a8f3386a">MakeMacroDefinitionCursor</link>(<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*,
+00145 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00146 
+00149 <emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a62254c8ae8eca4c0ca0f2d2a659e7d80">getCursorMacroDefinition</link>(CXCursor&#32;C);
+00150 
+00152 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a64450be5a9ef97c872d47219caaccfce">MakeMacroExpansionCursor</link>(MacroExpansion&#32;*,&#32;CXTranslationUnit&#32;TU);
+00153 
+00156 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a64450be5a9ef97c872d47219caaccfce">MakeMacroExpansionCursor</link>(MacroDefinitionRecord&#32;*,&#32;SourceLocation&#32;Loc,
+00157 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00158 
+<anchor xml:id="__c_x_cursor_8h_source_1l00166"/><link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor">00166</link> <emphasis role="keyword">class&#32;</emphasis><link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor">MacroExpansionCursor</link>&#32;{
+00167 &#32;&#32;CXCursor&#32;C;
+00168 
+00169 &#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;isPseudo()<emphasis role="keyword">&#32;const&#32;</emphasis>{&#32;<emphasis role="keywordflow">return</emphasis>&#32;C.data[1]&#32;!=&#32;<emphasis role="keyword">nullptr</emphasis>;&#32;}
+00170 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*getAsMacroDefinition()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00171 &#32;&#32;&#32;&#32;assert(isPseudo());
+00172 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>MacroDefinitionRecord&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]);
+00173 &#32;&#32;}
+00174 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroExpansion&#32;*getAsMacroExpansion()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00175 &#32;&#32;&#32;&#32;assert(!isPseudo());
+00176 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis>MacroExpansion&#32;*<emphasis role="keyword">&gt;</emphasis>(C.data[0]);
+00177 &#32;&#32;}
+00178 &#32;&#32;SourceLocation&#32;getPseudoLoc()<emphasis role="keyword">&#32;const&#32;</emphasis>{
+00179 &#32;&#32;&#32;&#32;assert(isPseudo());
+00180 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;SourceLocation::getFromPtrEncoding(C.data[1]);
+00181 &#32;&#32;}
+00182 
+00183 <emphasis role="keyword">public</emphasis>:
+<anchor xml:id="__c_x_cursor_8h_source_1l00184"/><link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a21870ac53120694276ccf4fe5a6e4e47">00184</link> &#32;&#32;<link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a21870ac53120694276ccf4fe5a6e4e47">MacroExpansionCursor</link>(CXCursor&#32;C)&#32;:&#32;C(C)&#32;{
+00185 &#32;&#32;&#32;&#32;assert(C.kind&#32;==&#32;CXCursor_MacroExpansion);
+00186 &#32;&#32;}
+00187 
+00188 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;IdentifierInfo&#32;*<link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1aab31344cd77f9da9c4ea0fc96017270e">getName</link>()&#32;<emphasis role="keyword">const</emphasis>;
+00189 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;MacroDefinitionRecord&#32;*<link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a489d2d3b3d09eeef19d31d051001d8e0">getDefinition</link>()&#32;<emphasis role="keyword">const</emphasis>;
+00190 &#32;&#32;SourceRange&#32;<link linkend="_classclang_1_1cxcursor_1_1_macro_expansion_cursor_1a7f3033c8d9ba9947b24ba0f3d0056f21">getSourceRange</link>()&#32;<emphasis role="keyword">const</emphasis>;
+00191 };
+00192 
+00194 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;MacroExpansionCursor&#32;getCursorMacroExpansion(CXCursor&#32;C)&#32;{
+00195 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;C;
+00196 }
+00197 
+00199 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1acc1961183c2fb603b894a7f8621b16bb">MakeInclusionDirectiveCursor</link>(InclusionDirective&#32;*,
+00200 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00201 
+00204 <emphasis role="keyword">const</emphasis>&#32;InclusionDirective&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a3894d584fef6edb8ba4333fc240315ac">getCursorInclusionDirective</link>(CXCursor&#32;C);
+00205 
+00207 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a2e83069419ec783a32e4ee2b67d5144a">MakeCursorLabelRef</link>(LabelStmt&#32;*Label,&#32;SourceLocation&#32;Loc,
+00208 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00209 
+00212 std::pair&lt;const&#32;LabelStmt&#32;*,&#32;SourceLocation&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a642e34370b829d06752d76d13c6a58dd">getCursorLabelRef</link>(CXCursor&#32;C);
+00213 
+00215 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">MakeCursorOverloadedDeclRef</link>(<emphasis role="keyword">const</emphasis>&#32;OverloadExpr&#32;*E,
+00216 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00217 
+00219 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">MakeCursorOverloadedDeclRef</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;SourceLocation&#32;Location,
+00220 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00221 
+00223 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a631225e024301b99cc72be73f0ee9271">MakeCursorOverloadedDeclRef</link>(TemplateName&#32;Template,
+00224 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SourceLocation&#32;Location,
+00225 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXTranslationUnit&#32;TU);
+00226 
+00228 <emphasis role="keyword">typedef</emphasis>&#32;llvm::PointerUnion&lt;<emphasis role="keyword">const</emphasis>&#32;OverloadExpr&#32;*,&#32;<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*,
+00229 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;OverloadedTemplateStorage&#32;*&gt;
+<anchor xml:id="__c_x_cursor_8h_source_1l00230"/><link linkend="_namespaceclang_1_1cxcursor_1a944e67de567f6905f10876d7585ac43b">00230</link> &#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1_1cxcursor_1a944e67de567f6905f10876d7585ac43b">OverloadedDeclRefStorage</link>;
+00231 
+00234 std::pair&lt;OverloadedDeclRefStorage,&#32;SourceLocation&gt;
+00235 <link linkend="_namespaceclang_1_1cxcursor_1a4b41e93d6de24aed1376ec7f789efa2a">getCursorOverloadedDeclRef</link>(CXCursor&#32;C);
+00236 
+00237 <emphasis role="keyword">const</emphasis>&#32;Decl&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a1f702246831c96afd990e457613dc642">getCursorDecl</link>(CXCursor&#32;Cursor);
+00238 <emphasis role="keyword">const</emphasis>&#32;Expr&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a80837a3710c6df0dfc24b5ee1d94ff9b">getCursorExpr</link>(CXCursor&#32;Cursor);
+00239 <emphasis role="keyword">const</emphasis>&#32;Stmt&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a2d5cb233204f81be58bd21deb628c7ad">getCursorStmt</link>(CXCursor&#32;Cursor);
+00240 <emphasis role="keyword">const</emphasis>&#32;Attr&#32;*<link linkend="_namespaceclang_1_1cxcursor_1afdc6aa952869e16b4981b07f05adff7f">getCursorAttr</link>(CXCursor&#32;Cursor);
+00241 
+00242 ASTContext&#32;&amp;<link linkend="_namespaceclang_1_1cxcursor_1a9f29c286f26b3cf616331c7e6554d373">getCursorContext</link>(CXCursor&#32;Cursor);
+00243 ASTUnit&#32;*<link linkend="_namespaceclang_1_1cxcursor_1a68c106f7bebde4f72b0fe7f6f67e8f29">getCursorASTUnit</link>(CXCursor&#32;Cursor);
+00244 CXTranslationUnit&#32;<link linkend="_namespaceclang_1_1cxcursor_1a23a495df22339e8289ae6d2421f493b6">getCursorTU</link>(CXCursor&#32;Cursor);
+00245 
+00246 <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ada86f0e873b92af5429ba6da7c7cd56f">getOverriddenCursors</link>(CXCursor&#32;cursor,
+00247 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;SmallVectorImpl&lt;CXCursor&gt;&#32;&amp;overridden);
+00248 
+00251 <emphasis role="keywordtype">void</emphasis>&#32;*<link linkend="_namespaceclang_1_1cxcursor_1af71b6ad00df82de093f378557ee93240">createOverridenCXCursorsPool</link>();
+00252 
+00254 <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3e9eef17e1ba69991801fcfcfc8a0d9e">disposeOverridenCXCursorsPool</link>(<emphasis role="keywordtype">void</emphasis>&#32;*pool);
+00255 
+00258 std::pair&lt;int,&#32;SourceLocation&gt;&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac0203107f2338d86b2c77680155c3bf5">getSelectorIdentifierIndexAndLoc</link>(CXCursor);
+00259 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keywordtype">int</emphasis>&#32;getSelectorIdentifierIndex(CXCursor&#32;cursor)&#32;{
+00260 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac0203107f2338d86b2c77680155c3bf5">getSelectorIdentifierIndexAndLoc</link>(cursor).first;
+00261 }
+00262 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;SourceLocation&#32;getSelectorIdentifierLoc(CXCursor&#32;cursor)&#32;{
+00263 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1ac0203107f2338d86b2c77680155c3bf5">getSelectorIdentifierIndexAndLoc</link>(cursor).second;
+00264 }
+00265 
+00266 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1a3fd86e25b3fca940466669d13b0ea93e">getSelectorIdentifierCursor</link>(<emphasis role="keywordtype">int</emphasis>&#32;SelIdx,&#32;CXCursor&#32;cursor);
+00267 
+00268 <emphasis role="keyword">static</emphasis>&#32;<emphasis role="keyword">inline</emphasis>&#32;CXCursor&#32;getTypeRefedCallExprCursor(CXCursor&#32;cursor)&#32;{
+00269 &#32;&#32;CXCursor&#32;newCursor&#32;=&#32;cursor;
+00270 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cursor.kind&#32;==&#32;CXCursor_CallExpr)
+00271 &#32;&#32;&#32;&#32;newCursor.xdata&#32;=&#32;1;
+00272 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;newCursor;
+00273 }
+00274 
+00275 CXCursor&#32;<link linkend="_namespaceclang_1_1cxcursor_1aa5198a2a166b25337d2c20917d3d28ce">getTypeRefCursor</link>(CXCursor&#32;cursor);
+00276 
+00280 <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a70c40817415cbc686e998bde4fe2e16e">getDeclCursorUSR</link>(<emphasis role="keyword">const</emphasis>&#32;Decl&#32;*D,&#32;SmallVectorImpl&lt;char&gt;&#32;&amp;Buf);
+00281 
+00282 <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a6eba9b639ae06e944e28d8a44767cf72">operator==</link>(CXCursor&#32;X,&#32;CXCursor&#32;Y);
+00283 
+<anchor xml:id="__c_x_cursor_8h_source_1l00284"/><link linkend="_namespaceclang_1_1cxcursor_1a787f5669055ba25e698a444d0106005f">00284</link> <emphasis role="keyword">inline</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a787f5669055ba25e698a444d0106005f">operator!=</link>(CXCursor&#32;X,&#32;CXCursor&#32;Y)&#32;{&#32;<emphasis role="keywordflow">return</emphasis>&#32;!(X&#32;==&#32;Y);&#32;}
+00285 
+00288 <emphasis role="keywordtype">bool</emphasis>&#32;<link linkend="_namespaceclang_1_1cxcursor_1a1ae32d54126c07eca2ab10d9ce40af7c">isFirstInDeclGroup</link>(CXCursor&#32;C);
+00289 
+00290 }&#32;<emphasis role="comment">//&#32;namespace&#32;cxcursor</emphasis>
+00291 }&#32;<emphasis role="comment">//&#32;namespace&#32;clang</emphasis>
+00292 
+00293 <emphasis role="preprocessor">#endif</emphasis>
+</programlisting></section>

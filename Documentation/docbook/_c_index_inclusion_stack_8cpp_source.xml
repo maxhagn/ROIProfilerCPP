@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__c_index_inclusion_stack_8cpp_source" xml:lang="en-US">
+<title>CIndexInclusionStack.cpp</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexInclusionStack.cpp</primary></indexterm>
+<programlisting>00001 <emphasis role="comment">//===-&#32;CIndexInclusionStack.cpp&#32;-&#32;Clang-C&#32;Source&#32;Indexing&#32;Library&#32;---------===//</emphasis>
+00002 <emphasis role="comment">//</emphasis>
+00003 <emphasis role="comment">//&#32;Part&#32;of&#32;the&#32;LLVM&#32;Project,&#32;under&#32;the&#32;Apache&#32;License&#32;v2.0&#32;with&#32;LLVM&#32;Exceptions.</emphasis>
+00004 <emphasis role="comment">//&#32;See&#32;https://llvm.org/LICENSE.txt&#32;for&#32;license&#32;information.</emphasis>
+00005 <emphasis role="comment">//&#32;SPDX-License-Identifier:&#32;Apache-2.0&#32;WITH&#32;LLVM-exception</emphasis>
+00006 <emphasis role="comment">//</emphasis>
+00007 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00008 <emphasis role="comment">//</emphasis>
+00009 <emphasis role="comment">//&#32;This&#32;file&#32;defines&#32;a&#32;callback&#32;mechanism&#32;for&#32;clients&#32;to&#32;get&#32;the&#32;inclusion</emphasis>
+00010 <emphasis role="comment">//&#32;stack&#32;from&#32;a&#32;translation&#32;unit.</emphasis>
+00011 <emphasis role="comment">//</emphasis>
+00012 <emphasis role="comment">//===----------------------------------------------------------------------===//</emphasis>
+00013 
+00014 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_indexer_8h">CIndexer.h</link>&quot;</emphasis>
+00015 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_source_location_8h">CXSourceLocation.h</link>&quot;</emphasis>
+00016 <emphasis role="preprocessor">#include&#32;&quot;<link linkend="__c_x_translation_unit_8h">CXTranslationUnit.h</link>&quot;</emphasis>
+00017 <emphasis role="preprocessor">#include&#32;&quot;clang/AST/DeclVisitor.h&quot;</emphasis>
+00018 <emphasis role="preprocessor">#include&#32;&quot;clang/Frontend/ASTUnit.h&quot;</emphasis>
+00019 <emphasis role="keyword">using&#32;namespace&#32;</emphasis><link linkend="_namespaceclang">clang</link>;
+00020 
+00021 <emphasis role="keyword">namespace&#32;</emphasis>{
+00022 <emphasis role="keywordtype">void</emphasis>&#32;getInclusions(<emphasis role="keywordtype">bool</emphasis>&#32;IsLocal,&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;n,&#32;CXTranslationUnit&#32;TU,
+00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXInclusionVisitor&#32;CB,&#32;CXClientData&#32;clientData)&#32;{
+00024 &#32;&#32;ASTUnit&#32;*CXXUnit&#32;=&#32;cxtu::getASTUnit(TU);
+00025 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;CXXUnit-&gt;getSourceManager();
+00026 &#32;&#32;ASTContext&#32;&amp;Ctx&#32;=&#32;CXXUnit-&gt;getASTContext();
+00027 &#32;&#32;SmallVector&lt;CXSourceLocation,&#32;10&gt;&#32;InclusionStack;
+00028 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">bool</emphasis>&#32;HasPreamble&#32;=&#32;SM.getPreambleFileID().isValid();
+00029 
+00030 &#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0&#32;;&#32;i&#32;&lt;&#32;n&#32;;&#32;++i)&#32;{
+00031 &#32;&#32;&#32;&#32;<emphasis role="keywordtype">bool</emphasis>&#32;Invalid&#32;=&#32;<emphasis role="keyword">false</emphasis>;
+00032 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;SrcMgr::SLocEntry&#32;&amp;SL&#32;=
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IsLocal&#32;?&#32;SM.getLocalSLocEntry(i)&#32;:&#32;SM.getLoadedSLocEntry(i,&#32;&amp;Invalid);
+00034 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!SL.isFile()&#32;||&#32;Invalid)
+00035 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00036 
+00037 &#32;&#32;&#32;&#32;<emphasis role="keyword">const</emphasis>&#32;SrcMgr::FileInfo&#32;&amp;FI&#32;=&#32;SL.getFile();
+00038 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!FI.getContentCache().OrigEntry)
+00039 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00040 
+00041 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;this&#32;is&#32;the&#32;main&#32;file,&#32;and&#32;there&#32;is&#32;a&#32;preamble,&#32;skip&#32;this&#32;SLoc.&#32;The</emphasis>
+00042 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;inclusions&#32;of&#32;the&#32;preamble&#32;already&#32;showed&#32;it.</emphasis>
+00043 &#32;&#32;&#32;&#32;SourceLocation&#32;L&#32;=&#32;FI.getIncludeLoc();
+00044 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasPreamble&#32;&amp;&amp;&#32;CXXUnit-&gt;isInMainFileID(L))
+00045 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">continue</emphasis>;
+00046 
+00047 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Build&#32;the&#32;inclusion&#32;stack.</emphasis>
+00048 &#32;&#32;&#32;&#32;InclusionStack.clear();
+00049 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(L.isValid())&#32;{
+00050 &#32;&#32;&#32;&#32;&#32;&#32;PresumedLoc&#32;PLoc&#32;=&#32;SM.getPresumedLoc(L);
+00051 &#32;&#32;&#32;&#32;&#32;&#32;InclusionStack.push_back(cxloc::translateSourceLocation(Ctx,&#32;L));
+00052 &#32;&#32;&#32;&#32;&#32;&#32;L&#32;=&#32;PLoc.isValid()?&#32;PLoc.getIncludeLoc()&#32;:&#32;SourceLocation();
+00053 &#32;&#32;&#32;&#32;}
+00054 
+00055 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;If&#32;there&#32;is&#32;a&#32;preamble,&#32;the&#32;last&#32;entry&#32;is&#32;the&#32;&quot;inclusion&quot;&#32;of&#32;that</emphasis>
+00056 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;preamble&#32;into&#32;the&#32;main&#32;file,&#32;which&#32;has&#32;the&#32;bogus&#32;entry&#32;of&#32;main.c:1:1</emphasis>
+00057 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(HasPreamble&#32;&amp;&amp;&#32;!InclusionStack.empty())
+00058 &#32;&#32;&#32;&#32;&#32;&#32;InclusionStack.pop_back();
+00059 
+00060 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;Callback&#32;to&#32;the&#32;client.</emphasis>
+00061 &#32;&#32;&#32;&#32;<emphasis role="comment">//&#32;FIXME:&#32;We&#32;should&#32;have&#32;a&#32;function&#32;to&#32;construct&#32;CXFiles.</emphasis>
+00062 &#32;&#32;&#32;&#32;CB(<emphasis role="keyword">static_cast&lt;</emphasis>CXFile<emphasis role="keyword">&gt;</emphasis>(
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keyword">const_cast&lt;</emphasis>FileEntry&#32;*<emphasis role="keyword">&gt;</emphasis>(FI.getContentCache().OrigEntry)),
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;InclusionStack.data(),&#32;InclusionStack.size(),&#32;clientData);
+00065 &#32;&#32;}
+00066 }
+00067 }&#32;<emphasis role="comment">//&#32;namespace</emphasis>
+00068 
+<anchor xml:id="__c_index_inclusion_stack_8cpp_source_1l00069"/><link linkend="__c_index_inclusion_stack_8cpp_1a46a93eb16ff8f277bb63cbbe5d70d3ae">00069</link> <emphasis role="keywordtype">void</emphasis>&#32;<link linkend="__c_index_inclusion_stack_8cpp_1a46a93eb16ff8f277bb63cbbe5d70d3ae">clang_getInclusions</link>(CXTranslationUnit&#32;TU,&#32;CXInclusionVisitor&#32;CB,
+00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CXClientData&#32;clientData)&#32;{
+00071 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(cxtu::isNotUsableTU(TU))&#32;{
+00072 &#32;&#32;&#32;&#32;<link linkend="__c_x_translation_unit_8h_1a4ec17e6e03ea0baf73e27802eae36106">LOG_BAD_TU</link>(TU);
+00073 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00074 &#32;&#32;}
+00075 
+00076 &#32;&#32;SourceManager&#32;&amp;SM&#32;=&#32;cxtu::getASTUnit(TU)-&gt;getSourceManager();
+00077 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<emphasis role="keywordtype">unsigned</emphasis>&#32;n&#32;=&#32;&#32;SM.local_sloc_entry_size();
+00078 
+00079 &#32;&#32;<emphasis role="comment">//&#32;In&#32;the&#32;case&#32;where&#32;all&#32;the&#32;SLocEntries&#32;are&#32;in&#32;an&#32;external&#32;source,&#32;traverse</emphasis>
+00080 &#32;&#32;<emphasis role="comment">//&#32;those&#32;SLocEntries&#32;as&#32;well.&#32;&#32;This&#32;is&#32;the&#32;case&#32;where&#32;we&#32;are&#32;looking</emphasis>
+00081 &#32;&#32;<emphasis role="comment">//&#32;at&#32;the&#32;inclusion&#32;stack&#32;of&#32;an&#32;AST/PCH&#32;file.&#32;Also,&#32;if&#32;we&#32;are&#32;not&#32;looking&#32;at</emphasis>
+00082 &#32;&#32;<emphasis role="comment">//&#32;a&#32;AST/PCH&#32;file,&#32;but&#32;this&#32;file&#32;has&#32;a&#32;pre-compiled&#32;preamble,&#32;we&#32;also&#32;need</emphasis>
+00083 &#32;&#32;<emphasis role="comment">//&#32;to&#32;look&#32;in&#32;that&#32;file.</emphasis>
+00084 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(n&#32;==&#32;1&#32;||&#32;SM.getPreambleFileID().isValid())&#32;{
+00085 &#32;&#32;&#32;&#32;getInclusions(<emphasis role="comment">/*IsLocal=*/</emphasis><emphasis role="keyword">false</emphasis>,&#32;SM.loaded_sloc_entry_size(),&#32;TU,&#32;CB,
+00086 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;clientData);
+00087 &#32;&#32;}
+00088 
+00089 &#32;&#32;<emphasis role="comment">//&#32;Not&#32;a&#32;PCH/AST&#32;file.&#32;Note,&#32;if&#32;there&#32;is&#32;a&#32;preamble,&#32;it&#32;could&#32;still&#32;be&#32;that</emphasis>
+00090 &#32;&#32;<emphasis role="comment">//&#32;there&#32;are&#32;#includes&#32;in&#32;this&#32;file&#32;(e.g.&#32;for&#32;any&#32;include&#32;after&#32;the&#32;first</emphasis>
+00091 &#32;&#32;<emphasis role="comment">//&#32;declaration).</emphasis>
+00092 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(n&#32;!=&#32;1)
+00093 &#32;&#32;&#32;&#32;getInclusions(<emphasis role="comment">/*IsLocal=*/</emphasis><emphasis role="keyword">true</emphasis>,&#32;n,&#32;TU,&#32;CB,&#32;clientData);
+00094 }
+</programlisting></section>

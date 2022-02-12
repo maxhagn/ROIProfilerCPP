@@ -1,0 +1,183 @@
+\hypertarget{namespaceclang-format}{}\doxysection{clang-\/format Namespace Reference}
+\label{namespaceclang-format}\index{clang-\/format@{clang-\/format}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \mbox{\hyperlink{namespaceclang-format_a1ab610d513bddf3cc3deff4acf33b3c3}{get\+\_\+buffer}} (encoding)
+\item 
+def \mbox{\hyperlink{namespaceclang-format_ac2477eea4d65a2f4127d41719e424f61}{main}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+string \mbox{\hyperlink{namespaceclang-format_a48c3a40a10c470091bafc20fdb850416}{binary}} = \textquotesingle{}clang-\/format\textquotesingle{}
+\item 
+\mbox{\hyperlink{namespaceclang-format_a1af1663024b4cdd499a7a10e202c9b9e}{style}} = None
+\item 
+\mbox{\hyperlink{namespaceclang-format_a47ed01450573c329ec6a17c525c53668}{fallback\+\_\+style}} = None
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang-format_a1ab610d513bddf3cc3deff4acf33b3c3}\label{namespaceclang-format_a1ab610d513bddf3cc3deff4acf33b3c3}} 
+\index{clang-\/format@{clang-\/format}!get\_buffer@{get\_buffer}}
+\index{get\_buffer@{get\_buffer}!clang-\/format@{clang-\/format}}
+\doxysubsubsection{\texorpdfstring{get\_buffer()}{get\_buffer()}}
+{\footnotesize\ttfamily def clang-\/format.\+get\+\_\+buffer (\begin{DoxyParamCaption}\item[{}]{encoding }\end{DoxyParamCaption})}
+
+
+
+Definition at line 64 of file clang-\/format.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{64 \textcolor{keyword}{def }\mbox{\hyperlink{namespaceclang-format_a1ab610d513bddf3cc3deff4acf33b3c3}{get\_buffer}}(encoding):}
+\DoxyCodeLine{65   \textcolor{keywordflow}{if} platform.python\_version\_tuple()[0] == \textcolor{stringliteral}{'3'}:}
+\DoxyCodeLine{66     \textcolor{keywordflow}{return} vim.current.buffer}
+\DoxyCodeLine{67   \textcolor{keywordflow}{return} [ line.decode(encoding) \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} vim.current.buffer ]}
+\DoxyCodeLine{68 }
+
+\end{DoxyCode}
+
+
+Referenced by main().
+
+\mbox{\Hypertarget{namespaceclang-format_ac2477eea4d65a2f4127d41719e424f61}\label{namespaceclang-format_ac2477eea4d65a2f4127d41719e424f61}} 
+\index{clang-\/format@{clang-\/format}!main@{main}}
+\index{main@{main}!clang-\/format@{clang-\/format}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily def clang-\/format.\+main (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 69 of file clang-\/format.\+py.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{69 \textcolor{keyword}{def }\mbox{\hyperlink{namespaceclang-format_ac2477eea4d65a2f4127d41719e424f61}{main}}():}
+\DoxyCodeLine{70   \textcolor{comment}{\# Get the current text.}}
+\DoxyCodeLine{71   encoding = vim.eval(\textcolor{stringliteral}{"{}\&encoding"{}})}
+\DoxyCodeLine{72   buf = \mbox{\hyperlink{namespaceclang-format_a1ab610d513bddf3cc3deff4acf33b3c3}{get\_buffer}}(encoding)}
+\DoxyCodeLine{73   \textcolor{comment}{\# Join the buffer into a single string with a terminating newline}}
+\DoxyCodeLine{74   text = (\textcolor{stringliteral}{'\(\backslash\)n'}.join(buf) + \textcolor{stringliteral}{'\(\backslash\)n'}).\mbox{\hyperlink{namespacelibscanbuild_1_1shell_ac92beb78a0b5fd06775e27d7b87870ed}{encode}}(encoding)}
+\DoxyCodeLine{75 }
+\DoxyCodeLine{76   \textcolor{comment}{\# Determine range to format.}}
+\DoxyCodeLine{77   \textcolor{keywordflow}{if} vim.eval(\textcolor{stringliteral}{'exists("{}l:lines"{})'}) == \textcolor{stringliteral}{'1'}:}
+\DoxyCodeLine{78     lines = [\textcolor{stringliteral}{'-\/lines'}, vim.eval(\textcolor{stringliteral}{'l:lines'})]}
+\DoxyCodeLine{79   \textcolor{keywordflow}{elif} vim.eval(\textcolor{stringliteral}{'exists("{}l:formatdiff"{})'}) == \textcolor{stringliteral}{'1'}:}
+\DoxyCodeLine{80     \textcolor{keyword}{with} \mbox{\hyperlink{namespacestartfile_aa582f75134b683dc321c07d01ff8e501}{open}}(vim.current.buffer.name, \textcolor{stringliteral}{'r'}) \textcolor{keyword}{as} f:}
+\DoxyCodeLine{81       ondisk = f.read().splitlines();}
+\DoxyCodeLine{82     sequence = difflib.SequenceMatcher(\textcolor{keywordtype}{None}, ondisk, vim.current.buffer)}
+\DoxyCodeLine{83     lines = []}
+\DoxyCodeLine{84     \textcolor{keywordflow}{for} op \textcolor{keywordflow}{in} reversed(sequence.get\_opcodes()):}
+\DoxyCodeLine{85       \textcolor{keywordflow}{if} op[0] \textcolor{keywordflow}{not} \textcolor{keywordflow}{in} [\textcolor{stringliteral}{'equal'}, \textcolor{stringliteral}{'delete'}]:}
+\DoxyCodeLine{86         lines += [\textcolor{stringliteral}{'-\/lines'}, \textcolor{stringliteral}{'\%s:\%s'} \% (op[3] + 1, op[4])]}
+\DoxyCodeLine{87     \textcolor{keywordflow}{if} lines == []:}
+\DoxyCodeLine{88       \textcolor{keywordflow}{return}}
+\DoxyCodeLine{89   \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{90     lines = [\textcolor{stringliteral}{'-\/lines'}, \textcolor{stringliteral}{'\%s:\%s'} \% (vim.current.range.start + 1,}
+\DoxyCodeLine{91                                   vim.current.range.end + 1)]}
+\DoxyCodeLine{92 }
+\DoxyCodeLine{93   \textcolor{comment}{\# Convert cursor (line, col) to bytes.}}
+\DoxyCodeLine{94   \textcolor{comment}{\# Don't use line2byte: https://github.com/vim/vim/issues/5930}}
+\DoxyCodeLine{95   \_, cursor\_line, cursor\_col, \_ = vim.eval(\textcolor{stringliteral}{'getpos("{}."{})'}) \textcolor{comment}{\# 1-\/based}}
+\DoxyCodeLine{96   cursor\_byte = 0}
+\DoxyCodeLine{97   \textcolor{keywordflow}{for} line \textcolor{keywordflow}{in} text.split(b\textcolor{stringliteral}{'\(\backslash\)n'})[:int(cursor\_line) -\/ 1]:}
+\DoxyCodeLine{98     cursor\_byte += len(line) + 1}
+\DoxyCodeLine{99   cursor\_byte += int(cursor\_col) -\/ 1}
+\DoxyCodeLine{100   \textcolor{keywordflow}{if} cursor\_byte < 0:}
+\DoxyCodeLine{101     \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{'Couldn\(\backslash\)'t determine cursor position. Is your file empty?'})}
+\DoxyCodeLine{102     \textcolor{keywordflow}{return}}
+\DoxyCodeLine{103 }
+\DoxyCodeLine{104   \textcolor{comment}{\# Avoid flashing an ugly, ugly cmd prompt on Windows when invoking clang-\/format.}}
+\DoxyCodeLine{105   startupinfo = \textcolor{keywordtype}{None}}
+\DoxyCodeLine{106   \textcolor{keywordflow}{if} sys.platform.startswith(\textcolor{stringliteral}{'win32'}):}
+\DoxyCodeLine{107     startupinfo = subprocess.STARTUPINFO()}
+\DoxyCodeLine{108     startupinfo.dwFlags |= subprocess.STARTF\_USESHOWWINDOW}
+\DoxyCodeLine{109     startupinfo.wShowWindow = subprocess.SW\_HIDE}
+\DoxyCodeLine{110 }
+\DoxyCodeLine{111   \textcolor{comment}{\# Call formatter.}}
+\DoxyCodeLine{112   command = [binary, \textcolor{stringliteral}{'-\/cursor'}, str(cursor\_byte)]}
+\DoxyCodeLine{113   \textcolor{keywordflow}{if} lines != [\textcolor{stringliteral}{'-\/lines'}, \textcolor{stringliteral}{'all'}]:}
+\DoxyCodeLine{114     command += lines}
+\DoxyCodeLine{115   \textcolor{keywordflow}{if} style:}
+\DoxyCodeLine{116     command.extend([\textcolor{stringliteral}{'-\/style'}, style])}
+\DoxyCodeLine{117   \textcolor{keywordflow}{if} fallback\_style:}
+\DoxyCodeLine{118     command.extend([\textcolor{stringliteral}{'-\/fallback-\/style'}, fallback\_style])}
+\DoxyCodeLine{119   \textcolor{keywordflow}{if} vim.current.buffer.name:}
+\DoxyCodeLine{120     command.extend([\textcolor{stringliteral}{'-\/assume-\/filename'}, vim.current.buffer.name])}
+\DoxyCodeLine{121   p = subprocess.Popen(command,}
+\DoxyCodeLine{122                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,}
+\DoxyCodeLine{123                        stdin=subprocess.PIPE, startupinfo=startupinfo)}
+\DoxyCodeLine{124   stdout, stderr = p.communicate(input=text)}
+\DoxyCodeLine{125 }
+\DoxyCodeLine{126   \textcolor{comment}{\# If successful, replace buffer contents.}}
+\DoxyCodeLine{127   \textcolor{keywordflow}{if} stderr:}
+\DoxyCodeLine{128     \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(stderr)}
+\DoxyCodeLine{129 }
+\DoxyCodeLine{130   \textcolor{keywordflow}{if} \textcolor{keywordflow}{not} stdout:}
+\DoxyCodeLine{131     \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(}
+\DoxyCodeLine{132         \textcolor{stringliteral}{'No output from clang-\/format (crashed?).\(\backslash\)n'}}
+\DoxyCodeLine{133         \textcolor{stringliteral}{'Please report to bugs.llvm.org.'}}
+\DoxyCodeLine{134     )}
+\DoxyCodeLine{135   \textcolor{keywordflow}{else}:}
+\DoxyCodeLine{136     header, content = stdout.split(b\textcolor{stringliteral}{'\(\backslash\)n'}, 1)}
+\DoxyCodeLine{137     header = json.loads(header)}
+\DoxyCodeLine{138     \textcolor{comment}{\# Strip off the trailing newline (added above).}}
+\DoxyCodeLine{139     \textcolor{comment}{\# This maintains trailing empty lines present in the buffer if}}
+\DoxyCodeLine{140     \textcolor{comment}{\# the -\/lines specification requests them to remain unchanged.}}
+\DoxyCodeLine{141     lines = content.decode(encoding).split(\textcolor{stringliteral}{'\(\backslash\)n'})[:-\/1]}
+\DoxyCodeLine{142     sequence = difflib.SequenceMatcher(\textcolor{keywordtype}{None}, buf, lines)}
+\DoxyCodeLine{143     \textcolor{keywordflow}{for} op \textcolor{keywordflow}{in} reversed(sequence.get\_opcodes()):}
+\DoxyCodeLine{144       \textcolor{keywordflow}{if} op[0] != \textcolor{stringliteral}{'equal'}:}
+\DoxyCodeLine{145         vim.current.buffer[op[1]:op[2]] = lines[op[3]:op[4]]}
+\DoxyCodeLine{146     \textcolor{keywordflow}{if} header.get(\textcolor{stringliteral}{'IncompleteFormat'}):}
+\DoxyCodeLine{147       \mbox{\hyperlink{_function_call_decl_8cpp_a388f572c62279f839ee138a9afbdeeb5}{print}}(\textcolor{stringliteral}{'clang-\/format: incomplete (syntax errors)'})}
+\DoxyCodeLine{148     \textcolor{comment}{\# Convert cursor bytes to (line, col)}}
+\DoxyCodeLine{149     \textcolor{comment}{\# Don't use goto: https://github.com/vim/vim/issues/5930}}
+\DoxyCodeLine{150     cursor\_byte = int(header[\textcolor{stringliteral}{'Cursor'}])}
+\DoxyCodeLine{151     prefix = content[0:cursor\_byte]}
+\DoxyCodeLine{152     cursor\_line = 1 + prefix.count(b\textcolor{stringliteral}{'\(\backslash\)n'})}
+\DoxyCodeLine{153     cursor\_column = 1 + len(prefix.rsplit(b\textcolor{stringliteral}{'\(\backslash\)n'}, 1)[-\/1])}
+\DoxyCodeLine{154     vim.command(\textcolor{stringliteral}{'call cursor(\%d, \%d)'} \% (cursor\_line, cursor\_column))}
+\DoxyCodeLine{155 }
+\DoxyCodeLine{156 \mbox{\hyperlink{namespaceclang-format_ac2477eea4d65a2f4127d41719e424f61}{main}}()}
+
+\end{DoxyCode}
+
+
+References libscanbuild.\+shell.\+encode(), get\+\_\+buffer(), startfile.\+open(), and print().
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{namespaceclang-format_a48c3a40a10c470091bafc20fdb850416}\label{namespaceclang-format_a48c3a40a10c470091bafc20fdb850416}} 
+\index{clang-\/format@{clang-\/format}!binary@{binary}}
+\index{binary@{binary}!clang-\/format@{clang-\/format}}
+\doxysubsubsection{\texorpdfstring{binary}{binary}}
+{\footnotesize\ttfamily clang-\/format.\+binary = \textquotesingle{}clang-\/format\textquotesingle{}}
+
+
+
+Definition at line 51 of file clang-\/format.\+py.
+
+\mbox{\Hypertarget{namespaceclang-format_a47ed01450573c329ec6a17c525c53668}\label{namespaceclang-format_a47ed01450573c329ec6a17c525c53668}} 
+\index{clang-\/format@{clang-\/format}!fallback\_style@{fallback\_style}}
+\index{fallback\_style@{fallback\_style}!clang-\/format@{clang-\/format}}
+\doxysubsubsection{\texorpdfstring{fallback\_style}{fallback\_style}}
+{\footnotesize\ttfamily clang-\/format.\+fallback\+\_\+style = None}
+
+
+
+Definition at line 60 of file clang-\/format.\+py.
+
+\mbox{\Hypertarget{namespaceclang-format_a1af1663024b4cdd499a7a10e202c9b9e}\label{namespaceclang-format_a1af1663024b4cdd499a7a10e202c9b9e}} 
+\index{clang-\/format@{clang-\/format}!style@{style}}
+\index{style@{style}!clang-\/format@{clang-\/format}}
+\doxysubsubsection{\texorpdfstring{style}{style}}
+{\footnotesize\ttfamily clang-\/format.\+style = None}
+
+
+
+Definition at line 59 of file clang-\/format.\+py.
+

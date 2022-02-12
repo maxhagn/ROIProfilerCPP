@@ -1,0 +1,46 @@
+\hypertarget{namespaceclang_1_1refactor}{}\doxysection{clang\+::refactor Namespace Reference}
+\label{namespaceclang_1_1refactor}\index{clang::refactor@{clang::refactor}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structclang_1_1refactor_1_1_test_selection_range}{Test\+Selection\+Range}}
+\item 
+struct \mbox{\hyperlink{structclang_1_1refactor_1_1_test_selection_ranges_in_file}{Test\+Selection\+Ranges\+In\+File}}
+\begin{DoxyCompactList}\small\item\em A set of test selection ranges specified in one file. \end{DoxyCompactList}\item 
+class \mbox{\hyperlink{classclang_1_1refactor_1_1_clang_refactor_tool_consumer_interface}{Clang\+Refactor\+Tool\+Consumer\+Interface}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+Optional$<$ \mbox{\hyperlink{structclang_1_1refactor_1_1_test_selection_ranges_in_file}{Test\+Selection\+Ranges\+In\+File}} $>$ \mbox{\hyperlink{namespaceclang_1_1refactor_ad9b16108537eeb4a03f8b06f785bdb0f}{find\+Test\+Selection\+Ranges}} (String\+Ref Filename)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespaceclang_1_1refactor_ad9b16108537eeb4a03f8b06f785bdb0f}\label{namespaceclang_1_1refactor_ad9b16108537eeb4a03f8b06f785bdb0f}} 
+\index{clang::refactor@{clang::refactor}!findTestSelectionRanges@{findTestSelectionRanges}}
+\index{findTestSelectionRanges@{findTestSelectionRanges}!clang::refactor@{clang::refactor}}
+\doxysubsubsection{\texorpdfstring{findTestSelectionRanges()}{findTestSelectionRanges()}}
+{\footnotesize\ttfamily Optional$<$ \mbox{\hyperlink{structclang_1_1refactor_1_1_test_selection_ranges_in_file}{Test\+Selection\+Ranges\+In\+File}} $>$ clang\+::refactor\+::find\+Test\+Selection\+Ranges (\begin{DoxyParamCaption}\item[{String\+Ref}]{Filename }\end{DoxyParamCaption})}
+
+Extracts the grouped selection ranges from the file that\textquotesingle{}s specified in the -\/selection=test\+:$<$filename$>$ option.
+
+The grouped ranges are specified in comments using the following syntax\+: \char`\"{}range\char`\"{} \mbox{[} group-\/name \mbox{]} \char`\"{}=\char`\"{} \mbox{[} \char`\"{}+\char`\"{} starting-\/column-\/offset \mbox{]} \mbox{[} \char`\"{}-\/$>$\char`\"{} \char`\"{}+\char`\"{} ending-\/line-\/offset \char`\"{}\+:\char`\"{} ending-\/column-\/position \mbox{]}
+
+The selection range is then computed from this command by taking the ending location of the comment, and adding \textquotesingle{}starting-\/column-\/offset\textquotesingle{} to the column for that location. That location in turns becomes the whole selection range, unless \textquotesingle{}ending-\/line-\/offset\textquotesingle{} and \textquotesingle{}ending-\/column-\/position\textquotesingle{} are specified. If they are specified, then the ending location of the selection range is the starting location\textquotesingle{}s line + \textquotesingle{}ending-\/line-\/offset\textquotesingle{} and the \textquotesingle{}ending-\/column-\/position\textquotesingle{} column.
+
+All selection ranges in one group are expected to produce the same refactoring result.
+
+When testing, zero is returned from clang-\/refactor even when a group produces an initiation error, which is different from normal invocation that returns a non-\/zero value. This is done on purpose, to ensure that group consistency checks can return non-\/zero, but still print the output of the group. So even if a test matches the output of group, it will still fail because clang-\/refactor should return zero on exit when the group results are consistent.
+
+\begin{DoxyReturn}{Returns}
+None on failure (errors are emitted to stderr), or a set of grouped source ranges in the given file otherwise. 
+\end{DoxyReturn}
+
+
+Definition at line 295 of file Test\+Support.\+cpp.
+
+
+
+References libscanbuild.\+report\+::comment().
+

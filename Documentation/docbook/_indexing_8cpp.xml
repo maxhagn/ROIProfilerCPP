@@ -1,0 +1,449 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="__indexing_8cpp" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/libclang/Indexing.cpp File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/libclang/Indexing.cpp</primary></indexterm>
+<programlisting>#include &quot;CIndexDiagnostic.h&quot;
+#include &quot;CIndexer.h&quot;
+#include &quot;CLog.h&quot;
+#include &quot;CXCursor.h&quot;
+#include &quot;CXIndexDataConsumer.h&quot;
+#include &quot;CXSourceLocation.h&quot;
+#include &quot;CXString.h&quot;
+#include &quot;CXTranslationUnit.h&quot;
+#include &quot;clang/AST/ASTConsumer.h&quot;
+#include &quot;clang/Frontend/ASTUnit.h&quot;
+#include &quot;clang/Frontend/CompilerInstance.h&quot;
+#include &quot;clang/Frontend/CompilerInvocation.h&quot;
+#include &quot;clang/Frontend/FrontendAction.h&quot;
+#include &quot;clang/Frontend/MultiplexConsumer.h&quot;
+#include &quot;clang/Frontend/Utils.h&quot;
+#include &quot;clang/Index/IndexingAction.h&quot;
+#include &quot;clang/Lex/HeaderSearch.h&quot;
+#include &quot;clang/Lex/PPCallbacks.h&quot;
+#include &quot;clang/Lex/PPConditionalDirectiveRecord.h&quot;
+#include &quot;clang/Lex/Preprocessor.h&quot;
+#include &quot;clang/Lex/PreprocessorOptions.h&quot;
+#include &quot;llvm/Support/CrashRecoveryContext.h&quot;
+#include &quot;llvm/Support/MemoryBuffer.h&quot;
+#include &lt;cstdio&gt;
+#include &lt;mutex&gt;
+#include &lt;utility&gt;
+</programlisting><simplesect>
+    <title>Classes    </title>
+        <itemizedlist>
+            <listitem><para>struct <link linkend="_structllvm_1_1_dense_map_info_3_01_p_p_region_01_4">llvm::DenseMapInfo&lt; PPRegion &gt;</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Namespaces    </title>
+        <itemizedlist>
+            <listitem><para> <link linkend="_namespacellvm">llvm</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Functions    </title>
+        <itemizedlist>
+            <listitem><para>int <link linkend="__indexing_8cpp_1aa218aee51ef76115268b7e9bc5ea1589">clang_index_isEntityObjCContainerKind</link> (CXIdxEntityKind K)</para>
+</listitem>
+            <listitem><para>const CXIdxObjCContainerDeclInfo * <link linkend="__indexing_8cpp_1a5009ec9a006f9b9c275e8501147be820">clang_index_getObjCContainerDeclInfo</link> (const CXIdxDeclInfo *DInfo)</para>
+</listitem>
+            <listitem><para>const CXIdxObjCInterfaceDeclInfo * <link linkend="__indexing_8cpp_1a4fd62151af19e4c04d4885c1de582a5a">clang_index_getObjCInterfaceDeclInfo</link> (const CXIdxDeclInfo *DInfo)</para>
+</listitem>
+            <listitem><para>const CXIdxObjCCategoryDeclInfo * <link linkend="__indexing_8cpp_1a4f42a70f90d010e75213a54e4efb71e4">clang_index_getObjCCategoryDeclInfo</link> (const CXIdxDeclInfo *DInfo)</para>
+</listitem>
+            <listitem><para>const CXIdxObjCProtocolRefListInfo * <link linkend="__indexing_8cpp_1a84557aa0abab4f20cc678ebb033fc35d">clang_index_getObjCProtocolRefListInfo</link> (const CXIdxDeclInfo *DInfo)</para>
+</listitem>
+            <listitem><para>const CXIdxObjCPropertyDeclInfo * <link linkend="__indexing_8cpp_1acb9210ebcc65a6c1b4c560485b27c9b1">clang_index_getObjCPropertyDeclInfo</link> (const CXIdxDeclInfo *DInfo)</para>
+</listitem>
+            <listitem><para>const CXIdxIBOutletCollectionAttrInfo * <link linkend="__indexing_8cpp_1ab8d88ec6239274232ca690786d2742c8">clang_index_getIBOutletCollectionAttrInfo</link> (const CXIdxAttrInfo *AInfo)</para>
+</listitem>
+            <listitem><para>const CXIdxCXXClassDeclInfo * <link linkend="__indexing_8cpp_1a99ab66a0a0f83e87a0e37af7eeb46025">clang_index_getCXXClassDeclInfo</link> (const CXIdxDeclInfo *DInfo)</para>
+</listitem>
+            <listitem><para>CXIdxClientContainer <link linkend="__indexing_8cpp_1a3bb9e55b3928a84a4d3aa3857116fc97">clang_index_getClientContainer</link> (const CXIdxContainerInfo *info)</para>
+</listitem>
+            <listitem><para>void <link linkend="__indexing_8cpp_1aa2eac57f19b74e513bad40df9a9d4a98">clang_index_setClientContainer</link> (const CXIdxContainerInfo *info, CXIdxClientContainer client)</para>
+</listitem>
+            <listitem><para>CXIdxClientEntity <link linkend="__indexing_8cpp_1af693d0089f071ec97c7d484394d26569">clang_index_getClientEntity</link> (const CXIdxEntityInfo *info)</para>
+</listitem>
+            <listitem><para>void <link linkend="__indexing_8cpp_1a9e9292a9d331944b3acd1d1a6192a9ee">clang_index_setClientEntity</link> (const CXIdxEntityInfo *info, CXIdxClientEntity client)</para>
+</listitem>
+            <listitem><para>CXIndexAction <link linkend="__indexing_8cpp_1a8951fd3fa3c59e24ac8ae72118363e9a">clang_IndexAction_create</link> (CXIndex CIdx)</para>
+</listitem>
+            <listitem><para>void <link linkend="__indexing_8cpp_1af00707f4579b5c8637e16ae9fb9d6fc4">clang_IndexAction_dispose</link> (CXIndexAction idxAction)</para>
+</listitem>
+            <listitem><para>int <link linkend="__indexing_8cpp_1aa28c1e7030b5ca7f87e589e2e11450cc">clang_indexSourceFile</link> (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks *index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, CXTranslationUnit *out_TU, unsigned TU_options)</para>
+</listitem>
+            <listitem><para>int <link linkend="__indexing_8cpp_1a70149e7a30ad5bdfe5985dd05ed4336e">clang_indexSourceFileFullArgv</link> (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks *index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, CXTranslationUnit *out_TU, unsigned TU_options)</para>
+</listitem>
+            <listitem><para>int <link linkend="__indexing_8cpp_1a92ce635fae76fa9778b17ac5121838cc">clang_indexTranslationUnit</link> (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks *index_callbacks, unsigned index_callbacks_size, unsigned index_options, CXTranslationUnit TU)</para>
+</listitem>
+            <listitem><para>void <link linkend="__indexing_8cpp_1a3b0c6665884edefc87f18c9b27930cad">clang_indexLoc_getFileLocation</link> (CXIdxLoc location, CXIdxClientFile *indexFile, CXFile *file, unsigned *line, unsigned *column, unsigned *offset)</para>
+</listitem>
+            <listitem><para>CXSourceLocation <link linkend="__indexing_8cpp_1a79942df8d85af804be57a78d5cc44cd0">clang_indexLoc_getCXSourceLocation</link> (CXIdxLoc location)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Function Documentation</title>
+<anchor xml:id="__indexing_8cpp_1a3bb9e55b3928a84a4d3aa3857116fc97"/>    <section>
+    <title>clang_index_getClientContainer()</title>
+<indexterm><primary>clang_index_getClientContainer</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getClientContainer</secondary></indexterm>
+<para><computeroutput>CXIdxClientContainer clang_index_getClientContainer (const CXIdxContainerInfo * info)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00822">822</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00822 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00823 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00824 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00825 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*Container&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00826 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aab567cd0d93550e824a2e8f8e037d1f0">getClientContainerForDC</link>(Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">DC</link>);
+00827 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8h_source_1l00061">clang::cxindex::ContainerInfo::DC</link>, <link linkend="__c_x_index_data_consumer_8cpp_source_1l01069">clang::cxindex::CXIndexDataConsumer::getClientContainerForDC()</link>, and <link linkend="__c_x_index_data_consumer_8h_source_1l00062">clang::cxindex::ContainerInfo::IndexCtx</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1af693d0089f071ec97c7d484394d26569"/>    <section>
+    <title>clang_index_getClientEntity()</title>
+<indexterm><primary>clang_index_getClientEntity</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getClientEntity</secondary></indexterm>
+<para><computeroutput>CXIdxClientEntity clang_index_getClientEntity (const CXIdxEntityInfo * info)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00837">837</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00837 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00838 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00839 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00840 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*Entity&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00841 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a758cad6aecad503d6dbda574e8f11f1b">getClientEntity</link>(Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">Dcl</link>);
+00842 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8h_source_1l00049">clang::cxindex::EntityInfo::Dcl</link>, <link linkend="__c_x_index_data_consumer_8cpp_source_1l00960">clang::cxindex::CXIndexDataConsumer::getClientEntity()</link>, and <link linkend="__c_x_index_data_consumer_8h_source_1l00050">clang::cxindex::EntityInfo::IndexCtx</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1a99ab66a0a0f83e87a0e37af7eeb46025"/>    <section>
+    <title>clang_index_getCXXClassDeclInfo()</title>
+<indexterm><primary>clang_index_getCXXClassDeclInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getCXXClassDeclInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxCXXClassDeclInfo* clang_index_getCXXClassDeclInfo (const CXIdxDeclInfo * DInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00810">810</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00810 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00811 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00812 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00813 
+00814 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00815 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_c_x_x_class_decl_info">CXXClassDeclInfo</link>&#32;*ClassInfo&#32;=&#32;dyn_cast&lt;CXXClassDeclInfo&gt;(DI))
+00816 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ClassInfo-&gt;CXXClassInfo;
+00817 
+00818 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00819 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1ab8d88ec6239274232ca690786d2742c8"/>    <section>
+    <title>clang_index_getIBOutletCollectionAttrInfo()</title>
+<indexterm><primary>clang_index_getIBOutletCollectionAttrInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getIBOutletCollectionAttrInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxIBOutletCollectionAttrInfo* clang_index_getIBOutletCollectionAttrInfo (const CXIdxAttrInfo * AInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00797">797</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00797 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00798 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!AInfo)
+00799 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00800 
+00801 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_attr_info">AttrInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(AInfo);
+00802 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_i_b_outlet_collection_info">IBOutletCollectionInfo</link>&#32;*
+00803 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;IBInfo&#32;=&#32;dyn_cast&lt;IBOutletCollectionInfo&gt;(DI))
+00804 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;IBInfo-&gt;IBCollInfo;
+00805 
+00806 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00807 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1a4f42a70f90d010e75213a54e4efb71e4"/>    <section>
+    <title>clang_index_getObjCCategoryDeclInfo()</title>
+<indexterm><primary>clang_index_getObjCCategoryDeclInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getObjCCategoryDeclInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxObjCCategoryDeclInfo* clang_index_getObjCCategoryDeclInfo (const CXIdxDeclInfo * DInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00751">751</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00751 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00752 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00753 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00754 
+00755 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00756 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;*
+00757 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;CatInfo&#32;=&#32;dyn_cast&lt;ObjCCategoryDeclInfo&gt;(DI))
+00758 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;CatInfo-&gt;ObjCCatDeclInfo;
+00759 
+00760 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00761 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1a5009ec9a006f9b9c275e8501147be820"/>    <section>
+    <title>clang_index_getObjCContainerDeclInfo()</title>
+<indexterm><primary>clang_index_getObjCContainerDeclInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getObjCContainerDeclInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxObjCContainerDeclInfo* clang_index_getObjCContainerDeclInfo (const CXIdxDeclInfo * DInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00725">725</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00725 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00726 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00727 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00728 
+00729 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00730 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_container_decl_info">ObjCContainerDeclInfo</link>&#32;*
+00731 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ContInfo&#32;=&#32;dyn_cast&lt;ObjCContainerDeclInfo&gt;(DI))
+00732 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ContInfo-&gt;ObjCContDeclInfo;
+00733 
+00734 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00735 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1a4fd62151af19e4c04d4885c1de582a5a"/>    <section>
+    <title>clang_index_getObjCInterfaceDeclInfo()</title>
+<indexterm><primary>clang_index_getObjCInterfaceDeclInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getObjCInterfaceDeclInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxObjCInterfaceDeclInfo* clang_index_getObjCInterfaceDeclInfo (const CXIdxDeclInfo * DInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00738">738</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00738 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00739 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00740 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00741 
+00742 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00743 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">ObjCInterfaceDeclInfo</link>&#32;*
+00744 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InterInfo&#32;=&#32;dyn_cast&lt;ObjCInterfaceDeclInfo&gt;(DI))
+00745 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;InterInfo-&gt;ObjCInterDeclInfo;
+00746 
+00747 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00748 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1acb9210ebcc65a6c1b4c560485b27c9b1"/>    <section>
+    <title>clang_index_getObjCPropertyDeclInfo()</title>
+<indexterm><primary>clang_index_getObjCPropertyDeclInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getObjCPropertyDeclInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxObjCPropertyDeclInfo* clang_index_getObjCPropertyDeclInfo (const CXIdxDeclInfo * DInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00785">785</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00785 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00786 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00787 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00788 
+00789 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00790 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_property_decl_info">ObjCPropertyDeclInfo</link>&#32;*PropInfo&#32;=&#32;dyn_cast&lt;ObjCPropertyDeclInfo&gt;(DI))
+00791 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;PropInfo-&gt;ObjCPropDeclInfo;
+00792 
+00793 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00794 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1a84557aa0abab4f20cc678ebb033fc35d"/>    <section>
+    <title>clang_index_getObjCProtocolRefListInfo()</title>
+<indexterm><primary>clang_index_getObjCProtocolRefListInfo</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_getObjCProtocolRefListInfo</secondary></indexterm>
+<para><computeroutput>const CXIdxObjCProtocolRefListInfo* clang_index_getObjCProtocolRefListInfo (const CXIdxDeclInfo * DInfo)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00764">764</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00764 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00765 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!DInfo)
+00766 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00767 
+00768 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*DI&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_decl_info">DeclInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(DInfo);
+00769 &#32;&#32;
+00770 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_interface_decl_info">ObjCInterfaceDeclInfo</link>&#32;*
+00771 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;InterInfo&#32;=&#32;dyn_cast&lt;ObjCInterfaceDeclInfo&gt;(DI))
+00772 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;InterInfo-&gt;ObjCInterDeclInfo.protocols;
+00773 &#32;&#32;
+00774 &#32;&#32;if&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_protocol_decl_info">ObjCProtocolDeclInfo</link>&#32;*
+00775 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;ProtInfo&#32;=&#32;dyn_cast&lt;ObjCProtocolDeclInfo&gt;(DI))
+00776 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;&amp;ProtInfo-&gt;ObjCProtoRefListInfo;
+00777 
+00778 &#32;&#32;if&#32;(<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_obj_c_category_decl_info">ObjCCategoryDeclInfo</link>&#32;*CatInfo&#32;=&#32;dyn_cast&lt;ObjCCategoryDeclInfo&gt;(DI))
+00779 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CatInfo-&gt;ObjCCatDeclInfo.protocols;
+00780 
+00781 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">nullptr</emphasis>;
+00782 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1aa218aee51ef76115268b7e9bc5ea1589"/>    <section>
+    <title>clang_index_isEntityObjCContainerKind()</title>
+<indexterm><primary>clang_index_isEntityObjCContainerKind</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_isEntityObjCContainerKind</secondary></indexterm>
+<para><computeroutput>int clang_index_isEntityObjCContainerKind (CXIdxEntityKind K)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00720">720</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00720 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00721 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXIdxEntity_ObjCClass&#32;&lt;=&#32;K&#32;&amp;&amp;&#32;K&#32;&lt;=&#32;CXIdxEntity_ObjCCategory;
+00722 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1aa2eac57f19b74e513bad40df9a9d4a98"/>    <section>
+    <title>clang_index_setClientContainer()</title>
+<indexterm><primary>clang_index_setClientContainer</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_setClientContainer</secondary></indexterm>
+<para><computeroutput>void clang_index_setClientContainer (const CXIdxContainerInfo * info, CXIdxClientContainer client)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00829">829</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00830 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00831 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00832 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00833 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*Container&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_container_info">ContainerInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00834 &#32;&#32;Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1ac3b8a12a9f3fb17af6db312eec3fbc93">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1aa606355afc24ae5ef78a5e1ae8e612c0">addContainerInMap</link>(Container-&gt;<link linkend="_structclang_1_1cxindex_1_1_container_info_1a7531a74cae31fbb0ff051c3a25f06235">DC</link>,&#32;client);
+00835 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8cpp_source_1l00941">clang::cxindex::CXIndexDataConsumer::addContainerInMap()</link>, <link linkend="__c_x_index_data_consumer_8h_source_1l00061">clang::cxindex::ContainerInfo::DC</link>, and <link linkend="__c_x_index_data_consumer_8h_source_1l00062">clang::cxindex::ContainerInfo::IndexCtx</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1a9e9292a9d331944b3acd1d1a6192a9ee"/>    <section>
+    <title>clang_index_setClientEntity()</title>
+<indexterm><primary>clang_index_setClientEntity</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_index_setClientEntity</secondary></indexterm>
+<para><computeroutput>void clang_index_setClientEntity (const CXIdxEntityInfo * info, CXIdxClientEntity client)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00844">844</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00845 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00846 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!info)
+00847 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00848 &#32;&#32;<emphasis role="keyword">const</emphasis>&#32;<link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*Entity&#32;=&#32;<emphasis role="keyword">static_cast&lt;</emphasis><emphasis role="keyword">const&#32;</emphasis><link linkend="_structclang_1_1cxindex_1_1_entity_info">EntityInfo</link>&#32;*<emphasis role="keyword">&gt;</emphasis>(info);
+00849 &#32;&#32;Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1a4c4342414a90e3801b1dce9b39662969">IndexCtx</link>-&gt;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a8410b188890a57a9e2034f3c5275be7e">setClientEntity</link>(Entity-&gt;<link linkend="_structclang_1_1cxindex_1_1_entity_info_1ae5285e30e5fbb8a40f57e45137e6408a">Dcl</link>,&#32;client);
+00850 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8h_source_1l00049">clang::cxindex::EntityInfo::Dcl</link>, <link linkend="__c_x_index_data_consumer_8h_source_1l00050">clang::cxindex::EntityInfo::IndexCtx</link>, and <link linkend="__c_x_index_data_consumer_8cpp_source_1l00969">clang::cxindex::CXIndexDataConsumer::setClientEntity()</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1a8951fd3fa3c59e24ac8ae72118363e9a"/>    <section>
+    <title>clang_IndexAction_create()</title>
+<indexterm><primary>clang_IndexAction_create</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_IndexAction_create</secondary></indexterm>
+<para><computeroutput>CXIndexAction clang_IndexAction_create (CXIndex CIdx)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00852">852</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00852 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00853 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="keyword">new</emphasis>&#32;IndexSessionData(CIdx);
+00854 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1af00707f4579b5c8637e16ae9fb9d6fc4"/>    <section>
+    <title>clang_IndexAction_dispose()</title>
+<indexterm><primary>clang_IndexAction_dispose</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_IndexAction_dispose</secondary></indexterm>
+<para><computeroutput>void clang_IndexAction_dispose (CXIndexAction idxAction)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00856">856</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00856 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00857 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(idxAction)
+00858 &#32;&#32;&#32;&#32;<emphasis role="keyword">delete</emphasis>&#32;<emphasis role="keyword">static_cast&lt;</emphasis>IndexSessionData&#32;*<emphasis role="keyword">&gt;</emphasis>(idxAction);
+00859 }
+</programlisting>    </section><anchor xml:id="__indexing_8cpp_1a79942df8d85af804be57a78d5cc44cd0"/>    <section>
+    <title>clang_indexLoc_getCXSourceLocation()</title>
+<indexterm><primary>clang_indexLoc_getCXSourceLocation</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_indexLoc_getCXSourceLocation</secondary></indexterm>
+<para><computeroutput>CXSourceLocation clang_indexLoc_getCXSourceLocation (CXIdxLoc location)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00989">989</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00989 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00990 &#32;&#32;SourceLocation&#32;Loc&#32;=&#32;SourceLocation::getFromRawEncoding(location.int_data);
+00991 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!location.ptr_data[0]&#32;||&#32;Loc.isInvalid())
+00992 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__c_x_source_location_8cpp_1a20bb1e9a72e2c16fbcb21958f0648947">clang_getNullLocation</link>();
+00993 
+00994 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer&#32;=
+00995 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>*<emphasis role="keyword">&gt;</emphasis>(location.ptr_data[0]);
+00996 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;cxloc::translateSourceLocation(DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a7e411bdd51411afd713185c3e5d19f90">getASTContext</link>(),&#32;Loc);
+00997 }
+</programlisting><para>
+References <link linkend="__c_x_source_location_8cpp_source_1l00041">clang_getNullLocation()</link>, and <link linkend="__c_x_index_data_consumer_8h_source_1l00340">clang::cxindex::CXIndexDataConsumer::getASTContext()</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1a3b0c6665884edefc87f18c9b27930cad"/>    <section>
+    <title>clang_indexLoc_getFileLocation()</title>
+<indexterm><primary>clang_indexLoc_getFileLocation</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_indexLoc_getFileLocation</secondary></indexterm>
+<para><computeroutput>void clang_indexLoc_getFileLocation (CXIdxLoc location, CXIdxClientFile * indexFile, CXFile * file, unsigned * line, unsigned * column, unsigned * offset)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00968">968</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00973 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00974 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(indexFile)&#32;*indexFile&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00975 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(file)&#32;&#32;&#32;*file&#32;=&#32;<emphasis role="keyword">nullptr</emphasis>;
+00976 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(line)&#32;&#32;&#32;*line&#32;=&#32;0;
+00977 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(column)&#32;*column&#32;=&#32;0;
+00978 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(offset)&#32;*offset&#32;=&#32;0;
+00979 
+00980 &#32;&#32;SourceLocation&#32;Loc&#32;=&#32;SourceLocation::getFromRawEncoding(location.int_data);
+00981 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!location.ptr_data[0]&#32;||&#32;Loc.isInvalid())
+00982 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>;
+00983 
+00984 &#32;&#32;<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>&#32;&amp;DataConsumer&#32;=
+00985 &#32;&#32;&#32;&#32;&#32;&#32;*<emphasis role="keyword">static_cast&lt;</emphasis><link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer">CXIndexDataConsumer</link>*<emphasis role="keyword">&gt;</emphasis>(location.ptr_data[0]);
+00986 &#32;&#32;DataConsumer.<link linkend="_classclang_1_1cxindex_1_1_c_x_index_data_consumer_1a5332371a52c1329c815af24c5dab3ed1">translateLoc</link>(Loc,&#32;indexFile,&#32;file,&#32;line,&#32;column,&#32;offset);
+00987 }
+</programlisting><para>
+References <link linkend="__c_x_index_data_consumer_8cpp_source_1l01101">clang::cxindex::CXIndexDataConsumer::translateLoc()</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1aa28c1e7030b5ca7f87e589e2e11450cc"/>    <section>
+    <title>clang_indexSourceFile()</title>
+<indexterm><primary>clang_indexSourceFile</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_indexSourceFile</secondary></indexterm>
+<para><computeroutput>int clang_indexSourceFile (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks * index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, CXTranslationUnit * out_TU, unsigned TU_options)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00861">861</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00872 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00873 &#32;&#32;SmallVector&lt;const&#32;char&#32;*,&#32;4&gt;&#32;Args;
+00874 &#32;&#32;Args.push_back(<emphasis role="stringliteral">&quot;clang&quot;</emphasis>);
+00875 &#32;&#32;Args.append(command_line_args,&#32;command_line_args&#32;+&#32;num_command_line_args);
+00876 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<link linkend="__indexing_8cpp_1a70149e7a30ad5bdfe5985dd05ed4336e">clang_indexSourceFileFullArgv</link>(
+00877 &#32;&#32;&#32;&#32;&#32;&#32;idxAction,&#32;client_data,&#32;index_callbacks,&#32;index_callbacks_size,
+00878 &#32;&#32;&#32;&#32;&#32;&#32;index_options,&#32;source_filename,&#32;Args.data(),&#32;Args.size(),&#32;unsaved_files,
+00879 &#32;&#32;&#32;&#32;&#32;&#32;num_unsaved_files,&#32;out_TU,&#32;TU_options);
+00880 }
+</programlisting><para>
+References <link linkend="__indexing_8cpp_source_1l00882">clang_indexSourceFileFullArgv()</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1a70149e7a30ad5bdfe5985dd05ed4336e"/>    <section>
+    <title>clang_indexSourceFileFullArgv()</title>
+<indexterm><primary>clang_indexSourceFileFullArgv</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_indexSourceFileFullArgv</secondary></indexterm>
+<para><computeroutput>int clang_indexSourceFileFullArgv (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks * index_callbacks, unsigned index_callbacks_size, unsigned index_options, const char * source_filename, const char *const * command_line_args, int num_command_line_args, struct CXUnsavedFile * unsaved_files, unsigned num_unsaved_files, CXTranslationUnit * out_TU, unsigned TU_options)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00882">882</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00888 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00889 &#32;&#32;<link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">LOG_FUNC_SECTION</link>&#32;{
+00890 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;source_filename&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;:&#32;&quot;</emphasis>;
+00891 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;num_command_line_args;&#32;++i)
+00892 &#32;&#32;&#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;command_line_args[i]&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&quot;</emphasis>;
+00893 &#32;&#32;}
+00894 
+00895 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(num_unsaved_files&#32;&amp;&amp;&#32;!unsaved_files)
+00896 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;CXError_InvalidArguments;
+00897 
+00898 &#32;&#32;CXErrorCode&#32;result&#32;=&#32;CXError_Failure;
+00899 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;IndexSourceFileImpl&#32;=&#32;[=,&#32;&amp;result]()&#32;{
+00900 &#32;&#32;&#32;&#32;result&#32;=&#32;clang_indexSourceFile_Impl(
+00901 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;idxAction,&#32;client_data,&#32;index_callbacks,&#32;index_callbacks_size,
+00902 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;index_options,&#32;source_filename,&#32;command_line_args,
+00903 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;num_command_line_args,
+00904 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;llvm::makeArrayRef(unsaved_files,&#32;num_unsaved_files),&#32;out_TU,
+00905 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;TU_options);
+00906 &#32;&#32;};
+00907 
+00908 &#32;&#32;llvm::CrashRecoveryContext&#32;CRC;
+00909 
+00910 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(CRC,&#32;IndexSourceFileImpl))&#32;{
+00911 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;libclang:&#32;crash&#32;detected&#32;during&#32;indexing&#32;source&#32;file:&#32;{\n&quot;</emphasis>);
+00912 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;source_filename&apos;&#32;:&#32;&apos;%s&apos;\n&quot;</emphasis>,&#32;source_filename);
+00913 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;command_line_args&apos;&#32;:&#32;[&quot;</emphasis>);
+00914 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;num_command_line_args;&#32;++i)&#32;{
+00915 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i)
+00916 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>);
+00917 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&apos;%s&apos;&quot;</emphasis>,&#32;command_line_args[i]);
+00918 &#32;&#32;&#32;&#32;}
+00919 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;],\n&quot;</emphasis>);
+00920 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;unsaved_files&apos;&#32;:&#32;[&quot;</emphasis>);
+00921 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(<emphasis role="keywordtype">unsigned</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;!=&#32;num_unsaved_files;&#32;++i)&#32;{
+00922 &#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(i)
+00923 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;,&#32;&quot;</emphasis>);
+00924 &#32;&#32;&#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;(&apos;%s&apos;,&#32;&apos;...&apos;,&#32;%ld)&quot;</emphasis>,&#32;unsaved_files[i].Filename,
+00925 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;unsaved_files[i].Length);
+00926 &#32;&#32;&#32;&#32;}
+00927 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;],\n&quot;</emphasis>);
+00928 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&apos;options&apos;&#32;:&#32;%d,\n&quot;</emphasis>,&#32;TU_options);
+00929 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;}\n&quot;</emphasis>);
+00930 &#32;&#32;&#32;&#32;
+00931 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00932 &#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(getenv(<emphasis role="stringliteral">&quot;LIBCLANG_RESOURCE_USAGE&quot;</emphasis>))&#32;{
+00933 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(out_TU)
+00934 &#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespaceclang_1aa969857ada50e5f302f7127c78a63018">PrintLibclangResourceUsage</link>(*out_TU);
+00935 &#32;&#32;}
+00936 
+00937 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00938 }
+</programlisting><para>
+References <link linkend="__c_log_8h_source_1l00100">LOG_FUNC_SECTION</link>.</para>
+<para>
+Referenced by <link linkend="__indexing_8cpp_source_1l00861">clang_indexSourceFile()</link>.</para>
+    </section><anchor xml:id="__indexing_8cpp_1a92ce635fae76fa9778b17ac5121838cc"/>    <section>
+    <title>clang_indexTranslationUnit()</title>
+<indexterm><primary>clang_indexTranslationUnit</primary><secondary>Indexing.cpp</secondary></indexterm>
+<indexterm><primary>Indexing.cpp</primary><secondary>clang_indexTranslationUnit</secondary></indexterm>
+<para><computeroutput>int clang_indexTranslationUnit (CXIndexAction idxAction, CXClientData client_data, IndexerCallbacks * index_callbacks, unsigned index_callbacks_size, unsigned index_options, CXTranslationUnit TU)</computeroutput></para><para>
+Definition at line <link linkend="__indexing_8cpp_source_1l00940">940</link> of file <link linkend="__indexing_8cpp_source">Indexing.cpp</link>.</para>
+<programlisting>00945 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00946 &#32;&#32;<link linkend="__c_log_8h_1a24474e48ce7e218f17ae9353103470d8">LOG_FUNC_SECTION</link>&#32;{
+00947 &#32;&#32;&#32;&#32;*Log&#32;&lt;&lt;&#32;TU;
+00948 &#32;&#32;}
+00949 
+00950 &#32;&#32;CXErrorCode&#32;result;
+00951 &#32;&#32;<emphasis role="keyword">auto</emphasis>&#32;IndexTranslationUnitImpl&#32;=&#32;[=,&#32;&amp;result]()&#32;{
+00952 &#32;&#32;&#32;&#32;result&#32;=&#32;clang_indexTranslationUnit_Impl(
+00953 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;idxAction,&#32;client_data,&#32;index_callbacks,&#32;index_callbacks_size,
+00954 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;index_options,&#32;TU);
+00955 &#32;&#32;};
+00956 
+00957 &#32;&#32;llvm::CrashRecoveryContext&#32;CRC;
+00958 
+00959 &#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(!<link linkend="_namespaceclang_1af866b018fe401ae941a367429bdd4c9a">RunSafely</link>(CRC,&#32;IndexTranslationUnitImpl))&#32;{
+00960 &#32;&#32;&#32;&#32;fprintf(stderr,&#32;<emphasis role="stringliteral">&quot;libclang:&#32;crash&#32;detected&#32;during&#32;indexing&#32;TU\n&quot;</emphasis>);
+00961 &#32;&#32;&#32;&#32;
+00962 &#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;1;
+00963 &#32;&#32;}
+00964 
+00965 &#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;result;
+00966 }
+</programlisting><para>
+References <link linkend="__c_log_8h_source_1l00100">LOG_FUNC_SECTION</link>.</para>
+</section>
+</section>
+</section>

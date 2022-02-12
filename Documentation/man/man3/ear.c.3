@@ -1,0 +1,104 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libear/ear.c" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libear/ear.c
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'config\&.h'\fP
+.br
+\fC#include <dlfcn\&.h>\fP
+.br
+\fC#include <pthread\&.h>\fP
+.br
+\fC#include <stdarg\&.h>\fP
+.br
+\fC#include <stddef\&.h>\fP
+.br
+\fC#include <stdio\&.h>\fP
+.br
+\fC#include <stdlib\&.h>\fP
+.br
+\fC#include <string\&.h>\fP
+.br
+\fC#include <unistd\&.h>\fP
+.br
+
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBENV_OUTPUT\fP   'INTERCEPT_BUILD_TARGET_DIR'"
+.br
+.ti -1c
+.RI "#define \fBENV_PRELOAD\fP   'LD_PRELOAD'"
+.br
+.ti -1c
+.RI "#define \fBENV_SIZE\fP   2"
+.br
+.ti -1c
+.RI "#define \fBDLSYM\fP(TYPE_,  VAR_,  SYMBOL_)"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef char const  * \fBbear_env_t\fP[\fBENV_SIZE\fP]"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "char ** \fBenviron\fP"
+.br
+.in -1c
+.SH "Macro Definition Documentation"
+.PP 
+.SS "#define DLSYM(TYPE_, VAR_, SYMBOL_)"
+\fBValue:\fP
+.PP
+.nf
+  union {                                                                      \
+    void *from;                                                                \
+    TYPE_ to;                                                                  \
+  } cast;                                                                      \
+  if (0 == (cast\&.from = dlsym(RTLD_NEXT, SYMBOL_))) {                          \
+    perror("bear: dlsym");                                                     \
+    exit(EXIT_FAILURE);                                                        \
+  }                                                                            \
+  TYPE_ const VAR_ = cast\&.to;
+.fi
+.PP
+Definition at line 53 of file ear\&.c\&.
+.SS "#define ENV_OUTPUT   'INTERCEPT_BUILD_TARGET_DIR'"
+
+.PP
+Definition at line 43 of file ear\&.c\&.
+.SS "#define ENV_PRELOAD   'LD_PRELOAD'"
+
+.PP
+Definition at line 49 of file ear\&.c\&.
+.SS "#define ENV_SIZE   2"
+
+.PP
+Definition at line 50 of file ear\&.c\&.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef char const* bear_env_t[\fBENV_SIZE\fP]"
+
+.PP
+Definition at line 64 of file ear\&.c\&.
+.SH "Variable Documentation"
+.PP 
+.SS "char** environ\fC [extern]\fP"
+This file implements a shared library\&. This library can be pre-loaded by the dynamic linker of the Operating System (OS)\&. It implements a few function related to process creation\&. By pre-load this library the executed process uses these functions instead of those from the standard library\&.
+.PP
+The idea here is to inject a logic before call the real methods\&. The logic is to dump the call into a file\&. To call the real method this library is doing the job of the dynamic linker\&.
+.PP
+The only input for the log writing is about the destination directory\&. This is passed as environment variable\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

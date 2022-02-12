@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_ear_8c" xml:lang="en-US">
+<title>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libear/ear.c File Reference</title>
+<indexterm><primary>/Users/maximilian/clang-llvm/clang/tools/scan-build-py/lib/libear/ear.c</primary></indexterm>
+<programlisting>#include &quot;config.h&quot;
+#include &lt;dlfcn.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;stddef.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+</programlisting><simplesect>
+    <title>Macros    </title>
+        <itemizedlist>
+            <listitem><para>#define <link linkend="_ear_8c_1a5115e8a1e6e4df1f94053f3c242ce90a">ENV_OUTPUT</link>   &quot;INTERCEPT_BUILD_TARGET_DIR&quot;</para>
+</listitem>
+            <listitem><para>#define <link linkend="_ear_8c_1a9dbd1fc3669ce86869300a2079bb4896">ENV_PRELOAD</link>   &quot;LD_PRELOAD&quot;</para>
+</listitem>
+            <listitem><para>#define <link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>   2</para>
+</listitem>
+            <listitem><para>#define <link linkend="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910">DLSYM</link>(TYPE_,  VAR_,  SYMBOL_)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Typedefs    </title>
+        <itemizedlist>
+            <listitem><para>typedef char const  * <link linkend="_ear_8c_1a217ea321e642e4196e75e746e4eb898e">bear_env_t</link>[<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>]</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Variables    </title>
+        <itemizedlist>
+            <listitem><para>char ** <link linkend="_ear_8c_1aa006daaf11f1e2e45a6ababaf463212b">environ</link></para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Macro Definition Documentation</title>
+<anchor xml:id="_ear_8c_1a591f1e0a0941e215395e8e9cdc076910"/>    <section>
+    <title>DLSYM</title>
+<indexterm><primary>DLSYM</primary><secondary>ear.c</secondary></indexterm>
+<indexterm><primary>ear.c</primary><secondary>DLSYM</secondary></indexterm>
+<para><computeroutput>#define DLSYM( TYPE_,  VAR_,  SYMBOL_)</computeroutput></para><emphasis role="strong">Value:</emphasis><programlisting>&#32;&#32;<emphasis role="keyword">union&#32;</emphasis>{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;void&#32;*from;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;TYPE_&#32;to;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;}&#32;cast;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;if&#32;(0&#32;==&#32;(cast.from&#32;=&#32;dlsym(RTLD_NEXT,&#32;SYMBOL_)))&#32;{&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;perror(<emphasis role="stringliteral">&quot;bear:&#32;dlsym&quot;</emphasis>);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;&#32;&#32;exit(EXIT_FAILURE);&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;}&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;\
+&#32;&#32;TYPE_&#32;<emphasis role="keyword">const</emphasis>&#32;VAR_&#32;=&#32;cast.to;
+</programlisting><para>
+Definition at line <link linkend="_ear_8c_source_1l00053">53</link> of file <link linkend="_ear_8c_source">ear.c</link>.</para>
+    </section><anchor xml:id="_ear_8c_1a5115e8a1e6e4df1f94053f3c242ce90a"/>    <section>
+    <title>ENV_OUTPUT</title>
+<indexterm><primary>ENV_OUTPUT</primary><secondary>ear.c</secondary></indexterm>
+<indexterm><primary>ear.c</primary><secondary>ENV_OUTPUT</secondary></indexterm>
+<para><computeroutput>#define ENV_OUTPUT   &quot;INTERCEPT_BUILD_TARGET_DIR&quot;</computeroutput></para><para>
+Definition at line <link linkend="_ear_8c_source_1l00043">43</link> of file <link linkend="_ear_8c_source">ear.c</link>.</para>
+    </section><anchor xml:id="_ear_8c_1a9dbd1fc3669ce86869300a2079bb4896"/>    <section>
+    <title>ENV_PRELOAD</title>
+<indexterm><primary>ENV_PRELOAD</primary><secondary>ear.c</secondary></indexterm>
+<indexterm><primary>ear.c</primary><secondary>ENV_PRELOAD</secondary></indexterm>
+<para><computeroutput>#define ENV_PRELOAD   &quot;LD_PRELOAD&quot;</computeroutput></para><para>
+Definition at line <link linkend="_ear_8c_source_1l00049">49</link> of file <link linkend="_ear_8c_source">ear.c</link>.</para>
+    </section><anchor xml:id="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a"/>    <section>
+    <title>ENV_SIZE</title>
+<indexterm><primary>ENV_SIZE</primary><secondary>ear.c</secondary></indexterm>
+<indexterm><primary>ear.c</primary><secondary>ENV_SIZE</secondary></indexterm>
+<para><computeroutput>#define ENV_SIZE   2</computeroutput></para><para>
+Definition at line <link linkend="_ear_8c_source_1l00050">50</link> of file <link linkend="_ear_8c_source">ear.c</link>.</para>
+</section>
+</section>
+<section>
+<title>Typedef Documentation</title>
+<anchor xml:id="_ear_8c_1a217ea321e642e4196e75e746e4eb898e"/>    <section>
+    <title>bear_env_t</title>
+<indexterm><primary>bear_env_t</primary><secondary>ear.c</secondary></indexterm>
+<indexterm><primary>ear.c</primary><secondary>bear_env_t</secondary></indexterm>
+<para><computeroutput>typedef char const* bear_env_t[<link linkend="_ear_8c_1af7693882c9eb9fbf7ad9d49f8ecb0f7a">ENV_SIZE</link>]</computeroutput></para><para>
+Definition at line <link linkend="_ear_8c_source_1l00064">64</link> of file <link linkend="_ear_8c_source">ear.c</link>.</para>
+</section>
+</section>
+<section>
+<title>Variable Documentation</title>
+<anchor xml:id="_ear_8c_1aa006daaf11f1e2e45a6ababaf463212b"/>    <section>
+    <title>environ</title>
+<indexterm><primary>environ</primary><secondary>ear.c</secondary></indexterm>
+<indexterm><primary>ear.c</primary><secondary>environ</secondary></indexterm>
+<para><computeroutput>char** environ<computeroutput>[extern]</computeroutput></computeroutput></para>
+<para>This file implements a shared library. This library can be pre-loaded by the dynamic linker of the Operating System (OS). It implements a few function related to process creation. By pre-load this library the executed process uses these functions instead of those from the standard library.</para>
+
+<para>The idea here is to inject a logic before call the real methods. The logic is to dump the call into a file. To call the real method this library is doing the job of the dynamic linker.</para>
+
+<para>The only input for the log writing is about the destination directory. This is passed as environment variable. </para>
+</section>
+</section>
+</section>

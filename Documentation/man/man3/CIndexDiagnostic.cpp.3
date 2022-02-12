@@ -1,0 +1,540 @@
+.TH "/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexDiagnostic.cpp" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+/Users/maximilian/clang-llvm/clang/tools/libclang/CIndexDiagnostic.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'CIndexDiagnostic\&.h'\fP
+.br
+\fC#include 'CIndexer\&.h'\fP
+.br
+\fC#include 'CXTranslationUnit\&.h'\fP
+.br
+\fC#include 'CXSourceLocation\&.h'\fP
+.br
+\fC#include 'CXString\&.h'\fP
+.br
+\fC#include 'clang/Basic/DiagnosticOptions\&.h'\fP
+.br
+\fC#include 'clang/Frontend/ASTUnit\&.h'\fP
+.br
+\fC#include 'clang/Frontend/DiagnosticRenderer\&.h'\fP
+.br
+\fC#include 'llvm/ADT/SmallString\&.h'\fP
+.br
+\fC#include 'llvm/Support/raw_ostream\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "unsigned \fBclang_getNumDiagnostics\fP (CXTranslationUnit Unit)"
+.br
+.ti -1c
+.RI "CXDiagnostic \fBclang_getDiagnostic\fP (CXTranslationUnit Unit, unsigned Index)"
+.br
+.ti -1c
+.RI "CXDiagnosticSet \fBclang_getDiagnosticSetFromTU\fP (CXTranslationUnit Unit)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeDiagnostic\fP (CXDiagnostic Diagnostic)"
+.br
+.ti -1c
+.RI "CXString \fBclang_formatDiagnostic\fP (CXDiagnostic Diagnostic, unsigned Options)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_defaultDiagnosticDisplayOptions\fP ()"
+.br
+.ti -1c
+.RI "enum CXDiagnosticSeverity \fBclang_getDiagnosticSeverity\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "CXSourceLocation \fBclang_getDiagnosticLocation\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getDiagnosticSpelling\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getDiagnosticOption\fP (CXDiagnostic Diag, CXString *Disable)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getDiagnosticCategory\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getDiagnosticCategoryName\fP (unsigned Category)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getDiagnosticCategoryText\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getDiagnosticNumRanges\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "CXSourceRange \fBclang_getDiagnosticRange\fP (CXDiagnostic Diag, unsigned Range)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getDiagnosticNumFixIts\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "CXString \fBclang_getDiagnosticFixIt\fP (CXDiagnostic Diag, unsigned FixIt, CXSourceRange *ReplacementRange)"
+.br
+.ti -1c
+.RI "void \fBclang_disposeDiagnosticSet\fP (CXDiagnosticSet Diags)"
+.br
+.ti -1c
+.RI "CXDiagnostic \fBclang_getDiagnosticInSet\fP (CXDiagnosticSet Diags, unsigned Index)"
+.br
+.ti -1c
+.RI "CXDiagnosticSet \fBclang_getChildDiagnostics\fP (CXDiagnostic Diag)"
+.br
+.ti -1c
+.RI "unsigned \fBclang_getNumDiagnosticsInSet\fP (CXDiagnosticSet Diags)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "unsigned clang_defaultDiagnosticDisplayOptions ()"
+
+.PP
+Definition at line 361 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+361                                                  {
+362   return CXDiagnostic_DisplaySourceLocation | CXDiagnostic_DisplayColumn |
+363          CXDiagnostic_DisplayOption;
+364 }
+.fi
+.PP
+Referenced by clang::cxindex::printDiagsToStderr()\&.
+.SS "void clang_disposeDiagnostic (CXDiagnostic Diagnostic)"
+
+.PP
+Definition at line 236 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+236                                                       {
+237   // No-op\&.  Kept as a legacy API\&.  CXDiagnostics are now managed
+238   // by the enclosing CXDiagnosticSet\&.
+239 }
+.fi
+.SS "void clang_disposeDiagnosticSet (CXDiagnosticSet Diags)"
+
+.PP
+Definition at line 441 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+441                                                        {
+442   if (CXDiagnosticSetImpl *D = static_cast<CXDiagnosticSetImpl *>(Diags)) {
+443     if (D->isExternallyManaged())
+444       delete D;
+445   }
+446 }
+.fi
+.PP
+Referenced by PrintDiagnostics()\&.
+.SS "CXString clang_formatDiagnostic (CXDiagnostic Diagnostic, unsigned Options)"
+
+.PP
+Definition at line 241 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+241                                                                            {
+242   if (!Diagnostic)
+243     return cxstring::createEmpty();
+244 
+245   CXDiagnosticSeverity Severity = clang_getDiagnosticSeverity(Diagnostic);
+246 
+247   SmallString<256> Str;
+248   llvm::raw_svector_ostream Out(Str);
+249   
+250   if (Options & CXDiagnostic_DisplaySourceLocation) {
+251     // Print source location (file:line), along with optional column
+252     // and source ranges\&.
+253     CXFile File;
+254     unsigned Line, Column;
+255     clang_getSpellingLocation(clang_getDiagnosticLocation(Diagnostic),
+256                               &File, &Line, &Column, nullptr);
+257     if (File) {
+258       CXString FName = clang_getFileName(File);
+259       Out << clang_getCString(FName) << ":" << Line << ":";
+260       clang_disposeString(FName);
+261       if (Options & CXDiagnostic_DisplayColumn)
+262         Out << Column << ":";
+263 
+264       if (Options & CXDiagnostic_DisplaySourceRanges) {
+265         unsigned N = clang_getDiagnosticNumRanges(Diagnostic);
+266         bool PrintedRange = false;
+267         for (unsigned I = 0; I != N; ++I) {
+268           CXFile StartFile, EndFile;
+269           CXSourceRange Range = clang_getDiagnosticRange(Diagnostic, I);
+270           
+271           unsigned StartLine, StartColumn, EndLine, EndColumn;
+272           clang_getSpellingLocation(clang_getRangeStart(Range),
+273                                     &StartFile, &StartLine, &StartColumn,
+274                                     nullptr);
+275           clang_getSpellingLocation(clang_getRangeEnd(Range),
+276                                     &EndFile, &EndLine, &EndColumn, nullptr);
+277 
+278           if (StartFile != EndFile || StartFile != File)
+279             continue;
+280           
+281           Out << "{" << StartLine << ":" << StartColumn << "-"
+282               << EndLine << ":" << EndColumn << "}";
+283           PrintedRange = true;
+284         }
+285         if (PrintedRange)
+286           Out << ":";
+287       }
+288       
+289       Out << " ";
+290     }
+291   }
+292 
+293   /* Print warning/error/etc\&. */
+294   switch (Severity) {
+295   case CXDiagnostic_Ignored: llvm_unreachable("impossible");
+296   case CXDiagnostic_Note: Out << "note: "; break;
+297   case CXDiagnostic_Warning: Out << "warning: "; break;
+298   case CXDiagnostic_Error: Out << "error: "; break;
+299   case CXDiagnostic_Fatal: Out << "fatal error: "; break;
+300   }
+301 
+302   CXString Text = clang_getDiagnosticSpelling(Diagnostic);
+303   if (clang_getCString(Text))
+304     Out << clang_getCString(Text);
+305   else
+306     Out << "<no diagnostic text>";
+307   clang_disposeString(Text);
+308   
+309   if (Options & (CXDiagnostic_DisplayOption | CXDiagnostic_DisplayCategoryId |
+310                  CXDiagnostic_DisplayCategoryName)) {
+311     bool NeedBracket = true;
+312     bool NeedComma = false;
+313 
+314     if (Options & CXDiagnostic_DisplayOption) {
+315       CXString OptionName = clang_getDiagnosticOption(Diagnostic, nullptr);
+316       if (const char *OptionText = clang_getCString(OptionName)) {
+317         if (OptionText[0]) {
+318           Out << " [" << OptionText;
+319           NeedBracket = false;
+320           NeedComma = true;
+321         }
+322       }
+323       clang_disposeString(OptionName);
+324     }
+325     
+326     if (Options & (CXDiagnostic_DisplayCategoryId | 
+327                    CXDiagnostic_DisplayCategoryName)) {
+328       if (unsigned CategoryID = clang_getDiagnosticCategory(Diagnostic)) {
+329         if (Options & CXDiagnostic_DisplayCategoryId) {
+330           if (NeedBracket)
+331             Out << " [";
+332           if (NeedComma)
+333             Out << ", ";
+334           Out << CategoryID;
+335           NeedBracket = false;
+336           NeedComma = true;
+337         }
+338         
+339         if (Options & CXDiagnostic_DisplayCategoryName) {
+340           CXString CategoryName = clang_getDiagnosticCategoryText(Diagnostic);
+341           if (NeedBracket)
+342             Out << " [";
+343           if (NeedComma)
+344             Out << ", ";
+345           Out << clang_getCString(CategoryName);
+346           NeedBracket = false;
+347           NeedComma = true;
+348           clang_disposeString(CategoryName);
+349         }
+350       }
+351     }
+352 
+353     (void) NeedComma; // Silence dead store warning\&.
+354     if (!NeedBracket)
+355       Out << "]";
+356   }
+357   
+358   return cxstring::createDup(Out\&.str());
+359 }
+.fi
+.PP
+Referenced by PrintDiagnostic(), and clang::cxindex::printDiagsToStderr()\&.
+.SS "CXDiagnosticSet clang_getChildDiagnostics (CXDiagnostic Diag)"
+
+.PP
+Definition at line 456 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+456                                                              {
+457   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag)) {
+458     CXDiagnosticSetImpl &ChildDiags = D->getChildDiagnostics();
+459     return ChildDiags\&.empty() ? nullptr : (CXDiagnosticSet) &ChildDiags;
+460   }
+461   return nullptr;
+462 }
+.fi
+.PP
+References clang::CXDiagnosticSetImpl::empty()\&.
+.PP
+Referenced by PrintDiagnosticSet()\&.
+.SS "CXDiagnostic clang_getDiagnostic (CXTranslationUnit Unit, unsigned Index)"
+
+.PP
+Definition at line 209 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+209                                                                          {
+210   if (cxtu::isNotUsableTU(Unit)) {
+211     LOG_BAD_TU(Unit);
+212     return nullptr;
+213   }
+214 
+215   CXDiagnosticSet D = clang_getDiagnosticSetFromTU(Unit);
+216   if (!D)
+217     return nullptr;
+218 
+219   CXDiagnosticSetImpl *Diags = static_cast<CXDiagnosticSetImpl*>(D);
+220   if (Index >= Diags->getNumDiagnostics())
+221     return nullptr;
+222 
+223   return Diags->getDiagnostic(Index);
+224 }
+.fi
+.PP
+References clang_getDiagnosticSetFromTU(), clang::CXDiagnosticSetImpl::getDiagnostic(), clang::CXDiagnosticSetImpl::getNumDiagnostics(), and LOG_BAD_TU\&.
+.SS "unsigned clang_getDiagnosticCategory (CXDiagnostic Diag)"
+
+.PP
+Definition at line 394 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+394                                                         {
+395   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag))
+396     return D->getCategory();
+397   return 0;
+398 }
+.fi
+.SS "CXString clang_getDiagnosticCategoryName (unsigned Category)"
+
+.PP
+Definition at line 400 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+400                                                             {
+401   // Kept for backward compatibility\&.
+402   return cxstring::createRef(DiagnosticIDs::getCategoryNameFromID(Category));
+403 }
+.fi
+.PP
+References clang::cxstring::createRef()\&.
+.SS "CXString clang_getDiagnosticCategoryText (CXDiagnostic Diag)"
+
+.PP
+Definition at line 405 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+405                                                             {
+406   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag))
+407     return D->getCategoryText();
+408   return cxstring::createEmpty();
+409 }
+.fi
+.PP
+References clang::cxstring::createEmpty()\&.
+.SS "CXString clang_getDiagnosticFixIt (CXDiagnostic Diag, unsigned FixIt, CXSourceRange * ReplacementRange)"
+
+.PP
+Definition at line 430 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+431                                                                    {
+432   CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag);
+433   if (!D || FixIt >= D->getNumFixIts()) {
+434     if (ReplacementRange)
+435       *ReplacementRange = clang_getNullRange();
+436     return cxstring::createEmpty();
+437   }
+438   return D->getFixIt(FixIt, ReplacementRange);
+439 }
+.fi
+.PP
+References clang_getNullRange(), clang::cxstring::createEmpty(), clang::CXDiagnosticImpl::getFixIt(), and clang::CXDiagnosticImpl::getNumFixIts()\&.
+.PP
+Referenced by PrintDiagnostic()\&.
+.SS "CXDiagnostic clang_getDiagnosticInSet (CXDiagnosticSet Diags, unsigned Index)"
+
+.PP
+Definition at line 448 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+449                                                       {
+450   if (CXDiagnosticSetImpl *D = static_cast<CXDiagnosticSetImpl*>(Diags))
+451     if (Index < D->getNumDiagnostics())
+452       return D->getDiagnostic(Index);
+453   return nullptr;
+454 }
+.fi
+.PP
+Referenced by PrintDiagnosticSet()\&.
+.SS "CXSourceLocation clang_getDiagnosticLocation (CXDiagnostic Diag)"
+
+.PP
+Definition at line 372 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+372                                                                 {
+373   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl*>(Diag))
+374     return D->getLocation();
+375   return clang_getNullLocation();
+376 }
+.fi
+.PP
+References clang_getNullLocation()\&.
+.PP
+Referenced by PrintDiagnostic()\&.
+.SS "unsigned clang_getDiagnosticNumFixIts (CXDiagnostic Diag)"
+
+.PP
+Definition at line 424 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+424                                                          {
+425   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag))
+426     return D->getNumFixIts();
+427   return 0;
+428 }
+.fi
+.PP
+Referenced by PrintDiagnostic()\&.
+.SS "unsigned clang_getDiagnosticNumRanges (CXDiagnostic Diag)"
+
+.PP
+Definition at line 411 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+411                                                          {
+412   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag))
+413     return D->getNumRanges();
+414   return 0;
+415 }
+.fi
+.SS "CXString clang_getDiagnosticOption (CXDiagnostic Diag, CXString * Disable)"
+
+.PP
+Definition at line 384 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+384                                                                          {
+385   if (Disable)
+386     *Disable = cxstring::createEmpty();
+387 
+388   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag))
+389     return D->getDiagnosticOption(Disable);
+390 
+391   return cxstring::createEmpty();
+392 }
+.fi
+.PP
+References clang::cxstring::createEmpty()\&.
+.SS "CXSourceRange clang_getDiagnosticRange (CXDiagnostic Diag, unsigned Range)"
+
+.PP
+Definition at line 417 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+417                                                                           {
+418   CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag);  
+419   if (!D || Range >= D->getNumRanges())
+420     return clang_getNullRange();
+421   return D->getRange(Range);
+422 }
+.fi
+.PP
+References clang_getNullRange(), clang::CXDiagnosticImpl::getNumRanges(), and clang::CXDiagnosticImpl::getRange()\&.
+.SS "CXDiagnosticSet clang_getDiagnosticSetFromTU (CXTranslationUnit Unit)"
+
+.PP
+Definition at line 226 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+226                                                                      {
+227   if (cxtu::isNotUsableTU(Unit)) {
+228     LOG_BAD_TU(Unit);
+229     return nullptr;
+230   }
+231   if (!cxtu::getASTUnit(Unit))
+232     return nullptr;
+233   return static_cast<CXDiagnostic>(lazyCreateDiags(Unit));
+234 }
+.fi
+.PP
+References clang::cxdiag::lazyCreateDiags(), and LOG_BAD_TU\&.
+.PP
+Referenced by clang_getDiagnostic(), and PrintDiagnostics()\&.
+.SS "enum CXDiagnosticSeverity clang_getDiagnosticSeverity (CXDiagnostic Diag)"
+
+.PP
+Definition at line 361 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+366                                                                          {
+367   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl*>(Diag))
+368     return D->getSeverity();
+369   return CXDiagnostic_Ignored;
+370 }
+.fi
+.PP
+Referenced by PrintDiagnostic()\&.
+.SS "CXString clang_getDiagnosticSpelling (CXDiagnostic Diag)"
+
+.PP
+Definition at line 378 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+378                                                         {
+379   if (CXDiagnosticImpl *D = static_cast<CXDiagnosticImpl *>(Diag))
+380     return D->getSpelling();
+381   return cxstring::createEmpty();
+382 }
+.fi
+.PP
+References clang::cxstring::createEmpty()\&.
+.SS "unsigned clang_getNumDiagnostics (CXTranslationUnit Unit)"
+
+.PP
+Definition at line 199 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+199                                                          {
+200   if (cxtu::isNotUsableTU(Unit)) {
+201     LOG_BAD_TU(Unit);
+202     return 0;
+203   }
+204   if (!cxtu::getASTUnit(Unit))
+205     return 0;
+206   return lazyCreateDiags(Unit, /*checkIfChanged=*/true)->getNumDiagnostics();
+207 }
+.fi
+.PP
+References clang::CXDiagnosticSetImpl::getNumDiagnostics(), clang::cxdiag::lazyCreateDiags(), and LOG_BAD_TU\&.
+.SS "unsigned clang_getNumDiagnosticsInSet (CXDiagnosticSet Diags)"
+
+.PP
+Definition at line 464 of file CIndexDiagnostic\&.cpp\&.
+.PP
+.nf
+464                                                              {
+465   if (CXDiagnosticSetImpl *D = static_cast<CXDiagnosticSetImpl*>(Diags))
+466     return D->getNumDiagnostics();
+467   return 0;
+468 }
+.fi
+.PP
+Referenced by PrintDiagnosticSet()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.
