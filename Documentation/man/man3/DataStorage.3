@@ -1,4 +1,4 @@
-.TH "DataStorage" 3 "Sun Nov 14 2021" "Version 1.0" "Hagn Tool Performance Counter" \" -*- nroff -*-
+.TH "DataStorage" 3 "Sat Feb 12 2022" "Version 1.2" "Regions Of Interest (ROI) Profiler" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -64,123 +64,145 @@ References StatementRuntime::identifier, identifierString, statementRuntimeArray
 .SS "void DataStorage::endEvent (int identifier)\fC [inline]\fP"
 
 .PP
-Definition at line 43 of file DataStorage\&.cpp\&.
+Definition at line 46 of file DataStorage\&.cpp\&.
 .PP
 .nf
-43                                     {
-44         statementRuntimeArray[ identifier ]\&.endTime = high_resolution_clock::now( );
-45     }
+46                                     {
+47         statementRuntimeArray[ identifier ]\&.endTime = high_resolution_clock::now( );
+48         //cout << "\ntime:" << high_resolution_clock::now()\&.time_since_epoch()\&.count();
+49     }
 .fi
 .PP
 References StatementRuntime::endTime, and statementRuntimeArray\&.
 .PP
-Referenced by main()\&.
+Referenced by main(), prime_sieve::runSieve(), and BitArray::setFlagsFalse()\&.
 .SS "void DataStorage::print ()\fC [inline]\fP"
 
 .PP
-Definition at line 48 of file DataStorage\&.cpp\&.
+Definition at line 52 of file DataStorage\&.cpp\&.
 .PP
 .nf
-48                   {
-49 
-50         // calculate total runtime
-51         MeasurementEvaluation total;
-52         total\&.identifier = "Runtime";
-53         total\&.duration = statementRuntimeArray[ 0 ]\&.endTime - statementRuntimeArray[ 0 ]\&.startTime;
-54 
-55         // calculate scope runtime
-56         MeasurementEvaluation scope;
-57         scope\&.identifier = "Scope";
-58         scope\&.duration = statementRuntimeArray[ 1 ]\&.endTime - statementRuntimeArray[ 1 ]\&.startTime;
-59 
-60         // sum of runtime of all annotated statements
-61         std::chrono::duration<double, std::nano> statementRuntimeSum;
+52                   {
+53 
+54         // calculate total runtime
+55         MeasurementEvaluation total;
+56         total\&.identifier = "Runtime";
+57         total\&.duration = statementRuntimeArray[ 0 ]\&.endTime - statementRuntimeArray[ 0 ]\&.startTime;
+58 
+59         //ofstream outfile;
+60         //outfile\&.open("Time_Without_Print\&.txt", ios_base::app);
+61         //outfile << hlibhelp::convertToSpecifiedUnit( total\&.duration, "s" ) << "\n";
 62 
-63         // get unit for runtime if scope measured
-64         string unit = hlibhelp::getUnit( scope\&.duration );
-65 
-66         // normally scope is measured
-67         bool scopeIsMeasured = true;
-68 
-69         // if scope is not measured, calculate time between first and last counter
-70         if ( scope\&.duration\&.count( ) == 0 ) {
-71             scope\&.duration = statementRuntimeArray[ statementRuntimeArraySize - 1 ]\&.endTime -
-72                              statementRuntimeArray[ 2 ]\&.startTime;
-73             // get unit for runtime
-74             unit = hlibhelp::getUnit( scope\&.duration );
-75             scopeIsMeasured = false;
-76         }
-77 
-78         // print the statistic banner
-79         hlibhelp::printStatisticBanner( );
-80 
-81         // print table header
-82         hlibhelp::printTableSeparator( 104, "—", "top", "\n" );
-83         hlibhelp::printTableRow( "ID", "ClassType", 0, "", "Scope", "Total" );
-84         hlibhelp::printTableSeparator( 104, "—", "middle", "\n" );
-85 
-86         // iterate through all measured statements
-87         for ( int i = 2; i < statementRuntimeArraySize; i++ ) {
-88 
-89             // calculate duration
-90             MeasurementEvaluation currentEvaluation;
-91             currentEvaluation\&.duration = statementRuntimeArray[ i ]\&.endTime - statementRuntimeArray[ i ]\&.startTime;
-92             currentEvaluation\&.totalUsage = currentEvaluation\&.duration / total\&.duration * 100;
-93             currentEvaluation\&.scopeUsage = currentEvaluation\&.duration / scope\&.duration * 100;
-94             statementRuntimeSum += currentEvaluation\&.duration;
-95 
-96             // split identifier in id and class type
-97             string *segments = hlibhelp::getSegmentsOfString( statementRuntimeArray[ i ]\&.identifier );
-98 
-99             // current evaluation to string
-100             double durationBeautified = hlibhelp::convertToSpecifiedUnit( currentEvaluation\&.duration, unit );
-101             string scopeUsageBeautified = hlibhelp::getUsageAsString( currentEvaluation\&.scopeUsage );
-102             string totalUsageBeautified = hlibhelp::getUsageAsString( currentEvaluation\&.totalUsage );
-103 
-104             // print current evaluation the row table
-105             hlibhelp::printTableRow( segments[ 1 ], segments[ 0 ], durationBeautified, unit,
-106                                      scopeUsageBeautified, totalUsageBeautified );
-107 
-108         }
+63         // calculate scope runtime
+64         MeasurementEvaluation scope;
+65         scope\&.identifier = "Scope";
+66         scope\&.duration = statementRuntimeArray[ 1 ]\&.endTime - statementRuntimeArray[ 1 ]\&.startTime;
+67 
+68         // sum of runtime of all annotated statements
+69         std::chrono::duration<double, std::nano> statementRuntimeSum;
+70 
+71         // get unit for runtime if scope measured
+72         string unit = hlibhelp::getUnit( total\&.duration );
+73 
+74         // normally scope is measured
+75         bool scopeIsMeasured = true;
+76 
+77         cout << scope\&.duration\&.count();
+78         // if scope is not measured, calculate time between first and last counter
+79         if ( scope\&.duration\&.count( ) == 0 ) {
+80             scope\&.duration = statementRuntimeArray[ statementRuntimeArraySize - 1 ]\&.endTime -
+81                              statementRuntimeArray[ 2 ]\&.startTime;
+82             // get unit for runtime
+83             unit = hlibhelp::getUnit( scope\&.duration );
+84             scopeIsMeasured = false;
+85         }
+86 
+87         // print the statistic banner
+88         hlibhelp::printStatisticBanner( );
+89 
+90         // print table header
+91         hlibhelp::printTableSeparator( 115, "—", "top", "\n" );
+92         hlibhelp::printTableRow( "ID", "ClassType", 0, "", "Scope", "Total", "Calls" );
+93         hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
+94 
+95         double sumCalls = 0;
+96 
+97         // iterate through all measured statements
+98         for ( int i = 2; i < statementRuntimeArraySize; i++ ) {
+99 
+100             // calculate duration
+101             MeasurementEvaluation currentEvaluation;
+102             currentEvaluation\&.duration = statementRuntimeArray[ i ]\&.endTime - statementRuntimeArray[ i ]\&.startTime;
+103             currentEvaluation\&.totalUsage = currentEvaluation\&.duration / total\&.duration * 100;
+104             currentEvaluation\&.scopeUsage = currentEvaluation\&.duration / scope\&.duration * 100;
+105             sumCalls += statementRuntimeArray[ i ]\&.called;
+106             std::ostringstream calledToString;
+107             calledToString << std::fixed << setprecision(0) << statementRuntimeArray[ i ]\&.called;
+108             currentEvaluation\&.called = calledToString\&.str();
 109 
-110         // evaluate hagn tool runtime
-111         MeasurementEvaluation hagnTool;
-112         hagnTool\&.identifier = "Hagn-Tool";
-113         hagnTool\&.duration = scope\&.duration - statementRuntimeSum;
-114         hagnTool\&.totalUsage = hagnTool\&.duration / total\&.duration * 100;
-115         hagnTool\&.scopeUsage = hagnTool\&.duration / scope\&.duration * 100;
-116 
-117         // hagn tool evaluation to string
-118         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool\&.duration, unit );
-119         string totalUsageBeautified = hlibhelp::getUsageAsString( hagnTool\&.totalUsage );
-120         string scopeUsageBeautified = hlibhelp::getUsageAsString( hagnTool\&.scopeUsage );
-121 
-122         // print hagnTool row table
-123         hlibhelp::printTableRow( hagnTool\&.identifier, "", hagnToolDurationBeautified, unit, scopeUsageBeautified,
-124                                  totalUsageBeautified );
+110             statementRuntimeSum += currentEvaluation\&.duration;
+111 
+112             // split identifier in id and class type
+113             string *segments = hlibhelp::getSegmentsOfString( statementRuntimeArray[ i ]\&.identifier );
+114 
+115             // current evaluation to string
+116             double durationBeautified = hlibhelp::convertToSpecifiedUnit( currentEvaluation\&.duration, unit );
+117             string scopeUsageBeautified = hlibhelp::getUsageAsString( currentEvaluation\&.scopeUsage );
+118             string totalUsageBeautified = hlibhelp::getUsageAsString( currentEvaluation\&.totalUsage );
+119 
+120             // print current evaluation the row table
+121             hlibhelp::printTableRow( segments[ 1 ], segments[ 0 ], durationBeautified, unit,
+122                                      scopeUsageBeautified, totalUsageBeautified, currentEvaluation\&.called );
+123 
+124         }
 125 
-126 
-127         // check if scope measurement should be printed
-128         if ( scopeIsMeasured ) {
-129             hlibhelp::printTableSeparator( 104, "—", "middle", "\n" );
-130             double scopeDurationBeautified = hlibhelp::convertToSpecifiedUnit( scope\&.duration, unit );
-131             hlibhelp::printTableRow( scope\&.identifier, "", scopeDurationBeautified, unit, "", "" );
-132         } else {
-133             hlibhelp::printTableSeparator( 104, "—", "middle", "\n" );
-134         }
-135 
-136         // total duration to string
-137         double totalDurationBeautified = hlibhelp::convertToSpecifiedUnit( total\&.duration, unit );
-138 
-139         // print runtime row table
-140         hlibhelp::printTableRow( total\&.identifier, "", totalDurationBeautified, unit, "", "" );
-141         hlibhelp::printTableSeparator( 104, "—", "bottom", "\n" );
-142         cout << "\n\n";
-143 
-144     }
+126         // evaluate hagn tool runtime
+127         MeasurementEvaluation hagnTool;
+128         hagnTool\&.identifier = "Perf Counter";
+129         hagnTool\&.duration = scope\&.duration - statementRuntimeSum;
+130         hagnTool\&.totalUsage = hagnTool\&.duration / total\&.duration * 100;
+131         hagnTool\&.scopeUsage = hagnTool\&.duration / scope\&.duration * 100;
+132         std::ostringstream calledToString;
+133 
+134         sumCalls = sumCalls*2;
+135         calledToString << std::fixed << setprecision(0) << sumCalls;
+136         hagnTool\&.called = calledToString\&.str();
+137 
+138         ofstream callsFile;
+139         callsFile\&.open("Calls\&.txt", ios_base::app);
+140         callsFile << calledToString\&.str() << "\n";
+141 
+142         // hagn tool evaluation to string
+143         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool\&.duration, unit );
+144         string totalUsageBeautified = hlibhelp::getUsageAsString( hagnTool\&.totalUsage );
+145         string scopeUsageBeautified = hlibhelp::getUsageAsString( hagnTool\&.scopeUsage );
+146 
+147         // print hagnTool row table
+148         hlibhelp::printTableRow( hagnTool\&.identifier, "", hagnToolDurationBeautified, unit, scopeUsageBeautified,
+149                                  totalUsageBeautified, hagnTool\&.called );
+150 
+151 
+152         // check if scope measurement should be printed
+153         if ( scopeIsMeasured ) {
+154             hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
+155             double scopeDurationBeautified = hlibhelp::convertToSpecifiedUnit( scope\&.duration, unit );
+156             hlibhelp::printTableRow( scope\&.identifier, "", scopeDurationBeautified, unit, "", "", "" );
+157         } else {
+158             hlibhelp::printTableSeparator( 115, "—", "middle", "\n" );
+159         }
+160 
+161         // total duration to string
+162         double totalDurationBeautified = hlibhelp::convertToSpecifiedUnit( total\&.duration, unit );
+163 
+164         // print runtime row table
+165         hlibhelp::printTableRow( total\&.identifier, "", totalDurationBeautified, unit, "", "", "" );
+166         hlibhelp::printTableSeparator( 115, "—", "bottom", "\n" );
+167         cout << "\n\n";
+168 
+169     }
 .fi
 .PP
-References hlibhelp::convertToSpecifiedUnit(), MeasurementEvaluation::duration, StatementRuntime::endTime, hlibhelp::getSegmentsOfString(), hlibhelp::getUnit(), hlibhelp::getUsageAsString(), MeasurementEvaluation::identifier, hlibhelp::printStatisticBanner(), hlibhelp::printTableRow(), hlibhelp::printTableSeparator(), MeasurementEvaluation::scopeUsage, StatementRuntime::startTime, statementRuntimeArray, statementRuntimeArraySize, and MeasurementEvaluation::totalUsage\&.
+References StatementRuntime::called, MeasurementEvaluation::called, hlibhelp::convertToSpecifiedUnit(), MeasurementEvaluation::duration, StatementRuntime::endTime, hlibhelp::getSegmentsOfString(), hlibhelp::getUnit(), hlibhelp::getUsageAsString(), MeasurementEvaluation::identifier, hlibhelp::printStatisticBanner(), hlibhelp::printTableRow(), hlibhelp::printTableSeparator(), MeasurementEvaluation::scopeUsage, StatementRuntime::startTime, statementRuntimeArray, statementRuntimeArraySize, and MeasurementEvaluation::totalUsage\&.
 .PP
 Referenced by main()\&.
 .SS "void DataStorage::startEvent (int identifier)\fC [inline]\fP"
@@ -190,23 +212,26 @@ Definition at line 28 of file DataStorage\&.cpp\&.
 .PP
 .nf
 28                                       {
-29         // if identifier is already measured, sum runtimes
-30         if ( statementRuntimeArray[ identifier ]\&.startTime != invalidTime &&
-31              statementRuntimeArray[ identifier ]\&.endTime != invalidTime ) {
-32             statementRuntimeArray[ identifier ]\&.startTime = high_resolution_clock::now( ) -
-33                                                             ( statementRuntimeArray[ identifier ]\&.endTime -
-34                                                               statementRuntimeArray[ identifier ]\&.startTime );
-35         }
-36             // else add timestamp as start time
-37         else {
-38             statementRuntimeArray[ identifier ]\&.startTime = high_resolution_clock::now( );
-39         }
-40     }
+29         statementRuntimeArray[ identifier ]\&.called++;
+30         // if identifier is already measured, sum runtimes
+31         if ( statementRuntimeArray[ identifier ]\&.startTime != invalidTime &&
+32              statementRuntimeArray[ identifier ]\&.endTime != invalidTime ) {
+33             statementRuntimeArray[ identifier ]\&.startTime = high_resolution_clock::now( ) -
+34                                                             ( statementRuntimeArray[ identifier ]\&.endTime -
+35                                                               statementRuntimeArray[ identifier ]\&.startTime );
+36         }
+37             // else add timestamp as start time
+38         else {
+39             statementRuntimeArray[ identifier ]\&.startTime = high_resolution_clock::now( );
+40         }
+41 
+42         //cout << "\ntime:" << high_resolution_clock::now()\&.time_since_epoch()\&.count();
+43     }
 .fi
 .PP
-References StatementRuntime::endTime, invalidTime, StatementRuntime::startTime, and statementRuntimeArray\&.
+References StatementRuntime::called, StatementRuntime::endTime, invalidTime, StatementRuntime::startTime, and statementRuntimeArray\&.
 .PP
-Referenced by fibonacci(), and main()\&.
+Referenced by main(), prime_sieve::runSieve(), and BitArray::setFlagsFalse()\&.
 .SH "Member Data Documentation"
 .PP 
 .SS "\fBStatementRuntime\fP* DataStorage::statementRuntimeArray"
@@ -224,4 +249,4 @@ Referenced by DataStorage(), and print()\&.
 
 .SH "Author"
 .PP 
-Generated automatically by Doxygen for Hagn Tool Performance Counter from the source code\&.
+Generated automatically by Doxygen for Regions Of Interest (ROI) Profiler from the source code\&.

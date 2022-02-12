@@ -56,9 +56,9 @@ public:
         total.identifier = "Runtime";
         total.duration = statementRuntimeArray[ 0 ].endTime - statementRuntimeArray[ 0 ].startTime;
 
-        ofstream outfile;
-        outfile.open("Time_Without_Print.txt", ios_base::app);
-        outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
+        //ofstream outfile;
+        //outfile.open("Time_Without_Print.txt", ios_base::app);
+        //outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
 
         // calculate scope runtime
         MeasurementEvaluation scope;
@@ -74,7 +74,6 @@ public:
         // normally scope is measured
         bool scopeIsMeasured = true;
 
-        cout << scope.duration.count();
         // if scope is not measured, calculate time between first and last counter
         if ( scope.duration.count( ) == 0 ) {
             scope.duration = statementRuntimeArray[ statementRuntimeArraySize - 1 ].endTime -

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['dec_144',['DEC',['../_c_make_c_compiler_id_8c.html#ad1280362da42492bbc11aa78cbf776ad',1,'DEC():&#160;CMakeCCompilerId.c'],['../_c_make_c_x_x_compiler_id_8cpp.html#ad1280362da42492bbc11aa78cbf776ad',1,'DEC():&#160;CMakeCXXCompilerId.cpp']]]
+  ['btcase_3605',['BTCASE',['../_c_x_type_8cpp.html#a8368b1f249bfe69199e6afd6ea97fd05',1,'CXType.cpp']]],
+  ['builtin_5ftype_3606',['BUILTIN_TYPE',['../_c_index_8cpp.html#a1df410a05b3c6fe66a44f327da27ebbf',1,'CIndex.cpp']]]
 ];

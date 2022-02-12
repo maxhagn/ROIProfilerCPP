@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['datastorage_101',['dataStorage',['../test_performance_8cpp.html#a9c8634583aaa8f3158a2ab5059741a6a',1,'testPerformance.cpp']]],
-  ['duration_102',['duration',['../struct_measurement_evaluation.html#af0033f4bc17de00a5f6f3d9d9a350115',1,'MeasurementEvaluation']]]
+  ['_5fboolean_3328',['_boolean',['../interface_basic_class.html#a8828ed42969d2bd7539f51e4a76c138f',1,'BasicClass']]],
+  ['_5ffield1_3329',['_field1',['../category_base_class_07_08.html#aa33370cadbe548f6b061c5be3ecd0791',1,'BaseClass()']]],
+  ['_5ffoo_3330',['_foo',['../interface_basic_class.html#aaf7f04109655cc0a506e3ba8fed7d3b8',1,'BasicClass']]]
 ];

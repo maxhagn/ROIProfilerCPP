@@ -11,7 +11,7 @@
 </listitem>
             <listitem><para>double <link linkend="_namespacehlibhelp_1a74db8c274222acbee3bbae8dfe30f56e">convertToSpecifiedUnit</link> (std::chrono::duration&lt; double, std::nano &gt; duration, string prefix)</para>
 </listitem>
-            <listitem><para>void <link linkend="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c">printTableRow</link> (string identifier, string stmtClass, double duration, string unit, string scopeUsage, string totalUsage)</para>
+            <listitem><para>void <link linkend="_namespacehlibhelp_1a96fe217e73b88a18b6443b0330b673be">printTableRow</link> (string identifier, string stmtClass, double duration, string unit, string scopeUsage, string totalUsage, string calls)</para>
 </listitem>
             <listitem><para>void <link linkend="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0">printTableSeparator</link> (int width, char separator, string escape)</para>
 </listitem>
@@ -30,197 +30,198 @@
 <indexterm><primary>convertToSpecifiedUnit</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>convertToSpecifiedUnit</secondary></indexterm>
 <para><computeroutput>double hlibhelp::convertToSpecifiedUnit (std::chrono::duration&lt; double, std::nano &gt; duration, string prefix)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00044">44</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;prefix&#32;==&#32;<emphasis role="stringliteral">&quot;s&quot;</emphasis>&#32;)&#32;{
-00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;)&#32;/&#32;1000000000;
-00047 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00048 
-00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;prefix&#32;==&#32;<emphasis role="stringliteral">&quot;ms&quot;</emphasis>&#32;)&#32;{
-00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;)&#32;/&#32;1000000;
-00051 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00052 
-00053 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;prefix&#32;==&#32;<emphasis role="stringliteral">&quot;µs&quot;</emphasis>&#32;)&#32;{
-00054 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;)&#32;/&#32;1000;
-00055 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00056 
-00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;);
-00058 &#32;&#32;&#32;&#32;}
+Definition at line <link linkend="__helper_8cpp_source_1l00043">43</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00043 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00044 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;prefix&#32;==&#32;<emphasis role="stringliteral">&quot;s&quot;</emphasis>&#32;)&#32;{
+00045 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;)&#32;/&#32;1000000000;
+00046 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00047 
+00048 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;prefix&#32;==&#32;<emphasis role="stringliteral">&quot;ms&quot;</emphasis>&#32;)&#32;{
+00049 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;)&#32;/&#32;1000000;
+00050 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00051 
+00052 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;duration.count(&#32;)&#32;/&#32;1000;
+00053 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>.</para>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>.</para>
     </section><anchor xml:id="_namespacehlibhelp_1ac68cd92332f70edbe3d4cea4ce986f07"/>    <section>
     <title>getSegmentsOfString()</title>
 <indexterm><primary>getSegmentsOfString</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>getSegmentsOfString</secondary></indexterm>
 <para><computeroutput>string* hlibhelp::getSegmentsOfString (string identifier)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00147">147</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::stringstream&#32;identifierStream(&#32;identifier&#32;);
-00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;identifierSegment;
-00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;*segments&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>[2];
-00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;segmentCounter&#32;=&#32;0;
-00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(&#32;std::getline(&#32;identifierStream,&#32;identifierSegment,&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>&#32;))&#32;{
-00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;segments[&#32;segmentCounter++&#32;]&#32;=&#32;identifierSegment;
-00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00155 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;segments;
-00156 &#32;&#32;&#32;&#32;}
+Definition at line <link linkend="__helper_8cpp_source_1l00146">146</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00146 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00147 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::stringstream&#32;identifierStream(&#32;identifier&#32;);
+00148 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;identifierSegment;
+00149 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;*segments&#32;=&#32;<emphasis role="keyword">new</emphasis>&#32;<emphasis role="keywordtype">string</emphasis>[2];
+00150 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">int</emphasis>&#32;segmentCounter&#32;=&#32;0;
+00151 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">while</emphasis>&#32;(&#32;std::getline(&#32;identifierStream,&#32;identifierSegment,&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>&#32;))&#32;{
+00152 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;segments[&#32;segmentCounter++&#32;]&#32;=&#32;identifierSegment;
+00153 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00154 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;segments;
+00155 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>.</para>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>.</para>
     </section><anchor xml:id="_namespacehlibhelp_1a41fb30c70b12ff8205daf51bc226d456"/>    <section>
     <title>getUnit()</title>
 <indexterm><primary>getUnit</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>getUnit</secondary></indexterm>
 <para><computeroutput>string hlibhelp::getUnit (std::chrono::duration&lt; double, std::nano &gt; duration)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00010">10</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00010 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00011 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration.count(&#32;)&#32;&gt;&#32;60000000000&#32;)&#32;{
-00012 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&#32;s&quot;</emphasis>;
-00013 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00014 
-00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration.count(&#32;)&#32;&gt;&#32;1000000000&#32;)&#32;{
-00016 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;ms&quot;</emphasis>;
-00017 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00018 
-00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration.count(&#32;)&#32;&gt;&#32;10000000&#32;)&#32;{
-00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;µs&quot;</emphasis>;
-00021 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00022 
-00023 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;ns&quot;</emphasis>;
-00024 &#32;&#32;&#32;&#32;}
+Definition at line <link linkend="__helper_8cpp_source_1l00012">12</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00012 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00013 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;&lt;&lt;&#32;duration.count();
+00014 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration.count(&#32;)&#32;&gt;&#32;60000000000&#32;)&#32;{
+00015 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;&#32;s&quot;</emphasis>;
+00016 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00017 
+00018 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration.count(&#32;)&#32;&gt;&#32;1000000000&#32;)&#32;{
+00019 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;ms&quot;</emphasis>;
+00020 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00021 
+00022 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;<emphasis role="stringliteral">&quot;µs&quot;</emphasis>;
+00023 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>.</para>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>.</para>
     </section><anchor xml:id="_namespacehlibhelp_1a621118bb4265d26a13d621b2b2202f65"/>    <section>
     <title>getUsageAsString()</title>
 <indexterm><primary>getUsageAsString</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>getUsageAsString</secondary></indexterm>
 <para><computeroutput>string hlibhelp::getUsageAsString (double usage)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00027">27</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00028 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::ostringstream&#32;customPrecision;
-00029 
-00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;usage&#32;&lt;&#32;0.01&#32;)&#32;{
-00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;&#32;&#32;0.01&quot;</emphasis>;
-00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;usage&#32;&gt;&#32;99.99&#32;)&#32;{
-00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&gt;&#32;99.99&quot;</emphasis>;
-00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
-00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;std::fixed;
-00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;std::setprecision(&#32;2&#32;);
-00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;usage;
-00038 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00039 
-00040 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;customPrecision.str(&#32;);
-00041 &#32;&#32;&#32;&#32;}
+Definition at line <link linkend="__helper_8cpp_source_1l00026">26</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00026 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00027 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::ostringstream&#32;customPrecision;
+00028 
+00029 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;usage&#32;&lt;&#32;0.01&#32;)&#32;{
+00030 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;&#32;&#32;0.01&quot;</emphasis>;
+00031 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;usage&#32;&gt;&#32;99.99&#32;)&#32;{
+00032 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&gt;&#32;99.99&quot;</emphasis>;
+00033 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00034 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;std::fixed;
+00035 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;std::setprecision(&#32;2&#32;);
+00036 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;customPrecision&#32;&lt;&lt;&#32;usage;
+00037 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00038 
+00039 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">return</emphasis>&#32;customPrecision.str(&#32;);
+00040 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>.</para>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>.</para>
     </section><anchor xml:id="_namespacehlibhelp_1a0e5ff9f6e297dcc25423cdaa15eacb12"/>    <section>
     <title>printStatisticBanner()</title>
 <indexterm><primary>printStatisticBanner</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>printStatisticBanner</secondary></indexterm>
 <para><computeroutput>void hlibhelp::printStatisticBanner ( )</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00139">139</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n\n&quot;</emphasis>;
-00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1ae3f6e92d90aa94f94d7e0f9a6293fe95">printTableSeparator</link>(&#32;108,&#32;<emphasis role="charliteral">&apos;=&apos;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
-00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;setw(&#32;60&#32;)&#32;&lt;&lt;&#32;setfill(&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Statistic\n&quot;</emphasis>;
-00143 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1ae3f6e92d90aa94f94d7e0f9a6293fe95">printTableSeparator</link>(&#32;109,&#32;<emphasis role="charliteral">&apos;=&apos;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n\n&quot;</emphasis>&#32;);
-00144 &#32;&#32;&#32;&#32;}
+Definition at line <link linkend="__helper_8cpp_source_1l00138">138</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00138 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00139 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n\n&quot;</emphasis>;
+00140 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1ae3f6e92d90aa94f94d7e0f9a6293fe95">printTableSeparator</link>(&#32;108,&#32;<emphasis role="charliteral">&apos;=&apos;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>&#32;);
+00141 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;setw(&#32;60&#32;)&#32;&lt;&lt;&#32;setfill(&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Statistic\n&quot;</emphasis>;
+00142 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<link linkend="_namespacehlibhelp_1ae3f6e92d90aa94f94d7e0f9a6293fe95">printTableSeparator</link>(&#32;109,&#32;<emphasis role="charliteral">&apos;=&apos;</emphasis>,&#32;<emphasis role="stringliteral">&quot;\n\n&quot;</emphasis>&#32;);
+00143 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-References <link linkend="__helper_8cpp_source_1l00111">printTableSeparator()</link>.</para>
+References <link linkend="__helper_8cpp_source_1l00110">printTableSeparator()</link>.</para>
 <para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>.</para>
-    </section><anchor xml:id="_namespacehlibhelp_1a6257c35789389e2dd1ac0e710bbffd7c"/>    <section>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>.</para>
+    </section><anchor xml:id="_namespacehlibhelp_1a96fe217e73b88a18b6443b0330b673be"/>    <section>
     <title>printTableRow()</title>
 <indexterm><primary>printTableRow</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>printTableRow</secondary></indexterm>
-<para><computeroutput>void hlibhelp::printTableRow (string identifier, string stmtClass, double duration, string unit, string scopeUsage, string totalUsage)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00061">61</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;percentChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;%&quot;</emphasis>;
-00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;separatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;│&#32;&#32;&quot;</emphasis>;
-00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;hagnToolSeparatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;│&#32;&#32;&quot;</emphasis>;
-00066 
-00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;Runtime&quot;</emphasis>&#32;||&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;Scope&quot;</emphasis>&#32;)&#32;{
-00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;percentChar&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
-00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;separatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&quot;</emphasis>;
-00070 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnToolSeparatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&quot;</emphasis>;
-00071 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;Hagn-Tool&quot;</emphasis>&#32;)&#32;{
-00073 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnToolSeparatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&quot;</emphasis>;
-00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00075 
-00076 
-00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::ostringstream&#32;durationCustomPrecision;
-00078 
-00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration&#32;&lt;&#32;0.001&#32;)&#32;{
-00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;&#32;0.001&quot;</emphasis>;
-00081 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
-00082 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;std::fixed;
-00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;std::setprecision(&#32;3&#32;);
-00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;duration;
-00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+<para><computeroutput>void hlibhelp::printTableRow (string identifier, string stmtClass, double duration, string unit, string scopeUsage, string totalUsage, string calls)</computeroutput></para><para>
+Definition at line <link linkend="__helper_8cpp_source_1l00056">56</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00057 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00058 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;percentChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;%&quot;</emphasis>;
+00059 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;separatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;│&#32;&#32;&quot;</emphasis>;
+00060 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;hagnToolSeparatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;│&#32;&#32;&quot;</emphasis>;
+00061 
+00062 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;Runtime&quot;</emphasis>&#32;||&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;Scope&quot;</emphasis>&#32;)&#32;{
+00063 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;percentChar&#32;=&#32;<emphasis role="stringliteral">&quot;&quot;</emphasis>;
+00064 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;separatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&quot;</emphasis>;
+00065 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnToolSeparatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&quot;</emphasis>;
+00066 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00067 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;Hagn-Tool&quot;</emphasis>&#32;)&#32;{
+00068 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;hagnToolSeparatorChar&#32;=&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;&#32;&#32;&quot;</emphasis>;
+00069 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00070 
+00071 
+00072 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::ostringstream&#32;durationCustomPrecision;
+00073 
+00074 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;duration&#32;&lt;&#32;0.001&#32;)&#32;{
+00075 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&lt;&#32;0.001&quot;</emphasis>;
+00076 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00077 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;std::fixed;
+00078 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;std::setprecision(&#32;3&#32;);
+00079 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;durationCustomPrecision&#32;&lt;&lt;&#32;duration;
+00080 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00081 
+00082 
+00083 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout&#32;&lt;&lt;&#32;setfill(&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;│&#32;&#32;&#32;&quot;</emphasis>
+00084 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;15&#32;)&#32;&lt;&lt;&#32;std::left&#32;&lt;&lt;&#32;identifier&#32;&lt;&lt;&#32;hagnToolSeparatorChar
+00085 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;25&#32;)&#32;&lt;&lt;&#32;std::left&#32;&lt;&lt;&#32;stmtClass&#32;&lt;&lt;&#32;separatorChar;
 00086 
-00087 
-00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout&#32;&lt;&lt;&#32;setfill(&#32;<emphasis role="charliteral">&apos;&#32;&apos;</emphasis>&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;│&#32;&#32;&#32;&quot;</emphasis>
-00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;15&#32;)&#32;&lt;&lt;&#32;std::left&#32;&lt;&lt;&#32;identifier&#32;&lt;&lt;&#32;hagnToolSeparatorChar
-00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;25&#32;)&#32;&lt;&lt;&#32;std::left&#32;&lt;&lt;&#32;stmtClass&#32;&lt;&lt;&#32;separatorChar;
-00091 
-00092 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;ID&quot;</emphasis>&#32;)&#32;{
-00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;19&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Runtime&quot;</emphasis>;
-00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
-00095 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;15&#32;)&#32;&lt;&lt;&#32;durationCustomPrecision.str(&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;unit;
-00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00087 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;identifier&#32;==&#32;<emphasis role="stringliteral">&quot;ID&quot;</emphasis>&#32;)&#32;{
+00088 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;19&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;Runtime&quot;</emphasis>;
+00089 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}&#32;<emphasis role="keywordflow">else</emphasis>&#32;{
+00090 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;15&#32;)&#32;&lt;&lt;&#32;durationCustomPrecision.str(&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&quot;</emphasis>&#32;&lt;&lt;&#32;unit;
+00091 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00092 
+00093 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout
+00094 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;separatorChar
+00095 
+00096 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;10&#32;)&#32;&lt;&lt;&#32;std::setprecision(&#32;2&#32;)&#32;&lt;&lt;&#32;scopeUsage&#32;+&#32;percentChar
 00097 
-00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;std::cout
-00099 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;separatorChar
-00100 
-00101 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;10&#32;)&#32;&lt;&lt;&#32;std::setprecision(&#32;2&#32;)&#32;&lt;&lt;&#32;scopeUsage&#32;+&#32;percentChar
-00102 
-00103 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;separatorChar
-00104 
-00105 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;10&#32;)&#32;&lt;&lt;&#32;std::setprecision(&#32;2&#32;)&#32;&lt;&lt;&#32;totalUsage&#32;+&#32;percentChar
-00106 
-00107 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;│&quot;</emphasis>&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
-00108 &#32;&#32;&#32;&#32;}
+00098 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;separatorChar
+00099 
+00100 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;10&#32;)&#32;&lt;&lt;&#32;std::setprecision(&#32;2&#32;)&#32;&lt;&lt;&#32;totalUsage&#32;+&#32;percentChar
+00101 
+00102 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;separatorChar
+00103 
+00104 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::right&#32;&lt;&lt;&#32;std::setw(&#32;6&#32;)&#32;&lt;&lt;&#32;std::setprecision(&#32;0&#32;)&#32;&lt;&lt;&#32;calls
+00105 
+00106 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&lt;&lt;&#32;std::setw(&#32;5&#32;)&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;&#32;&#32;&#32;│&quot;</emphasis>&#32;&lt;&lt;&#32;<emphasis role="stringliteral">&quot;\n&quot;</emphasis>;
+00107 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>.</para>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>.</para>
     </section><anchor xml:id="_namespacehlibhelp_1a181c0a08b09b08e54f800c3c1e0d00c0"/>    <section>
     <title>printTableSeparator()<computeroutput>[1/2]</computeroutput></title>
 <indexterm><primary>printTableSeparator</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>printTableSeparator</secondary></indexterm>
 <para><computeroutput>void hlibhelp::printTableSeparator (int width, char separator, string escape)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00111">111</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00112 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;setw(&#32;width&#32;)&#32;&lt;&lt;&#32;setfill(&#32;separator&#32;)&#32;&lt;&lt;&#32;escape;
-00113 &#32;&#32;&#32;&#32;}
+Definition at line <link linkend="__helper_8cpp_source_1l00110">110</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00110 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00111 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;setw(&#32;width&#32;)&#32;&lt;&lt;&#32;setfill(&#32;separator&#32;)&#32;&lt;&lt;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>;
+00112 &#32;&#32;&#32;&#32;}
 </programlisting><para>
-Referenced by <link linkend="__data_storage_8cpp_source_1l00048">DataStorage::print()</link>, and <link linkend="__helper_8cpp_source_1l00139">printStatisticBanner()</link>.</para>
+References <link linkend="_report_8py_source_1l00547">libscanbuild.report::escape()</link>.</para>
+<para>
+Referenced by <link linkend="__data_storage_8cpp_source_1l00052">DataStorage::print()</link>, and <link linkend="__helper_8cpp_source_1l00138">printStatisticBanner()</link>.</para>
     </section><anchor xml:id="_namespacehlibhelp_1ae3f6e92d90aa94f94d7e0f9a6293fe95"/>    <section>
     <title>printTableSeparator()<computeroutput>[2/2]</computeroutput></title>
 <indexterm><primary>printTableSeparator</primary><secondary>hlibhelp</secondary></indexterm>
 <indexterm><primary>hlibhelp</primary><secondary>printTableSeparator</secondary></indexterm>
 <para><computeroutput>void hlibhelp::printTableSeparator (int width, string separator, string position, string escape)</computeroutput></para><para>
-Definition at line <link linkend="__helper_8cpp_source_1l00116">116</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
-<programlisting>00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
-00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;leftSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;├&quot;</emphasis>;
-00118 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;rightSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┤&quot;</emphasis>;
-00119 
-00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;position&#32;==&#32;<emphasis role="stringliteral">&quot;top&quot;</emphasis>&#32;)&#32;{
-00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;leftSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┌&quot;</emphasis>;
-00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;rightSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┐&quot;</emphasis>;
-00123 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00124 
-00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;position&#32;==&#32;<emphasis role="stringliteral">&quot;bottom&quot;</emphasis>&#32;)&#32;{
-00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;leftSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;└&quot;</emphasis>;
-00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;rightSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┘&quot;</emphasis>;
-00128 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00129 
-00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;leftSeparator;
-00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(&#32;<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;&lt;=&#32;width;&#32;i++&#32;)&#32;{
-00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;separator;
-00133 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
-00134 
-00135 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;rightSeparator&#32;&lt;&lt;&#32;escape;
-00136 &#32;&#32;&#32;&#32;}
-</programlisting></section>
+Definition at line <link linkend="__helper_8cpp_source_1l00115">115</link> of file <link linkend="__helper_8cpp_source">Helper.cpp</link>.</para>
+<programlisting>00115 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;{
+00116 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;leftSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;├&quot;</emphasis>;
+00117 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordtype">string</emphasis>&#32;rightSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┤&quot;</emphasis>;
+00118 
+00119 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;position&#32;==&#32;<emphasis role="stringliteral">&quot;top&quot;</emphasis>&#32;)&#32;{
+00120 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;leftSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┌&quot;</emphasis>;
+00121 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;rightSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┐&quot;</emphasis>;
+00122 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00123 
+00124 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">if</emphasis>&#32;(&#32;position&#32;==&#32;<emphasis role="stringliteral">&quot;bottom&quot;</emphasis>&#32;)&#32;{
+00125 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;leftSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;└&quot;</emphasis>;
+00126 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;rightSeparator&#32;=&#32;<emphasis role="stringliteral">&quot;┘&quot;</emphasis>;
+00127 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00128 
+00129 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;leftSeparator;
+00130 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;<emphasis role="keywordflow">for</emphasis>&#32;(&#32;<emphasis role="keywordtype">int</emphasis>&#32;i&#32;=&#32;0;&#32;i&#32;&lt;=&#32;width;&#32;i++&#32;)&#32;{
+00131 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;separator;
+00132 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;}
+00133 
+00134 &#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;cout&#32;&lt;&lt;&#32;rightSeparator&#32;&lt;&lt;&#32;<link linkend="_namespacelibscanbuild_1_1report_1a47efadc6b0ae30e761eccc612329a1ef">escape</link>;
+00135 &#32;&#32;&#32;&#32;}
+</programlisting><para>
+References <link linkend="_report_8py_source_1l00547">libscanbuild.report::escape()</link>.</para>
+</section>
 </section>
 </section>

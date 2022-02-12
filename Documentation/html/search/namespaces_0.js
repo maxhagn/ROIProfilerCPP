@@ -1,4 +1,21 @@
 var searchData=
 [
-  ['hlibhelp_64',['hlibhelp',['../namespacehlibhelp.html',1,'']]]
+  ['clang_1945',['clang',['../namespaceclang.html',1,'']]],
+  ['clang_2dformat_1946',['clang-format',['../namespaceclang-format.html',1,'']]],
+  ['clang_2dformat_2ddiff_1947',['clang-format-diff',['../namespaceclang-format-diff.html',1,'']]],
+  ['clang_2dformat_2dsublime_1948',['clang-format-sublime',['../namespaceclang-format-sublime.html',1,'']]],
+  ['clang_2drename_1949',['clang-rename',['../namespaceclang-rename.html',1,'']]],
+  ['clang_5ffuzzer_1950',['clang_fuzzer',['../namespaceclang__fuzzer.html',1,'']]],
+  ['comments_1951',['comments',['../namespaceclang_1_1comments.html',1,'clang']]],
+  ['cxcomment_1952',['cxcomment',['../namespaceclang_1_1cxcomment.html',1,'clang']]],
+  ['cxcursor_1953',['cxcursor',['../namespaceclang_1_1cxcursor.html',1,'clang']]],
+  ['cxdiag_1954',['cxdiag',['../namespaceclang_1_1cxdiag.html',1,'clang']]],
+  ['cxindex_1955',['cxindex',['../namespaceclang_1_1cxindex.html',1,'clang']]],
+  ['cxloc_1956',['cxloc',['../namespaceclang_1_1cxloc.html',1,'clang']]],
+  ['cxstring_1957',['cxstring',['../namespaceclang_1_1cxstring.html',1,'clang']]],
+  ['cxtu_1958',['cxtu',['../namespaceclang_1_1cxtu.html',1,'clang']]],
+  ['cxtype_1959',['cxtype',['../namespaceclang_1_1cxtype.html',1,'clang']]],
+  ['format_1960',['format',['../namespaceclang_1_1format.html',1,'clang']]],
+  ['index_1961',['index',['../namespaceclang_1_1index.html',1,'clang']]],
+  ['refactor_1962',['refactor',['../namespaceclang_1_1refactor.html',1,'clang']]]
 ];
