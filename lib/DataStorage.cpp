@@ -134,10 +134,6 @@ public:
         calledToString << std::fixed << setprecision(0) << sumCalls;
         hagnTool.called = calledToString.str();
 
-        ofstream callsFile;
-        callsFile.open("Calls.txt", ios_base::app);
-        callsFile << calledToString.str() << "\n";
-
         // hagn tool evaluation to string
         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool.duration, unit );
         string totalUsageBeautified = hlibhelp::getUsageAsString( hagnTool.totalUsage );
