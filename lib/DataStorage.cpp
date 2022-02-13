@@ -57,8 +57,8 @@ public:
         total.duration = statementRuntimeArray[ 0 ].endTime - statementRuntimeArray[ 0 ].startTime;
 
         //ofstream outfile;
-        //outfile.open("Time_Without_Print.txt", ios_base::app);
-        //outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
+        outfile.open("CleanTime_Without.txt", ios_base::app);
+        outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
 
         // calculate scope runtime
         MeasurementEvaluation scope;
