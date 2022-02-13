@@ -57,7 +57,7 @@ public:
         total.duration = statementRuntimeArray[ 0 ].endTime - statementRuntimeArray[ 0 ].startTime;
 
         ofstream outfile;
-        outfile.open("CleanTime_Without.txt", ios_base::app);
+        outfile.open("CleanTime_Runtime.txt", ios_base::app);
         outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
 
         // calculate scope runtime
@@ -133,6 +133,10 @@ public:
         sumCalls = sumCalls*2;
         calledToString << std::fixed << setprecision(0) << sumCalls;
         hagnTool.called = calledToString.str();
+
+        ofstream callsFile;
+        callsFile.open("Call_Count.txt", ios_base::app);
+        callsFile << calledToString.str() << "\n";
 
         // hagn tool evaluation to string
         double hagnToolDurationBeautified = hlibhelp::convertToSpecifiedUnit( hagnTool.duration, unit );
