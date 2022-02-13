@@ -56,7 +56,7 @@ public:
         total.identifier = "Runtime";
         total.duration = statementRuntimeArray[ 0 ].endTime - statementRuntimeArray[ 0 ].startTime;
 
-        //ofstream outfile;
+        ofstream outfile;
         outfile.open("CleanTime_Without.txt", ios_base::app);
         outfile << hlibhelp::convertToSpecifiedUnit( total.duration, "s" ) << "\n";
 
