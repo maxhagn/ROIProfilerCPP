@@ -9,12 +9,12 @@ DataStorage dataStorage("Runtime,Scope,CustomCompoundStmt i000002,IfStmt 2218252
 int main(void) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<std::int64_t> dis(1, 20000000000);
-    std::int64_t random = dis(gen);
+    std::uniform_int_distribution<int> dis(1, 2000000);
+    int random = dis(gen);
 
     ofstream callsFile;
     callsFile.open("Password_Size.txt", ios_base::app);
-    callsFile << random << "\n";
+    callsFile << std::to_string(random) << "\n";
 
     dataStorage.startEvent(0);
     std::vector <std::string> passwordStorage;
