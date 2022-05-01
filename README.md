@@ -10,6 +10,24 @@ The Tool is build with Clang LibTooling library. LibTooling is a library to supp
 Further Information: https://clang.llvm.org/docs/LibTooling.html
 
 # Installation Guide
+This section explains how to build the LLVM source. More information is available on the official Clang or LLVM page.
+
+Clang Getting Started: [https://clang.llvm.org/get_started.html](https://clang.llvm.org/get_started.html)
+LLVM Getting Started: [https://llvm.org/docs/GettingStarted.html](https://llvm.org/docs/GettingStarted.html)
+
+
+## Requirements
+The program has been extensively tested on Linux and macOS and is definitely usable on these operating systems. Windows could also work with tools like cygwin or Linux subkernels, but you have to expect the normal performance losses that result from developing on Windows.
+
+To follow my recommended workflow the packages `CMAKE`, `GCC`, `Python`, `zlib`, `GNU Make`, `Ninja` are required. These can be installed under Linux with `apt-get` or under macOS with `brew`:
+
+| Instruction                                                             | Operating System                   |
+|-------------------------------------------------------------------------|------------------------------------|
+| `sudo apt-get install cmake gcc python ninja-build                      | Linux with apt-get Package Manager | 
+| `brew install cmake gcc python ninja`                                   | macOS                              |
+
+
+
 1. Install Requirements: CMAKE, GCC, Python, zlib, GNU Make, Ninja
 2. Checkout, configure and build LLVM with Ninja
    1. Checkout LLVM: git clone https://github.com/llvm/llvm-project.git
