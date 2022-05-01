@@ -12,9 +12,9 @@ Further Information: https://clang.llvm.org/docs/LibTooling.html
 # Installation Guide
 This section explains how to build the LLVM source. More information is available on the official Clang or LLVM page.
 
-Clang Getting Started: [https://clang.llvm.org/get_started.html](https://clang.llvm.org/get_started.html)
-Clang Settup LLVM for LibTooling: [https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html)
-LLVM Getting Started: [https://llvm.org/docs/GettingStarted.html](https://llvm.org/docs/GettingStarted.html)
++ Clang Getting Started: [https://clang.llvm.org/get_started.html](https://clang.llvm.org/get_started.html)
++ Clang Settup LLVM for LibTooling: [https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html)
++ LLVM Getting Started: [https://llvm.org/docs/GettingStarted.html](https://llvm.org/docs/GettingStarted.html)
 
 ## Requirements
 The program has been extensively tested on Linux and macOS and is definitely usable on these operating systems. Windows could also work with tools like cygwin or Linux subkernels, but you have to expect the normal performance losses that result from developing on Windows.
