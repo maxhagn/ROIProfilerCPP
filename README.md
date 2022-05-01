@@ -23,31 +23,33 @@ To follow my recommended workflow the packages `CMAKE`, `GCC`, `Python`, `zlib`,
 
 | Instruction                                                             | Operating System                   |
 |-------------------------------------------------------------------------|------------------------------------|
-| `sudo apt-get install cmake gcc python ninja-build                      | Linux with apt-get Package Manager | 
+| `sudo apt-get install cmake gcc python ninja-build`                     | Linux                              | 
 | `brew install cmake gcc python ninja`                                   | macOS                              |
 
+## Build LLVM and ROI Profiler
 
+I worked exclusively with the ninja build system for the development. Other options can be found on the official LLVM page, but ninja is used by most LLVM developers.
 
-1. Install Requirements: CMAKE, GCC, Python, zlib, GNU Make, Ninja
-2. Checkout, configure and build LLVM with Ninja
-   1. Checkout LLVM: git clone https://github.com/llvm/llvm-project.git
-   2. cd llvm-project
-   3. mkdir build
-   4. cd build
-   5. cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DLLVM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
-   6. ninja
-3. Checkout ROIProfilerCPP
-   1. cd ../clang/tools
-   2. mkdir regionprofile
-   3. cd regionprofile
-   4. git clone https://github.com/maxhagn/ROIProfilerCPP.git
-4. Add hagn-tool to CMakeLists.txt
-   1. cd ..
-   2. vi CMakeLists.txt
+###  Checkout, configure and build LLVM with Ninja
+1. `git clone https://github.com/llvm/llvm-project.git`
+2. `cd llvm-project`
+3. `mkdir build`
+4. `cd build`
+5. `cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DLLVM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release`
+6. `ninja`
+
+### Checkout, build and configure the ROI Profiler
+1. `cd ../clang/tools`
+2. `mkdir regionprofile`
+3. `cd regionprofile`
+4. `git clone https://github.com/maxhagn/ROIProfilerCPP.git`
+5. Add ROI Profiler to CMakeLists.txt
+   1. `cd ..`
+   2. `vi CMakeLists.txt`
    3. Add line "add_clang_subdirectory(regionprofile)"
-5. Build regionprofile
-   1. cd ../build 
-   2. ninja
+6. Build regionprofile
+   1. `cd ../build`
+   2. `ninja`
 
 Further information for LLVM and Clang installation:
 * LLVM Installation: https://llvm.org/docs/GettingStarted.html
