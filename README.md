@@ -19,7 +19,7 @@ LLVM Getting Started: [https://llvm.org/docs/GettingStarted.html](https://llvm.o
 ## Requirements
 The program has been extensively tested on Linux and macOS and is definitely usable on these operating systems. Windows could also work with tools like cygwin or Linux subkernels, but you have to expect the normal performance losses that result from developing on Windows.
 
-To follow my recommended workflow the packages `CMAKE`, `GCC`, `Python`, `zlib`, `GNU Make`, `Ninja` are required. These can be installed under Linux with `apt-get` or under macOS with `brew`:
+To follow my recommended workflow the packages `CMAKE`, `GCC`, `Python`, `zlib`, `GNU Make`, `Ninja` are required. These can be installed under Linux with `apt-get` or under macOS with `brew`. The packages should be available under any other Linux distro without `apt-get` package manager (`pacman`, `yum`), just follow the developer's web pages.
 
 | Instruction                                                             | Operating System                   |
 |-------------------------------------------------------------------------|------------------------------------|
@@ -28,7 +28,7 @@ To follow my recommended workflow the packages `CMAKE`, `GCC`, `Python`, `zlib`,
 
 ## Build LLVM and ROI Profiler
 
-I worked exclusively with the ninja build system for the development. Other options can be found on the official LLVM page, but ninja is used by most LLVM developers.
+I worked exclusively with the `ninja` build system for the development. Other options can be found on the official LLVM page, but `ninja` is used by most LLVM developers.
 
 ###  Checkout, configure and build LLVM with Ninja
 1. `git clone https://github.com/llvm/llvm-project.git`
