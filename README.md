@@ -23,7 +23,7 @@ To follow my recommended workflow the packages `CMAKE`, `GCC`, `Python`, `zlib`,
 
 | Instruction                                                             | Operating System                   |
 |-------------------------------------------------------------------------|------------------------------------|
-| `sudo apt-get install cmake gcc python ninja-build`                     | Linux                              | 
+| `sudo apt-get install cmake gcc python ninja-build`                     | Linux                              |
 | `brew install cmake gcc python ninja`                                   | macOS                              |
 
 ## Build LLVM and ROI Profiler
@@ -55,13 +55,36 @@ After the build is complete, a binary file called `roipc` should be found under 
 
 `export PATH=[pathToLLVMProject]/build/bin:$PATH`
 
-# Author
-Technical University Vienna
+## Workflow
+### Synopsis
+`roipc [options] <source0> [... <sourceN>]`
 
-Maximilian Hagn <br />
-Brausewettergasse 16 / TOP 3 <br />
-1220 Wien <br />
+| Options                      | Description                                                      |
+|------------------------------|------------------------------------------------------------------|
+| `--help`                     | Display available options (--help-hidden for more)               |
+| `--help-list`                | Display list of available options (--help-list-hidden for more)  |
+| `--version`                  | Display the version of this program                              |
+| `--extra-arg=<string>`       | Additional argument to append to the compiler command line       |
+| `--extra-arg-before=<string>`| Additional argument to prepend to the compiler command line      |
+| `-o=<output file>`           | Write transformed file to custom location                        |
+| `-p=<string>`                | Build Path                                                       |
+| `--stmt=<id of stmt>`        | Specifies the current traversal point                            |
+
+
+### Example
+
+## Documentation
+I plan to build a small website where the paper can be downloaded and the main idea, workflow and examples will be visualized. Furthermore, the Doxygen documentation will also be available. The offline version of the documentation is located in the `Documentation` directory in this repository.
+
+Website (Coming Soon): [https://roiprofiler.hagn.network](https://roiprofiler.hagn.network) 
+
+
+# Autor
+Maximilian Hagn <br>
+1220 Wien <br>
 Austria
 
-# Caveat
-This documentation is generated directly from the source code with doxygen. Since my clang libtool is constantly under active development, what you're about to read is out of date!
+**Institution**
+Technical University of Vienna<br>
+Technische Universität Wien<br>
+1040 Wien
