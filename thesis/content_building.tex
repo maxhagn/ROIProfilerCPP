@@ -1,0 +1,265 @@
+% Transformation %
+\chapter{Source-to-Source Transformation and Outcome Visualization}
+\label{chapter4}
+\CLANG provides another library called \LIBTOOLING which, in addition to accessing the \astsmall, also provides predefined functions and classes that can be used to traverse a program structure and perform a \SOUTOSOU transformation. In Chapter~\ref{chapter3} we looked at analyzing the structure of a program in which performance counters are to be inserted. In addition, the fundamental procedure of the profiling process was discussed. Thus, we have analyzed all the theoretical considerations and laid the foundation for the development of the \TOOL, which is the focus of this Chapter. For this purpose, we first look at which actions are provided by \CLANG and how these can be used to write our own application. Furthermore, we explore how the measurement code can be inserted efficiently and how the overhead can be reduced by performing resource-intensive operations before the actual execution of the application to be profiled. For the calculation of the runtimes and the output of the data, a library is introduced that can be customized by the user. Finally, we discuss the workflow of the profiling process.
+
+\section{Utilization of the Clang Infrastructure}
+In addition to the \astsmall provided, which is enormously valuable for our purpose, \CLANG also provides a library that allows users to develop their own front-end compiler actions~\cite{ClangTooling}. Since some of the functions provided by the library simplify the development of our \SOUTOSOU transformation application, we will use them. In the previous section, we already discussed the basic characteristics of the \TOOL. These can now be specified in more detail, so that the basic structure of the application can be created. In Listing~\ref{lst:b:clang_options}, it can be seen that we give the tool the name ``\emph{roiprofiler}'' by creating an \lstinline{llvm::cl::OptionCategory}.
+
+\begin{lstlisting}[float, language=C++, caption=Code Showing Option Definitions for Creating a \CLANG Tool., label=lst:b:clang_options]
+/* Definition of the Tool Name */
+static llvm::cl::OptionCategory MyToolCategory( "roiprofiler options" );
+
+/* Specification of the Output File Option */
+static cl::opt <string> OutputFile( "o", 
+           cl::desc( "Write transformed file to custom location" ),
+           cl::value_desc( "output file" ), 
+           cl::cat( MyToolCategory ));
+
+/* Specification of the Statement Option */
+static cl::opt <string> Statement( "stmt", 
+    cl::desc( "Specifies the current traversal point" ),
+    cl::value_desc( "id of stmt" ), 
+    cl::cat( MyToolCategory ));
+
+
+int main( int argc, const char **argv ) {
+    /* Bind the Specified Options to the Tool */
+    auto ExpectedParser = CommonOptionsParser::create( 
+                              argc, argv, 
+                              MyToolCategory, 
+                              llvm::cl::Required );
+}
+\end{lstlisting}
+
+Furthermore, we will create two variables of the class \lstinline{cl::opt}, which represent the parameters of the \TOOL. It is necessary to mention that we do not have to explicitly specify that one of the input parameters is a source code of an application, as all \LIBTOOLING tools require this property. However, we do need to indicate that the output location may be set with the \lstinline{-o}~option. Furthermore, we specify that the starting point of the traversal can be set by the user with the option~\lstinline{--stmt}. The final step is to create a common option parser in the main method of the tool, which contains the specified options. Once an executable program has been created from the code, it is possible to run it in the \CLANG environment, as shown in Figure~\ref{lst:b:tool_synopsis}.
+
+After the basic properties of the program have been defined and the \TOOL has been registered in the \CLANG environment, it is now possible to consider how a front-end action can be built with the infrastructure provided. The \ENTPOI for this is the \lstinline{FrontendAction} interface, with which custom actions can be executed on the code. A new \lstinline{FrontendAction} can be implemented using the \lstinline{Tool.run(newFrontendActionFactory)} instruction. Then the classes provided by \CLANG can be overwritten. The \CPP syntax for including the framework provided by \CLANG is shown in Listing~\ref{lst:b:clang_libtooling}. Next, the created front-end action is used to create an \lstinline{ASTConsumer} for each traversion unit. This allows the \astsmall to be accessed programmatically. For our scope, we will now call the function \lstinline{TraverseDecl} in the class \lstinline{Visitor}. We give this function the top level node of the \astsmall as a parameter, which allows us to determine the \ENTPOI of the traversal. By calling this function, all nodes of the \astsmall are visited. Finally, the \lstinline{RecursiveASTVisitor} can be used to visit selected nodes of different classes. In the constructor of the \lstinline{Visitor}, a reference to the \SOUMNG must be created, this will be important later for inserting the measurement code. The class \lstinline{RecursiveASTVisitor} can utilize a variety of different functions to traverse the different node types. For our purpose, we need the functions \lstinline{VisitFunctionDecl(FunctionDecl *func)} and \lstinline{VisitStmt( Stmt *stmt )}. The former iterates over all definitions of functions in the code, which is needed to annotate the instructions in the main function if no \lstinline{--stmt} option is given, and to insert performance counters that measure the runtime of the entire application. The \lstinline{VisitStmt( Stmt *stmt )} function is needed to look for \STATS in the code that have been specified by the user. From this point on, the recursive model developed can be used to traverse each level of the \astsmall. 
+
+\begin{lstlisting}[float, language=C++, caption=The Synopsis of the \TOOL.,basicstyle=\footnotesize\ttfamily\tiny, label=lst:b:tool_synopsis]
+sh-3.2# roiprofiler -help
+USAGE: roiprofiler [options] <source0> [... <sourceN>]
+
+OPTIONS:
+
+Generic Options:
+
+--help                          - Display available options
+--help-list                     - Display list of available options
+--version                       - Display the version of this program
+    
+roiprofiler options:
+
+--extra-arg=<string>            - Additional argument to append to the compiler command line
+--extra-arg-before=<string>     - Additional argument to prepend to the compiler command line
+-o=<output file>                - Write transformed file to custom location
+-p=<string>                     - Build path
+--stmt=<id of stmt>             - Specifies the current traversal point
+\end{lstlisting}
+
+\begin{lstlisting}[float, language=C++, caption={[Framework for Accessing the \AST Provided by \CLANG.]Code Framework for Accessing the \AST Provided by \CLANG.}, label=lst:b:clang_libtooling]
+/* Definition of the RecursiveASTVisitor provided by Clang */
+class Visitor : public RecursiveASTVisitor<Visitor> {
+private:
+    ASTContext *astContext;
+public:
+    explicit Visitor( ASTContext *Context ) : astContext( Context 
+    {
+        rewriter.setSourceMgr( astContext->getSourceManager( ),
+                               astContext->getLangOpts( ));
+    }
+
+    /* Functions for traversing the AST */
+    virtual bool VisitStmt( Stmt *stmt ) {}
+    virtual bool VisitFunctionDecl( FunctionDecl *func ) {}
+    virtual ~Visitor( ) { }
+};
+
+/* Definition of the AST Consumer */
+class Consumer : public ASTConsumer {
+private:
+    Visitor Visitor;
+
+public:
+    explicit Consumer( ASTContext *Context ) : Visitor( Context ) { }
+
+    virtual void HandleTranslationUnit( ASTContext &Context ) 
+    override { Visitor.TraverseDecl( Context.getTranslationUnitDecl( )); }
+};
+
+/* Definition of our frontend action */
+class ClangFrontendAction : public clang::ASTFrontendAction {
+public:
+    virtual std::unique_ptr <clang::ASTConsumer>
+    CreateASTConsumer( clang::CompilerInstance &Compiler, 
+                       llvm::StringRef InFile ) 
+    override { return std::make_unique<Consumer>( 
+               Compiler.getASTContext( )); }
+};
+
+int main( int argc, const char **argv ) {
+    /* Creation of a new frontend action */
+    int result = Tool.run( 
+                    newFrontendActionFactory<ClangFrontendAction>( ).get( ));
+}
+\end{lstlisting}
+
+\section{Insertion of Callback Functions}
+The in Chapter~\ref{chapter3} gathered knowledge about locating the different regions can now be used to insert measurement code. At the first accessible point in the source code, we will import the library needed to calculate the runtimes. Furthermore, the self-developed library \DATA, which will be described in more detail later, is imported and initialized. All nodes for which performance indices are to be measured must be enclosed with performance counters. For each region, two positions are needed, one before and one immediately after the region. Before each region, the function \lstinline{startEvent(int identifier)} should be called, and after it, the function \lstinline{endEvent(int identifier)} should be called. To transform the input application, the interface \lstinline{Rewriter} can be used. If we initialize this class, we get the possibility to use the function \lstinline{InsertText(SourceLocation Loc, StringRef Str)} to modify the source code. Since we already know the correct locations of the instructions, we only need to make sure that they are forwarded to the function. In addition to the position in the source code, the code to be inserted must also be specified. This function is always called when the position before or after a node to be annotated is reached. If a single node, such as a \PARSTA or a stand-alone \LEASTA, is to be annotated, the start and end positions can simply be determined. The \lstinline{startEvent(int identifier)} function is then inserted at the start position, and the \lstinline{endEvent(int identifier)} function at the end position. If several nodes are combined into a \lstinline{CustomCompoundStmt}, the start position is noted when the first node is visited and the end position when the last node is reached. The two functions can now be inserted at the positions found. Furthermore, it should be noted that the entire main class is enclosed with measurement codes and, if necessary, the runtime of a selected scope is also measured. Finally, after the last \STAT in the main class, a function \lstinline{print()} is added, which is responsible for the output of the collected measured values. 
+
+Listing~\ref{lst:b:transformed_file} shows an example of how the transformed code looks with the measurement code inserted. It can be seen that the \DATA library is included and can already be filled with data from the annotated nodes during initialization. In this case, both the total runtime and the runtime of the desired region are measured. Within the region there are four \LEASTAS, whereby two can be combined in a \lstinline{CustomCompoundStmt} class. Furthermore, the three \lstinline{while}-loops are annotated. Finally, the \lstinline{print()} method is called as the last \STAT, which outputs the collected data in a table. Thus, it can be stated that all functions needed for the calculation of the performance have been inserted in the correct~places.
+
+The \DATA library was primarily developed to keep the generated source code clean, but it also offers the user the possibility to build in their own logic for performance analysis. By placing the actual instructions in a separate file, only a small number of short instructions need to be added to the source code of the application, thus retaining readability. The library is included in every application transformed with the \TOOL and the \DATA can be filled with resource-intensive information about the nodes at the beginning. This procedure is made possible because the inclusion and initialization of this library can be performed as the final step in the transformation process. The biggest advantage is that an array with known memory allocation can be created at the beginning of the program code, into which all resource-intensive information about the annotated nodes can be statically inserted. For each annotated node, a character string for the identification and the type of the node is inserted in the array. This can massively reduce resource consumption, as the \lstinline{startEvent(int identifier)} and \lstinline{endEvent(int identifier)} functions only require a numerical value with which the current event can be identified. The reference is then made using the index of the array, which means that only one access to the memory is required for each measured value. It should also be noted that the library is not initialized in the main class, but after the \lstinline{include}-\STATS section, which means that the calculations in this section have no effect on the profiling process, as this section is never wrapped with performance counters. In the following, we will go into more detail about the \DATA class and the logic we used for the runtime measurement. 
+
+\begin{lstlisting}[float, language=C++, caption=Example Code for Inserting Callback Functions., label=lst:b:transformed_file]
+/* Include self-written library for data storage */
+#include "../lib/DataStorage.cpp"
+
+/* Initialization of the runtime array */
+DataStorage dataStorage("Runtime", "Scope", 
+                        "CustomCompoundStatement i000001", 
+                        "WhileStmt 2085536", 
+                        "WhileStmt 2085537", 
+                        "WhileStmt 2085538", 
+                        "CustomCompoundStatement i000002" );
+
+void foo () {
+    dataStorage.startEvent(2)                   // start time of i000001
+    int i = 1;
+    i = i * 4;
+    dataStorage.endEvent(2)                     // end time of i000001     
+    
+    dataStorage.startEvent(3)                   // start time for 2085536
+    while ( i <= 10 ) { /* code loop 1 */ }
+    dataStorage.endEvent(3)                     // end time for 2085536
+    
+    dataStorage.startEvent(4)                   // start time for 2085537
+    while ( i <= 20 ) { /* code loop 2 */ }
+    dataStorage.endEvent(4)                     // end time for 2085537
+    
+    dataStorage.startEvent(5)                   // start time for 2085538
+    while ( i <= 30 ) { /* code loop 3 */ }
+    dataStorage.endEvent(5)                     // end time for 2085538
+
+    dataStorage.startEvent(6)                   // start time for i000002
+    i = i - 3;
+    std::cout << i;
+    dataStorage.endEvent(6)                     // end time for i000002
+}
+
+int main(void) {
+    dataStorage.startEvent(0)                   // start time total runtime
+    dataStorage.endEvent(1)                     // start time scope runtime
+    foo();
+    dataStorage.endEvent(1)                     // end time scope runtime
+    
+    /* instructions outside the scope */
+    
+    dataStorage.endEvent(0)                     // end time total runtime
+    dataStorage.print();                        // print statistics
+    return 0;
+}
+\end{lstlisting} 
+
+\section{Measurement of the Performance Counters}
+We have already discussed the \DATA library, which is a powerful extension to the \TOOL as it allows the user to insert their own measurement code. For our application, we need a second library called \CHRONO, which is natively supported by \CPP~\cite{ChronoLibrary}. The library provides functions for time measurement. In contrast to other libraries, the user is given the possibility to choose the level of accuracy, whereby for the application area of performance analysis, the times should be calculated as precise as possible. 
+
+The \DATA class provides four basic functions. The first is the constructor, where all identifiers are stored in a data structure. For this, the string that is received as input is delimited at the separators and for each annotated node an entry is stored in the \lstinline{StatementRuntime} array. Each entry contains an identifier, the type of the node as well as a start and a finish time. If the array is initialized, all known information can already be inserted. Furthermore, the start and end times are set to an invalid time. To prevent various errors in the time calculation, such as the Y2262 problem, in which the 64-bit integer used to count the nanoseconds is overflowed at a certain point in time, we use the first valid timestamp for this. The timestamps set during the runtime of the input application can be assigned to a node using the array index. This is possible because the complete code has already been analyzed during the \SOUTOSOU transformation. 
+
+The next function to be discussed is the \lstinline{startEvent(int identifier)} function. This should be called before each instruction and should measure the current time. The \lstinline{endEvent(int identifier)} function analogously determines the current time after the \STAT. However, for loops it must be noted that the sum of the runtimes of the functions in a loop should be counted. For this purpose, when the start event function is called, it is checked whether a time has already been entered for this \STAT. If this is the case, the runtime of the previous call is subtracted from the current time. In addition to measuring the time values, the functions also store how often they are called. The user thus receives important data about the accesses to a function, the number of loop passes and how many callback functions were inserted by the \TOOL in total. 
+
+Finally, a \lstinline{print()} function is provided that can output all collected information to the command line. Note that this function is only executed after the last measurement and calculations performed at this time do not generate overhead. In this function, the total runtime of the application is calculated first. If a code \emph{region of interest} selected by the user was computed, the total runtime of this region is also measured. A measurement evaluation is created for each estimated timestamp pair of a region. In addition to the calculated runtime, this structure also contains a character string that provides information about the region and is also to be output. It also stores how much time this region consumes compared to the total or the running time of a selected area. In addition to calculating these values, the \lstinline{print()} function performs other actions such as calculating a suitable time format and converting the obtained runtimes into it. 
+
+\begin{lstlisting}[float, language=C++, caption=Example Code for Measuring and Calculating Time Values., label=lst:b:time_measurement]
+DataStorage runtimes("Runtime", 
+                     "CustomCompoundStatement i000001", 
+                     "WhileStmt 1052237" );
+
+void foo() {
+
+    runtimes[1].startTime = high_resolution_clock::now()    //   5 ns
+    int i = 0;
+    runtimes[1].endTime   = high_resolution_clock::now()    //  15 ns
+    
+    runtimes[2].startTime = high_resolution_clock::now()    //  20 ns
+    while (i < 10) {
+        i++;
+    }
+    runtimes[2].endTime   = high_resolution_clock::now()    //  95 ns
+    
+}
+
+int main(void) {
+
+    runtimes[0].startTime = high_resolution_clock::now()    //   0 ns 
+    foo();
+    runtimes[0].endTime   = high_resolution_clock::now()    // 100 ns
+    
+    /* calculation of the total runtime (100 ns - 0 ns = 100 ns) */
+    total = runtimes[0].endTime - runtimes[0].startTime;
+    
+    /* calculation of the runtimes (end time - start time = runtime) */
+    for each runtime (id stating at 1) {
+        runtimes[id] = runtimes[id].endTime 
+                       - runtimes[id].startTime; 
+    }
+    
+    print(runtimes);
+    return 0;
+}
+\end{lstlisting}
+
+\newpage
+\subsection{Runtime Calculation by Example}
+Listing~\ref{lst:b:time_measurement} shows an example of runtime calculations for a simple application that counts from zero to nine. In this example, the methods \lstinline{startEvent(int identifier)} and \lstinline{endEvent(int identifier)} have been replaced by the actual calculation to clarify which necessary operations are needed to measure the runtimes. The current time is read before and after an instruction with the function \lstinline{high_resolution_clock::now()}. In this example, six measured values are required, as a total of two instructions and the entire running time of the application are to be determined. After all timestamps have been successfully read, the total duration must be calculated first. This is achieved by subtracting the start time from the end time, which results in a variable of type \lstinline{chrono::duration<double, std:nano>}. This duration is stored in a double precision floating point in nanoseconds in order to calculate the time periods as precisely as possible. The computed duration can now be used to determine which unit suits best. After all calculations have been performed to the highest degree of accuracy, all runtimes are converted into this suitable time unit for output. After the individual runtimes have been calculated, they are compared to the total time span and the duration of the scope. Finally, it is possible to calculate how many resources are consumed by reading and writing the timestamps. For this purpose, the sum of the runtimes of the individual instructions can simply be subtracted from the duration of the scope. The output of the data collected is discussed in the following section. 
+
+\section{Presentation of the Collected Data}
+When outputting the information obtained, a distinction can be made between the report of the \TOOL and the report of the profiling statistics. The output of the \TOOL itself can be seen in Listing~\ref{lst:b:tool_output}. The first two values show the input file and the output file, whereby it should be noted that the output file in particular contains important information about the storage location if the user does not specify a user-defined location. The mode indicates whether an instruction to be traversed has been specified or if the run has been started in the main method. Next, it indicates how long the traversal and transformation took. Finally, it is indicated whether the \SOUTOSOU transformation was successful. This is not the case if an user-defined \STAT could not be found or if the code contains fatal errors that make compiling impossible. If the output is that the transformation was successful, the output file can now be compiled and executed so that the actual program can be profiled. 
+
+
+\begin{lstlisting}[float, language=C++, caption=The Command Line Output of the \TOOL., label=lst:b:tool_output]
+/* Execution of the ROIProfiler */
+roiprofiler PerformanceTest.cpp -o PerformanceTestTransformed.cpp --stmt 1234
+
+/* Statistics generated for the transformation phase */
+Input File: PerformanceTest.cpp
+Output File: PerformanceTestTransformed.cpp
+Mode: Annotating Stmt 1234
+Runtime: 955.13ms
+Success: Yes
+
+/* Compilation of the transformed file */
+clang++ PerformanceTestTransformed.cpp -o CompiledProgram
+
+/* Execution of the transformed program */
+./CompiledProgram
+
+/* Actual program output */
+
+/* Profiling statistics (Table 4.1) */
+\end{lstlisting}
+
+\begin{table}
+  \centering
+  \caption{Statistics Generated by the \TOOL.}
+  \begin{tabular}{rrrrrr}
+    \toprule
+    Identifier & ClassType & Runtime                       & Scope \%             & Total \%             & Calls \\
+    \midrule
+    2083316    & ForStmt   & \SI{77.000}{\micro\second}    & \SI{0.35}{\percent}  & \SI{0.35}{\percent}  & 1     \\
+    2083741    & ForStmt   & \SI{109.000}{\micro\second}   & \SI{0.50}{\percent}  & \SI{0.50}{\percent}  & 1     \\
+    2084167    & ForStmt   & \SI{90.000}{\micro\second}    & \SI{0.41}{\percent}  & \SI{0.41}{\percent}  & 1     \\
+    2084593    & ForStmt   & \SI{94.000}{\micro\second}    & \SI{0.43}{\percent}  & \SI{0.43}{\percent}  & 1     \\
+    2085019    & ForStmt   & \SI{21080.000}{\micro\second} & \SI{97.04}{\percent} & \SI{95.98}{\percent} & 1     \\
+    Overhead   &           & \SI{274.000}{\micro\second}   & \SI{1.26}{\percent}  & \SI{1.25}{\percent}  & 12    \\
+    \midrule
+    Runtime    &           & \SI{29647.000}{\micro\second} &                      &                              \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:b:display_data}
+\end{table}
+
+
+A table with information about the runtime is added to the actual output of the program. The output can be seen in Table~\ref{tab:b:display_data}. The first column contains the identifier of the code region, which can be used to re-run the \TOOL with the \lstinline{--stmt} option to profile this segment in detail. The second column contains the class type of the node, which can be used to find the section in the source code more easily. The next column shows the runtime of an area, which is converted into a suitable time unit for different durations. For this purpose, the entire runtime is considered and, depending on the length, a suitable unit is selected into which all times are converted. Possible time units are microseconds, milliseconds, and seconds. The fourth column shows the ratio of the scope running time to the time of the superordinate level, which can be calculated in two ways. If the user specifies the starting point of the traversal, the scope runtime is measured by inserting measurement code around this node. If no starting point is specified, the sum of all running times of the instructions is used. In comparison, the total runtime is always measured as the time between the first entry into the main function and the last point before termination of the application. The ratio of the resources spent on the total resources used can be seen in the next to last column of the table. The last column shows how often the performance counter pairs surrounding the \STAT were executed. In Table~\ref{tab:b:display_data} it can be seen that the \lstinline{for}-loops were executed only once. Note that these call values refer to the outer nodes and not to the iterations within a loop. After all instructions have been written, the amount of overhead generated by the performance counter is also calculated. The information about this can always be found in the second to last line of the table. In Table~\ref{tab:b:display_data} it can be seen that the call value is listed as twelve. This value refers to the added performance counter. To calculate the runtime of the \lstinline{for}-loops two counters each were needed, resulting in a total number of ten counters added. Furthermore, two performance counters were needed to measure the total runtime, resulting in a total of twelve counters. The last line of the table always displays the total required runtime. 
+
+With the data provided, the user can now see which instructions or areas of the code have the most load. If a particularly resource-consuming area is found, the user can locate it in the code. Furthermore, the identifier can be used to call the \TOOL again with the \lstinline{--stmt} option. In this case, the entire process can be repeated, whereby the user now receives more detailed information about a \emph{region of interest}. Finally, it should be noted that this output is produced by the \lstinline{print()} function in the \DATA library. Thus, this function can also be modified for own purposes. 

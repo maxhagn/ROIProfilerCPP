@@ -1,0 +1,226 @@
+% Copyright (C) 2014-2020 by Thomas Auzinger <thomas@auzinger.name>
+
+\documentclass[draft,final]{vutinfth} % Remove option 'final' to obtain debug information.
+
+% Load packages to allow in- and output of non-ASCII characters.
+\usepackage{lmodern}        % Use an extension of the original Computer Modern font to minimize the use of bitmapped letters.
+\usepackage[T1]{fontenc}    % Determines font encoding of the output. Font packages have to be included before this line.
+\usepackage[utf8]{inputenc} % Determines encoding of the input. All input files have to use UTF8 encoding.
+
+% Extended LaTeX functionality is enables by including packages with \usepackage{...}.
+\usepackage{amsmath}    % Extended typesetting of mathematical expression.
+\usepackage{amssymb}    % Provides a multitude of mathematical symbols.
+\usepackage{mathtools}  % Further extensions of mathematical typesetting.
+\usepackage{microtype}  % Small-scale typographic enhancements.
+\usepackage[inline]{enumitem} % User control over the layout of lists (itemize, enumerate, description).
+\usepackage{multirow}   % Allows table elements to span several rows.
+\usepackage{booktabs}   % Improves the typesettings of tables.
+\usepackage{subcaption} % Allows the use of subfigures and enables their referencing.
+\usepackage[ruled,linesnumbered,algochapter]{algorithm2e} % Enables the writing of pseudo code.
+\usepackage[usenames,dvipsnames,table]{xcolor} % Allows the definition and use of colors. This package has to be included before tikz.
+\usepackage{nag}       % Issues warnings when best practices in writing LaTeX documents are violated.
+\usepackage{todonotes} % Provides tooltip-like todo notes.
+
+% \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
+% hunsa
+\usepackage{siunitx}
+\usepackage{xspace}
+\usepackage{my_macros}
+
+% Spacing in List of Listings, same as by lot or lof
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\@chapter}% <cmd>
+  {\addtocontents}% <search>
+  {\addtocontents{lol}{\protect\addvspace{10\p@}}% Add per-chapter space in LoL
+   \addtocontents}% <replace>
+  {}{}% <success><failure>
+\makeatother
+
+% hunsa optional for algorithms (change this if you want to use other algorithms packages)
+% \usepackage{algorithmicx}
+%\usepackage[ruled,linesnumbered,algochapter]{algorithm2e} % Enables the writing of pseudo code.
+
+%\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{listings}
+
+\usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
+
+% CUSTOM SETTINGS ------------------------------------------- %
+\usepackage{xcolor}
+\definecolor{grey}{RGB}{100,100,100}
+\definecolor{keywordgreen}{RGB}{0,128,0}
+\definecolor{stringred}{RGB}{108,48,130}
+\definecolor{commentblue}{RGB}{64,128,128}
+
+\lstset{frame=lines,
+        basicstyle=\footnotesize\ttfamily,
+        showstringspaces=false,
+        captionpos=t,
+        keywordstyle=\color{keywordgreen},
+        stringstyle=\color{stringred},
+        commentstyle=\color{commentblue},
+        morecomment=[l][\color{commentblue}]{\#}
+}
+% CUSTOM SETTINGS ------------------------------------------- %
+
+% Define convenience functions to use the author name and the thesis title in the PDF document properties.
+\newcommand{\authorname}{Maximilian Alfred Hagn} % The author name without titles.
+\newcommand{\thesistitle}{Detecting Performance Bottlenecks through AST Transformation} % The title of the thesis. The English version should be used, if it exists.
+
+% Set PDF document properties
+\hypersetup{
+    pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
+    linkbordercolor = {Melon},                % The color of the borders of boxes around crosslinks (optional).
+    pdfauthor       = {\authorname},          % The author's name in the document properties (optional).
+    pdftitle        = {\thesistitle},         % The document's title in the document properties (optional).
+    pdfsubject      = {Subject},              % The document's subject in the document properties (optional).
+    pdfkeywords     = {CS, computer, science, Clang, LLVM, source-to-source, transformation, profiler} % The document's keywords in the document properties (optional).
+}
+
+\setpnumwidth{2.5em}        % Avoid overfull hboxes in the table of contents (see memoir manual).
+\setsecnumdepth{subsection} % Enumerate subsections.
+
+\nonzeroparskip             % Create space between paragraphs (optional).
+\setlength{\parindent}{0pt} % Remove paragraph identation (optional).
+
+%\makeindex      % Use an optional index.
+%\makeglossaries % Use an optional glossary.
+%\glstocfalse   % Remove the glossaries from the table of contents.
+
+% Set persons with 4 arguments:
+%  {title before name}{name}{title after name}{gender}
+%  where both titles are optional (i.e. can be given as empty brackets {}).
+\setauthor{}{\authorname}{}{male}
+\setadvisor{Associate Prof. Dipl.-Inform. Dr.rer.nat.}{Sascha Hunold}{}{male}
+
+% For bachelor and master theses:
+%\setfirstassistant{Pretitle}{Forename Surname}{Posttitle}{male}
+%\setsecondassistant{Pretitle}{Forename Surname}{Posttitle}{male}
+%\setthirdassistant{Pretitle}{Forename Surname}{Posttitle}{male}
+
+% For dissertations:
+%\setfirstreviewer{Pretitle}{Forename Surname}{Posttitle}{male}
+%\setsecondreviewer{Pretitle}{Forename Surname}{Posttitle}{male}
+
+% For dissertations at the PhD School and optionally for dissertations:
+%\setsecondadvisor{Pretitle}{Forename Surname}{Posttitle}{male} % Comment to remove.
+
+% Required data.
+\setregnumber{11808237}
+\setdate{15}{01}{2022} % Set date with 3 arguments: {day}{month}{year}.
+\settitle{\thesistitle}{Erkennen von Leistungsengpässen mittels AST-Transformationen} % Sets English and German version of the title (both can be English or German). If your title contains commas, enclose it with additional curvy brackets (i.e., {{your title}}) or define it as a macro as done with \thesistitle.
+%\setsubtitle{Optional Subtitle of the Thesis}{Optionaler Untertitel der Arbeit} % Sets English and German version of the subtitle (both can be English or German).
+
+% Select the thesis type: bachelor / master / doctor / phd-school.
+% Bachelor:
+\setthesis{bachelor}
+%
+% Master:
+%\setthesis{master}
+%\setmasterdegree{dipl.} % dipl. / rer.nat. / rer.soc.oec. / master
+%
+% Doctor:
+%\setthesis{doctor}
+%\setdoctordegree{rer.soc.oec.}% rer.nat. / techn. / rer.soc.oec.
+%
+% Doctor at the PhD School
+%\setthesis{phd-school} % Deactivate non-English title pages (see below)
+
+% For bachelor and master:
+\setcurriculum{Business Informatics}{Wirtschaftsinformatik} % Sets the English and German name of the curriculum.
+
+% For dissertations at the PhD School:
+\setfirstreviewerdata{Affiliation, Country}
+\setsecondreviewerdata{Affiliation, Country}
+
+
+\begin{document}
+
+\frontmatter % Switches to roman numbering.
+% The structure of the thesis has to conform to the guidelines at
+%  https://informatics.tuwien.ac.at/study-services
+
+\addtitlepage{naustrian} % German title page (not for dissertations at the PhD School).
+\addtitlepage{english} % English title page.
+\addstatementpage
+
+%\begin{danksagung*}
+%  \todo{Eine Danksagung ist ausreichend. Entweder in deutscher oder in
+%    englischer Sprache. Die andere wird gelöscht.}
+%\end{danksagung*}
+
+%\begin{acknowledgements*}
+%\todo{Enter your text here.}
+%\end{acknowledgements*}
+
+\begin{kurzfassung*}
+Bei der Entwicklung von Software stehen viele Programmiererinnen und Programmierer früher oder später vor der Frage, wie sie ihre Anwendungen optimieren und damit auch die Laufzeit so kurz wie möglich halten können. Gerade im Bereich des Hochleistungsrechnens und bei der Entwicklung zeitkritischer Software ist die Verkürzung der Laufzeit von Programmen unabdingbar. Die Laufzeitanalyse ist daher eine grundlegende Technik, die jede Entwicklerin und jeder Entwickler beherrschen muss. Zu diesem Zweck wird der Quellcode entweder manuell überprüft oder die Anwendung während der Laufzeit mit Profiling-Tools analysiert. Diese Instrumente bieten den Benutzenden die Möglichkeit, Daten über die Leistung einzelner Funktionen zu erhalten. Bei den meisten Tools können die \emph{interessierenden Bereiche}\emph{(ROI)} in der Regel manuell festgelegt werden. Die Identifizierung dieser Bereiche kann problematisch sein, insbesondere bei der Entwicklung komplexer Programme. Daher wäre es wünschenswert, wenn es eine Methode gäbe, mit der benutzerdefinierte \emph{Bereiche von Interesse} durch automatisches Einfügen von Messcode analysiert werden könnten. 
+
+In dieser Arbeit wird ein Werkzeug zur Leistungsmessung vorgestellt, das zur automatischen Messung der Laufzeiten kritischer Bereiche in \C /\CPP Anwendungen verwendet werden kann. Das entwickelte Programm basiert auf dem von \CLANG bereitgestellten Framework, das verschiedene Funktionen zum Traversieren von \emph{abstrakten Syntaxbäumen}\emph{(AST)} bietet. Das Programm analysiert den von \CLANG bereitgestellten \emph{Syntaxbaum} des Eingabecodes und fügt automatisch Messcode an den gewünschten Stellen ein. Dazu wird der \emph{abstrakte Syntaxbaum} von der Wurzel abwärts durchlaufen, wobei in jeder Iteration eine hierarchisch niedrigere Ebene von der Benutzerin oder dem Benutzer ausgewählt werden kann. In jeder Iteration erhält die oder der Anwendende Statistiken über die \emph{interessierenden Bereiche} und kann selbst auf Basis der gewonnenen Informationen entscheiden, welcher Bereich als nächster analysiert werden soll. Um die Funktionalität des Programms vorzustellen werden wir den Arbeitsablauf an verschiedenen Beispielen demonstrieren. Des Weiteren wird anhand einer Überlaufanalyse gezeigt, dass der Überlauf des Profiling-Prozesses durch die iterative Vorgehensweise gering gehalten werden kann.
+\end{kurzfassung*}
+
+\begin{abstract*}
+When developing software, many programmers are sooner or later faced with the question of how they can optimize their applications and also keep the runtime as short as possible. Especially in the field of high-performance computing and in the development of time-critical software, shortening the runtime of programs is indispensable. Runtime analysis is therefore a fundamental technique that must be mastered by every developer. For this purpose, the source code is either checked manually or the application is analyzed during runtime using profiling tools. These instruments offer the possibility to obtain data about the performance of single functions for the user. In most tools, \ROI\emph{(ROI)} can usually be specified manually. Identifying these can be problematic, especially when developing complex programs. Thus, it would be preferable if a method existed with which user-defined \roismall could be analyzed by automatically inserting measurement code. 
+
+This thesis presents a performance measurement tool that can be used to automatically measure the runtimes of critical areas in \C /\CPP applications. The developed program is based on the compiler front-end \CLANG, which offers various functions for traversing \ASTSI\emph{(AST)}. The program analyzes the \astsmall of the input code provided by \CLANG and automatically inserts measurement code at the desired positions. For this purpose, the \astsmall is traversed from the root downwards and in each iteration a hierarchically lower level can be selected by the user. In each iteration, the user receives statistics about the \roismall and can decide which area to analyze next based on the information obtained. To demonstrate the functionality of the program we will show the workflow on different examples. Furthermore, an overflow analysis will be carried out to show that the overflow of the profiling process can be minimized by using an iterative approach.
+\end{abstract*}
+
+% Select the language of the thesis, e.g., english or naustrian.
+\selectlanguage{english}
+
+% Add a table of contents (toc).
+\tableofcontents* % Starred version, i.e., \tableofcontents*, removes the self-entry.
+\cleardoublepage % Start list of tables on the next empty right hand page.
+
+% CUSTOM LIST OF LISTINGS ------------------------------------------- % 
+\renewcommand\lstlistlistingname{List of Listings}
+\lstlistoflistings % Starred version, i.e., \listoffigures*, removes the toc entry.
+\cleardoublepage % Start list of tables on the next empty right hand page.
+% \addcontentsline{toc}{chapter}{List of Listings}
+% CUSTOM LIST OF LISTINGS ------------------------------------------- % 
+
+% Use an optional list of figures.
+\listoffigures % Starred version, i.e., \listoffigures*, removes the toc entry.
+\cleardoublepage % Start list of tables on the next empty right hand page.
+
+% Use an optional list of tables.
+\listoftables % Starred version, i.e., \listoftables*, removes the toc entry.
+\cleardoublepage % Start list of tables on the next empty right hand page.
+
+% Switch to arabic numbering and start the enumeration of chapters in the table of content.
+\mainmatter
+
+% Remove following line for the final thesis.
+%\input{intro.tex} % A short introduction to LaTeX.
+
+\input{content_introduction.tex}    % Introduction, Motivation, Goal, Structure
+\input{content_theory.tex}          % LLVM, Clang, AST
+\input{content_concepts.tex}        % Analysing AST, Core Classes, Locations, Recursive Model
+\input{content_building.tex}        % Clang Infrastructure, Performance Counter, Run Times, Display Output
+\input{content_evaluation.tex}      % Use Cases, Performance Analysis
+\input{content_conclusion.tex}      % Limitations, Future Work
+
+
+\backmatter
+
+% Use an optional list of alogrithms.
+%\listofalgorithms
+%\addcontentsline{toc}{chapter}{List of Algorithms}
+
+% Add an index.
+%\printindex
+
+% Add a glossary.
+%\printglossaries
+
+% Add a bibliography.
+%\bibliographystyle{alpha}
+%\bibliography{intro}
+
+\bibliographystyle{ieeetr}
+\bibliography{intro}
+
+\end{document}
