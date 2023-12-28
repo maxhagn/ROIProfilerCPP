@@ -62,24 +62,6 @@ In diesem Projekt konzentrierte ich mich hauptsächlich auf die Entwicklung des 
 - [GitHub Repository](https://github.com/maxhagn/ROIProfilerCPP)
 - [Website](https://roiprofiler.hagn.network)
 
-## Gallery
-
-![Image 01 Title Page](https://files.hagn.network/images/regions-of-interest-profiler/title-page.webp)
-![Image 02 Example Code Showing a Simple C++ Application](https://files.hagn.network/images/regions-of-interest-profiler/example-code-cpp.webp)
-![Image 03 Example Code Showing the Instructions Wrapped by Performance Counters](https://files.hagn.network/images/regions-of-interest-profiler/example-code-instructions-wrapped.webp)
-![Image 04 The Desired Output of the Transformed Application](https://files.hagn.network/images/regions-of-interest-profiler/output-regions-of-interest-profiler.webp)
-![Image 05 An Example of the Abstract Syntax Tree Provided by Clang](https://files.hagn.network/images/regions-of-interest-profiler/example-abstract-syntax-tree-clang.webp)
-![Image 06 Flow Chart Representing the Logic of the ROIProfiler](https://files.hagn.network/images/regions-of-interest-profiler/roiprofiler-flow-chart.webp)
-![Image 07 The Synopsis of the ROIProfiler](https://files.hagn.network/images/regions-of-interest-profiler/roiprofiler-synopsis.webp)
-![Image 08 Runtime Comparison for the Varying Loop Runtimes Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-forloop-comparison.webp)
-![Image 09 Runtime Deviation for the Execution of the Varying Loop Runtimes Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-forloop-deviation.webp)
-![Image 10 Runtime Comparison for the Fibonacci Sequence Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-fibonacci-comparison.webp)
-![Image 11 Runtime Comparison for the Password Generator Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-password-comparison.webp)
-![Image 12 Runtime Comparison for the Variable Password Size Generator Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-variable-password-comparison.webp)
-![Image 13 Time Per Measurement Value Comparison for Various Test Cases](https://files.hagn.network/images/regions-of-interest-profiler/stats-conclusion-per-counter.webp)
-![Image 14 Total Overhead Per Code Block Comparison for Various Test Cases](https://files.hagn.network/images/regions-of-interest-profiler/stats-conclusion-per-array-entry.webp)
-![Image 15 Prime Number Comparison for the Prime Benchmark Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-prime-comparison.webp)
-
 ## Technical Introduction
 This tool transforms C++ code by adding performance counter dynamically to the source file.
 Functions and statements are traversed in the Clang AST and annotated if necessary. If 
@@ -152,9 +134,23 @@ After the build is complete, a binary file called `roipc` should be found under 
 | `-p=<string>`                | Build Path                                                       |
 | `--stmt=<id of stmt>`        | Specifies the current traversal point                            |
 
+## Gallery
 
-#### Example
-Coming Soon
+![Image 01 Title Page](https://files.hagn.network/images/regions-of-interest-profiler/title-page.webp)
+![Image 02 Example Code Showing a Simple C++ Application](https://files.hagn.network/images/regions-of-interest-profiler/example-code-cpp.webp)
+![Image 03 Example Code Showing the Instructions Wrapped by Performance Counters](https://files.hagn.network/images/regions-of-interest-profiler/example-code-instructions-wrapped.webp)
+![Image 04 The Desired Output of the Transformed Application](https://files.hagn.network/images/regions-of-interest-profiler/output-regions-of-interest-profiler.webp)
+![Image 05 An Example of the Abstract Syntax Tree Provided by Clang](https://files.hagn.network/images/regions-of-interest-profiler/example-abstract-syntax-tree-clang.webp)
+![Image 06 Flow Chart Representing the Logic of the ROIProfiler](https://files.hagn.network/images/regions-of-interest-profiler/roiprofiler-flow-chart.webp)
+![Image 07 The Synopsis of the ROIProfiler](https://files.hagn.network/images/regions-of-interest-profiler/roiprofiler-synopsis.webp)
+![Image 08 Runtime Comparison for the Varying Loop Runtimes Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-forloop-comparison.webp)
+![Image 09 Runtime Deviation for the Execution of the Varying Loop Runtimes Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-forloop-deviation.webp)
+![Image 10 Runtime Comparison for the Fibonacci Sequence Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-fibonacci-comparison.webp)
+![Image 11 Runtime Comparison for the Password Generator Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-password-comparison.webp)
+![Image 12 Runtime Comparison for the Variable Password Size Generator Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-variable-password-comparison.webp)
+![Image 13 Time Per Measurement Value Comparison for Various Test Cases](https://files.hagn.network/images/regions-of-interest-profiler/stats-conclusion-per-counter.webp)
+![Image 14 Total Overhead Per Code Block Comparison for Various Test Cases](https://files.hagn.network/images/regions-of-interest-profiler/stats-conclusion-per-array-entry.webp)
+![Image 15 Prime Number Comparison for the Prime Benchmark Application](https://files.hagn.network/images/regions-of-interest-profiler/stats-prime-comparison.webp)
 
 ## Autor
 Maximilian Hagn <br>
